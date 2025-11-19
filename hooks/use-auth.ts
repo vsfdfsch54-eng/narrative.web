@@ -1,0 +1,124 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { supabase } from "@/lib/supabaseClient"
+import { User } from "@supabase/supabase-js"
+
+export function useAuth() {
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const signUp = async (email: string, password: string, name?: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name || email.split('@')[0],
+          },
+        },
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      // Create user record in users table
+      if (data.user) {
+        // Use the email from the signup, not from data.user.email (which might be null if confirmation required)
+        const userEmail = data.user.email || email
+        
+        if (!userEmail) {
+          console.error('No email available for user record creation')
+          return { success: false, error: 'Email is required' }
+        }
+
+        const { error: dbError } = await supabase.from('users').insert({
+          id: data.user.id,
+          email: userEmail,
+          name: name || email.split('@')[0],
+        })
+
+        if (dbError) {
+          console.error('Error creating user record:', dbError)
+          // Don't fail signup if user record creation fails (user can complete onboarding later)
+        }
+      }
+
+      return { success: true, data }
+    } catch (error: any) {
+      return { success: false, error: error.message || "Failed to sign up" }
+    }
+  }
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        return { success: false, error: error.message }
+      }
+
+      // Check if user has a profile
+      if (data.user) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', data.user.id)
+          .single()
+
+        if (!userData || !userData.name) {
+          // No profile, will redirect to onboarding
+          return { success: true, data, needsOnboarding: true }
+        }
+      }
+
+      return { success: true, data }
+    } catch (error: any) {
+      return { success: false, error: error.message || "Failed to sign in" }
+    }
+  }
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
+
+  return {
+    user,
+    loading,
+    signUp,
+    signIn,
+    signOut,
+    isAuthenticated: !!user,
+    // Legacy support
+    login: signIn,
+    logout: signOut,
+  }
+}
+

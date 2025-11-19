@@ -1,0 +1,80 @@
+export type IntimacyTier = 'inner-circle' | 'close-friends' | 'community'
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  avatar?: string
+  bio?: string
+  location?: string
+  website?: string
+  intimacyTier: IntimacyTier
+  stats?: {
+    connections: number
+    topics: number
+    vibes: number
+  }
+}
+
+export interface Vibe {
+  id: string
+  label: string
+  icon: string
+  color: string
+  description?: string
+}
+
+export interface Topic {
+  id: string
+  label: string
+  icon: string
+  description?: string
+  category?: 'news' | 'pop-culture' | 'general'
+}
+
+export interface Match {
+  id: string
+  user: User
+  vibe: string
+  topic: string
+  compatibility: number
+  intimacyTier: IntimacyTier
+}
+
+export interface Message {
+  id: string
+  senderId: string
+  content: string
+  timestamp: Date
+  read: boolean
+}
+
+export interface Chat {
+  id: string
+  matchId: string
+  userId: string
+  matchUserId: string
+  messages: Message[]
+  lastMessageAt: Date
+  intimacyTier: IntimacyTier
+}
+
+export interface CalendarEvent {
+  id: string
+  title: string
+  date: Date
+  time?: string
+  description?: string
+  participants: string[]
+  intimacyTier: IntimacyTier
+}
+
+export interface FeedbackSubmission {
+  id?: string
+  name?: string
+  email?: string
+  category: 'general' | 'bug' | 'feature' | 'other'
+  message: string
+  submittedAt?: Date
+}
+
