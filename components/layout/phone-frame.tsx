@@ -9,7 +9,12 @@ interface PhoneFrameProps {
 
 export function PhoneFrame({ children, className = "" }: PhoneFrameProps) {
   return (
-    <div className={`fixed inset-0 flex items-center justify-center bg-black overflow-hidden ${className}`}>
+    <div
+      className={`
+        w-full min-h-screen bg-black flex items-center justify-center px-4 py-6
+        ${className}
+      `}
+    >
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
