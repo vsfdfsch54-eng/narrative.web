@@ -38,13 +38,20 @@ export function BottomNav() {
   return (
     <div 
       className={cn(
-        "absolute bottom-0 left-0 right-0 z-50"
+        "fixed bottom-0 left-0 right-0 z-[100]",
+        "pointer-events-none"
       )}
+      style={{ 
+        maxWidth: '375px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%'
+      }}
     >
       <motion.div
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
         className={cn(
           "pointer-events-auto h-20",
           "bg-[#0A0A0A] border-t border-white/10",

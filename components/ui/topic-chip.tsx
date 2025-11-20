@@ -20,21 +20,13 @@ export function TopicChip({
 }: TopicChipProps) {
   return (
     <motion.button
-      whileHover={{ 
-        scale: 1.02,
-        y: -1,
-        transition: { 
-          duration: 0.2,
-          ease: [0.22, 1, 0.36, 1]
-        }
-      }}
       whileTap={{ 
-        scale: 1.05,
-        transition: { duration: 0.15 }
+        scale: 0.98,
+        transition: { duration: 0.1 }
       }}
       onClick={onClick}
       className={cn(
-        "relative min-w-[120px] sm:min-w-[140px] px-5 py-3 sm:px-6 sm:py-3.5 rounded-full",
+        "relative min-w-[120px] sm:min-w-[140px] min-h-[44px] px-5 py-3 sm:px-6 sm:py-3.5 rounded-full",
         "font-medium text-sm tracking-tight",
         "transition-all duration-250",
         "group focus-ring touch-manipulation",

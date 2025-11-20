@@ -202,59 +202,33 @@ export default function VibePage() {
   }, [selectedVibe, selectedTopic])
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 sm:p-10 overflow-y-auto bg-black">
+    <div className="fixed inset-0 flex items-center justify-center bg-black overflow-hidden">
       {/* Phone Frame Container */}
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ 
-          duration: 0.25, 
-          ease: [0.22, 1, 0.36, 1]
-        }}
-        className="w-full max-w-[375px] mx-auto"
-      >
+      <div className="phone-frame-container">
         {/* Phone Frame - Sleek Black */}
-        <div className="relative bg-[#0A0A0A] rounded-[24px] p-1 border border-white/10">
+        <div className="phone-frame">
           {/* Phone Screen */}
-          <div className="bg-black rounded-[22px] relative flex flex-col h-[600px] sm:h-[800px] overflow-hidden">
-            <div className="flex flex-col flex-1 p-4 sm:p-5 overflow-y-auto scrollbar-hide min-h-0 pb-20">
+          <div className="phone-screen">
+            <div className="phone-content p-4 sm:p-5 pb-20">
               {/* Chat Icon - Top Left */}
               <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1, duration: 0.4 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.2 }}
                 onClick={() => router.push("/conversations")}
-                className="absolute top-4 left-4 z-20 p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                className="absolute top-4 left-4 z-20 min-w-[44px] min-h-[44px] p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all touch-manipulation"
               >
                 <MessageSquare className="h-5 w-5 text-white/80" />
               </motion.button>
 
               {/* Header - Bold White */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  delay: 0.1,
-                  duration: 0.25,
-                  ease: [0.22, 1, 0.36, 1]
-                }}
-                className="text-center mb-4"
-              >
+              <div className="text-center mb-4">
                 <h1 className="text-3xl font-black tracking-[-0.025em] text-white leading-tight mb-3">
                   Let&apos;s get started
                 </h1>
                 
                 {/* Time Limit Selector - Monochrome */}
-                <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                      delay: 0.2, 
-                      duration: 0.25, 
-                      ease: [0.22, 1, 0.36, 1]
-                    }}
-                  className="flex items-center justify-center gap-3"
-                >
+                <div className="flex items-center justify-center gap-3">
                   <Clock className="h-3.5 w-3.5 text-white/60" />
                   <span className="text-[10px] text-white/60 font-medium tracking-wide uppercase">Time</span>
                   <div className="flex items-center gap-2">
@@ -275,20 +249,11 @@ export default function VibePage() {
                       </motion.button>
                     ))}
                   </div>
-                </motion.div>
-              </motion.div>
+                </div>
+              </div>
 
               {/* Progress Indicator - White */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  delay: 0.3, 
-                  duration: 0.25, 
-                  ease: [0.22, 1, 0.36, 1]
-                }}
-                className="flex items-center justify-center gap-2 mb-4"
-              >
+              <div className="flex items-center justify-center gap-2 mb-4">
                 <motion.div 
                   layout
                   initial={false}
@@ -296,28 +261,17 @@ export default function VibePage() {
                     selectedVibe ? "bg-white w-12" : "bg-white/20 w-8"
                   }`}
                 />
-                <motion.div 
-                  layout
-                  initial={false}
+                <div 
                   className={`h-1 rounded-full transition-all duration-300 ${
                     selectedTopic ? "bg-white w-12" : "bg-white/20 w-8"
                   }`}
                 />
-              </motion.div>
+              </div>
 
               {/* Main Content - Sleek Modules */}
               <div className="flex flex-col gap-2.5">
                 {/* Vibe Module */}
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    delay: 0.4,
-                    duration: 0.25,
-                    ease: [0.22, 1, 0.36, 1]
-                  }}
-                  className="sleek-module p-3 border-2 border-white/15"
-                >
+                <div className="sleek-module p-3 border-2 border-white/15">
                   {/* Section Header */}
                   <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-white/20">
                     <div className="flex items-center gap-3">
@@ -402,19 +356,10 @@ export default function VibePage() {
                     <div className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none z-10" />
                     <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-black via-black/80 to-transparent pointer-events-none z-10" />
                   </div>
-                </motion.div>
+                </div>
 
                 {/* Topic Module */}
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ 
-                    delay: 0.5,
-                    duration: 0.25,
-                    ease: [0.22, 1, 0.36, 1]
-                  }}
-                  className="sleek-module p-3 border-2 border-white/15"
-                >
+                <div className="sleek-module p-3 border-2 border-white/15">
                   {/* Section Header */}
                   <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-white/20">
                     <div className="flex items-center gap-3">
@@ -528,19 +473,12 @@ export default function VibePage() {
                     <div className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none z-10" />
                     <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-black via-black/80 to-transparent pointer-events-none z-10" />
                   </div>
-                </motion.div>
+                </div>
               </div>
 
               {/* Action Buttons - Sleek Black & White */}
-              <motion.div
+              <div
                 ref={actionSectionRef}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  delay: 0.8, 
-                  duration: 0.25, 
-                  ease: [0.22, 1, 0.36, 1]
-                }}
                 className="flex items-center justify-center gap-3 mt-2 pt-3 border-t-2 border-white/20"
               >
                 <AnimatePresence mode="wait">
@@ -587,14 +525,14 @@ export default function VibePage() {
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
+              </div>
             </div>
             
             {/* Bottom Navigation */}
             <BottomNav />
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }
