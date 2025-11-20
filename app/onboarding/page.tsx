@@ -412,9 +412,11 @@ function OnboardingContent() {
 
   const handleSubmit = async () => {
     setError("")
+    console.log('handleSubmit called, user:', user?.id, 'verified:', user?.email_confirmed_at, 'interests:', selectedInterests.length)
     
     // If user is already authenticated and verified, just complete onboarding
     if (user && user.email_confirmed_at) {
+      console.log('User verified, calling handleCompleteOnboarding')
       await handleCompleteOnboarding()
       return
     }
@@ -501,25 +503,29 @@ function OnboardingContent() {
       return
     }
     
+    console.log('handleCompleteOnboarding called, userId:', user.id, 'interests:', selectedInterests)
     setLoading(true)
     setError("")
     
     try {
-      // Get existing user data
-      const userResponse = await fetch(`/api/users?userId=${user.id}`)
-      const userData = await userResponse.json()
-      const existingName = userData.success && userData.data?.name 
-        ? userData.data.name 
-        : name.trim() || user.email?.split('@')[0] || 'User'
-      
-      // Validate interests
+      // Validate interests first
       if (selectedInterests.length === 0) {
         setError("Please select at least one interest")
         setLoading(false)
         return
       }
       
+      // Get existing user data
+      const userResponse = await fetch(`/api/users?userId=${user.id}`)
+      const userData = await userResponse.json()
+      console.log('User data response:', userData)
+      
+      const existingName = userData.success && userData.data?.name 
+        ? userData.data.name 
+        : name.trim() || user.email?.split('@')[0] || 'User'
+      
       // Save user data with interests
+      console.log('Saving user data:', { userId: user.id, name: existingName, interests: selectedInterests })
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -531,14 +537,17 @@ function OnboardingContent() {
       })
 
       const data = await response.json()
+      console.log('Save response:', data)
       
       if (data.success) {
         // Clear saved onboarding data
         clearOnboardingData()
         setLoading(false)
+        console.log('Onboarding complete, redirecting to /vibe')
         // After completing onboarding, redirect to /vibe
         router.push('/vibe')
       } else {
+        console.error('Failed to save:', data.error)
         setError(data.error || "Failed to complete onboarding. Please try again.")
         setLoading(false)
       }
@@ -906,13 +915,19 @@ function OnboardingContent() {
                     Back
                   </Button>
                   <Button
-                    onClick={handleNext}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      console.log('Continue button clicked, interests:', selectedInterests.length)
+                      handleNext()
+                    }}
                     variant="primary"
-                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3] hover:bg-[#f1f1f3]/95"
+                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3] hover:bg-[#f1f1f3]/95 disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
                     disabled={loading || selectedInterests.length === 0}
+                    type="button"
                   >
-                    {loading ? "Creating..." : selectedInterests.length === 0 ? "Select at least 1" : "Continue"}
+                    {loading ? "Saving..." : selectedInterests.length === 0 ? "Select at least 1" : `Continue (${selectedInterests.length})`}
                   </Button>
                 </div>
               </div>
