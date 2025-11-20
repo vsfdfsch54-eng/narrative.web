@@ -152,7 +152,7 @@ export function useAuth() {
           .from('users')
           .select('name')
           .eq('id', data.user.id)
-          .single()
+          .maybeSingle()
 
         if (!userData || !userData.name) {
           // No profile, will redirect to onboarding

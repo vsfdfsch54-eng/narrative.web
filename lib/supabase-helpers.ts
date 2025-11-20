@@ -139,45 +139,42 @@ export async function findOrCreateMatch(userId: string): Promise<ChatMatch | nul
   const supabaseServer = createServerClient()
   
   // First, check if user already has an active match
-  const { data: existingMatch } = await supabaseServer
+  const { data: existingMatches, error: existingError } = await supabaseServer
     .from('chat_matches')
     .select('*')
     .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
 
-  if (existingMatch) {
-    return existingMatch
+  if (!existingError && existingMatches && existingMatches.length > 0) {
+    return existingMatches[0]
   }
 
   // Check for pending matches
-  const { data: pendingMatch } = await supabaseServer
+  const { data: pendingMatches, error: pendingError } = await supabaseServer
     .from('chat_matches')
     .select('*')
     .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
     .eq('status', 'pending')
     .order('created_at', { ascending: true })
     .limit(1)
-    .single()
 
-  if (pendingMatch) {
-    return pendingMatch
+  if (!pendingError && pendingMatches && pendingMatches.length > 0) {
+    return pendingMatches[0]
   }
 
   // Try to find a user in the queue
-  const { data: queueUser } = await supabaseServer
+  const { data: queueUsers, error: queueError } = await supabaseServer
     .from('match_queue')
     .select('user_id')
     .neq('user_id', userId)
     .order('created_at', { ascending: true })
     .limit(1)
-    .single()
 
-  if (queueUser) {
+  if (!queueError && queueUsers && queueUsers.length > 0) {
     // Found a user in queue, create match and remove both from queue
-    const otherUserId = queueUser.user_id
+    const otherUserId = queueUsers[0].user_id
     
     // Remove both users from queue
     await supabaseServer.from('match_queue').delete().eq('user_id', userId)
@@ -225,18 +222,17 @@ export async function getNextMatch(userId: string): Promise<ChatMatch | null> {
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No matches found
-      return null
-    }
     console.error('Error getting next match:', error)
     return null
   }
 
-  return data
+  if (!data || data.length === 0) {
+    return null
+  }
+
+  return data[0]
 }
 
 /**

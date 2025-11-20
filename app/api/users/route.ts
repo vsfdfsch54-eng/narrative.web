@@ -18,10 +18,14 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
     if (error) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    }
+
+    if (!data) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
     }
 
     return NextResponse.json({ success: true, data })
@@ -46,9 +50,9 @@ export async function PUT(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
-    if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = not found
+    if (fetchError) {
       return NextResponse.json({ success: false, error: fetchError.message }, { status: 500 })
     }
 
