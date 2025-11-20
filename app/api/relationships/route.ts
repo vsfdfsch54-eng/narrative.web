@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
         onConflict: 'user1_id,user2_id',
       })
       .select()
-      .single()
 
     if (error) {
       console.error('Error creating relationship:', error)

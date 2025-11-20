@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest) {
     // Now upsert with email and interests
     // Use upsert to handle both new users and existing users
     // onConflict: 'id' means update if user with this id exists
-    const { data, error } = await supabase
+    const { data: upsertData, error: upsertError } = await supabase
       .from('users')
       .upsert({
         id: userId,
@@ -88,11 +88,10 @@ export async function PUT(request: NextRequest) {
         ignoreDuplicates: false // Update if exists
       })
       .select()
-      .single()
 
-    if (error) {
+    if (upsertError) {
       // Handle duplicate email error gracefully
-      if (error.message.includes('duplicate key') || error.message.includes('unique constraint') || error.code === '23505') {
+      if (upsertError.message.includes('duplicate key') || upsertError.message.includes('unique constraint') || upsertError.code === '23505') {
         // Email already exists, try to update by id instead
         const { data: updateData, error: updateError } = await supabase
           .from('users')
@@ -103,19 +102,26 @@ export async function PUT(request: NextRequest) {
           })
           .eq('id', userId)
           .select()
-          .single()
         
         if (updateError) {
           return NextResponse.json({ success: false, error: updateError.message }, { status: 500 })
         }
         
-        return NextResponse.json({ success: true, data: updateData })
+        // Handle array response
+        const finalData = Array.isArray(updateData) ? updateData[0] : updateData
+        return NextResponse.json({ success: true, data: finalData })
       }
       
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+      return NextResponse.json({ success: false, error: upsertError.message }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, data })
+    // Handle array response from upsert
+    const finalData = Array.isArray(upsertData) ? upsertData[0] : upsertData
+    if (!finalData) {
+      return NextResponse.json({ success: false, error: 'Failed to save user data' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true, data: finalData })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
