@@ -65,9 +65,15 @@ function OnboardingContent() {
   // Check status on mount and when user changes
   useEffect(() => {
     if (!authLoading) {
-      checkOnboardingStatus()
+      if (!user) {
+        // No user, show signup form immediately
+        setCheckingStatus(false)
+      } else {
+        // User exists, check their onboarding status
+        checkOnboardingStatus()
+      }
     }
-  }, [authLoading, checkOnboardingStatus])
+  }, [authLoading, user, checkOnboardingStatus])
 
   // Handle email verification - auto-complete onboarding
   useEffect(() => {
@@ -251,8 +257,18 @@ function OnboardingContent() {
 
   const categories = getAllCategories()
 
-  // Show loading while checking status
-  if (checkingStatus || authLoading) {
+  // Show loading only while checking auth status (not when no user)
+  if (authLoading) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    )
+  }
+
+  // If no user, show signup form immediately (don't wait for checkingStatus)
+  // If user exists and is checking status, show loading
+  if (user && checkingStatus) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <p className="text-white/60">Loading...</p>
@@ -262,7 +278,7 @@ function OnboardingContent() {
 
   // If user is authenticated, verified, and has completed onboarding, redirect
   if (user && user.email_confirmed_at) {
-    // Will redirect in useEffect
+    // Will redirect in useEffect, but show loading briefly
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <p className="text-white/60">Loading...</p>
