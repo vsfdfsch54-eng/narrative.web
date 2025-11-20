@@ -22,18 +22,13 @@ function OnboardingContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [passwordMatchError, setPasswordMatchError] = useState("")
-  const [checkingStatus, setCheckingStatus] = useState(true)
-  
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, signUp, loading: authLoading } = useAuth()
 
   // Check onboarding status when user changes
   const checkOnboardingStatus = useCallback(async () => {
-    if (!user?.id) {
-      setCheckingStatus(false)
-      return
-    }
+    if (!user?.id) return
     
     try {
       const response = await fetch(`/api/users?userId=${user.id}`)
@@ -57,45 +52,44 @@ function OnboardingContent() {
       }
     } catch (err) {
       console.error('Error checking onboarding status:', err)
-    } finally {
-      setCheckingStatus(false)
     }
   }, [user, router])
 
   // Check status on mount and when user changes
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        // No user, show signup form immediately
-        setCheckingStatus(false)
-      } else {
-        // User exists, check their onboarding status
-        checkOnboardingStatus()
-      }
+    // Only check if auth has finished loading
+    if (authLoading) return
+    
+    if (!user) {
+      // No user, show signup form - do nothing, just render
+      return
     }
+    
+    // User exists, check their onboarding status
+    checkOnboardingStatus()
   }, [authLoading, user, checkOnboardingStatus])
 
   // Handle email verification - auto-complete onboarding
   useEffect(() => {
-    if (user && user.email_confirmed_at && !checkingStatus) {
-      const verified = searchParams.get('verified')
-      
-      if (verified === 'true' || user.email_confirmed_at) {
-        // User just verified email
-        if (selectedInterests.length > 0) {
-          handleCompleteOnboarding()
-        } else {
-          // Move to interests step if not already there
-          if (currentStep !== 'interests' && currentStep !== 'welcome') {
-            setCurrentStep('interests')
-          }
-          if (user.email && !email) {
-            setEmail(user.email)
-          }
+    if (!user || !user.email_confirmed_at || authLoading) return
+    
+    const verified = searchParams.get('verified')
+    
+    if (verified === 'true' || user.email_confirmed_at) {
+      // User just verified email
+      if (selectedInterests.length > 0) {
+        handleCompleteOnboarding()
+      } else {
+        // Move to interests step if not already there
+        if (currentStep !== 'interests' && currentStep !== 'welcome') {
+          setCurrentStep('interests')
+        }
+        if (user.email && !email) {
+          setEmail(user.email)
         }
       }
     }
-  }, [user, searchParams, selectedInterests, checkingStatus, email, currentStep])
+  }, [user, searchParams, selectedInterests, email, currentStep, authLoading])
 
   const validatePasswordMatch = useCallback(() => {
     if (confirmPassword && password !== confirmPassword) {
@@ -257,7 +251,8 @@ function OnboardingContent() {
 
   const categories = getAllCategories()
 
-  // Show loading only while checking auth status (not when no user)
+  // Show loading ONLY while auth is actually loading (first time check)
+  // Once authLoading is false, we can render the form
   if (authLoading) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
@@ -266,24 +261,11 @@ function OnboardingContent() {
     )
   }
 
-  // If no user, show signup form immediately (don't wait for checkingStatus)
-  // If user exists and is checking status, show loading
-  if (user && checkingStatus) {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <p className="text-white/60">Loading...</p>
-      </div>
-    )
-  }
-
   // If user is authenticated, verified, and has completed onboarding, redirect
+  // This will be handled by checkOnboardingStatus, but show loading briefly
   if (user && user.email_confirmed_at) {
-    // Will redirect in useEffect, but show loading briefly
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <p className="text-white/60">Loading...</p>
-      </div>
-    )
+    // Check if we should redirect (will happen in useEffect)
+    // Show form in case redirect takes a moment
   }
 
   // Step 1: Email

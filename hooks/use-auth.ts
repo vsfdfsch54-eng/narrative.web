@@ -9,21 +9,49 @@ export function useAuth() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    let mounted = true
+    
+    // Get initial session with timeout
+    const initSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Error getting session:', error)
+        if (mounted) {
+          setLoading(false)
+        }
+      }
+    }
+    
+    // Set a timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (mounted) {
+        setLoading(false)
+      }
+    }, 5000) // 5 second max wait
+    
+    initSession()
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
+      if (mounted) {
+        setUser(session?.user ?? null)
+        setLoading(false)
+        clearTimeout(timeout)
+      }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      clearTimeout(timeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signUp = async (email: string, password: string, name?: string) => {

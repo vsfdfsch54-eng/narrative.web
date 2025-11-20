@@ -44,10 +44,28 @@
     @apply border-border;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
   }
 
   *::-webkit-scrollbar {
     display: none;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  
+  /* Allow text selection in inputs */
+  input, textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
   }
 
   html {
@@ -58,6 +76,15 @@
     min-height: 100%;
     width: 100%;
     background: #000000;
+    position: fixed;
+    overflow: hidden;
+    touch-action: pan-x pan-y;
+    -ms-touch-action: pan-x pan-y;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
   }
 
   body {
@@ -68,10 +95,24 @@
     letter-spacing: -0.011em;
     background: #000000;
     min-height: 100vh;
+    min-height: 100dvh;
     margin: 0;
+    padding: 0;
     width: 100%;
-    overflow-x: hidden;
+    height: 100%;
+    position: fixed;
+    overflow: hidden;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
+    -ms-touch-action: pan-x pan-y;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   /* Subtle texture overlay */

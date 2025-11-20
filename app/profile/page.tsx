@@ -117,8 +117,29 @@ export default function ProfilePage() {
     }
   }
 
-  if (authLoading || loadingProfile || !user) {
-    return null
+  if (authLoading) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    )
+  }
+
+  if (!user) {
+    router.push("/onboarding")
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Redirecting...</p>
+      </div>
+    )
+  }
+
+  if (loadingProfile) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading profile...</p>
+      </div>
+    )
   }
 
   return (
