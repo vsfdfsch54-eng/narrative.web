@@ -132,33 +132,33 @@ export default function VibePage() {
   }, [selectedCategory])
 
   const handleConnect = async () => {
-    const userId = getUserId()
-    if (!userId) {
+      const userId = getUserId()
+      if (!userId) {
       router.push("/")
-      return
-    }
-    
-    setSaving(true)
-    
-    try {
+        return
+      }
+      
+      setSaving(true)
+      
+      try {
       // Save vibe to database if selected
-      if (selectedVibe) {
-        await fetch('/api/vibes', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            userId, 
-            vibe: selectedVibe.label 
+        if (selectedVibe) {
+          await fetch('/api/vibes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              userId, 
+              vibe: selectedVibe.label 
+            })
           })
-        })
-      }
-      
-      // Keep localStorage for time limit (can be moved to DB later)
-      if (selectedTimeLimit) {
-        localStorage.setItem("timeLimit", selectedTimeLimit.toString())
-      }
-      
-      // Store selections in localStorage for immediate use
+        }
+        
+        // Keep localStorage for time limit (can be moved to DB later)
+        if (selectedTimeLimit) {
+          localStorage.setItem("timeLimit", selectedTimeLimit.toString())
+        }
+        
+        // Store selections in localStorage for immediate use
       if (selectedVibe) {
         localStorage.setItem("selectedVibe", selectedVibe.id)
       }
@@ -183,12 +183,12 @@ export default function VibePage() {
         // No match found, go to connect page
         router.push("/connect")
       }
-    } catch (error) {
+      } catch (error) {
       console.error('Error connecting:', error)
-      // Still navigate even if save fails
-      router.push("/connect")
-    } finally {
-      setSaving(false)
+        // Still navigate even if save fails
+        router.push("/connect")
+      } finally {
+        setSaving(false)
     }
   }
 

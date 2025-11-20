@@ -16,7 +16,7 @@ export default function Home() {
     if (!loading && user) {
       if (user.email_confirmed_at) {
         // User is logged in AND verified → go directly to /vibe
-        router.push("/vibe")
+      router.push("/vibe")
       } else {
         // User is logged in but NOT verified → go to /verify
         router.push("/verify")
@@ -80,24 +80,24 @@ export default function Home() {
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-4 w-full items-stretch">
-            <Button
-              asChild
-              variant="primary"
-              size="lg"
+                <Button
+                  asChild
+                  variant="primary"
+                  size="lg"
               className="w-full h-14 text-base font-semibold tracking-wide bg-[#EDEDED] text-[#0A0A0A] border border-[#EDEDED] shadow-lg hover:bg-[#EDEDED]/95 transition-all flex items-center justify-center"
-            >
+                >
               <Link href="/onboarding" className="w-full h-full flex items-center justify-center">Create an Account</Link>
-            </Button>
+                </Button>
             
-            <Button
+                <Button
               onClick={handleGetToChatting}
-              variant="outline"
-              size="lg"
+                  variant="outline"
+                  size="lg"
               disabled={checkingAuth}
               className="w-full h-14 text-base font-semibold tracking-wide border-[#EDEDED]/20 text-[#EDEDED] hover:border-[#EDEDED]/40 hover:bg-[#EDEDED]/5 flex items-center justify-center"
-            >
+          >
               {checkingAuth ? "Loading..." : "Get to Chatting"}
-            </Button>
+                </Button>
           </div>
         </div>
       </div>

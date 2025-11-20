@@ -85,7 +85,7 @@ export default function ChatDetailPage() {
       return matchIdFromUrl
     }
     
-    // Try to find existing match in database
+      // Try to find existing match in database
     try {
       const response = await fetch(`/api/matches?userId=${currentUserId}`)
       const data = await response.json()
@@ -170,8 +170,8 @@ export default function ChatDetailPage() {
     if (savedTimeLimit) {
       const timeLimitMinutes = Number(savedTimeLimit)
       if (!isNaN(timeLimitMinutes) && timeLimitMinutes > 0) {
-        const timeLimitMs = timeLimitMinutes * 60 * 1000
-        setTimeRemaining(timeLimitMs)
+      const timeLimitMs = timeLimitMinutes * 60 * 1000
+      setTimeRemaining(timeLimitMs)
       }
     }
   }, [chatId, matchId, currentUserId, user, profileName, profileGender])
@@ -365,16 +365,16 @@ export default function ChatDetailPage() {
                   </button>
                   
                   <button
-                    onClick={() => setShowEndModal(true)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-xs font-semibold",
-                      "border border-white/10 bg-white/5",
-                      "text-white hover:bg-white/10",
-                      "transition-all duration-200",
-                      "touch-manipulation cursor-pointer"
-                    )}
-                  >
-                    End Convo
+                  onClick={() => setShowEndModal(true)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-semibold",
+                    "border border-white/10 bg-white/5",
+                    "text-white hover:bg-white/10",
+                    "transition-all duration-200",
+                    "touch-manipulation cursor-pointer"
+                  )}
+                >
+                  End Convo
                   </button>
                 </div>
               </div>
