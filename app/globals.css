@@ -200,7 +200,7 @@
     }
   }
   
-  /* Phone frame container - consistent across all pages */
+  /* Modern Full-Screen Mobile Layout */
   .phone-frame-container {
     width: 100%;
     max-width: none;
@@ -229,7 +229,7 @@
     overflow: hidden;
   }
   
-  /* Mobile: Remove ALL styling from phone-frame */
+  /* Mobile: Remove ALL styling from phone-frame - full screen */
   @media (max-width: 640px) {
     .phone-frame {
       background: transparent !important;
@@ -237,6 +237,9 @@
       padding: 0 !important;
       border: none !important;
       max-height: none !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
     }
   }
   
@@ -251,16 +254,19 @@
     width: 100%;
   }
   
-  /* Mobile: Remove ALL styling from phone-screen */
+  /* Mobile: Remove ALL styling from phone-screen - full screen */
   @media (max-width: 640px) {
     .phone-screen {
-      background: transparent !important;
+      background: #000000 !important;
       border-radius: 0 !important;
       border: none !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
     }
   }
   
-  /* Prevent layout shifts */
+  /* Modern Content Container */
   .phone-content {
     flex: 1;
     overflow-y: auto;
@@ -268,13 +274,20 @@
     -webkit-overflow-scrolling: touch;
     position: relative;
     min-height: 0;
+    width: 100%;
   }
   
-  /* On mobile, phone-content fills screen directly */
+  /* Mobile: Full-screen content with proper spacing */
   @media (max-width: 640px) {
     .phone-content {
-      padding: 1rem !important;
-      padding-bottom: 5rem !important; /* Space for bottom nav */
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      padding: 0 !important;
+      padding-top: env(safe-area-inset-top, 0) !important;
+      padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0)) !important;
+      position: relative !important;
+      background: #000000 !important;
     }
   }
   

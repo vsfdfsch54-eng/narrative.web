@@ -221,68 +221,89 @@ export default function VibePage() {
                 <MessageSquare className="h-5 w-5 text-white/80" />
               </motion.button>
 
-              {/* Header - Bold White */}
-              <div className="text-center mb-4">
-                <h1 className="text-3xl font-black tracking-[-0.025em] text-white leading-tight mb-3">
+              {/* Header - Modern & Clean */}
+              <div className="text-center mb-6 sm:mb-8">
+                <h1 className="text-4xl sm:text-5xl font-black tracking-[-0.03em] text-white leading-[1.1] mb-4 sm:mb-6">
                   Let&apos;s get started
                 </h1>
                 
-                {/* Time Limit Selector - Monochrome */}
-                <div className="flex items-center justify-center gap-3">
-                  <Clock className="h-3.5 w-3.5 text-white/60" />
-                  <span className="text-[10px] text-white/60 font-medium tracking-wide uppercase">Time</span>
+                {/* Time Limit Selector - Refined */}
+                <div className="flex items-center justify-center gap-2.5 mb-2">
+                  <Clock className="h-4 w-4 text-white/50" />
+                  <span className="text-[11px] text-white/50 font-semibold tracking-wider uppercase">Time</span>
                   <div className="flex items-center gap-2">
                     {TIME_LIMITS.map((time) => (
                       <motion.button
                         key={time}
                         onClick={() => setSelectedTimeLimit(time)}
-                        whileHover={{ scale: 1.03, y: -1 }}
-                        whileTap={{ scale: 1.05 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.98 }}
                         className={`
-                          relative px-4 py-1.5 rounded-full text-[10px] font-medium tracking-wide transition-all duration-250 focus-ring min-h-[32px] min-w-[32px] sleek-chip
-                          ${selectedTimeLimit === time ? "selected" : ""}
+                          relative px-5 py-2 rounded-full text-xs font-semibold tracking-tight transition-all duration-200 min-h-[36px] min-w-[36px]
+                          ${selectedTimeLimit === time 
+                            ? "bg-white text-black shadow-lg" 
+                            : "bg-white/5 text-white/80 border border-white/10 hover:bg-white/10"
+                          }
                         `}
                       >
-                        <span className={selectedTimeLimit === time ? "text-black" : "text-white/90"}>
-                          {time}m
-                        </span>
+                        {time}m
                       </motion.button>
                     ))}
                   </div>
                 </div>
               </div>
 
-              {/* Progress Indicator - White */}
-              <div className="flex items-center justify-center gap-2 mb-4">
+              {/* Progress Indicator - Subtle */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  delay: 0.2, 
+                  duration: 0.3, 
+                  ease: [0.22, 1, 0.36, 1]
+                }}
+                className="flex items-center justify-center gap-2 mb-6"
+              >
                 <motion.div 
                   layout
                   initial={false}
-                  className={`h-1 rounded-full transition-all duration-300 ${
-                    selectedVibe ? "bg-white w-12" : "bg-white/20 w-8"
+                  className={`h-1.5 rounded-full transition-all duration-400 ${
+                    selectedVibe ? "bg-white w-16" : "bg-white/15 w-10"
                   }`}
                 />
-                <div 
-                  className={`h-1 rounded-full transition-all duration-300 ${
-                    selectedTopic ? "bg-white w-12" : "bg-white/20 w-8"
+                <motion.div 
+                  layout
+                  initial={false}
+                  className={`h-1.5 rounded-full transition-all duration-400 ${
+                    selectedTopic ? "bg-white w-16" : "bg-white/15 w-10"
                   }`}
                 />
-              </div>
+              </motion.div>
 
-              {/* Main Content - Sleek Modules */}
-              <div className="flex flex-col gap-2.5">
+              {/* Main Content - Modern Cards */}
+              <div className="flex flex-col gap-4 sm:gap-5">
                 {/* Vibe Module */}
-                <div className="sleek-module p-3 border-2 border-white/15">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    delay: 0.3,
+                    duration: 0.4,
+                    ease: [0.22, 1, 0.36, 1]
+                  }}
+                  className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+                >
                   {/* Section Header */}
-                  <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-white/20">
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-white/5 border-2 border-white/20">
-                        <Sparkles className="h-4 w-4 text-white/70" />
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                        <Sparkles className="h-5 w-5 text-white/80" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-bold text-white tracking-tight leading-tight">
+                        <h2 className="text-xl font-bold text-white tracking-tight leading-tight">
                           Your Vibe
                         </h2>
-                        <p className="text-[10px] text-white/70 font-medium tracking-wide mt-0.5">
+                        <p className="text-xs text-white/60 font-medium tracking-wide mt-1">
                           How are you feeling?
                         </p>
                       </div>
@@ -292,7 +313,7 @@ export default function VibePage() {
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        className="w-1.5 h-1.5 rounded-full bg-white"
+                        className="w-2 h-2 rounded-full bg-white"
                       />
                     )}
                   </div>
@@ -300,35 +321,35 @@ export default function VibePage() {
                   {/* Last Vibe Option */}
                   {lastVibe && !loadingLastVibe && (
                     <motion.button
-                      initial={{ opacity: 0, y: 15 }}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ 
-                        delay: 0.5, 
-                        duration: 0.25, 
+                        delay: 0.4, 
+                        duration: 0.3, 
                         ease: [0.22, 1, 0.36, 1]
                       }}
-                      whileHover={{ scale: 1.01, y: -1 }}
+                      whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleSelectLastVibe}
                       className={`
-                        relative w-full px-3 py-2.5 rounded-[18px] text-left transition-all duration-250 overflow-hidden focus-ring flex-shrink-0
+                        relative w-full px-4 py-3.5 rounded-xl text-left transition-all duration-200 overflow-hidden flex-shrink-0
                         ${selectedVibe?.id === lastVibe.id
-                          ? "bg-white border-2 border-white"
-                          : "bg-white/5 border-2 border-white/20 hover:bg-white/10 hover:border-white/30"
+                          ? "bg-white text-black border border-white"
+                          : "bg-white/5 text-white border border-white/10 hover:bg-white/10"
                         }
                       `}
                     >
                       <div className="relative flex items-center justify-between z-10">
                         <div>
-                          <p className="text-[9px] text-white/80 font-bold uppercase tracking-wider mb-0.5">Last vibe</p>
-                          <p className="text-xs font-bold text-white">{lastVibe.label}</p>
+                          <p className="text-[10px] text-white/60 font-semibold uppercase tracking-wider mb-1">Last vibe</p>
+                          <p className="text-sm font-bold">{lastVibe.label}</p>
                         </div>
                         {selectedVibe?.id === lastVibe.id && (
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                            className="w-1.5 h-1.5 rounded-full bg-white"
+                            className="w-2 h-2 rounded-full bg-black"
                           />
                         )}
                       </div>
@@ -356,21 +377,30 @@ export default function VibePage() {
                     <div className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none z-10" />
                     <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-black via-black/80 to-transparent pointer-events-none z-10" />
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Topic Module */}
-                <div className="sleek-module p-3 border-2 border-white/15">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ 
+                    delay: 0.4,
+                    duration: 0.4,
+                    ease: [0.22, 1, 0.36, 1]
+                  }}
+                  className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10"
+                >
                   {/* Section Header */}
-                  <div className="flex items-center justify-between mb-3 pb-3 border-b-2 border-white/20">
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-white/5 border-2 border-white/20">
-                        <MessageSquare className="h-4 w-4 text-white/70" />
+                      <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                        <MessageSquare className="h-5 w-5 text-white/80" />
                       </div>
                       <div>
-                        <h2 className="text-lg font-bold text-white tracking-tight leading-tight">
+                        <h2 className="text-xl font-bold text-white tracking-tight leading-tight">
                           Your Topic
                         </h2>
-                        <p className="text-[10px] text-white/70 font-medium tracking-wide mt-0.5">
+                        <p className="text-xs text-white/60 font-medium tracking-wide mt-1">
                           What interests you?
                         </p>
                       </div>
@@ -380,55 +410,55 @@ export default function VibePage() {
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                        className="w-1.5 h-1.5 rounded-full bg-white"
+                        className="w-2 h-2 rounded-full bg-white"
                       />
                     )}
                   </div>
 
-                  {/* Most Popular Topic Option */}
-                  <motion.button
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ 
-                      delay: 0.6, 
-                      duration: 0.25, 
-                      ease: [0.22, 1, 0.36, 1]
-                    }}
-                    whileHover={{ scale: 1.01, y: -1 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleSelectMostPopular}
-                    className={`
-                      relative w-full px-3 py-2.5 rounded-[18px] text-left transition-all duration-250 overflow-hidden focus-ring flex-shrink-0
-                      ${selectedTopic?.id === MOST_POPULAR_TOPIC.id
-                        ? "bg-white border-2 border-white"
-                        : "bg-white/5 border-2 border-white/20 hover:bg-white/10 hover:border-white/30"
-                      }
-                    `}
-                  >
-                    <div className="relative flex items-center justify-between z-10">
-                      <div>
-                        <p className="text-[9px] text-white/80 font-bold uppercase tracking-wider mb-0.5">Most popular</p>
-                        <p className="text-xs font-bold text-white line-clamp-1">{MOST_POPULAR_TOPIC.label}</p>
+                    {/* Most Popular Topic Option */}
+                    <motion.button
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ 
+                        delay: 0.5, 
+                        duration: 0.3, 
+                        ease: [0.22, 1, 0.36, 1]
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleSelectMostPopular}
+                      className={`
+                        relative w-full px-4 py-3.5 rounded-xl text-left transition-all duration-200 overflow-hidden flex-shrink-0 mb-3
+                        ${selectedTopic?.id === MOST_POPULAR_TOPIC.id
+                          ? "bg-white text-black border border-white"
+                          : "bg-white/5 text-white border border-white/10 hover:bg-white/10"
+                        }
+                      `}
+                    >
+                      <div className="relative flex items-center justify-between z-10">
+                        <div>
+                          <p className="text-[10px] text-white/60 font-semibold uppercase tracking-wider mb-1">Most popular</p>
+                          <p className="text-sm font-bold line-clamp-1">{MOST_POPULAR_TOPIC.label}</p>
+                        </div>
+                        {selectedTopic?.id === MOST_POPULAR_TOPIC.id && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                            className="w-2 h-2 rounded-full bg-black"
+                          />
+                        )}
                       </div>
-                      {selectedTopic?.id === MOST_POPULAR_TOPIC.id && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                          className="w-1.5 h-1.5 rounded-full bg-white"
-                        />
-                      )}
-                    </div>
-                  </motion.button>
+                    </motion.button>
 
                   {/* Category Dropdown */}
                   <motion.div 
-                    className="relative flex-shrink-0 mt-2"
-                    initial={{ opacity: 0, y: 15 }}
+                    className="relative flex-shrink-0 mb-3"
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ 
-                      delay: 0.7, 
-                      duration: 0.25, 
+                      delay: 0.6, 
+                      duration: 0.3, 
                       ease: [0.22, 1, 0.36, 1]
                     }}
                   >
@@ -438,15 +468,15 @@ export default function VibePage() {
                         setSelectedCategory(e.target.value)
                         setSelectedTopic(null)
                       }}
-                      className="w-full appearance-none px-3 py-2.5 pr-9 rounded-[18px] bg-white/5 border-2 border-white/20 text-white/90 text-xs font-bold tracking-wide focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white transition-all duration-200 cursor-pointer hover:bg-white/10 hover:border-white/30"
-            >
+                      className="w-full appearance-none px-4 py-3 pr-10 rounded-xl bg-white/5 border border-white/10 text-white/90 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/20 transition-all duration-200 cursor-pointer hover:bg-white/10"
+                    >
                       {TOPIC_CATEGORIES.map((cat) => (
                         <option key={cat.id} value={cat.id} className="bg-black">
                           {cat.label}
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/65 pointer-events-none" />
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60 pointer-events-none" />
                   </motion.div>
 
                   {/* Topic Pills - Horizontal Scrollable */}
@@ -473,13 +503,20 @@ export default function VibePage() {
                     <div className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none z-10" />
                     <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-black via-black/80 to-transparent pointer-events-none z-10" />
                   </div>
-                </div>
+                </motion.div>
               </div>
 
-              {/* Action Buttons - Sleek Black & White */}
-              <div
+              {/* Action Buttons - Modern & Polished */}
+              <motion.div
                 ref={actionSectionRef}
-                className="flex items-center justify-center gap-3 mt-2 pt-3 border-t-2 border-white/20"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  delay: 0.6, 
+                  duration: 0.4, 
+                  ease: [0.22, 1, 0.36, 1]
+                }}
+                className="flex items-center justify-center gap-3 mt-6 pt-6 border-t border-white/10"
               >
                 <AnimatePresence mode="wait">
                   {isComplete ? (
@@ -498,18 +535,18 @@ export default function VibePage() {
                         size="lg"
                         onClick={handleConnect}
                         disabled={saving}
-                        className="w-full h-10 text-sm font-medium tracking-tight rounded-full bg-white text-black hover:bg-white/95 disabled:opacity-50"
+                        className="w-full h-12 text-base font-semibold tracking-tight rounded-xl bg-white text-black hover:bg-white/95 disabled:opacity-50 shadow-lg"
                       >
                         {saving ? "Connecting..." : "Connect"}
                       </Button>
                     </motion.div>
                   ) : (
                     <motion.div
-                      initial={{ opacity: 0, y: 15 }}
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 15 }}
+                      exit={{ opacity: 0, y: 10 }}
                       transition={{ 
-                        duration: 0.2, 
+                        duration: 0.3, 
                         ease: [0.22, 1, 0.36, 1]
                       }}
                       className="w-full"
@@ -518,14 +555,14 @@ export default function VibePage() {
                         variant="outline"
                         size="lg"
                         onClick={handleSkipAndChat}
-                        className="w-full h-10 text-sm font-medium tracking-tight rounded-full bg-white/5 text-white/90 border-white/10 hover:bg-white/8 hover:border-white/15"
+                        className="w-full h-12 text-base font-semibold tracking-tight rounded-xl bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20"
                       >
                         Skip and Chat
                       </Button>
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
+              </motion.div>
             </div>
             
             {/* Bottom Navigation */}

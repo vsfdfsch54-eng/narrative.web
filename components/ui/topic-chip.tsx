@@ -26,15 +26,15 @@ export function TopicChip({
       }}
       onClick={onClick}
       className={cn(
-        "relative min-w-[120px] sm:min-w-[140px] min-h-[44px] px-5 py-3 sm:px-6 sm:py-3.5 rounded-full",
-        "font-medium text-sm tracking-tight",
-        "transition-all duration-250",
+        "relative min-w-[130px] sm:min-w-[150px] min-h-[48px] px-6 py-3.5 rounded-full",
+        "font-semibold text-sm tracking-tight",
+        "transition-all duration-200",
         "group focus-ring touch-manipulation",
         "overflow-hidden flex items-center justify-center",
         "flex-shrink-0",
         selected
-          ? "sleek-chip selected"
-          : "sleek-chip"
+          ? "bg-white text-black shadow-lg"
+          : "bg-white/5 text-white/90 border border-white/10 hover:bg-white/10"
       )}
       style={{ willChange: "transform" }}
     >

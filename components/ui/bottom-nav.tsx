@@ -52,10 +52,10 @@ export function BottomNav() {
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-        className={cn(
-          "pointer-events-auto h-20",
-          "bg-[#0A0A0A] border-t border-white/10",
-        )}
+            className={cn(
+              "pointer-events-auto h-20",
+              "bg-black/95 backdrop-blur-xl border-t border-white/10",
+            )}
         style={{ willChange: "transform, opacity" }}
       >
         <div className="flex items-center justify-around gap-2 h-full px-4">
