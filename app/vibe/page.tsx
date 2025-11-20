@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import { AnimatePresence } from "framer-motion"
 import { VibeChip } from "@/components/ui/vibe-chip"
 import { TopicChip } from "@/components/ui/topic-chip"
 import { Button } from "@/components/ui/button"
@@ -39,7 +39,6 @@ export default function VibePage() {
   })
   const [loadingTopics, setLoadingTopics] = useState(false)
   const router = useRouter()
-  const actionSectionRef = useRef<HTMLDivElement | null>(null)
   const { user, loading } = useAuth()
   
   // Redirect if not authenticated or not verified
@@ -73,12 +72,10 @@ export default function VibePage() {
         const response = await fetch(`/api/vibes?userId=${userId}`)
         const data = await response.json()
         if (data.success && data.data) {
-          // Find the vibe in VIBES array that matches the label
           const matchingVibe = VIBES.find(v => v.label === data.data.vibe)
           if (matchingVibe) {
             setLastVibe(matchingVibe)
           } else {
-            // If not found, create a vibe object from the database data
             setLastVibe({
               id: data.data.id,
               label: data.data.vibe,
@@ -107,7 +104,6 @@ export default function VibePage() {
         const response = await fetch(`/api/topics?category=${selectedCategory}`)
         const data = await response.json()
         if (data.success && data.data && data.data.length > 0) {
-          // Convert database topics to Topic format
           const dbTopics: Topic[] = data.data.map((t: any) => ({
             id: t.id,
             label: t.label,
@@ -116,13 +112,11 @@ export default function VibePage() {
           }))
           setTopics(prev => ({ ...prev, [selectedCategory]: dbTopics }))
         } else {
-          // Fallback to constants if no DB topics
           const fallbackTopics = category?.topics || []
           setTopics(prev => ({ ...prev, [selectedCategory]: fallbackTopics }))
         }
       } catch (error) {
         console.error('Error loading topics:', error)
-        // Fallback to constants on error
         const fallbackTopics = category?.topics || []
         setTopics(prev => ({ ...prev, [selectedCategory]: fallbackTopics }))
       } finally {
@@ -134,33 +128,30 @@ export default function VibePage() {
   }, [selectedCategory])
 
   const handleConnect = async () => {
-      const userId = getUserId()
-      if (!userId) {
+    const userId = getUserId()
+    if (!userId) {
       router.push("/")
-        return
+      return
+    }
+    
+    setSaving(true)
+    
+    try {
+      if (selectedVibe) {
+        await fetch('/api/vibes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            userId, 
+            vibe: selectedVibe.label 
+          })
+        })
       }
       
-      setSaving(true)
+      if (selectedTimeLimit) {
+        localStorage.setItem("timeLimit", selectedTimeLimit.toString())
+      }
       
-      try {
-      // Save vibe to database if selected
-        if (selectedVibe) {
-          await fetch('/api/vibes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              userId, 
-              vibe: selectedVibe.label 
-            })
-          })
-        }
-        
-        // Keep localStorage for time limit (can be moved to DB later)
-        if (selectedTimeLimit) {
-          localStorage.setItem("timeLimit", selectedTimeLimit.toString())
-        }
-        
-        // Store selections in localStorage for immediate use
       if (selectedVibe) {
         localStorage.setItem("selectedVibe", selectedVibe.id)
       }
@@ -168,29 +159,23 @@ export default function VibePage() {
         localStorage.setItem("selectedTopic", selectedTopic.id)
       }
       
-      // Find or create a match
       const matchResponse = await fetch(`/api/matches?userId=${userId}&action=find`)
       const matchData = await matchResponse.json()
       
       if (matchData.success && matchData.data) {
-        // Match found! Navigate to chat
         const match = matchData.data
         const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
         router.push(`/chat/${otherUserId}?matchId=${match.id}`)
       } else if (matchData.inQueue) {
-        // User is in queue, show waiting message and poll for match
-        // For now, redirect to chat page which will handle waiting
         router.push("/chat")
       } else {
-        // No match found, go to connect page
         router.push("/connect")
       }
-      } catch (error) {
+    } catch (error) {
       console.error('Error connecting:', error)
-        // Still navigate even if save fails
-        router.push("/connect")
-      } finally {
-        setSaving(false)
+      router.push("/connect")
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -210,29 +195,6 @@ export default function VibePage() {
     setSelectedTopic(MOST_POPULAR_TOPIC)
   }
 
-  useEffect(() => {
-    if (selectedVibe && selectedTopic) {
-      const timer = setTimeout(() => {
-        actionSectionRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        })
-      }, 50)
-
-      return () => clearTimeout(timer)
-    }
-  }, [selectedVibe, selectedTopic])
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push("/")
-    } else if (!loading && user && !user.email_confirmed_at) {
-      // User is logged in but not verified, redirect to verify page
-      router.push("/verify")
-    }
-  }, [user, loading, router])
-
   // Show loading while checking auth
   if (loading || !user || (user && !user.email_confirmed_at)) {
     return (
@@ -244,33 +206,29 @@ export default function VibePage() {
 
   return (
     <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0">
-      {/* Phone Frame Container */}
       <div className="phone-frame-container">
-        {/* Phone Frame - Black & White */}
         <div className="phone-frame">
-          {/* Phone Screen */}
           <div className="phone-screen">
-            <div className="phone-content px-4 py-3 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
-              {/* Header - Modern & Clean */}
-              <div className="text-center mb-2 sm:mb-3 flex-shrink-0">
-                <h1 className="text-2xl sm:text-3xl font-black tracking-[-0.03em] text-white leading-[1.1] mb-2 sm:mb-3">
+            <div className="phone-content px-3 py-2 pb-0 overflow-hidden flex flex-col h-full">
+              {/* Compact Header */}
+              <div className="text-center mb-1.5 flex-shrink-0">
+                <h1 className="text-xl font-black tracking-tight text-[#f1f1f3] leading-tight mb-1">
                   Let&apos;s get started
                 </h1>
                 
-                {/* Time Limit Selector - Refined */}
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <Clock className="h-3.5 w-3.5 text-[#f1f1f3]/50" />
-                  <span className="text-[10px] text-[#f1f1f3]/50 font-semibold tracking-wider uppercase">Time</span>
-                  <div className="flex items-center gap-1.5">
+                {/* Time Limit Selector - Compact */}
+                <div className="flex items-center justify-center gap-1.5">
+                  <Clock className="h-3 w-3 text-[#f1f1f3]/50" />
+                  <div className="flex items-center gap-1">
                     {TIME_LIMITS.map((time) => (
                       <button
                         key={time}
                         onClick={() => setSelectedTimeLimit(time)}
                         className={`
-                          relative px-3 py-1 rounded-full text-[10px] font-semibold tracking-tight transition-all duration-200 min-h-[28px] min-w-[28px]
+                          px-2 py-0.5 rounded-full text-[9px] font-semibold transition-all min-h-[24px] min-w-[24px]
                           ${selectedTimeLimit === time 
-                            ? "bg-[#f1f1f3] text-[#0a0a0c] shadow-lg" 
-                            : "bg-white/5 text-[#f1f1f3]/80 border border-white/10 hover:bg-white/10"
+                            ? "bg-[#f1f1f3] text-[#0a0a0c]" 
+                            : "bg-white/5 text-[#f1f1f3]/80 border border-white/10"
                           }
                         `}
                       >
@@ -281,72 +239,52 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Progress Indicator - Subtle */}
-              <div className="flex items-center justify-center gap-2 mb-2 flex-shrink-0">
-                <div className={`h-1 rounded-full transition-all duration-300 ${
-                  selectedVibe ? "bg-white w-12" : "bg-white/15 w-8"
+              {/* Compact Progress Indicator */}
+              <div className="flex items-center justify-center gap-1.5 mb-1.5 flex-shrink-0">
+                <div className={`h-0.5 rounded-full transition-all ${
+                  selectedVibe ? "bg-[#f1f1f3] w-8" : "bg-white/15 w-6"
                 }`} />
-                <div className={`h-1 rounded-full transition-all duration-300 ${
-                  selectedTopic ? "bg-white w-12" : "bg-white/15 w-8"
+                <div className={`h-0.5 rounded-full transition-all ${
+                  selectedTopic ? "bg-[#f1f1f3] w-8" : "bg-white/15 w-6"
                 }`} />
               </div>
 
-              {/* Main Content - Modern Cards */}
-              <div className="flex flex-col gap-2 sm:gap-3 flex-1 min-h-0 overflow-hidden">
-                {/* Vibe Module */}
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-white/10 flex-shrink-0">
-                  {/* Section Header */}
-                  <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
-                        <Sparkles className="h-4 w-4 text-[#f1f1f3]/80" />
-                      </div>
-                      <div>
-                        <h2 className="text-base font-bold text-white tracking-tight leading-tight">
-                          Your Vibe
-                        </h2>
-                        <p className="text-[10px] text-[#f1f1f3]/60 font-medium tracking-wide">
-                          How are you feeling?
-                        </p>
-                      </div>
+              {/* Main Content - Compact Cards */}
+              <div className="flex flex-col gap-1.5 flex-1 min-h-0 overflow-hidden">
+                {/* Vibe Module - Compact */}
+                <div className="bg-white/5 rounded-lg p-2 border border-white/10 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-white/10">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-[#f1f1f3]/80" />
+                      <h2 className="text-sm font-bold text-[#f1f1f3]">Your Vibe</h2>
                     </div>
                     {selectedVibe && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                      <div className="w-1 h-1 rounded-full bg-[#f1f1f3]" />
                     )}
                   </div>
 
-                  {/* Last Vibe Option */}
+                  {/* Last Vibe Option - Compact */}
                   {lastVibe && !loadingLastVibe && (
                     <button
                       onClick={handleSelectLastVibe}
                       className={`
-                        relative w-full px-3 py-2 rounded-lg text-left transition-all duration-200 overflow-hidden flex-shrink-0 mb-2
+                        w-full px-2 py-1 rounded-lg text-left transition-all mb-1.5 text-xs
                         ${selectedVibe?.id === lastVibe.id
-                          ? "bg-[#f1f1f3] text-[#0a0a0c] border border-white"
-                          : "bg-white/5 text-white border border-white/10 hover:bg-white/10"
+                          ? "bg-[#f1f1f3] text-[#0a0a0c]"
+                          : "bg-white/5 text-[#f1f1f3] border border-white/10"
                         }
                       `}
                     >
-                      <div className="relative flex items-center justify-between z-10">
-                        <div>
-                          <p className="text-[9px] text-[#f1f1f3]/60 font-semibold uppercase tracking-wider mb-0.5">Last vibe</p>
-                          <p className="text-xs font-bold">{lastVibe.label}</p>
-                        </div>
-                        {selectedVibe?.id === lastVibe.id && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#0a0a0c]" />
-                        )}
-                      </div>
+                      <span className="text-[9px] text-[#f1f1f3]/60 font-semibold uppercase mr-1">Last:</span>
+                      <span className="font-bold">{lastVibe.label}</span>
                     </button>
                   )}
 
                   {/* Vibe Pills - Horizontal Scrollable */}
-                  <div className="relative -mx-1 mt-2">
-                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 pt-0.5 px-2 scroll-smooth">
+                  <div className="relative -mx-1">
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5 pt-0.5 px-1">
                       {VIBES.map((vibe) => (
-                        <div
-                          key={vibe.id}
-                          className="flex-shrink-0"
-                        >
+                        <div key={vibe.id} className="flex-shrink-0">
                           <VibeChip
                             vibe={vibe}
                             selected={selectedVibe?.id === vibe.id}
@@ -356,65 +294,45 @@ export default function VibePage() {
                         </div>
                       ))}
                     </div>
-                    {/* Fade gradients */}
-                    <div className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none z-10" />
-                    <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-black via-black/80 to-transparent pointer-events-none z-10" />
                   </div>
                 </div>
 
-                {/* Topic Module */}
-                <div className="bg-white/5 backdrop-blur-sm rounded-xl p-3 border border-white/10 flex-1 min-h-0 flex flex-col">
-                  {/* Section Header */}
-                  <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
-                        <MessageSquare className="h-4 w-4 text-[#f1f1f3]/80" />
-                      </div>
-                      <div>
-                        <h2 className="text-base font-bold text-white tracking-tight leading-tight">
-                          Your Topic
-                        </h2>
-                        <p className="text-[10px] text-[#f1f1f3]/60 font-medium tracking-wide">
-                          What interests you?
-                        </p>
-                      </div>
+                {/* Topic Module - Compact */}
+                <div className="bg-white/5 rounded-lg p-2 border border-white/10 flex-1 min-h-0 flex flex-col">
+                  <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-white/10 flex-shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <MessageSquare className="h-3.5 w-3.5 text-[#f1f1f3]/80" />
+                      <h2 className="text-sm font-bold text-[#f1f1f3]">Your Topic</h2>
                     </div>
                     {selectedTopic && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                      <div className="w-1 h-1 rounded-full bg-[#f1f1f3]" />
                     )}
                   </div>
 
-                    {/* Most Popular Topic Option */}
-                    <button
-                      onClick={handleSelectMostPopular}
-                      className={`
-                        relative w-full px-3 py-2 rounded-lg text-left transition-all duration-200 overflow-hidden flex-shrink-0 mb-2
-                        ${selectedTopic?.id === MOST_POPULAR_TOPIC.id
-                          ? "bg-[#f1f1f3] text-[#0a0a0c] border border-white"
-                          : "bg-white/5 text-white border border-white/10 hover:bg-white/10"
-                        }
-                      `}
-                    >
-                      <div className="relative flex items-center justify-between z-10">
-                        <div>
-                          <p className="text-[9px] text-[#f1f1f3]/60 font-semibold uppercase tracking-wider mb-0.5">Most popular</p>
-                          <p className="text-xs font-bold line-clamp-1">{MOST_POPULAR_TOPIC.label}</p>
-                        </div>
-                        {selectedTopic?.id === MOST_POPULAR_TOPIC.id && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#0a0a0c]" />
-                        )}
-                      </div>
-                    </button>
+                  {/* Most Popular Topic - Compact */}
+                  <button
+                    onClick={handleSelectMostPopular}
+                    className={`
+                      w-full px-2 py-1 rounded-lg text-left transition-all mb-1.5 text-xs flex-shrink-0
+                      ${selectedTopic?.id === MOST_POPULAR_TOPIC.id
+                        ? "bg-[#f1f1f3] text-[#0a0a0c]"
+                        : "bg-white/5 text-[#f1f1f3] border border-white/10"
+                      }
+                    `}
+                  >
+                    <span className="text-[9px] text-[#f1f1f3]/60 font-semibold uppercase mr-1">Popular:</span>
+                    <span className="font-bold line-clamp-1">{MOST_POPULAR_TOPIC.label}</span>
+                  </button>
 
-                  {/* Category Dropdown */}
-                  <div className="relative flex-shrink-0 mb-2">
+                  {/* Category Dropdown - Compact */}
+                  <div className="relative flex-shrink-0 mb-1.5">
                     <select
                       value={selectedCategory}
                       onChange={(e) => {
                         setSelectedCategory(e.target.value)
                         setSelectedTopic(null)
                       }}
-                      className="w-full appearance-none px-3 py-2 pr-8 rounded-lg bg-white/5 border border-white/10 text-[#f1f1f3]/90 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/20 transition-all duration-200 cursor-pointer hover:bg-white/10"
+                      className="w-full appearance-none px-2 py-1.5 pr-6 rounded-lg bg-white/5 border border-white/10 text-[#f1f1f3]/90 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-white/20 transition-all cursor-pointer"
                     >
                       {TOPIC_CATEGORIES.map((cat) => (
                         <option key={cat.id} value={cat.id} className="bg-[#0a0a0c]">
@@ -422,20 +340,14 @@ export default function VibePage() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#f1f1f3]/60 pointer-events-none" />
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#f1f1f3]/60 pointer-events-none" />
                   </div>
 
                   {/* Topic Pills - Horizontal Scrollable */}
-                  <div className="relative -mx-1 mt-2 flex-1 min-h-0">
-                    <div
-                      key={selectedCategory}
-                      className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 pt-0.5 px-2 scroll-smooth h-full"
-                    >
+                  <div className="relative -mx-1 flex-1 min-h-0">
+                    <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5 pt-0.5 px-1 h-full">
                       {currentTopics.map((topic) => (
-                        <div
-                          key={topic.id}
-                          className="flex-shrink-0"
-                        >
+                        <div key={topic.id} className="flex-shrink-0">
                           <TopicChip
                             topic={topic}
                             selected={selectedTopic?.id === topic.id}
@@ -445,48 +357,37 @@ export default function VibePage() {
                         </div>
                       ))}
                     </div>
-                    {/* Fade gradients */}
-                    <div className="absolute left-0 top-0 bottom-2 w-16 bg-gradient-to-r from-black via-black/80 to-transparent pointer-events-none z-10" />
-                    <div className="absolute right-0 top-0 bottom-2 w-16 bg-gradient-to-l from-black via-black/80 to-transparent pointer-events-none z-10" />
                   </div>
                 </div>
               </div>
 
-              {/* Action Buttons - Modern & Polished */}
-              <div
-                ref={actionSectionRef}
-                className="flex items-center justify-center gap-2 mt-3 pt-3 border-t border-white/10 flex-shrink-0"
-              >
+              {/* Action Button - Compact */}
+              <div className="flex items-center justify-center mt-2 pt-2 border-t border-white/10 flex-shrink-0 pb-2">
                 <AnimatePresence mode="wait">
                   {isComplete ? (
-                    <div className="w-full">
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        onClick={handleConnect}
-                        disabled={saving}
-                        className="w-full h-10 text-sm font-semibold tracking-tight rounded-lg bg-[#f1f1f3] text-[#0a0a0c] hover:bg-white/95 disabled:opacity-50 shadow-lg"
-                      >
-                        {saving ? "Connecting..." : "Connect"}
-                      </Button>
-                    </div>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={handleConnect}
+                      disabled={saving}
+                      className="w-full h-9 text-sm font-semibold rounded-lg bg-[#f1f1f3] text-[#0a0a0c] hover:bg-[#f1f1f3]/95 disabled:opacity-50"
+                    >
+                      {saving ? "Connecting..." : "Connect"}
+                    </Button>
                   ) : (
-                    <div className="w-full">
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        onClick={handleSkipAndChat}
-                        className="w-full h-10 text-sm font-semibold tracking-tight rounded-lg bg-white/5 text-white border-white/10 hover:bg-white/10 hover:border-white/20"
-                      >
-                        Skip and Chat
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={handleSkipAndChat}
+                      className="w-full h-9 text-sm font-semibold rounded-lg bg-white/5 text-[#f1f1f3] border-white/10 hover:bg-white/10"
+                    >
+                      Skip and Chat
+                    </Button>
                   )}
                 </AnimatePresence>
               </div>
             </div>
             
-            {/* Bottom Navigation */}
             <BottomNav />
           </div>
         </div>
