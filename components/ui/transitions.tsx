@@ -15,7 +15,14 @@ export function ClientPageTransition({ children }: PageTransitionProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-      style={{ willChange: "opacity" }}
+      className="w-screen h-screen fixed inset-0 m-0 p-0"
+      style={{ 
+        willChange: "opacity",
+        width: '100vw',
+        height: '100vh',
+        margin: 0,
+        padding: 0
+      }}
     >
       {children}
     </motion.div>

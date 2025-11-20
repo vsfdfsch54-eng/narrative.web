@@ -242,8 +242,41 @@
     min-height: 0;
   }
   
-  /* Mobile-specific fixes - FULLSCREEN on mobile */
+  /* Mobile-specific fixes - FULLSCREEN on mobile - NUCLEAR OPTION */
   @media (max-width: 640px) {
+    /* Force box-sizing on all elements */
+    * {
+      box-sizing: border-box !important;
+    }
+    
+    /* Target Next.js root container */
+    #__next {
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      overflow: hidden !important;
+    }
+    
+    /* Target ClientPageTransition motion.div wrapper */
+    body > div,
+    body > div > div {
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+    }
+    
     html {
       margin: 0 !important;
       padding: 0 !important;
@@ -252,6 +285,8 @@
       height: 100dvh !important;
       overflow: hidden !important;
       position: fixed !important;
+      /* Safe area insets */
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left) !important;
     }
     
     body {
@@ -260,6 +295,7 @@
       height: 100vh !important;
       height: 100dvh !important;
       overflow: hidden !important;
+      overflow-x: hidden !important;
       margin: 0 !important;
       padding: 0 !important;
       top: 0 !important;
