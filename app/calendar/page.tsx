@@ -734,10 +734,6 @@ export default function CalendarPage() {
           </motion.div>
         )}
       </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
