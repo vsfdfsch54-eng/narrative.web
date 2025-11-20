@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { INTERESTS, INTEREST_CATEGORIES, getAllCategories } from "@/lib/interests"
 import { cn } from "@/lib/utils"
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
   const [password, setPassword] = useState("")
@@ -376,5 +376,17 @@ export default function OnboardingPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
   )
 }
