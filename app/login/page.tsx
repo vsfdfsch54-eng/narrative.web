@@ -17,33 +17,16 @@ export default function LoginPage() {
   const router = useRouter()
   const { signIn, user, loading: authLoading } = useAuth()
 
-  // Redirect if user is already authenticated and verified
+  // Redirect if user is already authenticated
   useEffect(() => {
-    if (!authLoading && user && user.email_confirmed_at) {
-      // Check if onboarding is complete
-      const checkOnboarding = async () => {
-        try {
-          const response = await fetch(`/api/users?userId=${user.id}`)
-          const data = await response.json()
-          
-          if (data.success && data.data) {
-            const hasName = data.data.name
-            const hasInterests = data.data.interests && data.data.interests.length > 0
-            
-            if (hasName && hasInterests) {
-              router.push("/vibe")
-            } else {
-              router.push("/onboarding")
-            }
-          } else {
-            router.push("/onboarding")
-          }
-        } catch (err) {
-          router.push("/onboarding")
-        }
+    if (!authLoading && user) {
+      if (user.email_confirmed_at) {
+        // User is verified, go to /vibe
+        router.push("/vibe")
+      } else {
+        // User is logged in but not verified, go to verify-email page
+        router.push("/verify-email")
       }
-      
-      checkOnboarding()
     }
   }, [user, authLoading, router])
 

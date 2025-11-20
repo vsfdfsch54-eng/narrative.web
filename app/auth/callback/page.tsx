@@ -37,11 +37,11 @@ function AuthCallbackContent() {
             // Successfully verified and logged in
             // Check email verification status
             if (data.user.email_confirmed_at) {
-              // Email is verified, redirect to /verified page
+              // Email is verified, redirect to /verified page (which will redirect to /vibe)
               router.push('/verified')
             } else {
-              // Email not verified yet, go to onboarding
-              router.push('/onboarding')
+              // Email not verified yet, redirect to verify-email page
+              router.push('/verify-email')
             }
           } else {
             setError('No session created. Please try again.')
@@ -56,11 +56,11 @@ function AuthCallbackContent() {
           if (session && session.user) {
             // Check email verification
             if (session.user.email_confirmed_at) {
-              // Email verified, redirect to /verified page
+              // Email verified, redirect to /verified page (which will redirect to /vibe)
               router.push('/verified')
             } else {
-              // Email not verified, go to onboarding
-              router.push('/onboarding')
+              // Email not verified, redirect to verify-email page
+              router.push('/verify-email')
             }
           } else {
             // No code and no session, redirect to landing page

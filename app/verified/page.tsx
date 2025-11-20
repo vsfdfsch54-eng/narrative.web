@@ -2,64 +2,48 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabaseClient"
 
 export default function VerifiedPage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
-  const [checking, setChecking] = useState(true)
+  const [status, setStatus] = useState<'checking' | 'verified' | 'error'>('checking')
 
   useEffect(() => {
     const checkVerificationAndRedirect = async () => {
-      // Wait a moment for session to be established
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
       try {
         // Get current session
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Error getting session:', sessionError)
+          setStatus('error')
+          setTimeout(() => router.push('/onboarding'), 2000)
+          return
+        }
         
         if (session && session.user && session.user.email_confirmed_at) {
-          // Email is verified, check onboarding status
-          try {
-            const response = await fetch(`/api/users?userId=${session.user.id}`)
-            const data = await response.json()
-            
-            if (data.success && data.data) {
-              const hasName = data.data.name
-              const hasInterests = data.data.interests && data.data.interests.length > 0
-              
-              if (hasName && hasInterests) {
-                // Onboarding complete, redirect to /vibe
-                router.push('/vibe')
-              } else {
-                // Need to complete onboarding
-                router.push('/onboarding?verified=true')
-              }
-            } else {
-              // No user data, need onboarding
-              router.push('/onboarding?verified=true')
-            }
-          } catch (err) {
-            // Error checking, go to onboarding
-            router.push('/onboarding?verified=true')
-          }
+          // Email is verified - show success message briefly then redirect to /vibe
+          setStatus('verified')
+          
+          // Redirect to /vibe after 1.5 seconds
+          setTimeout(() => {
+            router.push('/vibe')
+          }, 1500)
         } else {
           // Not verified or no session, redirect to onboarding
           router.push('/onboarding')
         }
       } catch (err) {
-        // Error, redirect to onboarding
-        router.push('/onboarding')
-      } finally {
-        setChecking(false)
+        console.error('Verification check error:', err)
+        setStatus('error')
+        setTimeout(() => router.push('/onboarding'), 2000)
       }
     }
 
     checkVerificationAndRedirect()
   }, [router])
 
-  if (authLoading || checking) {
+  if (status === 'checking') {
     return (
       <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -69,10 +53,27 @@ export default function VerifiedPage() {
     )
   }
 
+  if (status === 'error') {
+    return (
+      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+        <div className="text-center space-y-4 px-6">
+          <p className="text-[#E5E5E5]/80">Verification error. Redirecting...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Verified - show success message
   return (
     <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <p className="text-[#E5E5E5]/60">Processing...</p>
+      <div className="text-center space-y-4 px-6 max-w-md">
+        <div className="text-4xl mb-4">✓</div>
+        <h1 className="text-2xl font-black tracking-tight text-[#E5E5E5]">
+          Email Verified
+        </h1>
+        <p className="text-sm text-[#E5E5E5]/60">
+          Your email has been confirmed. Redirecting you now...
+        </p>
       </div>
     </div>
   )

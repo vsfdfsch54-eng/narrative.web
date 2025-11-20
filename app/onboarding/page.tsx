@@ -32,6 +32,12 @@ function OnboardingContent() {
   const checkOnboardingStatus = useCallback(async () => {
     if (!user?.id) return
     
+    // If user is not verified, redirect to verify-email page
+    if (!user.email_confirmed_at) {
+      router.push("/verify-email")
+      return
+    }
+    
     try {
       const response = await fetch(`/api/users?userId=${user.id}`)
       const data = await response.json()

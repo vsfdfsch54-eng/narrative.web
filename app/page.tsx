@@ -13,36 +13,16 @@ export default function Home() {
 
   // Redirect authenticated users away from landing page
   useEffect(() => {
-    if (!loading && user && user.email_confirmed_at) {
-      // Check if onboarding is complete
-      const checkOnboarding = async () => {
-        try {
-          const response = await fetch(`/api/users?userId=${user.id}`)
-          const data = await response.json()
-          
-          if (data.success && data.data) {
-            const hasName = data.data.name
-            const hasInterests = data.data.interests && data.data.interests.length > 0
-            
-            if (hasName && hasInterests) {
-              // Onboarding complete, go to main app
-              router.push("/vibe")
-            } else {
-              // Need to complete onboarding
-              router.push("/onboarding")
-            }
-          } else {
-            // No user data, need onboarding
-            router.push("/onboarding")
-          }
-        } catch (err) {
-          // Error checking, go to onboarding
-          router.push("/onboarding")
-        }
+    if (!loading && user) {
+      if (user.email_confirmed_at) {
+        // User is logged in AND verified → send directly to /vibe
+        router.push("/vibe")
+      } else {
+        // User is logged in but NOT verified → send to verify-email page
+        router.push("/verify-email")
       }
-      
-      checkOnboarding()
     }
+    // If user is not logged in, show welcome screen (no redirect)
   }, [user, loading, router])
 
   const handleGetToChatting = async () => {
@@ -118,14 +98,14 @@ export default function Home() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-4 w-full">
+          <div className="flex flex-col gap-4 w-full items-stretch">
             <Button
               asChild
               variant="primary"
               size="lg"
-              className="w-full h-14 text-base font-semibold tracking-wide bg-[#E5E5E5] text-[#0A0A0A] border border-[#E5E5E5] shadow-lg hover:bg-[#E5E5E5]/95 transition-all"
+              className="w-full h-14 text-base font-semibold tracking-wide bg-[#E5E5E5] text-[#0A0A0A] border border-[#E5E5E5] shadow-lg hover:bg-[#E5E5E5]/95 transition-all flex items-center justify-center"
             >
-              <Link href="/onboarding">Create an Account</Link>
+              <Link href="/onboarding" className="w-full h-full flex items-center justify-center">Create an Account</Link>
             </Button>
             
             <Button
@@ -133,7 +113,7 @@ export default function Home() {
               variant="outline"
               size="lg"
               disabled={checkingAuth}
-              className="w-full h-14 text-base font-semibold tracking-wide border-[#E5E5E5]/20 text-[#E5E5E5] hover:border-[#E5E5E5]/40 hover:bg-[#E5E5E5]/5"
+              className="w-full h-14 text-base font-semibold tracking-wide border-[#E5E5E5]/20 text-[#E5E5E5] hover:border-[#E5E5E5]/40 hover:bg-[#E5E5E5]/5 flex items-center justify-center"
             >
               {checkingAuth ? "Loading..." : "Get to Chatting"}
             </Button>

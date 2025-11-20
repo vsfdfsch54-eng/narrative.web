@@ -203,8 +203,18 @@ export default function VibePage() {
     }
   }, [selectedVibe, selectedTopic])
 
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/")
+    } else if (!loading && user && !user.email_confirmed_at) {
+      // User is logged in but not verified, redirect to verify-email page
+      router.push("/verify-email")
+    }
+  }, [user, loading, router])
+
   // Show loading while checking auth
-  if (loading || !user) {
+  if (loading || !user || (user && !user.email_confirmed_at)) {
     return (
       <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
         <p className="text-[#E5E5E5]/60">Loading...</p>

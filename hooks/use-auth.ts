@@ -75,6 +75,16 @@ export function useAuth() {
       })
 
       if (error) {
+        // Handle duplicate email error with user-friendly message
+        if (error.message.includes('already registered') || 
+            error.message.includes('User already registered') ||
+            error.message.includes('already exists') ||
+            error.code === 'signup_disabled') {
+          return { 
+            success: false, 
+            error: 'An account with this email already exists. Please sign in instead.' 
+          }
+        }
         return { success: false, error: error.message }
       }
 
