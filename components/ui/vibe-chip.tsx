@@ -20,7 +20,8 @@ export function VibeChip({
 }: VibeChipProps) {
   return (
     <motion.button
-      whileTap={{ 
+
+    whileTap={{ 
         scale: 0.98,
         transition: { duration: 0.1 }
       }}

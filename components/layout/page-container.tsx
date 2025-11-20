@@ -25,8 +25,11 @@ export function PageContainer({
   return (
     <div
       className={cn(
-        "container mx-auto px-4 sm:px-6 lg:px-8",
-        maxWidthClasses[maxWidth],
+        "w-full h-full min-h-screen",
+        "px-4 sm:px-6 lg:px-8",
+        // Only apply max-width on desktop
+        "sm:container sm:mx-auto",
+        maxWidth !== "full" && `sm:${maxWidthClasses[maxWidth]}`,
         className
       )}
       {...props}

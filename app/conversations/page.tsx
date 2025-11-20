@@ -92,7 +92,7 @@ export default function ConversationsPage() {
   }, [user, loading])
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6 w-screen h-screen m-0 p-0">
+    <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
       {/* Phone Frame Container */}
       <div className="phone-frame-container">
         {/* Phone Frame - Black & White */}

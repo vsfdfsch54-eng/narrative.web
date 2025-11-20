@@ -203,10 +203,18 @@
   /* Phone frame container - consistent across all pages */
   .phone-frame-container {
     width: 100%;
-    max-width: 375px;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     position: relative;
     flex-shrink: 0;
+  }
+  
+  /* Desktop: center and limit width */
+  @media (min-width: 641px) {
+    .phone-frame-container {
+      max-width: 375px;
+      margin: 0 auto;
+    }
   }
   
   .phone-frame {

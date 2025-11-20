@@ -66,7 +66,7 @@ export default function ChatPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="w-full max-w-[375px] mx-auto"
+          className="w-full sm:max-w-[375px] sm:mx-auto"
         >
           <div className="relative bg-[#0A0A0A] rounded-[24px] p-1 border border-white/10">
             <div className="bg-black rounded-[22px] relative flex flex-col h-[600px] sm:h-[800px] overflow-hidden">
@@ -105,7 +105,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6 w-screen h-screen m-0 p-0">
+    <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
       {/* Phone Frame Container */}
       <div className="phone-frame-container">
         {/* Phone Frame - Black & White */}

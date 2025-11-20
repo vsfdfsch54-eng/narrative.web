@@ -277,7 +277,7 @@ export default function CalendarPage() {
   )
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6 w-screen h-screen m-0 p-0">
+    <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
@@ -608,7 +608,7 @@ export default function CalendarPage() {
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
               transition={{ type: "spring", stiffness: 260, damping: 26 }}
-              className="w-full max-w-[360px] bg-black border border-white/10 rounded-[24px] p-5 text-white space-y-4"
+              className="w-full sm:max-w-[360px] bg-black border border-white/10 rounded-[24px] p-5 text-white space-y-4"
             >
               <div className="flex items-center justify-between">
                 <div>
