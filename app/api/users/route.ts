@@ -69,6 +69,8 @@ export async function PUT(request: NextRequest) {
     }
 
     // Now upsert with email and interests
+    // Use upsert to handle both new users and existing users
+    // onConflict: 'id' means update if user with this id exists
     const { data, error } = await supabase
       .from('users')
       .upsert({
@@ -78,12 +80,34 @@ export async function PUT(request: NextRequest) {
         interests: interests || [],
         updated_at: new Date().toISOString()
       }, {
-        onConflict: 'id'
+        onConflict: 'id',
+        ignoreDuplicates: false // Update if exists
       })
       .select()
       .single()
 
     if (error) {
+      // Handle duplicate email error gracefully
+      if (error.message.includes('duplicate key') || error.message.includes('unique constraint') || error.code === '23505') {
+        // Email already exists, try to update by id instead
+        const { data: updateData, error: updateError } = await supabase
+          .from('users')
+          .update({
+            name: name,
+            interests: interests || [],
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId)
+          .select()
+          .single()
+        
+        if (updateError) {
+          return NextResponse.json({ success: false, error: updateError.message }, { status: 500 })
+        }
+        
+        return NextResponse.json({ success: true, data: updateData })
+      }
+      
       return NextResponse.json({ success: false, error: error.message }, { status: 500 })
     }
 
