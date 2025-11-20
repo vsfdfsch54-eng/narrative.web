@@ -388,7 +388,11 @@ function OnboardingContent() {
       setCurrentStep('interests')
     } else if (currentStep === 'interests') {
       if (selectedInterests.length === 0) {
-        setError("Please select at least one interest")
+        setError("Please select at least one interest to continue")
+        return
+      }
+      if (selectedInterests.length > 20) {
+        setError("Please select no more than 20 interests")
         return
       }
       handleSubmit()
@@ -491,23 +495,38 @@ function OnboardingContent() {
   }
 
   const handleCompleteOnboarding = async () => {
-    if (!user?.id) return
+    if (!user?.id) {
+      setError("User not found. Please try logging in again.")
+      setLoading(false)
+      return
+    }
     
     setLoading(true)
     setError("")
     
     try {
+      // Get existing user data
       const userResponse = await fetch(`/api/users?userId=${user.id}`)
       const userData = await userResponse.json()
-      const existingName = userData.success && userData.data?.name ? userData.data.name : name.trim() || user.email?.split('@')[0] || 'User'
+      const existingName = userData.success && userData.data?.name 
+        ? userData.data.name 
+        : name.trim() || user.email?.split('@')[0] || 'User'
       
+      // Validate interests
+      if (selectedInterests.length === 0) {
+        setError("Please select at least one interest")
+        setLoading(false)
+        return
+      }
+      
+      // Save user data with interests
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
           name: existingName,
-          interests: selectedInterests.length > 0 ? selectedInterests : []
+          interests: selectedInterests
         })
       })
 
@@ -516,14 +535,16 @@ function OnboardingContent() {
       if (data.success) {
         // Clear saved onboarding data
         clearOnboardingData()
+        setLoading(false)
         // After completing onboarding, redirect to /vibe
         router.push('/vibe')
       } else {
-        setError(data.error || "Failed to complete onboarding")
+        setError(data.error || "Failed to complete onboarding. Please try again.")
         setLoading(false)
       }
     } catch (err: any) {
-      setError(err.message || "Something went wrong")
+      console.error('Error completing onboarding:', err)
+      setError(err.message || "Something went wrong. Please try again.")
       setLoading(false)
     }
   }
