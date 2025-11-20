@@ -328,8 +328,19 @@ function OnboardingContent() {
         return
       }
 
+      // Check if signup was successful
+      if (!result.data?.user) {
+        setError("Account creation failed. Please try again.")
+        setLoading(false)
+        return
+      }
+
+      // Log for debugging
+      console.log('Signup successful, user:', result.data.user.id)
+      console.log('Email confirmation required:', !result.data.user.email_confirmed_at)
+
       // Save user data with interests immediately
-      if (result.data?.user?.id) {
+      if (result.data.user.id) {
         const userId = result.data.user.id
         
         const response = await fetch('/api/users', {
@@ -350,8 +361,10 @@ function OnboardingContent() {
       }
 
       // Move to verify step
+      setLoading(false)
       setCurrentStep('verify')
     } catch (err: any) {
+      console.error('Signup error:', err)
       setError(err.message || "Something went wrong. Please try again.")
       setLoading(false)
     }
@@ -771,10 +784,51 @@ function OnboardingContent() {
                   </p>
                 </div>
                 
-                <div className="w-full space-y-2 flex-shrink-0">
+                <div className="w-full space-y-3 flex-shrink-0">
+                  <Button
+                    onClick={async () => {
+                      // Resend verification email
+                      setLoading(true)
+                      try {
+                        if (!email) {
+                          alert('No email address found. Please go back and enter your email.')
+                          setLoading(false)
+                          return
+                        }
+
+                        const { error } = await supabase.auth.resend({
+                          type: 'signup',
+                          email: email,
+                          options: {
+                            emailRedirectTo: `${window.location.origin}/auth/callback`,
+                          },
+                        })
+
+                        if (error) {
+                          console.error('Error resending email:', error)
+                          alert(`Error: ${error.message}`)
+                        } else {
+                          alert('Verification email sent! Please check your inbox and spam folder.')
+                        }
+                      } catch (err: any) {
+                        console.error('Error resending email:', err)
+                        alert(`Error: ${err.message || 'Failed to resend email'}`)
+                      } finally {
+                        setLoading(false)
+                      }
+                    }}
+                    variant="outline"
+                    className="w-full h-12 text-sm font-semibold border-[#EDEDED]/20 text-[#EDEDED] hover:border-[#EDEDED]/40 hover:bg-[#EDEDED]/5"
+                    size="lg"
+                    disabled={loading}
+                  >
+                    {loading ? "Sending..." : "Resend Verification Email"}
+                  </Button>
+
                   <Button
                     onClick={async () => {
                       // Manually check verification
+                      setLoading(true)
                       try {
                         const { data: { session } } = await supabase.auth.getSession()
                         if (session?.user?.email_confirmed_at) {
@@ -804,22 +858,25 @@ function OnboardingContent() {
                             setCurrentStep('name')
                           }
                         } else {
-                          alert('Email not verified yet. Please check your email and click the verification link.')
+                          alert('Email not verified yet. Please check your email and click the verification link. Make sure to check your spam folder!')
                         }
                       } catch (err) {
                         console.error('Error checking verification:', err)
                         alert('Error checking verification. Please try again.')
+                      } finally {
+                        setLoading(false)
                       }
                     }}
                     variant="primary"
                     className="w-full h-12 text-sm font-semibold tracking-wide bg-[#EDEDED] text-[#0A0A0A] border border-[#EDEDED]"
                     size="lg"
+                    disabled={loading}
                   >
                     I&apos;ve Verified My Email
                   </Button>
                   
                   <p className="text-xs text-[#EDEDED]/40 text-center px-4">
-                    You&apos;ll be automatically redirected once you click the verification link in your email.
+                    Check your email ({email}) and click the verification link. Don&apos;t forget to check your spam folder!
                   </p>
                 </div>
               </div>
