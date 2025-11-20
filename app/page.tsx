@@ -4,12 +4,46 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function Home() {
   const { user, loading } = useAuth()
   const router = useRouter()
   const [checkingAuth, setCheckingAuth] = useState(false)
+
+  // Redirect authenticated users away from landing page
+  useEffect(() => {
+    if (!loading && user && user.email_confirmed_at) {
+      // Check if onboarding is complete
+      const checkOnboarding = async () => {
+        try {
+          const response = await fetch(`/api/users?userId=${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            const hasName = data.data.name
+            const hasInterests = data.data.interests && data.data.interests.length > 0
+            
+            if (hasName && hasInterests) {
+              // Onboarding complete, go to main app
+              router.push("/vibe")
+            } else {
+              // Need to complete onboarding
+              router.push("/onboarding")
+            }
+          } else {
+            // No user data, need onboarding
+            router.push("/onboarding")
+          }
+        } catch (err) {
+          // Error checking, go to onboarding
+          router.push("/onboarding")
+        }
+      }
+      
+      checkOnboarding()
+    }
+  }, [user, loading, router])
 
   const handleGetToChatting = async () => {
     setCheckingAuth(true)
@@ -18,8 +52,26 @@ export default function Home() {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     if (user && user.email_confirmed_at) {
-      // User is authenticated and verified, go to main app
-      router.push("/vibe")
+      // User is authenticated and verified, check onboarding status
+      try {
+        const response = await fetch(`/api/users?userId=${user.id}`)
+        const data = await response.json()
+        
+        if (data.success && data.data) {
+          const hasName = data.data.name
+          const hasInterests = data.data.interests && data.data.interests.length > 0
+          
+          if (hasName && hasInterests) {
+            router.push("/vibe")
+          } else {
+            router.push("/onboarding")
+          }
+        } else {
+          router.push("/onboarding")
+        }
+      } catch (err) {
+        router.push("/onboarding")
+      }
     } else {
       // User not authenticated, go to login
       router.push("/login")
@@ -28,8 +80,16 @@ export default function Home() {
     setCheckingAuth(false)
   }
 
+  // Show loading while checking auth state
+  if (loading || (user && user.email_confirmed_at)) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    )
+  }
+
   // Show minimal loading only while checking auth for button click
-  // DO NOT show loading on initial page load - always show welcome screen
   if (checkingAuth) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
@@ -38,7 +98,7 @@ export default function Home() {
     )
   }
 
-  // Welcome screen - ALWAYS show this first, regardless of auth state
+  // Landing screen - only show if user is NOT authenticated
   return (
     <div className="fixed inset-0 bg-black w-full h-full overflow-hidden">
       <div className="w-full h-full flex items-center justify-center px-6 py-8">
@@ -46,10 +106,10 @@ export default function Home() {
           {/* Title Section */}
           <div className="text-center space-y-3">
             <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-white leading-tight">
-              Welcome to Narrative
+              Welcome to Narrative.
             </h1>
             <p className="text-sm sm:text-base text-white/60 max-w-sm mx-auto">
-              A phone-native space to match through vibes, share topics, and keep your closest circle alive.
+              Where real connection begins.
             </p>
           </div>
 

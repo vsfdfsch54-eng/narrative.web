@@ -21,10 +21,10 @@ export default function ConnectPage() {
     return null
   }
   
-  // Redirect to login if not authenticated
+  // Redirect to landing if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login")
+      router.push("/")
     }
   }, [user, authLoading, router])
 
@@ -146,7 +146,7 @@ export default function ConnectPage() {
                       onChat={async () => {
                         const userId = getUserId()
                         if (!userId) {
-                          router.push("/login")
+                          router.push("/")
                           return
                         }
                         

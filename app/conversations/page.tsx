@@ -20,10 +20,10 @@ export default function ConversationsPage() {
     return null
   }
   
-  // Redirect to login if not authenticated
+  // Redirect to landing if not authenticated
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login")
+      router.push("/")
     }
   }, [user, loading, router])
 

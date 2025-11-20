@@ -49,7 +49,7 @@ export default function FeedbackPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login")
+      router.push("/")
     }
   }, [user, authLoading, router])
 
@@ -94,7 +94,7 @@ export default function FeedbackPage() {
     
     const userId = getUserId()
     if (!userId) {
-      router.push("/login")
+      router.push("/")
       return
     }
     

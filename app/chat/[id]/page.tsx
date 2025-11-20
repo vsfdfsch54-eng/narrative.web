@@ -41,7 +41,7 @@ export default function ChatDetailPage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login")
+      router.push("/")
     }
   }, [user, authLoading, router])
   

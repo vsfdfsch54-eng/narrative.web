@@ -42,14 +42,16 @@ export default function VibePage() {
   const actionSectionRef = useRef<HTMLDivElement | null>(null)
   const { user, loading } = useAuth()
   
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/")
+    }
+  }, [user, loading, router])
+  
   // Get user ID from Supabase Auth
   const getUserId = () => {
     if (user?.id) return user.id
-    // If not authenticated, redirect to login
-    if (!loading && !user) {
-      router.push("/login")
-      return null
-    }
     return null
   }
 
@@ -133,7 +135,7 @@ export default function VibePage() {
     if (selectedVibe && selectedTopic) {
       const userId = getUserId()
       if (!userId) {
-        router.push("/login")
+        router.push("/")
         return
       }
       
@@ -200,6 +202,15 @@ export default function VibePage() {
       return () => clearTimeout(timer)
     }
   }, [selectedVibe, selectedTopic])
+
+  // Show loading while checking auth
+  if (loading || !user) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">

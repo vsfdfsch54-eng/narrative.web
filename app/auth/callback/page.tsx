@@ -33,10 +33,32 @@ function AuthCallbackContent() {
             return
           }
 
-          if (data.session) {
+          if (data.session && data.user) {
             // Successfully verified and logged in
-            // Redirect to the next page (usually onboarding)
-            router.push(next)
+            // Check if user has completed onboarding
+            try {
+              const response = await fetch(`/api/users?userId=${data.user.id}`)
+              const userData = await response.json()
+              
+              if (userData.success && userData.data) {
+                const hasName = userData.data.name
+                const hasInterests = userData.data.interests && userData.data.interests.length > 0
+                
+                if (hasName && hasInterests) {
+                  // Onboarding complete, go to welcome page then main app
+                  router.push('/welcome')
+                } else {
+                  // Need to complete onboarding, redirect with verified flag
+                  router.push('/onboarding?verified=true')
+                }
+              } else {
+                // No user data, need onboarding
+                router.push('/onboarding?verified=true')
+              }
+            } catch (err) {
+              // Error checking user data, go to onboarding
+              router.push('/onboarding?verified=true')
+            }
           } else {
             setError('No session created. Please try again.')
             setLoading(false)
@@ -47,9 +69,27 @@ function AuthCallbackContent() {
         } else {
           // No code, check if user is already authenticated
           const { data: { session } } = await supabase.auth.getSession()
-          if (session) {
-            // User is already authenticated, redirect
-            router.push(searchParams.get('next') || '/onboarding?verified=true')
+          if (session && session.user) {
+            // Check onboarding status
+            try {
+              const response = await fetch(`/api/users?userId=${session.user.id}`)
+              const userData = await response.json()
+              
+              if (userData.success && userData.data) {
+                const hasName = userData.data.name
+                const hasInterests = userData.data.interests && userData.data.interests.length > 0
+                
+                if (hasName && hasInterests) {
+                  router.push('/welcome')
+                } else {
+                  router.push('/onboarding?verified=true')
+                }
+              } else {
+                router.push('/onboarding?verified=true')
+              }
+            } catch (err) {
+              router.push('/onboarding?verified=true')
+            }
           } else {
             // No code and no session, redirect to onboarding
             router.push('/onboarding')

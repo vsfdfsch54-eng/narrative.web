@@ -21,10 +21,10 @@ export default function ProfilePage() {
   const [isEditingName, setIsEditingName] = useState(false)
   const [tempName, setTempName] = useState("")
 
-  // Redirect to login if not authenticated
+  // Redirect to landing if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login")
+      router.push("/")
     }
   }, [user, authLoading, router])
 

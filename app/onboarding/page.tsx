@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Notification } from "@/components/ui/notification"
 import { useAuth } from "@/hooks/use-auth"
 import { INTERESTS, INTEREST_CATEGORIES, getAllCategories } from "@/lib/interests"
 import { cn } from "@/lib/utils"
@@ -25,6 +26,7 @@ function OnboardingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, signUp, loading: authLoading } = useAuth()
+  const [showVerified, setShowVerified] = useState(false)
 
   // Check onboarding status when user changes
   const checkOnboardingStatus = useCallback(async () => {
@@ -76,23 +78,31 @@ function OnboardingContent() {
     const verified = searchParams.get('verified')
     
     // If user just verified email (via callback or direct verification)
-    if (user && user.email_confirmed_at && (verified === 'true' || currentStep === 'verify')) {
-      // User just verified email - move them forward
-      if (selectedInterests.length > 0) {
-        // Already has interests, complete onboarding
-        handleCompleteOnboarding()
-      } else {
-        // Move to interests step if not already there or on welcome
-        if (currentStep === 'verify' || (currentStep !== 'interests' && currentStep !== 'welcome')) {
+    if (user && user.email_confirmed_at && verified === 'true') {
+      // Show verified notification
+      setShowVerified(true)
+      
+      // Check if onboarding is complete
+      checkOnboardingStatus().then(() => {
+        // If user has name and interests, they'll be redirected by checkOnboardingStatus
+        // Otherwise, move to interests step
+        if (currentStep === 'verify') {
           setCurrentStep('interests')
         }
         // Pre-fill email if available
         if (user.email && !email) {
           setEmail(user.email)
         }
+      })
+    } else if (user && user.email_confirmed_at && currentStep === 'verify') {
+      // User verified but no verified param - still move forward
+      if (selectedInterests.length > 0) {
+        handleCompleteOnboarding()
+      } else {
+        setCurrentStep('interests')
       }
     }
-  }, [user, searchParams, selectedInterests, email, currentStep, authLoading])
+  }, [user, searchParams, selectedInterests, email, currentStep, authLoading, checkOnboardingStatus])
 
   const validatePasswordMatch = useCallback(() => {
     if (confirmPassword && password !== confirmPassword) {
@@ -237,11 +247,8 @@ function OnboardingContent() {
       const data = await response.json()
       
       if (data.success) {
-        setCurrentStep('welcome')
-        // After welcome screen, redirect to vibe
-        setTimeout(() => {
-          router.push("/vibe")
-        }, 2000)
+        // Redirect to welcome page after completing onboarding
+        router.push('/welcome')
       } else {
         setError(data.error || "Failed to complete onboarding")
         setLoading(false)
@@ -270,7 +277,16 @@ function OnboardingContent() {
   // Step 1: Email
   if (currentStep === 'email') {
     return (
-      <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      <>
+        {showVerified && (
+          <Notification
+            message="Email verified successfully!"
+            type="success"
+            duration={4000}
+            onClose={() => setShowVerified(false)}
+          />
+        )}
+        <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
         <div className="phone-frame-container">
           <div className="phone-frame">
             <div className="phone-screen">
@@ -338,6 +354,7 @@ function OnboardingContent() {
           </div>
         </div>
       </div>
+      </>
     )
   }
 
@@ -621,17 +638,9 @@ function OnboardingContent() {
                 </div>
                 
                 <div className="w-full space-y-2 flex-shrink-0">
-                  <Button
-                    onClick={() => {
-                      // Refresh to check if email was verified
-                      window.location.reload()
-                    }}
-                    variant="outline"
-                    className="w-full h-12 text-sm font-semibold tracking-wide border-white/20 text-white hover:border-white/40 hover:bg-white/5"
-                    size="lg"
-                  >
-                    I&apos;ve verified my email
-                  </Button>
+                  <p className="text-xs text-white/40 text-center px-4">
+                    You&apos;ll be automatically redirected once you click the verification link in your email.
+                  </p>
                 </div>
               </div>
             </div>

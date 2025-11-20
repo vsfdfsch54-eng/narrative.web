@@ -20,8 +20,30 @@ export default function LoginPage() {
   // Redirect if user is already authenticated and verified
   useEffect(() => {
     if (!authLoading && user && user.email_confirmed_at) {
-      // User is already logged in, redirect to main app
-      router.push("/vibe")
+      // Check if onboarding is complete
+      const checkOnboarding = async () => {
+        try {
+          const response = await fetch(`/api/users?userId=${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            const hasName = data.data.name
+            const hasInterests = data.data.interests && data.data.interests.length > 0
+            
+            if (hasName && hasInterests) {
+              router.push("/vibe")
+            } else {
+              router.push("/onboarding")
+            }
+          } else {
+            router.push("/onboarding")
+          }
+        } catch (err) {
+          router.push("/onboarding")
+        }
+      }
+      
+      checkOnboarding()
     }
   }, [user, authLoading, router])
 
@@ -37,7 +59,30 @@ export default function LoginPage() {
         if ((result as any).needsOnboarding) {
           router.push("/onboarding")
         } else {
-          router.push("/vibe")
+          // Check onboarding status
+          const checkOnboarding = async () => {
+            try {
+              const response = await fetch(`/api/users?userId=${(result as any).data.user.id}`)
+              const data = await response.json()
+              
+              if (data.success && data.data) {
+                const hasName = data.data.name
+                const hasInterests = data.data.interests && data.data.interests.length > 0
+                
+                if (hasName && hasInterests) {
+                  router.push("/vibe")
+                } else {
+                  router.push("/onboarding")
+                }
+              } else {
+                router.push("/onboarding")
+              }
+            } catch (err) {
+              router.push("/onboarding")
+            }
+          }
+          
+          checkOnboarding()
         }
       } else {
         setError(result.error || "Invalid credentials")
