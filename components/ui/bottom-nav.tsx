@@ -40,7 +40,8 @@ export function BottomNav() {
       className={cn(
         "fixed bottom-0 left-0 right-0 z-[100]",
         "pointer-events-none",
-        "sm:max-w-[375px] sm:left-1/2 sm:-translate-x-1/2"
+        "sm:max-w-[375px] sm:left-1/2 sm:-translate-x-1/2",
+        "w-screen"
       )}
       style={{ 
         width: '100%'
