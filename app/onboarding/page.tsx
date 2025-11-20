@@ -365,52 +365,19 @@ function OnboardingContent() {
         }
       }
 
-      // Check if email was sent - Supabase should send it automatically
-      // But if it didn't, try to resend immediately
-      if (!result.data.user.email_confirmed_at) {
-        console.log('Email not confirmed, attempting to resend verification email...')
-        console.log('Email address:', email)
-        console.log('Redirect URL:', `${window.location.origin}/auth/callback`)
-        
-        try {
-          const { data: resendData, error: resendError } = await supabase.auth.resend({
-            type: 'signup',
-            email: email,
-            options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback`,
-            },
-          })
-          
-          console.log('Resend response:', { data: resendData, error: resendError })
-          
-          if (resendError) {
-            console.error('Error resending email:', resendError)
-            console.error('Error details:', {
-              message: resendError.message,
-              status: resendError.status,
-              code: resendError.code
-            })
-            
-            // Show helpful error message
-            if (resendError.message.includes('rate limit') || resendError.message.includes('too many')) {
-              setError('Too many email requests. Please wait a few minutes and try again.')
-            } else if (resendError.message.includes('disabled') || resendError.message.includes('not enabled')) {
-              setError('Email verification is not enabled in Supabase. Please contact support or check Supabase settings.')
-            } else {
-              setError(`Email sending failed: ${resendError.message}. Please check Supabase email configuration.`)
-            }
-          } else {
-            console.log('Verification email resent successfully')
-          }
-        } catch (resendErr: any) {
-          console.error('Exception resending email:', resendErr)
-          setError(`Failed to send email: ${resendErr.message}. Please check Supabase configuration.`)
-        }
-      } else {
-        console.log('User email already confirmed - no need to send verification email')
+      // Check if email confirmation is required
+      // If email is already confirmed (email confirmation disabled in Supabase), skip verify step
+      if (result.data.user.email_confirmed_at) {
+        console.log('Email already confirmed - email confirmation is disabled in Supabase')
+        // User is already verified, complete onboarding and redirect
+        setLoading(false)
+        router.push('/signed-up')
+        return
       }
 
-      // Move to verify step
+      // Email confirmation is required - move to verify step
+      // Note: We don't try to resend here since Supabase should send automatically on signup
+      console.log('Email confirmation required, moving to verify step')
       setLoading(false)
       setCurrentStep('verify')
     } catch (err: any) {
