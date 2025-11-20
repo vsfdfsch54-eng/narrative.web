@@ -39,12 +39,10 @@ export function BottomNav() {
     <div 
       className={cn(
         "fixed bottom-0 left-0 right-0 z-[100]",
-        "pointer-events-none"
+        "pointer-events-none",
+        "sm:max-w-[375px] sm:left-1/2 sm:-translate-x-1/2"
       )}
       style={{ 
-        maxWidth: '375px',
-        left: '50%',
-        transform: 'translateX(-50%)',
         width: '100%'
       }}
     >

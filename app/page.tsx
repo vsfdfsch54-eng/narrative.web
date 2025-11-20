@@ -18,16 +18,11 @@ export default function Home() {
     }
   }, [user, loading, router])
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[375px] mx-auto"
-      >
-        <div className="relative bg-[#050505]/70 backdrop-blur-2xl rounded-[2.5rem] p-2 border border-white/10 shadow-[0_35px_80px_rgba(0,0,0,0.8)]">
-          <div className="bg-[#040406] rounded-[2rem] border border-white/10 flex flex-col h-[600px] sm:h-[800px] overflow-hidden">
-            <div className="flex flex-col flex-1 items-center justify-center text-center px-6 py-10 gap-6">
+    <div className="fixed inset-0 bg-black overflow-hidden sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      <div className="phone-frame-container">
+        <div className="phone-frame">
+          <div className="phone-screen">
+            <div className="phone-content flex items-center justify-center text-center px-6 py-10 gap-6">
               <motion.span
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -81,7 +76,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

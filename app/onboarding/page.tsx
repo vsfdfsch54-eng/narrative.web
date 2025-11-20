@@ -45,16 +45,11 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[375px] mx-auto"
-      >
-        <div className="relative bg-[#0A0A0A] rounded-[24px] p-1 border border-white/10">
-          <div className="bg-black rounded-[22px] border border-white/10 flex flex-col h-[600px] sm:h-[800px] overflow-hidden">
-            <div className="flex flex-col flex-1 overflow-y-auto scrollbar-hide min-h-0 p-5 gap-5 items-center justify-center">
+    <div className="fixed inset-0 bg-black overflow-hidden sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      <div className="phone-frame-container">
+        <div className="phone-frame">
+          <div className="phone-screen">
+            <div className="phone-content p-5 gap-5 items-center justify-center">
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -105,7 +100,7 @@ export default function OnboardingPage() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

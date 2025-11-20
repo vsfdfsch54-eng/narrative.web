@@ -42,16 +42,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[375px] mx-auto"
-      >
-        <div className="relative bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] p-2 border border-slate-700/50 shadow-2xl">
-          <div className="bg-slate-950 rounded-[2rem] border border-slate-800/50 flex flex-col h-[600px] sm:h-[800px] overflow-hidden">
-            <div className="flex flex-col flex-1 overflow-y-auto scrollbar-hide min-h-0 p-5 gap-5">
+    <div className="fixed inset-0 bg-black overflow-hidden sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      <div className="phone-frame-container">
+        <div className="phone-frame">
+          <div className="phone-screen">
+            <div className="phone-content p-5 gap-5">
               <div className="text-center space-y-2 mt-2">
                 <motion.h1
                   initial={{ opacity: 0, y: 8 }}
@@ -133,7 +128,7 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

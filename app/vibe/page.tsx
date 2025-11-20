@@ -202,7 +202,7 @@ export default function VibePage() {
   }, [selectedVibe, selectedTopic])
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black overflow-hidden">
+    <div className="fixed inset-0 bg-black overflow-hidden sm:flex sm:items-center sm:justify-center">
       {/* Phone Frame Container */}
       <div className="phone-frame-container">
         {/* Phone Frame - Sleek Black */}

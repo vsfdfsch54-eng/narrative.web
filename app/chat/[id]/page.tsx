@@ -237,18 +237,14 @@ export default function ChatDetailPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black">
+    <div className="fixed inset-0 bg-black overflow-hidden sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
       {/* Phone Frame Container */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="w-full max-w-[375px] mx-auto"
-      >
+      <div className="phone-frame-container">
         {/* Phone Frame - Black & White */}
-        <div className="relative bg-[#0A0A0A] rounded-[24px] p-1 border border-white/10">
+        <div className="phone-frame">
           {/* Phone Screen */}
-          <div className="bg-black rounded-[22px] relative flex flex-col h-[600px] sm:h-[800px] overflow-hidden">
-            <div className="flex flex-col flex-1 pb-20 overflow-y-auto scrollbar-hide min-h-0">
+          <div className="phone-screen">
+            <div className="phone-content pb-20">
               {/* Header */}
               <div className={cn(
                 "flex items-center justify-between px-4 py-3",
@@ -393,7 +389,7 @@ export default function ChatDetailPage() {
             <BottomNav />
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* End Conversation Modal */}
       <EndConvoModal
