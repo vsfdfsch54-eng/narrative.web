@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllTopics, getTopicsByCategory } from '@/lib/supabase-helpers'
 
-// Force dynamic rendering
+// Force dynamic rendering - must be at top level
 export const dynamic = 'force-dynamic'
+export const dynamicParams = true
 export const runtime = 'nodejs'
 export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 export async function GET(request: NextRequest) {
+  // Access searchParams outside try/catch to ensure Next.js recognizes dynamic usage
+  const searchParams = request.nextUrl.searchParams
+  const category = searchParams.get('category')
+
   try {
-    const searchParams = request.nextUrl.searchParams
-    const category = searchParams.get('category')
 
     let result
     if (category) {
@@ -19,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data: result })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in GET /api/topics:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

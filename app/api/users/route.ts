@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
 
-// Force dynamic rendering
+// Force dynamic rendering - must be at top level
 export const dynamic = 'force-dynamic'
+export const dynamicParams = true
 export const runtime = 'nodejs'
 export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams

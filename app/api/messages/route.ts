@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendMessage, getMessages } from '@/lib/supabase-helpers'
 
-// Force dynamic rendering
+// Force dynamic rendering - must be at top level
 export const dynamic = 'force-dynamic'
+export const dynamicParams = true
 export const runtime = 'nodejs'
 export const revalidate = 0
+export const fetchCache = 'force-no-store'
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,16 +40,18 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams
-    const matchId = searchParams.get('matchId')
+  // Access searchParams outside try/catch to ensure Next.js recognizes dynamic usage
+  const searchParams = request.nextUrl.searchParams
+  const matchId = searchParams.get('matchId')
 
-    if (!matchId) {
-      return NextResponse.json(
-        { error: 'Missing matchId query parameter' },
-        { status: 400 }
-      )
-    }
+  if (!matchId) {
+    return NextResponse.json(
+      { error: 'Missing matchId query parameter' },
+      { status: 400 }
+    )
+  }
+
+  try {
 
     const result = await getMessages(matchId)
 
