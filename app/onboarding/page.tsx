@@ -261,12 +261,8 @@ function OnboardingContent() {
     )
   }
 
-  // If user is authenticated, verified, and has completed onboarding, redirect
-  // This will be handled by checkOnboardingStatus, but show loading briefly
-  if (user && user.email_confirmed_at) {
-    // Check if we should redirect (will happen in useEffect)
-    // Show form in case redirect takes a moment
-  }
+  // If user is authenticated, verified, and has completed onboarding, they will be redirected
+  // But don't block rendering - let the redirect happen naturally
 
   // Step 1: Email
   if (currentStep === 'email') {
