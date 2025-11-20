@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { INTERESTS, INTEREST_CATEGORIES, getAllCategories } from "@/lib/interests"
 import { cn } from "@/lib/utils"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { supabase } from "@/lib/supabaseClient"
 
 type Step = 'email' | 'name' | 'password' | 'interests' | 'verify' | 'welcome'
 
