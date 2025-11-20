@@ -15,10 +15,15 @@ export default function Home() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        // User is authenticated, redirect to vibe
-        router.push("/vibe")
+        // User is authenticated and email verified, redirect to vibe
+        if (user.email_confirmed_at) {
+          router.push("/vibe")
+        } else {
+          // User authenticated but email not verified, go to onboarding
+          router.push("/onboarding")
+        }
       } else {
-        // User is not authenticated, redirect to onboarding
+        // User is not authenticated, redirect to onboarding (signup)
         router.push("/onboarding")
       }
     }
@@ -67,7 +72,7 @@ export default function Home() {
                   size="lg"
                   className="w-full h-11 text-sm font-semibold tracking-wide bg-white text-slate-900 border border-white/70 shadow-[0_15px_45px_rgba(0,0,0,0.45)] hover:-translate-y-0.5 transition-all"
                 >
-                  <Link href="/onboarding">Get Started</Link>
+                  <Link href="/onboarding">Sign Up</Link>
                 </Button>
                 <Button
                   asChild

@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/hooks/use-auth"
@@ -18,30 +19,18 @@ function OnboardingContent() {
   const [error, setError] = useState("")
   const [emailSent, setEmailSent] = useState(false)
   const [passwordMatchError, setPasswordMatchError] = useState("")
+  const [checkingStatus, setCheckingStatus] = useState(true)
   
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, signUp } = useAuth()
+  const { user, signUp, loading: authLoading } = useAuth()
 
-  // Check if email was verified
-  useEffect(() => {
-    const verified = searchParams.get('verified')
-    if (verified === 'true' && user && user.email_confirmed_at) {
-      // User verified their email, complete onboarding
-      handleCompleteOnboarding()
+  // Check onboarding status when user changes
+  const checkOnboardingStatus = useCallback(async () => {
+    if (!user?.id) {
+      setCheckingStatus(false)
+      return
     }
-  }, [searchParams, user])
-
-  // Redirect if already authenticated and has completed onboarding
-  useEffect(() => {
-    if (user && user.email_confirmed_at) {
-      // Check if user has interests (completed onboarding)
-      checkOnboardingStatus()
-    }
-  }, [user])
-
-  const checkOnboardingStatus = async () => {
-    if (!user?.id) return
     
     try {
       const response = await fetch(`/api/users?userId=${user.id}`)
@@ -52,14 +41,53 @@ function OnboardingContent() {
         // If user has name and interests, they've completed onboarding
         if (userData.name && userData.interests && userData.interests.length > 0) {
           router.push("/vibe")
+          return
+        }
+        
+        // If user is verified but hasn't completed onboarding, pre-fill data
+        if (user.email_confirmed_at && userData.name) {
+          setName(userData.name)
+          if (userData.interests && userData.interests.length > 0) {
+            setSelectedInterests(userData.interests)
+          }
         }
       }
     } catch (err) {
       console.error('Error checking onboarding status:', err)
+    } finally {
+      setCheckingStatus(false)
     }
-  }
+  }, [user, router])
 
-  const validatePasswordMatch = () => {
+  // Check status on mount and when user changes
+  useEffect(() => {
+    if (!authLoading) {
+      checkOnboardingStatus()
+    }
+  }, [authLoading, checkOnboardingStatus])
+
+  // Handle email verification - auto-complete onboarding
+  useEffect(() => {
+    if (user && user.email_confirmed_at && !checkingStatus) {
+      // User is verified, check if they need to complete onboarding
+      const verified = searchParams.get('verified')
+      
+      if (verified === 'true' || user.email_confirmed_at) {
+        // User just verified email, complete onboarding if interests are selected
+        if (selectedInterests.length > 0) {
+          handleCompleteOnboarding()
+        } else {
+          // User verified but no interests yet, show form to complete
+          // Pre-fill email if available
+          if (user.email && !email) {
+            setEmail(user.email)
+          }
+        }
+      }
+    }
+  }, [user, searchParams, selectedInterests, checkingStatus, email])
+
+  const validatePasswordMatch = useCallback(() => {
     if (confirmPassword && password !== confirmPassword) {
       setPasswordMatchError("Passwords do not match")
       return false
@@ -67,13 +95,13 @@ function OnboardingContent() {
       setPasswordMatchError("")
       return true
     }
-  }
+  }, [password, confirmPassword])
 
   useEffect(() => {
     if (confirmPassword) {
       validatePasswordMatch()
     }
-  }, [password, confirmPassword])
+  }, [password, confirmPassword, validatePasswordMatch])
 
   const handleInterestToggle = (interestId: string) => {
     setSelectedInterests(prev => 
@@ -83,11 +111,58 @@ function OnboardingContent() {
     )
   }
 
+  const handleCompleteOnboarding = async () => {
+    if (!user?.id) return
+    
+    setLoading(true)
+    setError("")
+    
+    try {
+      // Get existing user data to preserve name if already set
+      const userResponse = await fetch(`/api/users?userId=${user.id}`)
+      const userData = await userResponse.json()
+      const existingName = userData.success && userData.data?.name ? userData.data.name : name.trim() || user.email?.split('@')[0] || 'User'
+      
+      // Save interests
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          name: existingName,
+          interests: selectedInterests.length > 0 ? selectedInterests : []
+        })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        router.push("/vibe")
+      } else {
+        setError(data.error || "Failed to complete onboarding")
+        setLoading(false)
+      }
+    } catch (err: any) {
+      setError(err.message || "Something went wrong")
+      setLoading(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     
-    // Validation
+    // If user is already authenticated and verified, just complete onboarding
+    if (user && user.email_confirmed_at) {
+      if (selectedInterests.length === 0) {
+        setError("Please select at least one interest")
+        return
+      }
+      await handleCompleteOnboarding()
+      return
+    }
+    
+    // Validation for new signup
     if (!email.trim()) {
       setError("Email is required")
       return
@@ -125,7 +200,7 @@ function OnboardingContent() {
         return
       }
 
-      // If user was created, save interests to database
+      // Save user data with interests immediately (don't wait for verification)
       if (result.data?.user?.id) {
         const userId = result.data.user.id
         
@@ -156,40 +231,30 @@ function OnboardingContent() {
     }
   }
 
-  const handleCompleteOnboarding = async () => {
-    if (!user?.id) return
-    
-    setLoading(true)
-    
-    try {
-      // Save interests if not already saved
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          name: name.trim() || user.email?.split('@')[0] || 'User',
-          interests: selectedInterests.length > 0 ? selectedInterests : []
-        })
-      })
-
-      const data = await response.json()
-      
-      if (data.success) {
-        router.push("/vibe")
-      } else {
-        setError(data.error || "Failed to complete onboarding")
-        setLoading(false)
-      }
-    } catch (err: any) {
-      setError(err.message || "Something went wrong")
-      setLoading(false)
-    }
-  }
-
   const categories = getAllCategories()
 
-  if (emailSent) {
+  // Show loading while checking status
+  if (checkingStatus || authLoading) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    )
+  }
+
+  // If user is authenticated, verified, and has completed onboarding, redirect
+  // (This is handled by checkOnboardingStatus, but keep as safety check)
+  if (user && user.email_confirmed_at) {
+    // Will redirect in useEffect, but show loading
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    )
+  }
+
+  // Show email verification message
+  if (emailSent || (user && !user.email_confirmed_at)) {
     return (
       <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
         <div className="phone-frame-container">
@@ -202,21 +267,24 @@ function OnboardingContent() {
                     Check your email
                   </h1>
                   <p className="text-sm text-white/60 px-4">
-                    We sent a verification link to <strong>{email}</strong>
+                    We sent a verification link to <strong>{user?.email || email}</strong>
                   </p>
                   <p className="text-xs text-white/50 px-4">
-                    Click the link in the email to verify your account and complete onboarding.
+                    Click the link in the email to verify your account. Once verified, you&apos;ll be automatically signed in.
                   </p>
                 </div>
                 
                 <div className="w-full space-y-2 flex-shrink-0">
                   <Button
-                    onClick={() => router.push("/login")}
+                    onClick={() => {
+                      // Refresh to check if email was verified
+                      window.location.reload()
+                    }}
                     variant="outline"
                     className="w-full h-11 text-sm font-semibold tracking-wide border-white/20 text-white hover:border-white/40 hover:bg-white/5"
                     size="lg"
                   >
-                    Already verified? Continue
+                    I&apos;ve verified my email
                   </Button>
                 </div>
               </div>
@@ -227,6 +295,7 @@ function OnboardingContent() {
     )
   }
 
+  // Show signup form
   return (
     <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
       <div className="phone-frame-container">
@@ -235,10 +304,10 @@ function OnboardingContent() {
             <div className="phone-content p-4 gap-3 overflow-hidden flex flex-col">
               <div className="text-center space-y-1.5 flex-shrink-0">
                 <h1 className="text-2xl font-black tracking-tight text-white">
-                  Welcome to Narrative
+                  Sign Up
                 </h1>
                 <p className="text-xs text-white/60">
-                  Let&apos;s set up your profile
+                  Create your account to get started
                 </p>
               </div>
 
@@ -260,7 +329,7 @@ function OnboardingContent() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      disabled={loading}
+                      disabled={loading || !!user}
                       className="bg-white/5 border-white/10 text-sm text-white"
                     />
                   </div>
@@ -280,42 +349,46 @@ function OnboardingContent() {
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
-                      Password
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      disabled={loading}
-                      className="bg-white/5 border-white/10 text-sm text-white"
-                    />
-                  </div>
+                  {!user && (
+                    <>
+                      <div className="space-y-1">
+                        <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
+                          Password
+                        </label>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          minLength={6}
+                          disabled={loading}
+                          className="bg-white/5 border-white/10 text-sm text-white"
+                        />
+                      </div>
 
-                  <div className="space-y-1">
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
-                      Confirm Password
-                    </label>
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      disabled={loading}
-                      className={cn(
-                        "bg-white/5 border-white/10 text-sm text-white",
-                        passwordMatchError && "border-red-500/50"
-                      )}
-                    />
-                    {passwordMatchError && (
-                      <p className="text-[10px] text-red-400 mt-0.5">{passwordMatchError}</p>
-                    )}
-                  </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
+                          Confirm Password
+                        </label>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          disabled={loading}
+                          className={cn(
+                            "bg-white/5 border-white/10 text-sm text-white",
+                            passwordMatchError && "border-red-500/50"
+                          )}
+                        />
+                        {passwordMatchError && (
+                          <p className="text-[10px] text-red-400 mt-0.5">{passwordMatchError}</p>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Interests Selection */}
@@ -365,10 +438,19 @@ function OnboardingContent() {
                     variant="primary"
                     className="w-full h-11 text-sm font-semibold tracking-wide bg-white text-black border border-white"
                     size="lg"
-                    disabled={loading || !email.trim() || !name.trim() || password.length < 6 || selectedInterests.length === 0 || !!passwordMatchError}
+                    disabled={loading || !email.trim() || !name.trim() || (!user && (password.length < 6 || !!passwordMatchError)) || selectedInterests.length === 0}
                   >
-                    {loading ? "Creating account..." : "Create Account"}
+                    {loading ? (user ? "Completing..." : "Creating account...") : (user ? "Complete Sign Up" : "Create Account")}
                   </Button>
+                  
+                  {!user && (
+                    <div className="text-center text-[11px] text-white/60">
+                      Already have an account?{" "}
+                      <Link href="/login" className="text-white underline-offset-4 hover:underline">
+                        Sign in
+                      </Link>
+                    </div>
+                  )}
                 </div>
               </form>
             </div>
