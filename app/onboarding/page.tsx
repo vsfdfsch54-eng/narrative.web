@@ -237,8 +237,15 @@ function OnboardingContent() {
       const result = await signUp(email, password, name)
       
       if (!result.success) {
-        setError(result.error || "Failed to create account")
+        // Show user-friendly error message
+        const errorMessage = result.error || "Failed to create account"
+        setError(errorMessage)
         setLoading(false)
+        
+        // If duplicate email, suggest signing in
+        if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
+          // Keep error message, user can click "Sign in" link
+        }
         return
       }
 
@@ -313,8 +320,8 @@ function OnboardingContent() {
   // Once authLoading is false, we can render the form
   if (authLoading) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <p className="text-white/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+        <p className="text-[#E5E5E5]/60">Loading...</p>
       </div>
     )
   }
@@ -334,16 +341,16 @@ function OnboardingContent() {
             onClose={() => setShowVerified(false)}
           />
         )}
-        <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+        <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0">
         <div className="phone-frame-container">
           <div className="phone-frame">
             <div className="phone-screen">
               <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
                 <div className="text-center space-y-2 flex-shrink-0">
-                  <h1 className="text-2xl font-black tracking-tight text-white">
+                  <h1 className="text-2xl font-black tracking-tight text-[#E5E5E5]">
                     Sign Up
                   </h1>
-                  <p className="text-xs text-white/60">
+                  <p className="text-xs text-[#E5E5E5]/60">
                     Step 1 of 4
                   </p>
                 </div>
@@ -356,7 +363,7 @@ function OnboardingContent() {
                   )}
 
                   <div className="space-y-2">
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
+                    <label className="text-[11px] uppercase tracking-[0.2em] text-[#E5E5E5]/60">
                       Email
                     </label>
                     <Input
@@ -371,7 +378,7 @@ function OnboardingContent() {
                       }}
                       required
                       disabled={loading || !!user}
-                      className="bg-white/5 border-white/10 text-sm text-white h-12"
+                      className="bg-white/5 border-[#E5E5E5]/10 text-sm text-[#E5E5E5] h-12"
                       autoFocus
                     />
                   </div>
@@ -381,7 +388,7 @@ function OnboardingContent() {
                   <Button
                     onClick={handleNext}
                     variant="primary"
-                    className="w-full h-12 text-sm font-semibold tracking-wide bg-white text-black border border-white"
+                    className="w-full h-12 text-sm font-semibold tracking-wide bg-[#E5E5E5] text-[#0A0A0A] border border-[#E5E5E5]"
                     size="lg"
                     disabled={loading || !email.trim() || !email.includes('@')}
                   >
@@ -389,9 +396,9 @@ function OnboardingContent() {
                   </Button>
                   
                   {!user && (
-                    <div className="text-center text-[11px] text-white/60">
+                    <div className="text-center text-[11px] text-[#E5E5E5]/60">
                       Already have an account?{" "}
-                      <Link href="/login" className="text-white underline-offset-4 hover:underline">
+                      <Link href="/login" className="text-[#E5E5E5] underline-offset-4 hover:underline">
                         Sign in
                       </Link>
                     </div>
@@ -409,16 +416,16 @@ function OnboardingContent() {
   // Step 2: Name
   if (currentStep === 'name') {
     return (
-      <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0">
         <div className="phone-frame-container">
           <div className="phone-frame">
             <div className="phone-screen">
               <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
                 <div className="text-center space-y-2 flex-shrink-0">
-                  <h1 className="text-2xl font-black tracking-tight text-white">
+                  <h1 className="text-2xl font-black tracking-tight text-[#E5E5E5]">
                     What&apos;s your name?
                   </h1>
-                  <p className="text-xs text-white/60">
+                  <p className="text-xs text-[#E5E5E5]/60">
                     Step 2 of 4
                   </p>
                 </div>
@@ -431,7 +438,7 @@ function OnboardingContent() {
                   )}
 
                   <div className="space-y-2">
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
+                    <label className="text-[11px] uppercase tracking-[0.2em] text-[#E5E5E5]/60">
                       Name
                     </label>
                     <Input
@@ -446,7 +453,7 @@ function OnboardingContent() {
                       }}
                       required
                       disabled={loading}
-                      className="bg-white/5 border-white/10 text-sm text-white h-12"
+                      className="bg-white/5 border-[#E5E5E5]/10 text-sm text-[#E5E5E5] h-12"
                       autoFocus
                     />
                   </div>
@@ -456,7 +463,7 @@ function OnboardingContent() {
                   <Button
                     onClick={handleBack}
                     variant="outline"
-                    className="flex-1 h-12 text-sm font-semibold border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    className="flex-1 h-12 text-sm font-semibold border-[#E5E5E5]/10 bg-white/5 text-[#E5E5E5] hover:bg-white/10"
                     size="lg"
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
@@ -465,7 +472,7 @@ function OnboardingContent() {
                   <Button
                     onClick={handleNext}
                     variant="primary"
-                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-white text-black border border-white"
+                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-[#E5E5E5] text-[#0A0A0A] border border-[#E5E5E5]"
                     size="lg"
                     disabled={loading || !name.trim()}
                   >
@@ -483,16 +490,16 @@ function OnboardingContent() {
   // Step 3: Password
   if (currentStep === 'password') {
     return (
-      <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0">
         <div className="phone-frame-container">
           <div className="phone-frame">
             <div className="phone-screen">
               <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
                 <div className="text-center space-y-2 flex-shrink-0">
-                  <h1 className="text-2xl font-black tracking-tight text-white">
+                  <h1 className="text-2xl font-black tracking-tight text-[#E5E5E5]">
                     Create a password
                   </h1>
-                  <p className="text-xs text-white/60">
+                  <p className="text-xs text-[#E5E5E5]/60">
                     Step 3 of 4
                   </p>
                 </div>
@@ -506,7 +513,7 @@ function OnboardingContent() {
 
                   <div className="space-y-4">
                     <div className="space-y-2">
-                      <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
+                      <label className="text-[11px] uppercase tracking-[0.2em] text-[#E5E5E5]/60">
                         Password
                       </label>
                       <Input
@@ -517,13 +524,13 @@ function OnboardingContent() {
                         required
                         minLength={6}
                         disabled={loading}
-                        className="bg-white/5 border-white/10 text-sm text-white h-12"
+                        className="bg-white/5 border-[#E5E5E5]/10 text-sm text-[#E5E5E5] h-12"
                         autoFocus
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
+                      <label className="text-[11px] uppercase tracking-[0.2em] text-[#E5E5E5]/60">
                         Confirm Password
                       </label>
                       <Input
@@ -539,7 +546,7 @@ function OnboardingContent() {
                         required
                         disabled={loading}
                         className={cn(
-                          "bg-white/5 border-white/10 text-sm text-white h-12",
+                          "bg-white/5 border-[#E5E5E5]/10 text-sm text-[#E5E5E5] h-12",
                           passwordMatchError && "border-red-500/50"
                         )}
                       />
@@ -554,7 +561,7 @@ function OnboardingContent() {
                   <Button
                     onClick={handleBack}
                     variant="outline"
-                    className="flex-1 h-12 text-sm font-semibold border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    className="flex-1 h-12 text-sm font-semibold border-[#E5E5E5]/10 bg-white/5 text-[#E5E5E5] hover:bg-white/10"
                     size="lg"
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
@@ -563,7 +570,7 @@ function OnboardingContent() {
                   <Button
                     onClick={handleNext}
                     variant="primary"
-                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-white text-black border border-white"
+                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-[#E5E5E5] text-[#0A0A0A] border border-[#E5E5E5]"
                     size="lg"
                     disabled={loading || password.length < 6 || !!passwordMatchError}
                   >
@@ -581,16 +588,16 @@ function OnboardingContent() {
   // Step 4: Interests
   if (currentStep === 'interests') {
     return (
-      <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0">
         <div className="phone-frame-container">
           <div className="phone-frame">
             <div className="phone-screen">
               <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
                 <div className="text-center space-y-2 flex-shrink-0">
-                  <h1 className="text-2xl font-black tracking-tight text-white">
+                  <h1 className="text-2xl font-black tracking-tight text-[#E5E5E5]">
                     Select your interests
                   </h1>
-                  <p className="text-xs text-white/60">
+                  <p className="text-xs text-[#E5E5E5]/60">
                     Step 4 of 4
                   </p>
                 </div>
@@ -606,7 +613,7 @@ function OnboardingContent() {
                     const categoryInterests = INTERESTS.filter(i => i.category === category)
                     return (
                       <div key={category} className="space-y-2">
-                        <h3 className="text-xs font-semibold text-white/80">{category}</h3>
+                        <h3 className="text-xs font-semibold text-[#E5E5E5]/80">{category}</h3>
                         <div className="flex flex-wrap gap-2">
                           {categoryInterests.map((interest) => {
                             const isSelected = selectedInterests.includes(interest.id)
@@ -620,8 +627,8 @@ function OnboardingContent() {
                                   "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
                                   "border min-h-[36px] min-w-[36px]",
                                   isSelected
-                                    ? "bg-white text-black border-white"
-                                    : "bg-white/5 text-white/80 border-white/10 hover:bg-white/10 hover:border-white/20",
+                                    ? "bg-[#E5E5E5] text-[#0A0A0A] border-[#E5E5E5]"
+                                    : "bg-white/5 text-[#E5E5E5]/80 border-[#E5E5E5]/10 hover:bg-white/10 hover:border-[#E5E5E5]/20",
                                   "disabled:opacity-50 disabled:cursor-not-allowed"
                                 )}
                               >
@@ -636,11 +643,11 @@ function OnboardingContent() {
                   })}
                 </div>
 
-                <div className="flex-shrink-0 flex gap-2 pt-2 border-t border-white/10">
+                <div className="flex-shrink-0 flex gap-2 pt-2 border-t border-[#E5E5E5]/10">
                   <Button
                     onClick={handleBack}
                     variant="outline"
-                    className="flex-1 h-12 text-sm font-semibold border-white/10 bg-white/5 text-white hover:bg-white/10"
+                    className="flex-1 h-12 text-sm font-semibold border-[#E5E5E5]/10 bg-white/5 text-[#E5E5E5] hover:bg-white/10"
                     size="lg"
                   >
                     <ChevronLeft className="h-4 w-4 mr-1" />
@@ -649,7 +656,7 @@ function OnboardingContent() {
                   <Button
                     onClick={handleNext}
                     variant="primary"
-                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-white text-black border border-white"
+                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-[#E5E5E5] text-[#0A0A0A] border border-[#E5E5E5]"
                     size="lg"
                     disabled={loading || selectedInterests.length === 0}
                   >
@@ -667,26 +674,26 @@ function OnboardingContent() {
   // Step 5: Verify Email
   if (currentStep === 'verify') {
     return (
-      <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0">
         <div className="phone-frame-container">
           <div className="phone-frame">
             <div className="phone-screen">
               <div className="phone-content p-4 gap-4 items-center justify-center overflow-hidden flex flex-col">
                 <div className="text-center space-y-3 w-full flex-shrink-0">
                   <div className="text-4xl mb-2">📧</div>
-                  <h1 className="text-2xl font-black tracking-tight text-white">
+                  <h1 className="text-2xl font-black tracking-tight text-[#E5E5E5]">
                     Check your email
                   </h1>
-                  <p className="text-sm text-white/60 px-4">
+                  <p className="text-sm text-[#E5E5E5]/60 px-4">
                     We sent a verification link to <strong>{user?.email || email}</strong>
                   </p>
-                  <p className="text-xs text-white/50 px-4">
+                  <p className="text-xs text-[#E5E5E5]/50 px-4">
                     Click the link in the email to verify your account. Once verified, you&apos;ll be automatically signed in.
                   </p>
                 </div>
                 
                 <div className="w-full space-y-2 flex-shrink-0">
-                  <p className="text-xs text-white/40 text-center px-4">
+                  <p className="text-xs text-[#E5E5E5]/40 text-center px-4">
                     You&apos;ll be automatically redirected once you click the verification link in your email.
                   </p>
                 </div>
@@ -701,17 +708,17 @@ function OnboardingContent() {
   // Step 6: Welcome
   if (currentStep === 'welcome') {
     return (
-      <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0">
         <div className="phone-frame-container">
           <div className="phone-frame">
             <div className="phone-screen">
               <div className="phone-content p-4 gap-4 items-center justify-center overflow-hidden flex flex-col">
                 <div className="text-center space-y-4 w-full flex-shrink-0">
                   <div className="text-5xl mb-4">🎉</div>
-                  <h1 className="text-3xl font-black tracking-tight text-white">
+                  <h1 className="text-3xl font-black tracking-tight text-[#E5E5E5]">
                     Welcome to Narrative
                   </h1>
-                  <p className="text-sm text-white/60 px-4">
+                  <p className="text-sm text-[#E5E5E5]/60 px-4">
                     Your account is ready! Redirecting you now...
                   </p>
                 </div>
@@ -729,8 +736,8 @@ function OnboardingContent() {
 export default function OnboardingPage() {
   return (
     <Suspense fallback={
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <p className="text-white/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+        <p className="text-[#E5E5E5]/60">Loading...</p>
       </div>
     }>
       <OnboardingContent />

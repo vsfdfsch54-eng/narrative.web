@@ -206,14 +206,14 @@ export default function VibePage() {
   // Show loading while checking auth
   if (loading || !user) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <p className="text-white/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+        <p className="text-[#E5E5E5]/60">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+    <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0">
       {/* Phone Frame Container */}
       <div className="phone-frame-container">
         {/* Phone Frame - Black & White */}
@@ -229,8 +229,8 @@ export default function VibePage() {
                 
                 {/* Time Limit Selector - Refined */}
                 <div className="flex items-center justify-center gap-2 mb-1">
-                  <Clock className="h-3.5 w-3.5 text-white/50" />
-                  <span className="text-[10px] text-white/50 font-semibold tracking-wider uppercase">Time</span>
+                  <Clock className="h-3.5 w-3.5 text-[#E5E5E5]/50" />
+                  <span className="text-[10px] text-[#E5E5E5]/50 font-semibold tracking-wider uppercase">Time</span>
                   <div className="flex items-center gap-1.5">
                     {TIME_LIMITS.map((time) => (
                       <button
@@ -239,8 +239,8 @@ export default function VibePage() {
                         className={`
                           relative px-3 py-1 rounded-full text-[10px] font-semibold tracking-tight transition-all duration-200 min-h-[28px] min-w-[28px]
                           ${selectedTimeLimit === time 
-                            ? "bg-white text-black shadow-lg" 
-                            : "bg-white/5 text-white/80 border border-white/10 hover:bg-white/10"
+                            ? "bg-[#E5E5E5] text-[#0A0A0A] shadow-lg" 
+                            : "bg-white/5 text-[#E5E5E5]/80 border border-white/10 hover:bg-white/10"
                           }
                         `}
                       >
@@ -269,13 +269,13 @@ export default function VibePage() {
                   <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
-                        <Sparkles className="h-4 w-4 text-white/80" />
+                        <Sparkles className="h-4 w-4 text-[#E5E5E5]/80" />
                       </div>
                       <div>
                         <h2 className="text-base font-bold text-white tracking-tight leading-tight">
                           Your Vibe
                         </h2>
-                        <p className="text-[10px] text-white/60 font-medium tracking-wide">
+                        <p className="text-[10px] text-[#E5E5E5]/60 font-medium tracking-wide">
                           How are you feeling?
                         </p>
                       </div>
@@ -292,18 +292,18 @@ export default function VibePage() {
                       className={`
                         relative w-full px-3 py-2 rounded-lg text-left transition-all duration-200 overflow-hidden flex-shrink-0 mb-2
                         ${selectedVibe?.id === lastVibe.id
-                          ? "bg-white text-black border border-white"
+                          ? "bg-[#E5E5E5] text-[#0A0A0A] border border-white"
                           : "bg-white/5 text-white border border-white/10 hover:bg-white/10"
                         }
                       `}
                     >
                       <div className="relative flex items-center justify-between z-10">
                         <div>
-                          <p className="text-[9px] text-white/60 font-semibold uppercase tracking-wider mb-0.5">Last vibe</p>
+                          <p className="text-[9px] text-[#E5E5E5]/60 font-semibold uppercase tracking-wider mb-0.5">Last vibe</p>
                           <p className="text-xs font-bold">{lastVibe.label}</p>
                         </div>
                         {selectedVibe?.id === lastVibe.id && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#0A0A0A]" />
                         )}
                       </div>
                     </button>
@@ -338,13 +338,13 @@ export default function VibePage() {
                   <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/10 flex-shrink-0">
                     <div className="flex items-center gap-2">
                       <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
-                        <MessageSquare className="h-4 w-4 text-white/80" />
+                        <MessageSquare className="h-4 w-4 text-[#E5E5E5]/80" />
                       </div>
                       <div>
                         <h2 className="text-base font-bold text-white tracking-tight leading-tight">
                           Your Topic
                         </h2>
-                        <p className="text-[10px] text-white/60 font-medium tracking-wide">
+                        <p className="text-[10px] text-[#E5E5E5]/60 font-medium tracking-wide">
                           What interests you?
                         </p>
                       </div>
@@ -360,18 +360,18 @@ export default function VibePage() {
                       className={`
                         relative w-full px-3 py-2 rounded-lg text-left transition-all duration-200 overflow-hidden flex-shrink-0 mb-2
                         ${selectedTopic?.id === MOST_POPULAR_TOPIC.id
-                          ? "bg-white text-black border border-white"
+                          ? "bg-[#E5E5E5] text-[#0A0A0A] border border-white"
                           : "bg-white/5 text-white border border-white/10 hover:bg-white/10"
                         }
                       `}
                     >
                       <div className="relative flex items-center justify-between z-10">
                         <div>
-                          <p className="text-[9px] text-white/60 font-semibold uppercase tracking-wider mb-0.5">Most popular</p>
+                          <p className="text-[9px] text-[#E5E5E5]/60 font-semibold uppercase tracking-wider mb-0.5">Most popular</p>
                           <p className="text-xs font-bold line-clamp-1">{MOST_POPULAR_TOPIC.label}</p>
                         </div>
                         {selectedTopic?.id === MOST_POPULAR_TOPIC.id && (
-                          <div className="w-1.5 h-1.5 rounded-full bg-black" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#0A0A0A]" />
                         )}
                       </div>
                     </button>
@@ -384,15 +384,15 @@ export default function VibePage() {
                         setSelectedCategory(e.target.value)
                         setSelectedTopic(null)
                       }}
-                      className="w-full appearance-none px-3 py-2 pr-8 rounded-lg bg-white/5 border border-white/10 text-white/90 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/20 transition-all duration-200 cursor-pointer hover:bg-white/10"
+                      className="w-full appearance-none px-3 py-2 pr-8 rounded-lg bg-white/5 border border-white/10 text-[#E5E5E5]/90 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/20 transition-all duration-200 cursor-pointer hover:bg-white/10"
                     >
                       {TOPIC_CATEGORIES.map((cat) => (
-                        <option key={cat.id} value={cat.id} className="bg-black">
+                        <option key={cat.id} value={cat.id} className="bg-[#0A0A0A]">
                           {cat.label}
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/60 pointer-events-none" />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#E5E5E5]/60 pointer-events-none" />
                   </div>
 
                   {/* Topic Pills - Horizontal Scrollable */}
@@ -435,7 +435,7 @@ export default function VibePage() {
                         size="lg"
                         onClick={handleConnect}
                         disabled={saving}
-                        className="w-full h-10 text-sm font-semibold tracking-tight rounded-lg bg-white text-black hover:bg-white/95 disabled:opacity-50 shadow-lg"
+                        className="w-full h-10 text-sm font-semibold tracking-tight rounded-lg bg-[#E5E5E5] text-[#0A0A0A] hover:bg-white/95 disabled:opacity-50 shadow-lg"
                       >
                         {saving ? "Connecting..." : "Connect"}
                       </Button>

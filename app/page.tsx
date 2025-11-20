@@ -87,8 +87,8 @@ export default function Home() {
   // Show loading while checking auth state
   if (loading || (user && user.email_confirmed_at)) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <p className="text-white/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+        <p className="text-[#E5E5E5]/60">Loading...</p>
       </div>
     )
   }
@@ -96,23 +96,23 @@ export default function Home() {
   // Show minimal loading only while checking auth for button click
   if (checkingAuth) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <p className="text-white/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+        <p className="text-[#E5E5E5]/60">Loading...</p>
       </div>
     )
   }
 
   // Landing screen - only show if user is NOT authenticated
   return (
-    <div className="fixed inset-0 bg-black w-full h-full overflow-hidden">
+    <div className="fixed inset-0 bg-[#0A0A0A] w-full h-full overflow-hidden">
       <div className="w-full h-full flex items-center justify-center px-6 py-8">
         <div className="flex flex-col items-center gap-8 w-full max-w-md">
           {/* Title Section */}
           <div className="text-center space-y-3">
-            <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-white leading-tight">
+            <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-[#E5E5E5] leading-tight">
               Welcome to Narrative.
             </h1>
-            <p className="text-sm sm:text-base text-white/60 max-w-sm mx-auto">
+            <p className="text-sm sm:text-base text-[#E5E5E5]/60 max-w-sm mx-auto">
               Where real connection begins.
             </p>
           </div>
@@ -123,7 +123,7 @@ export default function Home() {
               asChild
               variant="primary"
               size="lg"
-              className="w-full h-14 text-base font-semibold tracking-wide bg-white text-black border border-white shadow-lg hover:bg-white/95 transition-all"
+              className="w-full h-14 text-base font-semibold tracking-wide bg-[#E5E5E5] text-[#0A0A0A] border border-[#E5E5E5] shadow-lg hover:bg-[#E5E5E5]/95 transition-all"
             >
               <Link href="/onboarding">Create an Account</Link>
             </Button>
@@ -133,7 +133,7 @@ export default function Home() {
               variant="outline"
               size="lg"
               disabled={checkingAuth}
-              className="w-full h-14 text-base font-semibold tracking-wide border-white/20 text-white hover:border-white/40 hover:bg-white/5"
+              className="w-full h-14 text-base font-semibold tracking-wide border-[#E5E5E5]/20 text-[#E5E5E5] hover:border-[#E5E5E5]/40 hover:bg-[#E5E5E5]/5"
             >
               {checkingAuth ? "Loading..." : "Get to Chatting"}
             </Button>

@@ -230,14 +230,14 @@ export default function ChatDetailPage() {
 
   if (authLoading || loadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-black">
-        <p className="text-white/60">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0A0A]">
+        <p className="text-[#E5E5E5]/60">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+    <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
       {/* Phone Frame Container */}
       <div className="phone-frame-container">
         {/* Phone Frame - Black & White */}
@@ -248,7 +248,7 @@ export default function ChatDetailPage() {
               {/* Header */}
               <div className={cn(
                 "flex items-center justify-between px-3 py-2",
-                "border-b border-white/10 bg-black",
+                "border-b border-white/10 bg-[#0A0A0A]",
                 "sticky top-0 z-10 flex-shrink-0"
               )}>
                 <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -256,7 +256,7 @@ export default function ChatDetailPage() {
                     onClick={() => router.push("/vibe")}
                     className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
-                    <ArrowLeft className="h-5 w-5 text-white/80" />
+                    <ArrowLeft className="h-5 w-5 text-[#E5E5E5]/80" />
                   </button>
                   
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -267,7 +267,7 @@ export default function ChatDetailPage() {
                       <h2 className="text-base font-bold text-white truncate">
                         {profileName}
                       </h2>
-                      <p className="text-xs text-white/60">
+                      <p className="text-xs text-[#E5E5E5]/60">
                         {timeRemaining !== null && timeRemaining > 0
                           ? `Time left: ${formatTimeRemaining(timeRemaining)}`
                           : getStatusText()}
@@ -295,10 +295,10 @@ export default function ChatDetailPage() {
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
-                      <p className="text-white/60 text-sm mb-1">
+                      <p className="text-[#E5E5E5]/60 text-sm mb-1">
                         Start the conversation!
                       </p>
-                      <p className="text-white/50 text-xs">
+                      <p className="text-[#E5E5E5]/50 text-xs">
                         Say hello to {profileName}
                       </p>
                     </div>
@@ -322,7 +322,7 @@ export default function ChatDetailPage() {
               {/* Input Area */}
               <div className={cn(
                 "px-3 py-2 border-t border-white/10",
-                "bg-black",
+                "bg-[#0A0A0A]",
                 "flex-shrink-0"
               )}>
                 <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
@@ -336,7 +336,7 @@ export default function ChatDetailPage() {
                       className={cn(
                         "w-full px-4 py-2.5 rounded-full",
                         "bg-white/5 border border-white/10",
-                        "text-white placeholder:text-white/50",
+                        "text-white placeholder:text-[#E5E5E5]/50",
                         "transition-all duration-200",
                         "focus:outline-none focus:border-white/20",
                         "focus:ring-1 focus:ring-white/20",
@@ -349,7 +349,7 @@ export default function ChatDetailPage() {
                     disabled={!message.trim()}
                     className={cn(
                       "p-2.5 rounded-full",
-                      "bg-white text-black",
+                      "bg-[#E5E5E5] text-[#0A0A0A]",
                       "border border-white",
                       "transition-all duration-200",
                       "hover:bg-white/95",

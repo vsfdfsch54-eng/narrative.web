@@ -37,30 +37,8 @@ function AuthCallbackContent() {
             // Successfully verified and logged in
             // Check email verification status
             if (data.user.email_confirmed_at) {
-              // Email is verified, check if onboarding is complete
-              try {
-                const response = await fetch(`/api/users?userId=${data.user.id}`)
-                const userData = await response.json()
-                
-                if (userData.success && userData.data) {
-                  const hasName = userData.data.name
-                  const hasInterests = userData.data.interests && userData.data.interests.length > 0
-                  
-                  if (hasName && hasInterests) {
-                    // Onboarding complete, go DIRECTLY to /vibe
-                    router.push('/vibe')
-                  } else {
-                    // Need to complete onboarding
-                    router.push('/onboarding?verified=true')
-                  }
-                } else {
-                  // No user data, need onboarding
-                  router.push('/onboarding?verified=true')
-                }
-              } catch (err) {
-                // Error checking user data, go to onboarding
-                router.push('/onboarding?verified=true')
-              }
+              // Email is verified, redirect to /verified page
+              router.push('/verified')
             } else {
               // Email not verified yet, go to onboarding
               router.push('/onboarding')
@@ -76,28 +54,10 @@ function AuthCallbackContent() {
           // No code, check if user is already authenticated
           const { data: { session } } = await supabase.auth.getSession()
           if (session && session.user) {
-            // Check email verification and onboarding status
+            // Check email verification
             if (session.user.email_confirmed_at) {
-              try {
-                const response = await fetch(`/api/users?userId=${session.user.id}`)
-                const userData = await response.json()
-                
-                if (userData.success && userData.data) {
-                  const hasName = userData.data.name
-                  const hasInterests = userData.data.interests && userData.data.interests.length > 0
-                  
-                  if (hasName && hasInterests) {
-                    // Onboarding complete, go DIRECTLY to /vibe
-                    router.push('/vibe')
-                  } else {
-                    router.push('/onboarding?verified=true')
-                  }
-                } else {
-                  router.push('/onboarding?verified=true')
-                }
-              } catch (err) {
-                router.push('/onboarding?verified=true')
-              }
+              // Email verified, redirect to /verified page
+              router.push('/verified')
             } else {
               // Email not verified, go to onboarding
               router.push('/onboarding')
@@ -122,9 +82,9 @@ function AuthCallbackContent() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <p className="text-white/60">Verifying your email...</p>
+          <p className="text-[#E5E5E5]/60">Verifying your email...</p>
         </div>
       </div>
     )
@@ -132,19 +92,19 @@ function AuthCallbackContent() {
 
   if (error) {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
         <div className="text-center space-y-4 px-6">
-          <p className="text-white/80">{error}</p>
-          <p className="text-white/40 text-sm">Redirecting...</p>
+          <p className="text-[#E5E5E5]/80">{error}</p>
+          <p className="text-[#E5E5E5]/40 text-sm">Redirecting...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center">
+    <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
       <div className="text-center space-y-4">
-        <p className="text-white/60">Processing...</p>
+        <p className="text-[#E5E5E5]/60">Processing...</p>
       </div>
     </div>
   )
@@ -153,8 +113,8 @@ function AuthCallbackContent() {
 export default function AuthCallback() {
   return (
     <Suspense fallback={
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <p className="text-white/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+        <p className="text-[#E5E5E5]/60">Loading...</p>
       </div>
     }>
       <AuthCallbackContent />
