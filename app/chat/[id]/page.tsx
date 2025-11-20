@@ -244,10 +244,10 @@ export default function ChatDetailPage() {
         <div className="phone-frame">
           {/* Phone Screen */}
           <div className="phone-screen">
-            <div className="phone-content px-5 py-6 sm:p-4 pb-20">
+            <div className="phone-content px-4 py-2 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
               {/* Header */}
               <div className={cn(
-                "flex items-center justify-between px-4 py-3",
+                "flex items-center justify-between px-3 py-2",
                 "border-b border-white/10 bg-black",
                 "sticky top-0 z-10 flex-shrink-0"
               )}>
@@ -291,7 +291,7 @@ export default function ChatDetailPage() {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto scrollbar-hide px-4 py-4">
+              <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-3 min-h-0">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
@@ -321,9 +321,9 @@ export default function ChatDetailPage() {
 
               {/* Input Area */}
               <div className={cn(
-                "px-4 py-3 border-t border-white/10",
+                "px-3 py-2 border-t border-white/10",
                 "bg-black",
-                "sticky bottom-0 flex-shrink-0"
+                "flex-shrink-0"
               )}>
                 <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
                   <div className="flex-1 relative">

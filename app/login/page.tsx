@@ -46,81 +46,73 @@ export default function LoginPage() {
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content p-5 gap-5">
-              <div className="text-center space-y-2 mt-2">
-                <motion.h1
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-2xl font-black tracking-tight bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100 bg-clip-text text-transparent"
-                >
+            <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
+              <div className="text-center space-y-1.5 flex-shrink-0">
+                <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-slate-100 via-slate-200 to-slate-100 bg-clip-text text-transparent">
                   Welcome back
-                </motion.h1>
-                <motion.p
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-xs text-slate-400/80"
-                >
+                </h1>
+                <p className="text-xs text-slate-400/80">
                   Sign in to continue the conversation
-                </motion.p>
-        </div>
+                </p>
+              </div>
 
-              <Card className="p-4 glass-effect border-slate-700/30 bg-slate-900/30 shadow-2xl">
-                <CardContent className="p-0">
-                  <form onSubmit={handleSubmit} className="space-y-4">
+              <Card className="p-3 glass-effect border-slate-700/30 bg-slate-900/30 shadow-2xl flex-1 min-h-0 flex flex-col">
+                <CardContent className="p-0 flex-1 min-h-0 flex flex-col">
+                  <form onSubmit={handleSubmit} className="space-y-3 flex-1 min-h-0 flex flex-col">
                     {error && (
                       <div className="p-3 rounded-2xl border border-white/15 bg-white/5 text-xs text-white/80">
                         {error}
                       </div>
                     )}
 
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
+                    <div className="space-y-2.5 flex-shrink-0">
+                      <div className="space-y-1">
                         <label className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                Email
-              </label>
+                          Email
+                        </label>
                         <Input
-                type="email"
-                placeholder="you@example.com"
+                          type="email"
+                          placeholder="you@example.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           required
                           disabled={loading}
                           className="bg-slate-900/40 border-slate-700/40 text-sm"
-              />
-            </div>
-                      <div className="space-y-1.5">
+                        />
+                      </div>
+                      <div className="space-y-1">
                         <label className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
-                Password
-              </label>
+                          Password
+                        </label>
                         <Input
-                type="password"
-                placeholder="••••••••"
+                          type="password"
+                          placeholder="••••••••"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           required
                           disabled={loading}
                           className="bg-slate-900/40 border-slate-700/40 text-sm"
-              />
-            </div>
-          </div>
+                        />
+                      </div>
+                    </div>
 
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      className="w-full h-11 text-sm font-semibold tracking-wide bg-white text-slate-900 border border-white/70 shadow-[0_12px_35px_rgba(0,0,0,0.45)]"
-                      size="lg"
-                      disabled={loading}
-                    >
-                      {loading ? "Signing in..." : "Sign In"}
-                    </Button>
+                    <div className="mt-auto space-y-2.5 flex-shrink-0">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        className="w-full h-11 text-sm font-semibold tracking-wide bg-white text-slate-900 border border-white/70 shadow-[0_12px_35px_rgba(0,0,0,0.45)]"
+                        size="lg"
+                        disabled={loading}
+                      >
+                        {loading ? "Signing in..." : "Sign In"}
+                      </Button>
 
-                    <div className="text-center text-[11px] text-white/60">
-                      Don&apos;t have an account?{" "}
-                      <Link href="/signup" className="text-white underline-offset-4 hover:underline">
-                        Sign up
-                      </Link>
+                      <div className="text-center text-[11px] text-white/60">
+                        Don&apos;t have an account?{" "}
+                        <Link href="/signup" className="text-white underline-offset-4 hover:underline">
+                          Sign up
+                        </Link>
+                      </div>
                     </div>
                   </form>
                 </CardContent>

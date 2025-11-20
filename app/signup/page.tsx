@@ -42,37 +42,27 @@ export default function SignUpPage() {
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content p-5 gap-5">
-              <div className="text-center space-y-2 mt-2">
-                <motion.h1
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-2xl font-black tracking-tight text-white"
-                >
+            <div className="phone-content p-4 gap-3 overflow-hidden flex flex-col">
+              <div className="text-center space-y-1.5 flex-shrink-0">
+                <h1 className="text-2xl font-black tracking-tight text-white">
                   Create account
-                </motion.h1>
-                <motion.p
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-xs text-white/60"
-                >
+                </h1>
+                <p className="text-xs text-white/60">
                   Join Narrative to start connecting
-                </motion.p>
+                </p>
               </div>
 
-              <Card className="p-4 bg-white/5 border-white/10">
-                <CardContent className="p-0">
-                  <form onSubmit={handleSubmit} className="space-y-4">
+              <Card className="p-3 bg-white/5 border-white/10 flex-1 min-h-0 flex flex-col">
+                <CardContent className="p-0 flex-1 min-h-0 flex flex-col">
+                  <form onSubmit={handleSubmit} className="space-y-3 flex-1 min-h-0 flex flex-col">
                     {error && (
                       <div className="p-3 rounded-2xl border border-white/15 bg-white/5 text-xs text-white/80">
                         {error}
                       </div>
                     )}
 
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
+                    <div className="space-y-2.5 flex-shrink-0">
+                      <div className="space-y-1">
                         <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
                           Name
                         </label>
@@ -86,7 +76,7 @@ export default function SignUpPage() {
                           className="bg-white/5 border-white/10 text-sm text-white"
                         />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
                           Email
                         </label>
@@ -100,7 +90,7 @@ export default function SignUpPage() {
                           className="bg-white/5 border-white/10 text-sm text-white"
                         />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <label className="text-[11px] uppercase tracking-[0.2em] text-white/60">
                           Password
                         </label>
@@ -117,21 +107,23 @@ export default function SignUpPage() {
                       </div>
                     </div>
 
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      className="w-full h-11 text-sm font-semibold tracking-wide bg-white text-black border border-white"
-                      size="lg"
-                      disabled={loading}
-                    >
-                      {loading ? "Creating account..." : "Sign Up"}
-                    </Button>
+                    <div className="mt-auto space-y-2.5 flex-shrink-0">
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        className="w-full h-11 text-sm font-semibold tracking-wide bg-white text-black border border-white"
+                        size="lg"
+                        disabled={loading}
+                      >
+                        {loading ? "Creating account..." : "Sign Up"}
+                      </Button>
 
-                    <div className="text-center text-[11px] text-white/60">
-                      Already have an account?{" "}
-                      <Link href="/login" className="text-white underline-offset-4 hover:underline">
-                        Sign in
-                      </Link>
+                      <div className="text-center text-[11px] text-white/60">
+                        Already have an account?{" "}
+                        <Link href="/login" className="text-white underline-offset-4 hover:underline">
+                          Sign in
+                        </Link>
+                      </div>
                     </div>
                   </form>
                 </CardContent>

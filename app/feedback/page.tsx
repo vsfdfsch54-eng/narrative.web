@@ -199,38 +199,36 @@ export default function FeedbackPage() {
         <div className="phone-frame">
           {/* Phone Screen */}
           <div className="phone-screen">
-            <div className="phone-content px-5 py-6 sm:p-4 pb-20 overflow-hidden">
+            <div className="phone-content px-4 py-2 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
               {/* Header */}
               <div className={cn(
-                "flex items-center justify-between px-4 py-3",
+                "flex items-center justify-between px-3 py-2",
                 "border-b border-white/10 bg-black",
                 "sticky top-0 z-10 flex-shrink-0"
               )}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={() => router.push("/chat")}
                   className={cn(
-                    "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold",
+                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold",
                     "border border-white/10 bg-white/5",
                     "text-white hover:bg-white/10",
                     "transition-all duration-200",
                     "touch-manipulation cursor-pointer"
                   )}
                 >
-                  <MessageSquare className="h-3.5 w-3.5" />
+                  <MessageSquare className="h-3 w-3" />
                   Next Chat
-                </motion.button>
+                </button>
                 
-                <h1 className="text-lg font-bold text-white tracking-tight">
+                <h1 className="text-base font-bold text-white tracking-tight">
                   Feedback
                 </h1>
                 
-                <div className="w-20" /> {/* Spacer */}
+                <div className="w-16" /> {/* Spacer */}
               </div>
 
               {/* Content - No Scroll, Compact */}
-              <div className="flex-1 overflow-hidden flex flex-col p-4">
+              <div className="flex-1 overflow-hidden flex flex-col p-3 min-h-0">
                 <AnimatePresence mode="wait">
                   {submitted ? (
                     <motion.div
@@ -272,11 +270,11 @@ export default function FeedbackPage() {
                       className="flex flex-col h-full"
                     >
                       {/* Sub-header - Compact */}
-                      <div className="text-center mb-4 flex-shrink-0">
-                        <h2 className="text-xl font-bold text-white tracking-tight mb-1">
+                      <div className="text-center mb-2 flex-shrink-0">
+                        <h2 className="text-lg font-bold text-white tracking-tight mb-0.5">
                           How was it?
                         </h2>
-                        <p className="text-[10px] text-white/60">
+                        <p className="text-[9px] text-white/60">
                           {profileName
                             ? `Rate your conversation with ${profileName}`
                             : "Rate your conversation"}
@@ -284,7 +282,7 @@ export default function FeedbackPage() {
                       </div>
 
                       {/* Rating Sections - Compact Grid */}
-                      <div className="flex-1 grid grid-cols-1 gap-3 mb-3 overflow-y-auto scrollbar-hide">
+                      <div className="flex-1 grid grid-cols-1 gap-2 mb-2 overflow-y-auto scrollbar-hide min-h-0">
                         <EmojiRating
                           label="Conversation"
                           emojis={RATING_EMOJIS}
@@ -314,8 +312,8 @@ export default function FeedbackPage() {
                       </div>
 
                       {/* Notes Section */}
-                      <div className="mb-3 flex-shrink-0">
-                        <label className="text-xs font-bold text-white/90 mb-2 block text-center">
+                      <div className="mb-2 flex-shrink-0">
+                        <label className="text-[10px] font-bold text-white/90 mb-1 block text-center">
                           Notes about {profileName || "Alex"}
                         </label>
                         <textarea
@@ -323,22 +321,20 @@ export default function FeedbackPage() {
                           onChange={(e) => setNotes(e.target.value)}
                           placeholder={`Share your thoughts about ${profileName || "Alex"}...`}
                           className={cn(
-                            "w-full px-4 py-3 rounded-[20px]",
+                            "w-full px-3 py-2 rounded-lg",
                             "bg-white/5 border-2 border-white/20",
                             "text-white placeholder:text-white/50",
                             "text-xs resize-none",
                             "focus:outline-none focus:border-white/40",
                             "focus:ring-2 focus:ring-white/20"
                           )}
-                          rows={3}
+                          rows={2}
                         />
                       </div>
 
                       {/* Action Buttons - Compact */}
-                      <div className="space-y-2 flex-shrink-0">
-                        <motion.button
-                          whileHover={!addedToCommunity ? { scale: 1.02 } : {}}
-                          whileTap={!addedToCommunity ? { scale: 0.98 } : {}}
+                      <div className="space-y-1.5 flex-shrink-0">
+                        <button
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
@@ -347,8 +343,8 @@ export default function FeedbackPage() {
                           type="button"
                           disabled={addedToCommunity}
                           className={cn(
-                            "w-full px-4 py-2.5 rounded-full font-semibold text-xs",
-                            "flex items-center justify-center gap-2",
+                            "w-full px-3 py-2 rounded-full font-semibold text-[10px]",
+                            "flex items-center justify-center gap-1.5",
                             "transition-all duration-200",
                             "touch-manipulation relative z-10",
                             addedToCommunity
@@ -356,15 +352,13 @@ export default function FeedbackPage() {
                               : "bg-white text-black border border-white hover:bg-white/95 cursor-pointer pointer-events-auto"
                           )}
                         >
-                          <Users className="h-3.5 w-3.5" />
+                          <Users className="h-3 w-3" />
                           {addedToCommunity
                             ? `Added ${profileName || "them"} to Community`
                             : `Add ${profileName || "them"} to Community`}
-                        </motion.button>
+                        </button>
 
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
+                        <button
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
@@ -372,22 +366,20 @@ export default function FeedbackPage() {
                           }}
                           type="button"
                           className={cn(
-                            "w-full px-4 py-2.5 rounded-full font-semibold text-xs",
-                            "flex items-center justify-center gap-2",
+                            "w-full px-3 py-2 rounded-full font-semibold text-[10px]",
+                            "flex items-center justify-center gap-1.5",
                             "border border-white/10 bg-white/5",
                             "text-white hover:bg-white/8 hover:border-white/15",
                             "transition-all duration-200",
                             "touch-manipulation cursor-pointer pointer-events-auto relative z-10"
                           )}
                         >
-                          <Flag className="h-3.5 w-3.5" />
+                          <Flag className="h-3 w-3" />
                           Report {profileName || "this person"}
-                        </motion.button>
+                        </button>
 
                         {/* Submit Button */}
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
+                        <button
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
@@ -396,7 +388,7 @@ export default function FeedbackPage() {
                           type="button"
                           disabled={loading}
                           className={cn(
-                            "w-full px-4 py-3 rounded-full font-bold text-sm tracking-wide",
+                            "w-full px-3 py-2.5 rounded-full font-bold text-xs tracking-wide",
                             "transition-all duration-200",
                             "touch-manipulation relative z-10",
                             "bg-white text-black border border-white",
@@ -406,7 +398,7 @@ export default function FeedbackPage() {
                           )}
                         >
                           {loading ? "Submitting..." : hasAnyRating ? "Submit Feedback" : "Skip Feedback"}
-                        </motion.button>
+                        </button>
                       </div>
                     </motion.div>
                   )}

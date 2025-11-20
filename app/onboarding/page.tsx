@@ -49,22 +49,17 @@ export default function OnboardingPage() {
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content p-5 gap-5 items-center justify-center">
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="text-center space-y-4 w-full"
-              >
-                <h1 className="text-3xl font-black tracking-tight text-white">
+            <div className="phone-content p-4 gap-4 items-center justify-center overflow-hidden flex flex-col">
+              <div className="text-center space-y-2 w-full flex-shrink-0">
+                <h1 className="text-2xl font-black tracking-tight text-white">
                   Welcome to Narrative
                 </h1>
-                <p className="text-sm text-white/60">
+                <p className="text-xs text-white/60">
                   Let&apos;s start by setting up your profile
                 </p>
-              </motion.div>
+              </div>
 
-              <form onSubmit={handleSubmit} className="w-full space-y-4">
+              <form onSubmit={handleSubmit} className="w-full space-y-3 flex-shrink-0">
                 {error && (
                   <div className="p-3 rounded-[16px] border border-white/15 bg-white/5 text-xs text-white/80">
                     {error}

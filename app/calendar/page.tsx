@@ -281,7 +281,7 @@ export default function CalendarPage() {
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content px-5 py-6 sm:p-4 pb-20">
+            <div className="phone-content px-4 py-3 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
               <AnimatePresence>
               {panelOpen && (
                 <motion.div
@@ -295,39 +295,35 @@ export default function CalendarPage() {
             </AnimatePresence>
 
             <div className={cn(
-              "flex flex-col flex-1 p-5 pb-24 transition-all duration-500 relative z-10",
+              "flex flex-col flex-1 p-3 transition-all duration-500 relative z-10",
               panelOpen ? "scale-[0.97] blur-[1.5px] brightness-75 pointer-events-none" : "scale-100 blur-0 pointer-events-auto",
             )}>
-              <div className="flex items-center justify-between text-white mb-4">
+              <div className="flex items-center justify-between text-white mb-3 flex-shrink-0">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.4em] text-white/60">Narrative</p>
-                  <h1 className="text-2xl font-bold tracking-tight mt-1 text-white">
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-white/60">Narrative</p>
+                  <h1 className="text-xl font-bold tracking-tight mt-0.5 text-white">
                     {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                   </h1>
                 </div>
-                <div className="flex items-center gap-3">
-                  <motion.button
+                <div className="flex items-center gap-2">
+                  <button
                     type="button"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                     onClick={() => changeMonth("prev")}
-                    className="p-2 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition"
+                    className="p-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                  </motion.button>
-                  <motion.button
+                  </button>
+                  <button
                     type="button"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                     onClick={() => changeMonth("next")}
-                    className="p-2 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition"
+                    className="p-1.5 rounded-full bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition"
                   >
                     <ChevronRight className="h-4 w-4" />
-                  </motion.button>
+                  </button>
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-[20px] p-3 flex items-center gap-3 text-[11px] text-white/80 mb-4">
+              <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2 text-[10px] text-white/80 mb-3 flex-shrink-0">
                 <Info className="h-4 w-4 text-white/80" />
                 <div className="flex flex-wrap gap-3 text-xs">
                   {Object.entries(tagColors).map(([tag, meta]) => (
@@ -339,13 +335,13 @@ export default function CalendarPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-7 gap-2 text-[10px] uppercase tracking-[0.2em] text-white/60 mb-3">
+              <div className="grid grid-cols-7 gap-1.5 text-[9px] uppercase tracking-[0.2em] text-white/60 mb-2 flex-shrink-0">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                   <span key={day} className="text-center">{day}</span>
                 ))}
               </div>
 
-              <div className="grid grid-cols-7 gap-2 flex-1">
+              <div className="grid grid-cols-7 gap-1.5 flex-1 min-h-0 overflow-hidden">
                 {Array.from({ length: firstDay }).map((_, index) => (
                   <div key={`empty-${index}`} />
                 ))}

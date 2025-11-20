@@ -99,21 +99,19 @@ export default function ConversationsPage() {
         <div className="phone-frame">
           {/* Phone Screen */}
           <div className="phone-screen">
-            <div className="phone-content pb-20">
+            <div className="phone-content pb-4 overflow-hidden flex flex-col h-full">
               {/* Header */}
               <div className={cn(
-                "flex items-center justify-between px-4 py-4",
+                "flex items-center justify-between px-3 py-2",
                 "border-b border-white/10 bg-black",
                 "sticky top-0 z-10 flex-shrink-0"
               )}>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={() => router.push("/vibe")}
                   className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                 >
                   <ArrowLeft className="h-5 w-5 text-white/80" />
-                </motion.button>
+                </button>
                 
                 <h1 className="text-lg font-bold text-white tracking-tight">
                   Conversations
@@ -123,7 +121,7 @@ export default function ConversationsPage() {
               </div>
 
               {/* Content - Modern List */}
-              <div className="flex-1 p-4 space-y-2">
+              <div className="flex-1 p-3 space-y-1.5 overflow-y-auto min-h-0">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-white/60 text-sm">Loading conversations...</p>
@@ -133,18 +131,13 @@ export default function ConversationsPage() {
                     <p className="text-white/60 text-sm">No conversations yet</p>
                   </div>
                 ) : (
-                  conversations.map((person, index) => (
-                  <motion.button
+                  conversations.map((person) => (
+                  <button
                     key={person.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05, duration: 0.3 }}
-                    whileHover={{ scale: 1.01, x: 2 }}
-                    whileTap={{ scale: 0.99 }}
                     onClick={() => router.push(`/chat/${person.id}`)}
                     type="button"
                     className={cn(
-                      "w-full flex items-center gap-4 px-4 py-4 rounded-[20px]",
+                      "w-full flex items-center gap-3 px-3 py-3 rounded-lg",
                       "bg-white/5 border border-white/10",
                       "hover:bg-white/8 hover:border-white/15",
                       "transition-all duration-200",
@@ -153,18 +146,18 @@ export default function ConversationsPage() {
                   >
                     {/* Avatar with status */}
                     <div className="relative flex-shrink-0">
-                      <span className="text-3xl">{person.emoji}</span>
+                      <span className="text-2xl">{person.emoji}</span>
                       {person.status === "online" && (
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-black" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-black" />
                       )}
                       {person.status === "away" && (
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-orange-400 border-2 border-black" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-orange-400 border-2 border-black" />
                       )}
                     </div>
                     
                     {/* Message Info */}
                     <div className="flex-1 text-left min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-1.5 mb-0.5">
                         <p className="text-sm font-semibold text-white/90 truncate">{person.name}</p>
                         {person.status === "online" && (
                           <span className="text-[9px] text-green-400 font-medium">●</span>
@@ -177,7 +170,7 @@ export default function ConversationsPage() {
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
                       <p className="text-[10px] text-white/50">{person.time}</p>
                     </div>
-                  </motion.button>
+                  </button>
                   ))
                 )}
               </div>

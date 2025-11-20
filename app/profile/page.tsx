@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { BottomNav } from "@/components/ui/bottom-nav"
 import { cn } from "@/lib/utils"
-import { ArrowLeft, Save, Users, Edit2 } from "lucide-react"
+import { ArrowLeft, Save, Users, Edit2, MessageSquare } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function ProfilePage() {
@@ -128,38 +128,37 @@ export default function ProfilePage() {
         <div className="phone-frame">
           {/* Phone Screen */}
           <div className="phone-screen">
-            <div className="phone-content px-5 py-6 sm:p-4 pb-20">
+            <div className="phone-content px-4 py-2 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
               {/* Header */}
               <div className={cn(
-                "flex items-center justify-between px-4 py-3",
+                "flex items-center justify-between px-3 py-2",
                 "border-b border-white/10 bg-black",
                 "sticky top-0 z-10 flex-shrink-0"
               )}>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={() => router.push("/vibe")}
                   className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                 >
                   <ArrowLeft className="h-5 w-5 text-white/80" />
-                </motion.button>
+                </button>
 
                 <h1 className="text-lg font-bold text-white tracking-tight">
                   Profile
                 </h1>
 
-                <div className="w-9" />
+                <button
+                  onClick={() => router.push("/conversations")}
+                  className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                >
+                  <MessageSquare className="h-5 w-5 text-white/80" />
+                </button>
               </div>
 
               {/* Content */}
-              <div className="flex-1 p-4 space-y-3">
+              <div className="flex-1 p-3 space-y-2 overflow-y-auto min-h-0">
                 {/* Profile Header */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center mb-4"
-                >
-                  <div className="text-4xl mb-2">👤</div>
+                <div className="text-center mb-3">
+                  <div className="text-3xl mb-1.5">👤</div>
                   {isEditingName ? (
                     <div className="flex items-center gap-2 justify-center">
                       <input
@@ -182,28 +181,21 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 justify-center">
-                      <h2 className="text-2xl font-bold text-white tracking-tight">
+                      <h2 className="text-xl font-bold text-white tracking-tight">
                         {userName || "User"}
                       </h2>
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                      <button
                         onClick={() => setIsEditingName(true)}
                         className="p-1 rounded-lg hover:bg-white/5 transition-colors"
                       >
                         <Edit2 className="h-4 w-4 text-white/60" />
-                      </motion.button>
+                      </button>
                     </div>
                   )}
-                </motion.div>
+                </div>
 
                 {/* What's on my mind */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className={cn("rounded-[20px] p-3", "sleek-module")}
-                >
+                <div className={cn("rounded-lg p-2.5", "sleek-module")}>
                   <div className="flex items-start gap-2">
                     <textarea
                       value={quoteOfDay}
@@ -220,45 +212,33 @@ export default function ProfilePage() {
                       )}
                       rows={2}
                     />
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       onClick={handleSaveQuote}
                       type="button"
                       className={cn(
-                        "p-2 rounded-xl",
+                        "p-1.5 rounded-lg",
                         "bg-white text-black",
                         "border border-white",
                         "touch-manipulation cursor-pointer"
                       )}
                     >
                       <Save className="h-3.5 w-3.5" />
-                    </motion.button>
+                    </button>
                   </div>
-                </motion.div>
+                </div>
 
                 {/* What People Say - Empty State */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.15 }}
-                  className={cn("rounded-[20px] p-3", "sleek-module")}
-                >
-                  <h3 className="text-xs font-bold text-white/90 mb-2.5">
+                <div className={cn("rounded-lg p-2.5", "sleek-module")}>
+                  <h3 className="text-xs font-bold text-white/90 mb-2">
                     What People Say About Me
                   </h3>
-                  <p className="text-xs text-white/60 text-center py-4">
+                  <p className="text-xs text-white/60 text-center py-2">
                     No reviews yet. Start conversations to get feedback!
                   </p>
-                </motion.div>
+                </div>
 
                 {/* Friends - Empty States */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className={cn("rounded-[20px] p-3", "sleek-module")}
-                >
+                <div className={cn("rounded-lg p-2.5", "sleek-module")}>
                   <h3 className="text-xs font-bold text-white/90 mb-3 flex items-center gap-2">
                     <Users className="h-3.5 w-3.5" />
                     My Friends
@@ -315,41 +295,34 @@ export default function ProfilePage() {
                       <p className="text-xs text-white/60 px-1">No community members yet</p>
                     )}
                   </div>
-                </motion.div>
+                </div>
 
                 {/* Recent Chats */}
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.25 }}
-                  className={cn("rounded-[20px] p-3", "sleek-module")}
-                >
+                <div className={cn("rounded-lg p-2.5", "sleek-module")}>
                   <h3 className="text-xs font-bold text-white/90 mb-2.5">Recent Chats</h3>
                   {loadingChats ? (
-                    <p className="text-xs text-white/60 text-center py-4">Loading...</p>
+                    <p className="text-xs text-white/60 text-center py-2">Loading...</p>
                   ) : recentChats.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {recentChats.map((chat) => (
-                        <motion.button
+                        <button
                           key={chat.id}
-                          whileHover={{ scale: 1.01 }}
-                          whileTap={{ scale: 0.99 }}
                           onClick={() => router.push(`/chat/${chat.id}`)}
-                          className="w-full flex items-center gap-3 bg-white/5 border border-white/10 rounded-[16px] px-3 py-2 text-left"
+                          className="w-full flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-2.5 py-2 text-left"
                         >
-                          <span className="text-xl">{chat.emoji || "👤"}</span>
+                          <span className="text-lg">{chat.emoji || "👤"}</span>
                           <div className="flex-1">
-                            <p className="text-sm font-semibold text-white/90">{chat.name}</p>
-                            <p className="text-xs text-white/60">{chat.lastMessage || "No messages yet"}</p>
+                            <p className="text-xs font-semibold text-white/90">{chat.name}</p>
+                            <p className="text-[10px] text-white/60">{chat.lastMessage || "No messages yet"}</p>
                           </div>
-                          <p className="text-[10px] text-white/50">{chat.time}</p>
-                        </motion.button>
+                          <p className="text-[9px] text-white/50">{chat.time}</p>
+                        </button>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-white/60 text-center py-4">No recent chats</p>
+                    <p className="text-xs text-white/60 text-center py-2">No recent chats</p>
                   )}
-                </motion.div>
+                </div>
               </div>
             </div>
 

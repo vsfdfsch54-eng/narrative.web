@@ -69,16 +69,16 @@ export default function ChatPage() {
           <div className="phone-frame">
             {/* Phone Screen */}
             <div className="phone-screen">
-              <div className="phone-content flex flex-col items-center justify-center text-center px-6 py-10 gap-6 pb-20">
-                <h1 className="text-2xl font-bold text-white">
+              <div className="phone-content flex flex-col items-center justify-center text-center px-6 py-6 gap-4 overflow-hidden">
+                <h1 className="text-xl font-bold text-white">
                   Find Your Match
                 </h1>
-                <p className="text-white/60 max-w-xs">
+                <p className="text-sm text-white/60 max-w-xs">
                   No matches yet. Start by selecting a vibe and topic to find people to connect with!
                 </p>
                 <button
                   onClick={() => router.push("/vibe")}
-                  className="px-6 py-3 rounded-full bg-white text-black font-semibold"
+                  className="px-5 py-2.5 rounded-full bg-white text-black font-semibold text-sm"
                 >
                   Select Vibe & Topic
                 </button>
@@ -109,16 +109,16 @@ export default function ChatPage() {
         <div className="phone-frame">
           {/* Phone Screen */}
           <div className="phone-screen">
-            <div className="phone-content px-5 py-6 sm:p-4 pb-20">
+            <div className="phone-content px-4 py-3 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
               {/* Header */}
-              <div className="text-center mb-6 flex-shrink-0">
-                <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-white leading-tight">
+              <div className="text-center mb-3 flex-shrink-0">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.02em] text-white leading-tight">
                   Find Your Match
                 </h1>
               </div>
 
               {/* Profile Card Container - Single Card, Full Screen */}
-              <div className="flex-1 flex items-center justify-center relative min-h-0">
+              <div className="flex-1 flex items-center justify-center relative min-h-0 overflow-hidden">
                 <AnimatePresence mode="wait" initial={false}>
                   <div
                     key={currentProfile.id}
