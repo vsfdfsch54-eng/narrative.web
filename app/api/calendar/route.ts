@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   // Access searchParams outside try/catch to ensure Next.js recognizes dynamic usage
-  const searchParams = request.nextUrl.searchParams
+  const { searchParams } = new URL(request.url)
   const userId = searchParams.get('userId')
   const year = searchParams.get('year')
   const month = searchParams.get('month')

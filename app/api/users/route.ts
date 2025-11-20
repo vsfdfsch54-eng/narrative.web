@@ -9,7 +9,7 @@ export const revalidate = 0
 export const fetchCache = 'force-no-store'
 
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams
+  const { searchParams } = new URL(request.url)
   const userId = searchParams.get('userId')
 
   if (!userId) {
