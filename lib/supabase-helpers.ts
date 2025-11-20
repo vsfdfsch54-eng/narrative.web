@@ -404,11 +404,12 @@ export async function submitFeedback(
  * Get user by ID
  */
 export async function getUser(userId: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const supabaseServer = createServerClient()
+  const { data, error } = await supabaseServer
     .from('users')
     .select('*')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('Error getting user:', error)

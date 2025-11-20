@@ -40,7 +40,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, data })
+    // Handle array response from upsert
+    const finalData = Array.isArray(data) ? data[0] : data
+    return NextResponse.json({ success: true, data: finalData })
   } catch (error) {
     console.error('Error in POST /api/relationships:', error)
     return NextResponse.json(
