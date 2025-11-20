@@ -63,6 +63,9 @@ export function useAuth() {
         ? `${window.location.origin}/auth/callback`
         : '/auth/callback'
 
+      console.log('Attempting signup with email:', email)
+      console.log('Redirect URL:', redirectUrl)
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -72,6 +75,13 @@ export function useAuth() {
             name: name || email.split('@')[0],
           },
         },
+      })
+
+      console.log('Signup response:', { 
+        user: data?.user?.id, 
+        session: !!data?.session,
+        error: error?.message,
+        emailSent: !error && !!data?.user
       })
 
       if (error) {

@@ -338,6 +338,7 @@ function OnboardingContent() {
       // Log for debugging
       console.log('Signup successful, user:', result.data.user.id)
       console.log('Email confirmation required:', !result.data.user.email_confirmed_at)
+      console.log('User email:', result.data.user.email)
 
       // Save user data with interests immediately
       if (result.data.user.id) {
@@ -357,6 +358,30 @@ function OnboardingContent() {
         
         if (!userData.success) {
           console.error('Error saving user data:', userData.error)
+        }
+      }
+
+      // Check if email was sent - Supabase should send it automatically
+      // But if it didn't, try to resend immediately
+      if (!result.data.user.email_confirmed_at) {
+        console.log('Email not confirmed, attempting to resend verification email...')
+        try {
+          const { error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email: email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback`,
+            },
+          })
+          
+          if (resendError) {
+            console.error('Error resending email:', resendError)
+            // Don't fail the signup, just log the error
+          } else {
+            console.log('Verification email resent successfully')
+          }
+        } catch (resendErr) {
+          console.error('Exception resending email:', resendErr)
         }
       }
 
@@ -790,29 +815,35 @@ function OnboardingContent() {
                       // Resend verification email
                       setLoading(true)
                       try {
-                        if (!email) {
+                        const emailToUse = user?.email || email
+                        if (!emailToUse) {
                           alert('No email address found. Please go back and enter your email.')
                           setLoading(false)
                           return
                         }
 
-                        const { error } = await supabase.auth.resend({
+                        console.log('Resending verification email to:', emailToUse)
+                        console.log('Redirect URL:', `${window.location.origin}/auth/callback`)
+
+                        const { data, error } = await supabase.auth.resend({
                           type: 'signup',
-                          email: email,
+                          email: emailToUse,
                           options: {
                             emailRedirectTo: `${window.location.origin}/auth/callback`,
                           },
                         })
 
+                        console.log('Resend response:', { data, error })
+
                         if (error) {
                           console.error('Error resending email:', error)
-                          alert(`Error: ${error.message}`)
+                          alert(`Error: ${error.message}\n\nPlease check:\n1. Supabase email settings are configured\n2. Your email address is valid\n3. Check spam folder`)
                         } else {
                           alert('Verification email sent! Please check your inbox and spam folder.')
                         }
                       } catch (err: any) {
                         console.error('Error resending email:', err)
-                        alert(`Error: ${err.message || 'Failed to resend email'}`)
+                        alert(`Error: ${err.message || 'Failed to resend email'}\n\nPlease check Supabase email configuration.`)
                       } finally {
                         setLoading(false)
                       }
