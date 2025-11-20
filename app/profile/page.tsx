@@ -37,23 +37,38 @@ export default function ProfilePage() {
       try {
         const response = await fetch(`/api/users?userId=${user.id}`)
         const data = await response.json()
+        
         if (data.success && data.data) {
-          setUserName(data.data.name || "User")
-          setTempName(data.data.name || "User")
+          // User exists in database, use their name
+          const savedName = data.data.name
+          if (savedName && savedName.trim()) {
+            setUserName(savedName.trim())
+            setTempName(savedName.trim())
+          } else {
+            // No name in database, try to get from auth metadata or email
+            const fallbackName = user.user_metadata?.name || user.email?.split('@')[0] || "User"
+            setUserName(fallbackName)
+            setTempName(fallbackName)
+          }
         } else {
-          // No profile yet, redirect to onboarding
-          router.push("/onboarding")
+          // User doesn't exist in database yet, use fallback from auth
+          const fallbackName = user.user_metadata?.name || user.email?.split('@')[0] || "User"
+          setUserName(fallbackName)
+          setTempName(fallbackName)
         }
       } catch (error) {
         console.error('Error loading profile:', error)
-        router.push("/onboarding")
+        // On error, use fallback from auth
+        const fallbackName = user.user_metadata?.name || user.email?.split('@')[0] || "User"
+        setUserName(fallbackName)
+        setTempName(fallbackName)
       } finally {
         setLoadingProfile(false)
       }
     }
 
     loadProfile()
-  }, [user, router])
+  }, [user])
 
   useEffect(() => {
     if (!user?.id) return
@@ -95,7 +110,12 @@ export default function ProfilePage() {
   }
 
   const handleSaveName = async () => {
-    if (!user?.id || !tempName.trim()) return
+    if (!user?.id || !tempName.trim()) {
+      // If empty, revert to current name
+      setTempName(userName)
+      setIsEditingName(false)
+      return
+    }
 
     try {
       const response = await fetch('/api/users', {
@@ -103,7 +123,8 @@ export default function ProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          name: tempName.trim()
+          name: tempName.trim(),
+          interests: [] // Preserve existing interests if any
         })
       })
 
@@ -111,9 +132,16 @@ export default function ProfilePage() {
       if (data.success) {
         setUserName(tempName.trim())
         setIsEditingName(false)
+      } else {
+        // If save fails, revert to current name
+        setTempName(userName)
+        setIsEditingName(false)
       }
     } catch (error) {
       console.error('Error saving name:', error)
+      // On error, revert to current name
+      setTempName(userName)
+      setIsEditingName(false)
     }
   }
 
