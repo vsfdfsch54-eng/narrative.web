@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sendMessage, getMessages } from '@/lib/supabase-helpers'
 
-// Force dynamic rendering - must be at top level
-export const dynamic = 'force-dynamic'
-export const dynamicParams = true
-export const runtime = 'nodejs'
-export const revalidate = 0
-export const fetchCache = 'force-no-store'
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs" // optional but helps Vercel
 
 export async function POST(request: NextRequest) {
   try {

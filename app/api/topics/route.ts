@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllTopics, getTopicsByCategory } from '@/lib/supabase-helpers'
 
-// Force dynamic rendering - must be at top level
-export const dynamic = 'force-dynamic'
-export const dynamicParams = true
-export const runtime = 'nodejs'
-export const revalidate = 0
-export const fetchCache = 'force-no-store'
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs" // optional but helps Vercel
 
 export async function GET(request: NextRequest) {
   // Access searchParams outside try/catch to ensure Next.js recognizes dynamic usage

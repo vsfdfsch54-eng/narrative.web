@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { submitFeedback } from '@/lib/supabase-helpers'
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs" // optional but helps Vercel
 
 export async function POST(request: NextRequest) {
   try {
