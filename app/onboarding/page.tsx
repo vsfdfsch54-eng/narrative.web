@@ -33,9 +33,13 @@ function OnboardingContent() {
   const checkOnboardingStatus = useCallback(async () => {
     if (!user?.id) return
     
-    // If user is not verified, redirect to verify page
+    // If email confirmation is enabled in Supabase and user is not verified, redirect to verify page
+    // Note: If email confirmation is disabled, user.email_confirmed_at will be true immediately
     if (!user.email_confirmed_at) {
-      router.push("/verify")
+      // Check if we're already on verify step - if so, don't redirect
+      if (currentStep !== 'verify') {
+        router.push("/verify")
+      }
       return
     }
     
