@@ -26,42 +26,30 @@ function AuthCallbackContent() {
             setError('Verification failed. Please try again.')
             setLoading(false)
             setTimeout(() => {
-              router.push('/verify')
+              router.push('/')
             }, 2000)
             return
           }
 
           if (data.session && data.user) {
             // Successfully verified and logged in
-            // Check email verification status
-            if (data.user.email_confirmed_at) {
-              // Email is verified → redirect directly to /vibe
-              // Refresh session to ensure state is updated
-              await supabase.auth.refreshSession()
-              router.push('/vibe')
-            } else {
-              // Email not verified yet, redirect to verify page
-              router.push('/verify')
-            }
+            // Refresh session to ensure state is updated
+            await supabase.auth.refreshSession()
+            // Always redirect to welcome page - it will check auth state and redirect accordingly
+            router.push('/')
           } else {
             setError('No session created. Please try again.')
             setLoading(false)
             setTimeout(() => {
-              router.push('/verify')
+              router.push('/')
             }, 2000)
           }
         } else {
           // No code, check if user is already authenticated
           const { data: { session } } = await supabase.auth.getSession()
           if (session && session.user) {
-            // Check email verification
-            if (session.user.email_confirmed_at) {
-              // Email verified → redirect directly to /vibe
-              router.push('/vibe')
-            } else {
-              // Email not verified, redirect to verify page
-              router.push('/verify')
-            }
+            // User is authenticated, redirect to welcome page - it will handle routing
+            router.push('/')
           } else {
             // No code and no session, redirect to landing page
             router.push('/')
@@ -72,7 +60,7 @@ function AuthCallbackContent() {
         setError('An error occurred. Please try again.')
         setLoading(false)
         setTimeout(() => {
-          router.push('/verify')
+          router.push('/')
         }, 2000)
       }
     }

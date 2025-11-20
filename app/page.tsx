@@ -11,16 +11,22 @@ export default function Home() {
   const router = useRouter()
   const [checkingAuth, setCheckingAuth] = useState(false)
 
-  // Only redirect authenticated users away from landing page
+  // Redirect authenticated users away from landing page
+  // But show welcome page first, then redirect (for better UX)
   useEffect(() => {
     if (!loading && user) {
-      if (user.email_confirmed_at) {
-        // User is logged in AND verified → go directly to /vibe
-        router.push("/vibe")
-      } else {
-        // User is logged in but NOT verified → go to /verify
-        router.push("/verify")
-      }
+      // Small delay to show welcome page briefly before redirect
+      const redirectTimer = setTimeout(() => {
+        if (user.email_confirmed_at) {
+          // User is logged in AND verified → go to /vibe
+          router.push("/vibe")
+        } else {
+          // User is logged in but NOT verified → go to /verify
+          router.push("/verify")
+        }
+      }, 500) // Brief delay to show welcome page
+      
+      return () => clearTimeout(redirectTimer)
     }
     // If user is not logged in, show welcome screen (no redirect)
   }, [user, loading, router])
@@ -45,8 +51,8 @@ export default function Home() {
     setCheckingAuth(false)
   }
 
-  // Show loading while checking auth state
-  if (loading || (user && user.email_confirmed_at)) {
+  // Show loading only while auth is loading
+  if (loading) {
     return (
       <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
         <p className="text-[#f1f1f3]/60">Loading...</p>
