@@ -11,25 +11,9 @@ export default function Home() {
   const router = useRouter()
   const [checkingAuth, setCheckingAuth] = useState(false)
 
-  // Redirect authenticated users away from landing page
-  // But show welcome page first, then redirect (for better UX)
-  useEffect(() => {
-    if (!loading && user) {
-      // Small delay to show welcome page briefly before redirect
-      const redirectTimer = setTimeout(() => {
-        if (user.email_confirmed_at) {
-          // User is logged in AND verified → go to /vibe
-          router.push("/vibe")
-        } else {
-          // User is logged in but NOT verified → go to /verify
-          router.push("/verify")
-        }
-      }, 500) // Brief delay to show welcome page
-      
-      return () => clearTimeout(redirectTimer)
-    }
-    // If user is not logged in, show welcome screen (no redirect)
-  }, [user, loading, router])
+  // DO NOT auto-redirect - always show welcome page
+  // User must click "Get to Chatting" to proceed
+  // This ensures welcome page always shows, even after verification
 
   const handleGetToChatting = async () => {
     setCheckingAuth(true)
@@ -51,7 +35,7 @@ export default function Home() {
     setCheckingAuth(false)
   }
 
-  // Show loading only while auth is loading
+  // Show loading only while auth is loading (first time check)
   if (loading) {
     return (
       <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
@@ -59,6 +43,8 @@ export default function Home() {
       </div>
     )
   }
+
+  // Always show welcome screen - no auto-redirects
 
   // Show minimal loading only while checking auth for button click
   if (checkingAuth) {
