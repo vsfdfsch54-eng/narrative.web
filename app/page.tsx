@@ -15,8 +15,33 @@ export default function Home() {
   useEffect(() => {
     if (!loading && user) {
       if (user.email_confirmed_at) {
-        // User is logged in AND verified → go directly to /vibe
-      router.push("/vibe")
+        // User is logged in AND verified - check onboarding status
+        const checkOnboarding = async () => {
+          try {
+            const response = await fetch(`/api/users?userId=${user.id}`)
+            const data = await response.json()
+            
+            if (data.success && data.data) {
+              const hasName = data.data.name
+              const hasInterests = data.data.interests && data.data.interests.length > 0
+              
+              if (hasName && hasInterests) {
+                // Onboarding complete - don't auto-redirect, let user navigate
+                return
+              } else {
+                // Need onboarding
+                router.push("/onboarding")
+              }
+            } else {
+              // Need onboarding
+              router.push("/onboarding")
+            }
+          } catch (err) {
+            // Need onboarding
+            router.push("/onboarding")
+          }
+        }
+        checkOnboarding()
       } else {
         // User is logged in but NOT verified → go to /verify
         router.push("/verify")
@@ -32,8 +57,27 @@ export default function Home() {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     if (user && user.email_confirmed_at) {
-      // User is logged in AND verified → go directly to /vibe
-      router.push("/vibe")
+      // User is logged in AND verified - check onboarding
+      try {
+        const response = await fetch(`/api/users?userId=${user.id}`)
+        const data = await response.json()
+        
+        if (data.success && data.data) {
+          const hasName = data.data.name
+          const hasInterests = data.data.interests && data.data.interests.length > 0
+          
+          if (hasName && hasInterests) {
+            // Onboarding complete - don't auto-redirect
+            // User can navigate manually
+          } else {
+            router.push("/onboarding")
+          }
+        } else {
+          router.push("/onboarding")
+        }
+      } catch (err) {
+        router.push("/onboarding")
+      }
     } else if (user && !user.email_confirmed_at) {
       // User is logged in but NOT verified → go to /verify
       router.push("/verify")
@@ -46,7 +90,7 @@ export default function Home() {
   }
 
   // Show loading while checking auth state
-  if (loading || (user && user.email_confirmed_at)) {
+  if (loading) {
     return (
       <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
         <p className="text-[#EDEDED]/60">Loading...</p>

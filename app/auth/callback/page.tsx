@@ -47,8 +47,8 @@ function AuthCallbackContent() {
                   const hasInterests = userData.data.interests && userData.data.interests.length > 0
                   
                   if (hasName && hasInterests) {
-                    // Onboarding complete, redirect to /vibe
-                    router.push('/vibe')
+                    // Onboarding complete - redirect to /signed-up
+                    router.push('/signed-up')
                   } else {
                     // Onboarding not complete, redirect to /onboarding
                     router.push('/onboarding')
@@ -88,7 +88,8 @@ function AuthCallbackContent() {
                   const hasInterests = userData.data.interests && userData.data.interests.length > 0
                   
                   if (hasName && hasInterests) {
-                    router.push('/vibe')
+                    // Onboarding complete - redirect to /signed-up
+                    router.push('/signed-up')
                   } else {
                     router.push('/onboarding')
                   }

@@ -114,11 +114,8 @@ function OnboardingContent() {
         const userData = data.data
         
         // If user has name and interests, they've completed onboarding
-        if (userData.name && userData.interests && userData.interests.length > 0) {
-          clearOnboardingData()
-          router.push("/vibe")
-          return
-        }
+        // Don't redirect - let them stay on the page to see completion
+        // They can navigate manually when ready
         
         // User is verified but hasn't completed onboarding
         // Pre-fill data and set appropriate step
@@ -140,8 +137,7 @@ function OnboardingContent() {
               setSelectedInterests(userData.interests)
             }
           } else {
-            // They have everything, should have been redirected above
-            router.push("/vibe")
+            // They have everything - don't redirect, let them continue
           }
         } else {
           // No name yet, but they're verified
@@ -217,9 +213,8 @@ function OnboardingContent() {
             const hasInterests = data.data.interests && data.data.interests.length > 0
             
             if (hasName && hasInterests) {
-              // Onboarding complete, redirect directly to /vibe
-              clearOnboardingData()
-              router.push('/vibe')
+              // Onboarding complete - don't auto-redirect
+              // User can navigate manually
               return
             } else {
               // Not complete, set appropriate step
@@ -290,8 +285,8 @@ function OnboardingContent() {
               const hasInterests = data.data.interests && data.data.interests.length > 0
               
               if (hasName && hasInterests) {
-                // Onboarding complete, redirect to /vibe
-                router.push('/vibe')
+                // Onboarding complete - don't auto-redirect
+                // User can navigate manually
               } else {
                 // Move to interests step
                 setShowVerified(true)
@@ -958,7 +953,8 @@ function OnboardingContent() {
                             const hasInterests = data.data.interests && data.data.interests.length > 0
                             
                             if (hasName && hasInterests) {
-                              router.push('/vibe')
+                              // Onboarding complete - don't auto-redirect
+                              // User can navigate manually
                             } else {
                               setShowVerified(true)
                               if (hasName) {

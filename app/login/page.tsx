@@ -21,8 +21,33 @@ export default function LoginPage() {
   useEffect(() => {
     if (!authLoading && user) {
       if (user.email_confirmed_at) {
-        // User is verified, go to /vibe
-        router.push("/vibe")
+        // User is verified, check if they need onboarding
+        const checkOnboarding = async () => {
+          try {
+            const response = await fetch(`/api/users?userId=${user.id}`)
+            const data = await response.json()
+            
+            if (data.success && data.data) {
+              const hasName = data.data.name
+              const hasInterests = data.data.interests && data.data.interests.length > 0
+              
+              if (hasName && hasInterests) {
+                // Onboarding complete - don't auto-redirect, let user navigate
+                return
+              } else {
+                // Need onboarding
+                router.push("/onboarding")
+              }
+            } else {
+              // Need onboarding
+              router.push("/onboarding")
+            }
+          } catch (err) {
+            // Need onboarding
+            router.push("/onboarding")
+          }
+        }
+        checkOnboarding()
       } else {
         // User is logged in but not verified, go to verify page
         router.push("/verify")
@@ -53,7 +78,8 @@ export default function LoginPage() {
                 const hasInterests = data.data.interests && data.data.interests.length > 0
                 
                 if (hasName && hasInterests) {
-                  router.push("/vibe")
+                  // Onboarding complete - don't auto-redirect
+                  // User can navigate manually
                 } else {
                   router.push("/onboarding")
                 }
