@@ -43,6 +43,9 @@ function OnboardingContent() {
       return
     }
     
+    // Don't interfere if user is actively filling out the form
+    // Only redirect if they've completed everything
+    
     try {
       const response = await fetch(`/api/users?userId=${user.id}`)
       const data = await response.json()
@@ -113,13 +116,22 @@ function OnboardingContent() {
       return
     }
     
-    // User exists, check their onboarding status
-    checkOnboardingStatus()
-  }, [authLoading, user, checkOnboardingStatus])
+    // Only check onboarding status if we're not actively in the middle of a step
+    // Don't interfere if user is filling out the form
+    if (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome') {
+      checkOnboardingStatus()
+    }
+  }, [authLoading, user, checkOnboardingStatus, currentStep])
 
   // Handle email verification - poll for verification status and redirect
   useEffect(() => {
     if (authLoading) return
+    
+    // Only run this check on initial load or when coming from verify step
+    // Don't interfere if user is actively filling out name/password/interests
+    if (currentStep !== 'email' && currentStep !== 'verify' && currentStep !== 'welcome') {
+      return
+    }
     
     // If user is verified, check onboarding status and set appropriate step
     if (user && user.email_confirmed_at) {
@@ -153,23 +165,30 @@ function OnboardingContent() {
                 }
               } else {
                 // Needs name (and password, then interests)
-                // Start at name step since email is already done
-                setCurrentStep('name')
+                // Only set step if we're on email or verify step
+                if (currentStep === 'email' || currentStep === 'verify') {
+                  setCurrentStep('name')
+                }
               }
             }
           } else {
             // No user data, but verified - start at name step
+            // Only set step if we're on email or verify step
             if (user.email) {
               setEmail(user.email)
             }
-            setCurrentStep('name')
+            if (currentStep === 'email' || currentStep === 'verify') {
+              setCurrentStep('name')
+            }
           }
         } catch (err) {
           // Error checking, start at name step if verified
           if (user.email) {
             setEmail(user.email)
           }
-          setCurrentStep('name')
+          if (currentStep === 'email' || currentStep === 'verify') {
+            setCurrentStep('name')
+          }
         }
       }
       
