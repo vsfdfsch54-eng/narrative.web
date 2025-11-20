@@ -24,8 +24,8 @@ export default function LoginPage() {
         // User is verified, go to /vibe
         router.push("/vibe")
       } else {
-        // User is logged in but not verified, go to verify-email page
-        router.push("/verify-email")
+        // User is logged in but not verified, go to verify page
+        router.push("/verify")
       }
     }
   }, [user, authLoading, router])
@@ -81,7 +81,7 @@ export default function LoginPage() {
   if (authLoading) {
     return (
       <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#E5E5E5]/60">Loading...</p>
+        <p className="text-[#EDEDED]/60">Loading...</p>
       </div>
     )
   }
@@ -90,7 +90,7 @@ export default function LoginPage() {
   if (user && user.email_confirmed_at) {
     return (
       <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#E5E5E5]/60">Loading...</p>
+        <p className="text-[#EDEDED]/60">Loading...</p>
       </div>
     )
   }
@@ -102,26 +102,26 @@ export default function LoginPage() {
           <div className="phone-screen">
             <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
               <div className="text-center space-y-1.5 flex-shrink-0">
-                <h1 className="text-2xl font-black tracking-tight text-[#E5E5E5]">
+                <h1 className="text-2xl font-black tracking-tight text-[#EDEDED]">
                   Welcome back
                 </h1>
-                <p className="text-xs text-[#E5E5E5]/60">
+                <p className="text-xs text-[#EDEDED]/60">
                   Sign in to continue the conversation
                 </p>
               </div>
 
-              <Card className="p-4 glass-effect border-[#E5E5E5]/10 bg-[#1A1A1A]/30 shadow-2xl flex-shrink-0">
+              <Card className="p-4 glass-effect border-[#EDEDED]/10 bg-[#1A1A1A]/30 shadow-2xl flex-shrink-0">
                 <CardContent className="p-0">
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
-                      <div className="p-3 rounded-2xl border border-[#E5E5E5]/15 bg-[#E5E5E5]/5 text-xs text-[#E5E5E5]/80">
+                      <div className="p-3 rounded-2xl border border-[#EDEDED]/15 bg-[#EDEDED]/5 text-xs text-[#EDEDED]/80">
                         {error}
                       </div>
                     )}
 
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <label className="text-[11px] uppercase tracking-[0.2em] text-[#E5E5E5]/60">
+                        <label className="text-[11px] uppercase tracking-[0.2em] text-[#EDEDED]/60">
                           Email
                         </label>
                         <Input
@@ -131,11 +131,11 @@ export default function LoginPage() {
                           onChange={(e) => setEmail(e.target.value)}
                           required
                           disabled={loading}
-                          className="bg-[#1A1A1A]/40 border-[#E5E5E5]/10 text-sm h-12 text-[#E5E5E5]"
+                          className="bg-[#1A1A1A]/40 border-[#EDEDED]/10 text-sm h-12 text-[#EDEDED]"
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[11px] uppercase tracking-[0.2em] text-[#E5E5E5]/60">
+                        <label className="text-[11px] uppercase tracking-[0.2em] text-[#EDEDED]/60">
                           Password
                         </label>
                         <Input
@@ -145,7 +145,7 @@ export default function LoginPage() {
                           onChange={(e) => setPassword(e.target.value)}
                           required
                           disabled={loading}
-                          className="bg-[#1A1A1A]/40 border-[#E5E5E5]/10 text-sm h-12 text-[#E5E5E5]"
+                          className="bg-[#1A1A1A]/40 border-[#EDEDED]/10 text-sm h-12 text-[#EDEDED]"
                         />
                       </div>
                     </div>
@@ -154,18 +154,25 @@ export default function LoginPage() {
                       <Button
                         type="submit"
                         variant="primary"
-                        className="w-full h-12 text-sm font-semibold tracking-wide bg-[#E5E5E5] text-[#0A0A0A] border border-[#E5E5E5]/70 shadow-[0_12px_35px_rgba(0,0,0,0.45)]"
+                        className="w-full h-12 text-sm font-semibold tracking-wide bg-[#EDEDED] text-[#0A0A0A] border border-[#EDEDED]/70 shadow-[0_12px_35px_rgba(0,0,0,0.45)]"
                         size="lg"
                         disabled={loading}
                       >
                         {loading ? "Signing in..." : "Sign In"}
                       </Button>
 
-                      <div className="text-center text-[11px] text-[#E5E5E5]/60">
-                        Don&apos;t have an account?{" "}
-                        <Link href="/onboarding" className="text-[#E5E5E5] underline-offset-4 hover:underline">
-                          Create account
-                        </Link>
+                      <div className="text-center text-[11px] text-[#EDEDED]/60 space-y-2">
+                        <div>
+                          Don&apos;t have an account?{" "}
+                          <Link href="/onboarding" className="text-[#EDEDED] underline-offset-4 hover:underline">
+                            Create account
+                          </Link>
+                        </div>
+                        <div>
+                          <Link href="/auth/reset-password" className="text-[#EDEDED]/60 underline-offset-4 hover:underline">
+                            Forgot password?
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </form>

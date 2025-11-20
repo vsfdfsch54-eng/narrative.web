@@ -120,7 +120,7 @@ export default function ProfilePage() {
   if (authLoading) {
     return (
       <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#E5E5E5]/60">Loading...</p>
+        <p className="text-[#EDEDED]/60">Loading...</p>
       </div>
     )
   }
@@ -129,7 +129,7 @@ export default function ProfilePage() {
     router.push("/onboarding")
     return (
       <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#E5E5E5]/60">Redirecting...</p>
+        <p className="text-[#EDEDED]/60">Redirecting...</p>
       </div>
     )
   }
@@ -137,7 +137,7 @@ export default function ProfilePage() {
   if (loadingProfile) {
     return (
       <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#E5E5E5]/60">Loading profile...</p>
+        <p className="text-[#EDEDED]/60">Loading profile...</p>
       </div>
     )
   }
@@ -161,7 +161,7 @@ export default function ProfilePage() {
                   onClick={() => router.push("/vibe")}
                   className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                 >
-                  <ArrowLeft className="h-5 w-5 text-[#E5E5E5]/80" />
+                  <ArrowLeft className="h-5 w-5 text-[#EDEDED]/80" />
                 </button>
 
                 <h1 className="text-lg font-bold text-white tracking-tight">
@@ -172,7 +172,7 @@ export default function ProfilePage() {
                   onClick={() => router.push("/conversations")}
                   className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                 >
-                  <MessageSquare className="h-5 w-5 text-[#E5E5E5]/80" />
+                  <MessageSquare className="h-5 w-5 text-[#EDEDED]/80" />
                 </button>
               </div>
 
@@ -210,7 +210,7 @@ export default function ProfilePage() {
                         onClick={() => setIsEditingName(true)}
                         className="p-1 rounded-lg hover:bg-white/5 transition-colors"
                       >
-                        <Edit2 className="h-4 w-4 text-[#E5E5E5]/60" />
+                        <Edit2 className="h-4 w-4 text-[#EDEDED]/60" />
                       </button>
                     </div>
                   )}
@@ -227,7 +227,7 @@ export default function ProfilePage() {
                       className={cn(
                         "flex-1 px-3 py-2 rounded-xl",
                         "bg-white/5 border border-white/10",
-                        "text-white placeholder:text-[#E5E5E5]/50",
+                        "text-white placeholder:text-[#EDEDED]/50",
                         "text-xs resize-none",
                         "focus:outline-none focus:border-white/20",
                         "focus:ring-1 focus:ring-white/20"
@@ -239,7 +239,7 @@ export default function ProfilePage() {
                       type="button"
                       className={cn(
                         "p-1.5 rounded-lg",
-                        "bg-[#E5E5E5] text-[#0A0A0A]",
+                        "bg-[#EDEDED] text-[#0A0A0A]",
                         "border border-white",
                         "touch-manipulation cursor-pointer"
                       )}
@@ -251,17 +251,17 @@ export default function ProfilePage() {
 
                 {/* What People Say - Empty State */}
                 <div className={cn("rounded-lg p-2.5", "sleek-module")}>
-                  <h3 className="text-xs font-bold text-[#E5E5E5]/90 mb-2">
+                  <h3 className="text-xs font-bold text-[#EDEDED]/90 mb-2">
                     What People Say About Me
                   </h3>
-                  <p className="text-xs text-[#E5E5E5]/60 text-center py-2">
+                  <p className="text-xs text-[#EDEDED]/60 text-center py-2">
                     No reviews yet. Start conversations to get feedback!
                   </p>
                 </div>
 
                 {/* Friends - Empty States */}
                 <div className={cn("rounded-lg p-2.5", "sleek-module")}>
-                  <h3 className="text-xs font-bold text-[#E5E5E5]/90 mb-3 flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-[#EDEDED]/90 mb-3 flex items-center gap-2">
                     <Users className="h-3.5 w-3.5" />
                     My Friends
                   </h3>
@@ -269,26 +269,26 @@ export default function ProfilePage() {
                   {/* Inner Circle */}
                   <div className="mb-3">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] text-[#E5E5E5]/70 font-medium">Inner Circle</p>
-                      <span className="text-[10px] text-[#E5E5E5]/50">0</span>
+                      <p className="text-[10px] text-[#EDEDED]/70 font-medium">Inner Circle</p>
+                      <span className="text-[10px] text-[#EDEDED]/50">0</span>
                     </div>
-                    <p className="text-xs text-[#E5E5E5]/60 px-1">No inner circle members yet</p>
+                    <p className="text-xs text-[#EDEDED]/60 px-1">No inner circle members yet</p>
                   </div>
 
                   {/* Close Friends */}
                   <div className="mb-3">
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] text-[#E5E5E5]/70 font-medium">Close Friends</p>
-                      <span className="text-[10px] text-[#E5E5E5]/50">0</span>
+                      <p className="text-[10px] text-[#EDEDED]/70 font-medium">Close Friends</p>
+                      <span className="text-[10px] text-[#EDEDED]/50">0</span>
                     </div>
-                    <p className="text-xs text-[#E5E5E5]/60 px-1">No close friends yet</p>
+                    <p className="text-xs text-[#EDEDED]/60 px-1">No close friends yet</p>
                   </div>
 
                   {/* Community */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <p className="text-[10px] text-[#E5E5E5]/70 font-medium">Community</p>
-                      <span className="text-[10px] text-[#E5E5E5]/50">{communityMembers.length}</span>
+                      <p className="text-[10px] text-[#EDEDED]/70 font-medium">Community</p>
+                      <span className="text-[10px] text-[#EDEDED]/50">{communityMembers.length}</span>
                     </div>
                     {communityMembers.length > 0 ? (
                       <div className="relative -mx-1">
@@ -308,22 +308,22 @@ export default function ProfilePage() {
                                 "touch-manipulation cursor-pointer"
                               )}
                             >
-                              <span className="text-xs font-medium text-[#E5E5E5]/90">{member.name}</span>
+                              <span className="text-xs font-medium text-[#EDEDED]/90">{member.name}</span>
                             </motion.button>
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <p className="text-xs text-[#E5E5E5]/60 px-1">No community members yet</p>
+                      <p className="text-xs text-[#EDEDED]/60 px-1">No community members yet</p>
                     )}
                   </div>
                 </div>
 
                 {/* Recent Chats */}
                 <div className={cn("rounded-lg p-2.5", "sleek-module")}>
-                  <h3 className="text-xs font-bold text-[#E5E5E5]/90 mb-2.5">Recent Chats</h3>
+                  <h3 className="text-xs font-bold text-[#EDEDED]/90 mb-2.5">Recent Chats</h3>
                   {loadingChats ? (
-                    <p className="text-xs text-[#E5E5E5]/60 text-center py-2">Loading...</p>
+                    <p className="text-xs text-[#EDEDED]/60 text-center py-2">Loading...</p>
                   ) : recentChats.length > 0 ? (
                     <div className="space-y-1.5">
                       {recentChats.map((chat) => (
@@ -334,15 +334,15 @@ export default function ProfilePage() {
                         >
                           <span className="text-lg">{chat.emoji || "👤"}</span>
                           <div className="flex-1">
-                            <p className="text-xs font-semibold text-[#E5E5E5]/90">{chat.name}</p>
-                            <p className="text-[10px] text-[#E5E5E5]/60">{chat.lastMessage || "No messages yet"}</p>
+                            <p className="text-xs font-semibold text-[#EDEDED]/90">{chat.name}</p>
+                            <p className="text-[10px] text-[#EDEDED]/60">{chat.lastMessage || "No messages yet"}</p>
                           </div>
-                          <p className="text-[9px] text-[#E5E5E5]/50">{chat.time}</p>
+                          <p className="text-[9px] text-[#EDEDED]/50">{chat.time}</p>
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-[#E5E5E5]/60 text-center py-2">No recent chats</p>
+                    <p className="text-xs text-[#EDEDED]/60 text-center py-2">No recent chats</p>
                   )}
                 </div>
               </div>
@@ -354,13 +354,13 @@ export default function ProfilePage() {
                     await signOut()
                     router.push("/onboarding")
                   }}
-                  className="w-full px-4 py-2.5 rounded-lg text-sm font-semibold border border-white/10 bg-white/5 text-[#E5E5E5]/80 hover:bg-white/10 hover:border-white/20 transition-all"
+                  className="w-full px-4 py-2.5 rounded-lg text-sm font-semibold border border-white/10 bg-white/5 text-[#EDEDED]/80 hover:bg-white/10 hover:border-white/20 transition-all"
                 >
                   Sign Out
                 </button>
                 <Link
                   href="/login"
-                  className="block w-full px-4 py-2.5 rounded-lg text-sm font-semibold border border-white/10 bg-white/5 text-[#E5E5E5]/80 hover:bg-white/10 hover:border-white/20 transition-all text-center"
+                  className="block w-full px-4 py-2.5 rounded-lg text-sm font-semibold border border-white/10 bg-white/5 text-[#EDEDED]/80 hover:bg-white/10 hover:border-white/20 transition-all text-center"
                 >
                   Forgot Password
                 </Link>

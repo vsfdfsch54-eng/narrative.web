@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
-export default function VerifyEmailPage() {
+export default function VerifyPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
   const [resending, setResending] = useState(false)

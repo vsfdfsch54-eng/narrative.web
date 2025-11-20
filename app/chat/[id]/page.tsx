@@ -74,21 +74,43 @@ export default function ChatDetailPage() {
     loadProfile()
   }, [chatId, currentUserId])
   
-  // Get or create match ID
-  const getMatchId = () => {
+  // Get match ID from URL params or find existing match
+  const getMatchId = async () => {
     if (!currentUserId || !chatId) return null
     
-    let matchId = localStorage.getItem(`match_${chatId}`)
-    if (!matchId) {
-      // Try to find existing match in database
-      // For now, create a temporary match ID
-      matchId = `temp_${currentUserId}_${chatId}_${Date.now()}`
-      localStorage.setItem(`match_${chatId}`, matchId)
+    // Check URL params first
+    const urlParams = new URLSearchParams(window.location.search)
+    const matchIdFromUrl = urlParams.get('matchId')
+    if (matchIdFromUrl) {
+      return matchIdFromUrl
     }
-    return matchId
+    
+    // Try to find existing match in database
+    try {
+      const response = await fetch(`/api/matches?userId=${currentUserId}`)
+      const data = await response.json()
+      if (data.success && data.data) {
+        const match = data.data
+        // Check if this match involves the chatId user
+        if ((match.user1_id === currentUserId && match.user2_id === chatId) ||
+            (match.user2_id === currentUserId && match.user1_id === chatId)) {
+          return match.id
+        }
+      }
+    } catch (error) {
+      console.error('Error finding match:', error)
+    }
+    
+    return null
   }
   
-  const matchId = getMatchId()
+  const [matchId, setMatchId] = useState<string | null>(null)
+  
+  useEffect(() => {
+    if (currentUserId && chatId) {
+      getMatchId().then(setMatchId)
+    }
+  }, [currentUserId, chatId])
 
   useEffect(() => {
     if (!user || !currentUserId || !matchId) return
@@ -120,6 +142,11 @@ export default function ChatDetailPage() {
     
     loadMessages()
     
+    // Poll for new messages every 2 seconds
+    const messagePollInterval = setInterval(loadMessages, 2000)
+    
+    return () => clearInterval(messagePollInterval)
+    
     // Track recent chat
     const recentChats = JSON.parse(localStorage.getItem("recentChats") || "[]")
     const chatExists = recentChats.find((chat: { id: string }) => chat.id === chatId)
@@ -141,9 +168,11 @@ export default function ChatDetailPage() {
     // Get time limit from localStorage
     const savedTimeLimit = localStorage.getItem("timeLimit")
     if (savedTimeLimit) {
-      const timeLimitMinutes = parseInt(savedTimeLimit, 10)
-      const timeLimitMs = timeLimitMinutes * 60 * 1000
-      setTimeRemaining(timeLimitMs)
+      const timeLimitMinutes = Number(savedTimeLimit)
+      if (!isNaN(timeLimitMinutes) && timeLimitMinutes > 0) {
+        const timeLimitMs = timeLimitMinutes * 60 * 1000
+        setTimeRemaining(timeLimitMs)
+      }
     }
   }, [chatId, matchId, currentUserId, user, profileName, profileGender])
 
@@ -190,7 +219,7 @@ export default function ChatDetailPage() {
     
     // Save to database
     try {
-      await fetch('/api/messages', {
+      const response = await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -199,9 +228,49 @@ export default function ChatDetailPage() {
           text: messageText,
         })
       })
+      
+      const data = await response.json()
+      if (data.success && data.data) {
+        // Replace optimistic message with real one from database
+        setMessages(prev => prev.map(msg => 
+          msg.id === newMessage.id 
+            ? {
+                id: data.data.id,
+                senderId: data.data.sender_id,
+                content: data.data.text,
+                timestamp: new Date(data.data.created_at),
+                read: true,
+              }
+            : msg
+        ))
+      }
     } catch (error) {
       console.error('Error saving message:', error)
-      // Optionally revert optimistic update
+      // Revert optimistic update on error
+      setMessages(prev => prev.filter(msg => msg.id !== newMessage.id))
+    }
+  }
+
+  const handleAddToCommunity = async () => {
+    if (!currentUserId || !chatId) return
+    
+    try {
+      const response = await fetch('/api/relationships', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user1Id: currentUserId,
+          user2Id: chatId,
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        // Show success feedback (could add a toast notification here)
+        console.log('Added to community!')
+      }
+    } catch (error) {
+      console.error('Error adding to community:', error)
     }
   }
 
@@ -231,7 +300,7 @@ export default function ChatDetailPage() {
   if (authLoading || loadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0A0A]">
-        <p className="text-[#E5E5E5]/60">Loading...</p>
+        <p className="text-[#EDEDED]/60">Loading...</p>
       </div>
     )
   }
@@ -256,7 +325,7 @@ export default function ChatDetailPage() {
                     onClick={() => router.push("/vibe")}
                     className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
-                    <ArrowLeft className="h-5 w-5 text-[#E5E5E5]/80" />
+                    <ArrowLeft className="h-5 w-5 text-[#EDEDED]/80" />
                   </button>
                   
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
@@ -267,27 +336,47 @@ export default function ChatDetailPage() {
                       <h2 className="text-base font-bold text-white truncate">
                         {profileName}
                       </h2>
-                      <p className="text-xs text-[#E5E5E5]/60">
+                      <p className="text-xs text-[#EDEDED]/60">
                         {timeRemaining !== null && timeRemaining > 0
                           ? `Time left: ${formatTimeRemaining(timeRemaining)}`
                           : getStatusText()}
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Add to Community Button */}
+                  <button
+                    onClick={handleAddToCommunity}
+                    className="px-3 py-1.5 rounded-lg bg-[#EDEDED]/10 border border-[#EDEDED]/20 text-[#EDEDED] text-xs font-semibold hover:bg-[#EDEDED]/20 transition-colors"
+                    title="Add to Community"
+                  >
+                    + Add
+                  </button>
                 </div>
                 
-                <button
-                  onClick={() => setShowEndModal(true)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-semibold",
-                    "border border-white/10 bg-white/5",
-                    "text-white hover:bg-white/10",
-                    "transition-all duration-200",
-                    "touch-manipulation cursor-pointer"
-                  )}
-                >
-                  End Convo
-                </button>
+                <div className="flex items-center gap-2">
+                  {/* Add to Community Button */}
+                  <button
+                    onClick={handleAddToCommunity}
+                    className="px-3 py-1.5 rounded-lg bg-[#EDEDED]/10 border border-[#EDEDED]/20 text-[#EDEDED] text-xs font-semibold hover:bg-[#EDEDED]/20 transition-colors"
+                    title="Add to Community"
+                  >
+                    + Add
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowEndModal(true)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-semibold",
+                      "border border-white/10 bg-white/5",
+                      "text-white hover:bg-white/10",
+                      "transition-all duration-200",
+                      "touch-manipulation cursor-pointer"
+                    )}
+                  >
+                    End Convo
+                  </button>
+                </div>
               </div>
 
               {/* Messages Area */}
@@ -295,10 +384,10 @@ export default function ChatDetailPage() {
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
-                      <p className="text-[#E5E5E5]/60 text-sm mb-1">
+                      <p className="text-[#EDEDED]/60 text-sm mb-1">
                         Start the conversation!
                       </p>
-                      <p className="text-[#E5E5E5]/50 text-xs">
+                      <p className="text-[#EDEDED]/50 text-xs">
                         Say hello to {profileName}
                       </p>
                     </div>
@@ -336,7 +425,7 @@ export default function ChatDetailPage() {
                       className={cn(
                         "w-full px-4 py-2.5 rounded-full",
                         "bg-white/5 border border-white/10",
-                        "text-white placeholder:text-[#E5E5E5]/50",
+                        "text-white placeholder:text-[#EDEDED]/50",
                         "transition-all duration-200",
                         "focus:outline-none focus:border-white/20",
                         "focus:ring-1 focus:ring-white/20",
@@ -349,7 +438,7 @@ export default function ChatDetailPage() {
                     disabled={!message.trim()}
                     className={cn(
                       "p-2.5 rounded-full",
-                      "bg-[#E5E5E5] text-[#0A0A0A]",
+                      "bg-[#EDEDED] text-[#0A0A0A]",
                       "border border-white",
                       "transition-all duration-200",
                       "hover:bg-white/95",

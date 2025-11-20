@@ -110,7 +110,7 @@ export default function ConversationsPage() {
                   onClick={() => router.push("/vibe")}
                   className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                 >
-                  <ArrowLeft className="h-5 w-5 text-[#E5E5E5]/80" />
+                  <ArrowLeft className="h-5 w-5 text-[#EDEDED]/80" />
                 </button>
                 
                 <h1 className="text-lg font-bold text-white tracking-tight">
@@ -124,11 +124,11 @@ export default function ConversationsPage() {
               <div className="flex-1 p-3 space-y-1.5 overflow-y-auto min-h-0">
                 {loading ? (
                   <div className="flex items-center justify-center h-full">
-                    <p className="text-[#E5E5E5]/60 text-sm">Loading conversations...</p>
+                    <p className="text-[#EDEDED]/60 text-sm">Loading conversations...</p>
                   </div>
                 ) : conversations.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
-                    <p className="text-[#E5E5E5]/60 text-sm">No conversations yet</p>
+                    <p className="text-[#EDEDED]/60 text-sm">No conversations yet</p>
                   </div>
                 ) : (
                   conversations.map((person) => (
@@ -158,17 +158,17 @@ export default function ConversationsPage() {
                     {/* Message Info */}
                     <div className="flex-1 text-left min-w-0">
                       <div className="flex items-center gap-1.5 mb-0.5">
-                        <p className="text-sm font-semibold text-[#E5E5E5]/90 truncate">{person.name}</p>
+                        <p className="text-sm font-semibold text-[#EDEDED]/90 truncate">{person.name}</p>
                         {person.status === "online" && (
                           <span className="text-[9px] text-green-400 font-medium">●</span>
                         )}
                       </div>
-                      <p className="text-xs text-[#E5E5E5]/60 truncate">{person.lastMessage}</p>
+                      <p className="text-xs text-[#EDEDED]/60 truncate">{person.lastMessage}</p>
                     </div>
                     
                     {/* Time */}
                     <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                      <p className="text-[10px] text-[#E5E5E5]/50">{person.time}</p>
+                      <p className="text-[10px] text-[#EDEDED]/50">{person.time}</p>
                     </div>
                   </button>
                   ))

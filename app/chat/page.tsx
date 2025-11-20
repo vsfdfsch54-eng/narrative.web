@@ -21,13 +21,21 @@ export default function ChatPage() {
     const loadMatches = async () => {
       setLoading(true)
       try {
-        // Load potential matches from database
-        // For now, return empty array since there are no users yet
-        const response = await fetch(`/api/matches?userId=${user.id}&type=potential`)
+        // Try to find or create a match
+        const response = await fetch(`/api/matches?userId=${user.id}&action=find`)
         const data = await response.json()
+        
         if (data.success && data.data) {
-          setProfiles(data.data)
+          // Match found! Navigate to chat
+          const match = data.data
+          const otherUserId = match.user1_id === user.id ? match.user2_id : match.user1_id
+          router.push(`/chat/${otherUserId}?matchId=${match.id}`)
+          return
+        } else if (data.inQueue) {
+          // User is in queue, poll for match
+          pollForMatch()
         } else {
+          // No matches, show empty state
           setProfiles([])
         }
       } catch (error) {
@@ -38,8 +46,31 @@ export default function ChatPage() {
       }
     }
 
+    const pollForMatch = async () => {
+      // Poll every 2 seconds for a match
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/matches?userId=${user.id}&action=find`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            // Match found!
+            clearInterval(interval)
+            const match = data.data
+            const otherUserId = match.user1_id === user.id ? match.user2_id : match.user1_id
+            router.push(`/chat/${otherUserId}?matchId=${match.id}`)
+          }
+        } catch (error) {
+          console.error('Error polling for match:', error)
+        }
+      }, 2000)
+
+      // Cleanup after 30 seconds
+      setTimeout(() => clearInterval(interval), 30000)
+    }
+
     loadMatches()
-  }, [user])
+  }, [user, router])
 
   const currentProfile = profiles[currentIndex]
 
@@ -55,32 +86,34 @@ export default function ChatPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0A0A]">
-        <p className="text-[#E5E5E5]/60">Loading...</p>
+        <p className="text-[#EDEDED]/60">Loading...</p>
       </div>
     )
   }
 
-  if (profiles.length === 0) {
+  if (profiles.length === 0 && !loading) {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
-        {/* Phone Frame Container */}
+      <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0">
         <div className="phone-frame-container">
-          {/* Phone Frame - Black & White */}
           <div className="phone-frame">
-            {/* Phone Screen */}
             <div className="phone-screen">
               <div className="phone-content flex flex-col items-center justify-center text-center px-6 py-6 gap-4 overflow-hidden">
-                <h1 className="text-xl font-bold text-white">
-                  Find Your Match
+                <h1 className="text-xl font-bold text-[#EDEDED]">
+                  Waiting for Match
                 </h1>
-                <p className="text-sm text-[#E5E5E5]/60 max-w-xs">
-                  No matches yet. Start by selecting a vibe and topic to find people to connect with!
+                <p className="text-sm text-[#EDEDED]/60 max-w-xs">
+                  We&apos;re finding someone for you to chat with. This should only take a moment...
                 </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-2 h-2 bg-[#EDEDED]/60 rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-[#EDEDED]/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-2 h-2 bg-[#EDEDED]/60 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                </div>
                 <button
                   onClick={() => router.push("/vibe")}
-                  className="px-5 py-2.5 rounded-full bg-[#E5E5E5] text-[#0A0A0A] font-semibold text-sm"
+                  className="px-5 py-2.5 rounded-full bg-[#EDEDED]/10 text-[#EDEDED] border border-[#EDEDED]/20 font-semibold text-sm hover:bg-[#EDEDED]/20 mt-4"
                 >
-                  Select Vibe & Topic
+                  Go Back
                 </button>
               </div>
               <BottomNav />
@@ -95,7 +128,7 @@ export default function ChatPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0A0A]">
         <div className="text-center">
-          <p className="text-[#E5E5E5]/60 text-lg">No more profiles to show</p>
+          <p className="text-[#EDEDED]/60 text-lg">No more profiles to show</p>
         </div>
       </div>
     )

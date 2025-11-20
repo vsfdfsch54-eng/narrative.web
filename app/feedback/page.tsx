@@ -256,7 +256,7 @@ export default function FeedbackPage() {
                       <h2 className="text-xl font-bold text-white mb-2 tracking-tight">
                         Thank You!
                       </h2>
-                      <p className="text-xs text-[#E5E5E5]/60">
+                      <p className="text-xs text-[#EDEDED]/60">
                         Your feedback helps us improve
                       </p>
                     </motion.div>
@@ -274,7 +274,7 @@ export default function FeedbackPage() {
                         <h2 className="text-lg font-bold text-white tracking-tight mb-0.5">
                           How was it?
                         </h2>
-                        <p className="text-[9px] text-[#E5E5E5]/60">
+                        <p className="text-[9px] text-[#EDEDED]/60">
                           {profileName
                             ? `Rate your conversation with ${profileName}`
                             : "Rate your conversation"}
@@ -313,7 +313,7 @@ export default function FeedbackPage() {
 
                       {/* Notes Section */}
                       <div className="mb-2 flex-shrink-0">
-                        <label className="text-[10px] font-bold text-[#E5E5E5]/90 mb-1 block text-center">
+                        <label className="text-[10px] font-bold text-[#EDEDED]/90 mb-1 block text-center">
                           Notes about {profileName || "Alex"}
                         </label>
                         <textarea
@@ -323,7 +323,7 @@ export default function FeedbackPage() {
                           className={cn(
                             "w-full px-3 py-2 rounded-lg",
                             "bg-white/5 border-2 border-white/20",
-                            "text-white placeholder:text-[#E5E5E5]/50",
+                            "text-white placeholder:text-[#EDEDED]/50",
                             "text-xs resize-none",
                             "focus:outline-none focus:border-white/40",
                             "focus:ring-2 focus:ring-white/20"
@@ -348,8 +348,8 @@ export default function FeedbackPage() {
                             "transition-all duration-200",
                             "touch-manipulation relative z-10",
                             addedToCommunity
-                              ? "bg-white/5 border border-white/10 text-[#E5E5E5]/40 cursor-not-allowed"
-                              : "bg-[#E5E5E5] text-[#0A0A0A] border border-white hover:bg-white/95 cursor-pointer pointer-events-auto"
+                              ? "bg-white/5 border border-white/10 text-[#EDEDED]/40 cursor-not-allowed"
+                              : "bg-[#EDEDED] text-[#0A0A0A] border border-white hover:bg-white/95 cursor-pointer pointer-events-auto"
                           )}
                         >
                           <Users className="h-3 w-3" />
@@ -391,7 +391,7 @@ export default function FeedbackPage() {
                             "w-full px-3 py-2.5 rounded-full font-bold text-xs tracking-wide",
                             "transition-all duration-200",
                             "touch-manipulation relative z-10",
-                            "bg-[#E5E5E5] text-[#0A0A0A] border border-white",
+                            "bg-[#EDEDED] text-[#0A0A0A] border border-white",
                             "hover:bg-white/95",
                             "cursor-pointer pointer-events-auto",
                             "disabled:opacity-50 disabled:cursor-not-allowed"

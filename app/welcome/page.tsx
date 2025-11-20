@@ -79,7 +79,7 @@ export default function WelcomePage() {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#E5E5E5]/60">Loading...</p>
+        <p className="text-[#EDEDED]/60">Loading...</p>
       </div>
     )
   }
@@ -92,7 +92,7 @@ export default function WelcomePage() {
             <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
               Welcome to Narrative
             </h1>
-            <p className="text-base sm:text-lg text-[#E5E5E5]/80 max-w-md mx-auto">
+            <p className="text-base sm:text-lg text-[#EDEDED]/80 max-w-md mx-auto">
               You&apos;re all set. Enjoy your connections.
             </p>
           </div>
@@ -101,7 +101,7 @@ export default function WelcomePage() {
             onClick={handleContinue}
             variant="primary"
             size="lg"
-            className="w-full h-14 text-base font-semibold tracking-wide bg-[#E5E5E5] text-[#0A0A0A] border border-white shadow-lg hover:bg-white/95 transition-all"
+            className="w-full h-14 text-base font-semibold tracking-wide bg-[#EDEDED] text-[#0A0A0A] border border-white shadow-lg hover:bg-white/95 transition-all"
           >
             Continue
           </Button>

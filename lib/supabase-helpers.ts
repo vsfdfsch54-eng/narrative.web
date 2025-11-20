@@ -132,6 +132,88 @@ export async function createMatch(
 }
 
 /**
+ * Find or create a match for a user (server-side)
+ * Tries to find an available user in the queue, or adds current user to queue
+ */
+export async function findOrCreateMatch(userId: string): Promise<ChatMatch | null> {
+  const supabaseServer = createServerClient()
+  
+  // First, check if user already has an active match
+  const { data: existingMatch } = await supabaseServer
+    .from('chat_matches')
+    .select('*')
+    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (existingMatch) {
+    return existingMatch
+  }
+
+  // Check for pending matches
+  const { data: pendingMatch } = await supabaseServer
+    .from('chat_matches')
+    .select('*')
+    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+
+  if (pendingMatch) {
+    return pendingMatch
+  }
+
+  // Try to find a user in the queue
+  const { data: queueUser } = await supabaseServer
+    .from('match_queue')
+    .select('user_id')
+    .neq('user_id', userId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+
+  if (queueUser) {
+    // Found a user in queue, create match and remove both from queue
+    const otherUserId = queueUser.user_id
+    
+    // Remove both users from queue
+    await supabaseServer.from('match_queue').delete().eq('user_id', userId)
+    await supabaseServer.from('match_queue').delete().eq('user_id', otherUserId)
+    
+    // Create match
+    const { data: newMatch, error: matchError } = await supabaseServer
+      .from('chat_matches')
+      .insert({
+        user1_id: userId,
+        user2_id: otherUserId,
+        status: 'active',
+        relationship_tier: 'community',
+      })
+      .select()
+      .single()
+
+    if (matchError) {
+      console.error('Error creating match:', matchError)
+      // Add user back to queue if match creation failed
+      await supabaseServer.from('match_queue').upsert({ user_id: userId })
+      return null
+    }
+
+    return newMatch
+  } else {
+    // No one in queue, add current user to queue
+    await supabaseServer
+      .from('match_queue')
+      .upsert({ user_id: userId }, { onConflict: 'user_id' })
+    
+    return null // User is now in queue
+  }
+}
+
+/**
  * Get the next available match for a user (server-side)
  */
 export async function getNextMatch(userId: string): Promise<ChatMatch | null> {
@@ -140,8 +222,8 @@ export async function getNextMatch(userId: string): Promise<ChatMatch | null> {
     .from('chat_matches')
     .select('*')
     .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: true })
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
     .limit(1)
     .single()
 

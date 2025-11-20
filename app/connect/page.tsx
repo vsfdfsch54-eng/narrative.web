@@ -69,7 +69,7 @@ export default function ConnectPage() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0A0A]">
-        <p className="text-[#E5E5E5]/60">Loading...</p>
+        <p className="text-[#EDEDED]/60">Loading...</p>
       </div>
     )
   }
@@ -85,12 +85,12 @@ export default function ConnectPage() {
                   <h1 className="text-xl font-bold text-white">
                     Find Your Match
                   </h1>
-                  <p className="text-sm text-[#E5E5E5]/60 px-4">
+                  <p className="text-sm text-[#EDEDED]/60 px-4">
                     No matches yet. Start by selecting a vibe and topic to find people to connect with!
                   </p>
                   <button
                     onClick={() => router.push("/vibe")}
-                    className="px-5 py-2.5 rounded-full bg-[#E5E5E5] text-[#0A0A0A] font-semibold text-sm"
+                    className="px-5 py-2.5 rounded-full bg-[#EDEDED] text-[#0A0A0A] font-semibold text-sm"
                   >
                     Select Vibe & Topic
                   </button>
@@ -108,7 +108,7 @@ export default function ConnectPage() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0A0A]">
         <div className="text-center">
-          <p className="text-[#E5E5E5]/60 text-lg">No more profiles to show</p>
+          <p className="text-[#EDEDED]/60 text-lg">No more profiles to show</p>
         </div>
       </div>
     )

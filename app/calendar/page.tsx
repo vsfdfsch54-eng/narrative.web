@@ -241,7 +241,7 @@ export default function CalendarPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-[#0A0A0A]">
-        <p className="text-[#E5E5E5]/60">Loading...</p>
+        <p className="text-[#EDEDED]/60">Loading...</p>
       </div>
     )
   }
@@ -253,10 +253,10 @@ export default function CalendarPage() {
       )}
     >
       <div className="flex items-center gap-2">
-        <Plus className="h-4 w-4 text-[#E5E5E5]/80" />
-        <p className="font-semibold text-[#E5E5E5]/90">Create new moment</p>
+        <Plus className="h-4 w-4 text-[#EDEDED]/80" />
+        <p className="font-semibold text-[#EDEDED]/90">Create new moment</p>
       </div>
-      <p className="text-[11px] text-[#E5E5E5]/70">
+      <p className="text-[11px] text-[#EDEDED]/70">
         Curate a hangout, save a ritual, or plan something spontaneous.
       </p>
       <motion.button
@@ -269,7 +269,7 @@ export default function CalendarPage() {
           setSaveError(null)
           setShowPlanner(true)
         }}
-        className="w-full py-2 rounded-full bg-[#E5E5E5] text-[#0A0A0A] font-semibold text-sm hover:bg-white/95 transition cursor-pointer pointer-events-auto relative z-10"
+        className="w-full py-2 rounded-full bg-[#EDEDED] text-[#0A0A0A] font-semibold text-sm hover:bg-white/95 transition cursor-pointer pointer-events-auto relative z-10"
       >
         Start a plan
       </motion.button>
@@ -300,7 +300,7 @@ export default function CalendarPage() {
             )}>
               <div className="flex items-center justify-between text-white mb-3 flex-shrink-0">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.4em] text-[#E5E5E5]/60">Narrative</p>
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-[#EDEDED]/60">Narrative</p>
                   <h1 className="text-xl font-bold tracking-tight mt-0.5 text-white">
                     {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
                   </h1>
@@ -309,33 +309,33 @@ export default function CalendarPage() {
                   <button
                     type="button"
                     onClick={() => changeMonth("prev")}
-                    className="p-1.5 rounded-full bg-white/5 border border-white/10 text-[#E5E5E5]/80 hover:bg-white/10 transition"
+                    className="p-1.5 rounded-full bg-white/5 border border-white/10 text-[#EDEDED]/80 hover:bg-white/10 transition"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => changeMonth("next")}
-                    className="p-1.5 rounded-full bg-white/5 border border-white/10 text-[#E5E5E5]/80 hover:bg-white/10 transition"
+                    className="p-1.5 rounded-full bg-white/5 border border-white/10 text-[#EDEDED]/80 hover:bg-white/10 transition"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </div>
               </div>
 
-              <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2 text-[10px] text-[#E5E5E5]/80 mb-3 flex-shrink-0">
-                <Info className="h-4 w-4 text-[#E5E5E5]/80" />
+              <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2 text-[10px] text-[#EDEDED]/80 mb-3 flex-shrink-0">
+                <Info className="h-4 w-4 text-[#EDEDED]/80" />
                 <div className="flex flex-wrap gap-3 text-xs">
                   {Object.entries(tagColors).map(([tag, meta]) => (
                     <div key={tag} className="flex items-center gap-1.5">
                       <span className={cn("w-3 h-3 rounded-full", meta.dot)} />
-                      <span className="text-[#E5E5E5]/90">{tag}</span>
+                      <span className="text-[#EDEDED]/90">{tag}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-7 gap-1.5 text-[9px] uppercase tracking-[0.2em] text-[#E5E5E5]/60 mb-2 flex-shrink-0">
+              <div className="grid grid-cols-7 gap-1.5 text-[9px] uppercase tracking-[0.2em] text-[#EDEDED]/60 mb-2 flex-shrink-0">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
                   <span key={day} className="text-center">{day}</span>
                 ))}
@@ -368,7 +368,7 @@ export default function CalendarPage() {
                           ? "border-white/40 text-white"
                           : isToday
                           ? "border-white/30 text-white"
-                          : "border-white/10 text-[#E5E5E5]/80 hover:border-white/20",
+                          : "border-white/10 text-[#EDEDED]/80 hover:border-white/20",
                       )}
                     >
                       {tintGradient && (
@@ -403,7 +403,7 @@ export default function CalendarPage() {
                     <div className="bg-[#0A0A0A] border border-white/10 rounded-[24px] max-h-full overflow-hidden flex flex-col flex-1">
                       <div className="p-4 flex items-center justify-between">
                         <div>
-                          <p className="text-xs uppercase tracking-[0.4em] text-[#E5E5E5]/60">Selected</p>
+                          <p className="text-xs uppercase tracking-[0.4em] text-[#EDEDED]/60">Selected</p>
                           <h2 className="text-2xl font-bold text-white">
                             {monthNames[currentDate.getMonth()]} {selectedDay}
                           </h2>
@@ -424,7 +424,7 @@ export default function CalendarPage() {
                         {eventsForDay.length > 0 && (
                           <section className="bg-white/5 rounded-[18px] border border-white/10 p-3 sleek-module">
                             <div className="flex items-center justify-between text-white mb-2.5">
-                              <span className="text-xs font-semibold text-[#E5E5E5]/90">Events</span>
+                              <span className="text-xs font-semibold text-[#EDEDED]/90">Events</span>
                               <motion.button
                                 type="button"
                                 whileHover={{ scale: 1.05 }}
@@ -434,7 +434,7 @@ export default function CalendarPage() {
                                   e.stopPropagation()
                                   console.log("Edit events for day", selectedDay)
                                 }}
-                                className="text-[10px] uppercase tracking-[0.2em] text-[#E5E5E5]/60 hover:text-[#E5E5E5]/80 transition cursor-pointer pointer-events-auto relative z-10"
+                                className="text-[10px] uppercase tracking-[0.2em] text-[#EDEDED]/60 hover:text-[#EDEDED]/80 transition cursor-pointer pointer-events-auto relative z-10"
                               >
                                 Edit
                               </motion.button>
@@ -462,7 +462,7 @@ export default function CalendarPage() {
                                   >
                                     <div>
                                       <p className="text-xs font-semibold">{event.title}</p>
-                                      <p className="text-[10px] text-[#E5E5E5]/70">{event.time}</p>
+                                      <p className="text-[10px] text-[#EDEDED]/70">{event.time}</p>
                                     </div>
                                     <div className="flex items-center justify-between">
                                       <span className={cn(
@@ -482,7 +482,7 @@ export default function CalendarPage() {
                                           e.stopPropagation()
                                           console.log("Request to join:", event.title)
                                         }}
-                                        className="text-[10px] font-semibold text-[#E5E5E5]/80 hover:text-white transition cursor-pointer pointer-events-auto relative z-20"
+                                        className="text-[10px] font-semibold text-[#EDEDED]/80 hover:text-white transition cursor-pointer pointer-events-auto relative z-20"
                                       >
                                         Request to join
                                       </motion.button>
@@ -504,8 +504,8 @@ export default function CalendarPage() {
                         {/* Suggested Hangouts */}
                         <section className="bg-white/5 rounded-[18px] border border-white/10 p-3 sleek-module">
                           <div className="flex items-center gap-2 text-white mb-2.5">
-                            <Sparkles className="h-3.5 w-3.5 text-[#E5E5E5]/80" />
-                            <p className="text-xs font-semibold text-[#E5E5E5]/90">Suggested hangouts</p>
+                            <Sparkles className="h-3.5 w-3.5 text-[#EDEDED]/80" />
+                            <p className="text-xs font-semibold text-[#EDEDED]/90">Suggested hangouts</p>
                           </div>
                           {suggestions.length > 0 ? (
                             <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
@@ -520,30 +520,30 @@ export default function CalendarPage() {
                                     e.stopPropagation()
                                     console.log("Selected suggestion:", suggestion.title)
                                   }}
-                                  className="min-w-[190px] bg-white/5 rounded-[14px] border border-white/10 p-2.5 text-left text-[#E5E5E5]/90 hover:bg-white/8 transition cursor-pointer pointer-events-auto relative z-10"
+                                  className="min-w-[190px] bg-white/5 rounded-[14px] border border-white/10 p-2.5 text-left text-[#EDEDED]/90 hover:bg-white/8 transition cursor-pointer pointer-events-auto relative z-10"
                                 >
                                   <p className="text-xs font-semibold">{suggestion.title}</p>
-                                  <p className="text-[10px] text-[#E5E5E5]/70">{suggestion.detail}</p>
+                                  <p className="text-[10px] text-[#EDEDED]/70">{suggestion.detail}</p>
                                   <div className="flex items-center justify-between text-[9px] mt-1.5">
-                                    <span className="uppercase tracking-[0.25em] text-[#E5E5E5]/70">{suggestion.vibe}</span>
-                                    <span className="text-[#E5E5E5]/60">{suggestion.source}</span>
+                                    <span className="uppercase tracking-[0.25em] text-[#EDEDED]/70">{suggestion.vibe}</span>
+                                    <span className="text-[#EDEDED]/60">{suggestion.source}</span>
                                   </div>
                                 </motion.button>
                               ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-[#E5E5E5]/60 text-center py-4">No suggestions available</p>
+                            <p className="text-xs text-[#EDEDED]/60 text-center py-4">No suggestions available</p>
                           )}
                         </section>
 
                         {/* People Section */}
                         <section className="bg-white/5 rounded-[18px] border border-white/10 p-3 space-y-2.5 sleek-module">
                           <div className="flex items-center gap-2 text-white">
-                            <Users className="h-3.5 w-3.5 text-[#E5E5E5]/80" />
-                            <p className="text-xs font-semibold text-[#E5E5E5]/90">People</p>
+                            <Users className="h-3.5 w-3.5 text-[#EDEDED]/80" />
+                            <p className="text-xs font-semibold text-[#EDEDED]/90">People</p>
                           </div>
                           <div className="bg-white/5 rounded-[14px] p-2.5 border border-white/10">
-                            <label className="text-[9px] uppercase tracking-[0.25em] text-[#E5E5E5]/60">Viewing</label>
+                            <label className="text-[9px] uppercase tracking-[0.25em] text-[#EDEDED]/60">Viewing</label>
                             <select
                               value={selectedFriendGroup}
                               onChange={(e) => setSelectedFriendGroup(e.target.value as keyof typeof friends)}
@@ -576,7 +576,7 @@ export default function CalendarPage() {
                               ))}
                             </div>
                           ) : (
-                            <p className="text-xs text-[#E5E5E5]/60 text-center py-4">No {selectedFriendGroup.toLowerCase()} yet</p>
+                            <p className="text-xs text-[#EDEDED]/60 text-center py-4">No {selectedFriendGroup.toLowerCase()} yet</p>
                           )}
                         </section>
                       </div>
@@ -610,7 +610,7 @@ export default function CalendarPage() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.35em] text-[#E5E5E5]/60">New plan</p>
+                  <p className="text-[10px] uppercase tracking-[0.35em] text-[#EDEDED]/60">New plan</p>
                   <h3 className="text-xl font-bold text-white">Design your moment</h3>
                 </div>
                 <motion.button
@@ -618,24 +618,24 @@ export default function CalendarPage() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setShowPlanner(false)}
-                  className="rounded-full border border-white/10 p-2 text-[#E5E5E5]/70 hover:text-white hover:bg-white/5 transition"
+                  className="rounded-full border border-white/10 p-2 text-[#EDEDED]/70 hover:text-white hover:bg-white/5 transition"
                 >
                   <X className="h-4 w-4" />
                 </motion.button>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#E5E5E5]/60">Title</label>
+                <label className="text-[11px] uppercase tracking-[0.3em] text-[#EDEDED]/60">Title</label>
                 <input
                   value={plannerFields.title}
                   onChange={(e) => handlePlannerField("title", e.target.value)}
                   placeholder="Name this moment"
-                  className="w-full bg-white/5 border border-white/10 rounded-[16px] px-3 py-2 text-sm text-white placeholder:text-[#E5E5E5]/50 focus:outline-none focus:ring-1 focus:ring-white/40"
+                  className="w-full bg-white/5 border border-white/10 rounded-[16px] px-3 py-2 text-sm text-white placeholder:text-[#EDEDED]/50 focus:outline-none focus:ring-1 focus:ring-white/40"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#E5E5E5]/60">Invite group</label>
+                <label className="text-[11px] uppercase tracking-[0.3em] text-[#EDEDED]/60">Invite group</label>
                 <select
                   value={plannerFields.inviteGroup}
                   onChange={(e) => handlePlannerField("inviteGroup", e.target.value)}
@@ -650,7 +650,7 @@ export default function CalendarPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#E5E5E5]/60">Privacy</label>
+                <label className="text-[11px] uppercase tracking-[0.3em] text-[#EDEDED]/60">Privacy</label>
                 <div className="grid grid-cols-2 gap-3">
                   {["public", "private"].map((mode) => (
                     <motion.button
@@ -662,8 +662,8 @@ export default function CalendarPage() {
                       className={cn(
                         "rounded-full px-3 py-2 border text-sm capitalize transition",
                         plannerFields.privacy === mode
-                          ? "bg-[#E5E5E5] text-[#0A0A0A] border-white"
-                          : "bg-white/5 border-white/10 text-[#E5E5E5]/70",
+                          ? "bg-[#EDEDED] text-[#0A0A0A] border-white"
+                          : "bg-white/5 border-white/10 text-[#EDEDED]/70",
                       )}
                     >
                       {mode}
@@ -673,7 +673,7 @@ export default function CalendarPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#E5E5E5]/60">Templates</label>
+                <label className="text-[11px] uppercase tracking-[0.3em] text-[#EDEDED]/60">Templates</label>
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
                   {planTemplates.map((template) => (
                     <motion.button
@@ -688,27 +688,27 @@ export default function CalendarPage() {
                       }}
                       className="min-w-[190px] bg-white/5 border border-white/10 rounded-[16px] px-3 py-3 text-left hover:bg-white/8 transition cursor-pointer pointer-events-auto relative z-10"
                     >
-                      <p className="text-sm font-semibold text-[#E5E5E5]/90">{template.title}</p>
-                      <p className="text-[11px] text-[#E5E5E5]/70">{template.detail}</p>
-                      <span className="text-[10px] uppercase tracking-[0.3em] text-[#E5E5E5]/70">{template.vibe}</span>
+                      <p className="text-sm font-semibold text-[#EDEDED]/90">{template.title}</p>
+                      <p className="text-[11px] text-[#EDEDED]/70">{template.detail}</p>
+                      <span className="text-[10px] uppercase tracking-[0.3em] text-[#EDEDED]/70">{template.vibe}</span>
                     </motion.button>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#E5E5E5]/60">Notes</label>
+                <label className="text-[11px] uppercase tracking-[0.3em] text-[#EDEDED]/60">Notes</label>
                 <textarea
                   value={plannerFields.notes}
                   onChange={(e) => handlePlannerField("notes", e.target.value)}
                   placeholder="What makes this special?"
                   rows={3}
-                  className="w-full bg-white/5 border border-white/10 rounded-[16px] px-3 py-2 text-sm text-white placeholder:text-[#E5E5E5]/50 focus:outline-none focus:ring-1 focus:ring-white/40 resize-none"
+                  className="w-full bg-white/5 border border-white/10 rounded-[16px] px-3 py-2 text-sm text-white placeholder:text-[#EDEDED]/50 focus:outline-none focus:ring-1 focus:ring-white/40 resize-none"
                 />
               </div>
 
               {saveError && (
-                <div className="p-3 rounded-[16px] border border-white/15 bg-white/5 text-xs text-[#E5E5E5]/80">
+                <div className="p-3 rounded-[16px] border border-white/15 bg-white/5 text-xs text-[#EDEDED]/80">
                   {saveError}
                 </div>
               )}
@@ -720,7 +720,7 @@ export default function CalendarPage() {
                 onClick={handlePlannerSubmit}
                 disabled={savingEvent || !plannerFields.title.trim()}
                 className={cn(
-                  "w-full py-3 rounded-full bg-[#E5E5E5] text-[#0A0A0A] font-semibold text-sm hover:bg-white/95 transition",
+                  "w-full py-3 rounded-full bg-[#EDEDED] text-[#0A0A0A] font-semibold text-sm hover:bg-white/95 transition",
                   "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
               >
