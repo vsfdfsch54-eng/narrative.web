@@ -46,6 +46,21 @@ export function FullscreenEnforcer() {
         }
       }
       
+      // Target the outer fixed container
+      const outerContainer = document.querySelector('.fixed.inset-0')
+      if (outerContainer) {
+        const el = outerContainer as HTMLElement
+        el.style.width = "100vw"
+        el.style.height = "100vh"
+        el.style.height = "100dvh"
+        el.style.margin = "0"
+        el.style.padding = "0"
+        el.style.border = "none"
+        el.style.outline = "none"
+        el.style.boxShadow = "none"
+        el.style.background = "transparent"
+      }
+      
       // Run immediately
       enforceFullscreen()
       
@@ -53,8 +68,40 @@ export function FullscreenEnforcer() {
       window.addEventListener("resize", enforceFullscreen)
       
       // Run after a short delay to catch any late-rendering
-      setTimeout(enforceFullscreen, 100)
-      setTimeout(enforceFullscreen, 500)
+      setTimeout(() => {
+        enforceFullscreen()
+        // Re-apply outer container styles
+        const outerContainer = document.querySelector('.fixed.inset-0')
+        if (outerContainer) {
+          const el = outerContainer as HTMLElement
+          el.style.width = "100vw"
+          el.style.height = "100vh"
+          el.style.height = "100dvh"
+          el.style.margin = "0"
+          el.style.padding = "0"
+          el.style.border = "none"
+          el.style.outline = "none"
+          el.style.boxShadow = "none"
+          el.style.background = "transparent"
+        }
+      }, 100)
+      setTimeout(() => {
+        enforceFullscreen()
+        // Re-apply outer container styles
+        const outerContainer = document.querySelector('.fixed.inset-0')
+        if (outerContainer) {
+          const el = outerContainer as HTMLElement
+          el.style.width = "100vw"
+          el.style.height = "100vh"
+          el.style.height = "100dvh"
+          el.style.margin = "0"
+          el.style.padding = "0"
+          el.style.border = "none"
+          el.style.outline = "none"
+          el.style.boxShadow = "none"
+          el.style.background = "transparent"
+        }
+      }, 500)
       
       return () => {
         window.removeEventListener("resize", enforceFullscreen)
