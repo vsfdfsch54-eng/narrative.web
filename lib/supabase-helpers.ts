@@ -118,7 +118,7 @@ export async function createMatch(
       user1_id: user1Id,
       user2_id: user2Id,
       topic: topic || null,
-      status: 'pending',
+      status: 'active',
     })
     .select()
     .single()

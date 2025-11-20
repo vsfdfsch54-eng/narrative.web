@@ -38,17 +38,17 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] w-full h-full overflow-hidden">
+      <div className="fixed inset-0 bg-[#0a0a0c] w-full h-full overflow-hidden">
         <div className="w-full h-full flex items-center justify-center px-6 py-8">
           <div className="flex flex-col items-center gap-8 w-full max-w-md text-center">
             <div className="text-4xl mb-4">✓</div>
-            <h1 className="text-2xl font-black tracking-tight text-[#EDEDED]">
+            <h1 className="text-2xl font-black tracking-tight text-[#f1f1f3]">
               Check Your Email
             </h1>
-            <p className="text-sm text-[#EDEDED]/60 max-w-sm mx-auto">
+            <p className="text-sm text-[#f1f1f3]/60 max-w-sm mx-auto">
               We sent a password reset link to {email}
             </p>
-            <Link href="/login" className="text-xs text-[#EDEDED]/60 hover:underline">
+            <Link href="/login" className="text-xs text-[#f1f1f3]/60 hover:underline">
               Back to Login
             </Link>
           </div>
@@ -58,14 +58,14 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0A0A0A] w-full h-full overflow-hidden">
+    <div className="fixed inset-0 bg-[#0a0a0c] w-full h-full overflow-hidden">
       <div className="w-full h-full flex items-center justify-center px-6 py-8">
         <div className="flex flex-col items-center gap-8 w-full max-w-md">
           <div className="text-center space-y-3">
-            <h1 className="text-3xl font-black tracking-tight text-[#EDEDED]">
+            <h1 className="text-3xl font-black tracking-tight text-[#f1f1f3]">
               Reset Password
             </h1>
-            <p className="text-sm text-[#EDEDED]/60 max-w-sm mx-auto">
+            <p className="text-sm text-[#f1f1f3]/60 max-w-sm mx-auto">
               Enter your email and we&apos;ll send you a reset link
             </p>
           </div>
@@ -78,7 +78,7 @@ export default function ResetPasswordPage() {
             )}
 
             <div className="space-y-2">
-              <label className="text-[11px] uppercase tracking-[0.2em] text-[#EDEDED]/60">
+              <label className="text-[11px] uppercase tracking-[0.2em] text-[#f1f1f3]/60">
                 Email
               </label>
               <Input
@@ -88,21 +88,21 @@ export default function ResetPasswordPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                className="bg-[#1A1A1A]/40 border-[#EDEDED]/10 text-sm h-12 text-[#EDEDED]"
+                className="bg-[#1A1A1A]/40 border-[#f1f1f3]/10 text-sm h-12 text-[#f1f1f3]"
               />
             </div>
 
             <Button
               type="submit"
               variant="primary"
-              className="w-full h-12 text-sm font-semibold tracking-wide bg-[#EDEDED] text-[#0A0A0A] border border-[#EDEDED]"
+              className="w-full h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3]"
               size="lg"
               disabled={loading}
             >
               {loading ? "Sending..." : "Send Reset Link"}
             </Button>
 
-            <Link href="/login" className="block text-center text-xs text-[#EDEDED]/60 hover:underline">
+            <Link href="/login" className="block text-center text-xs text-[#f1f1f3]/60 hover:underline">
               Back to Login
             </Link>
           </form>

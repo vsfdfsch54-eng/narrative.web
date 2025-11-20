@@ -58,14 +58,14 @@ function UpdatePasswordContent() {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0A0A0A] w-full h-full overflow-hidden">
+    <div className="fixed inset-0 bg-[#0a0a0c] w-full h-full overflow-hidden">
       <div className="w-full h-full flex items-center justify-center px-6 py-8">
         <div className="flex flex-col items-center gap-8 w-full max-w-md">
           <div className="text-center space-y-3">
-            <h1 className="text-3xl font-black tracking-tight text-[#EDEDED]">
+            <h1 className="text-3xl font-black tracking-tight text-[#f1f1f3]">
               Update Password
             </h1>
-            <p className="text-sm text-[#EDEDED]/60 max-w-sm mx-auto">
+            <p className="text-sm text-[#f1f1f3]/60 max-w-sm mx-auto">
               Enter your new password
             </p>
           </div>
@@ -78,7 +78,7 @@ function UpdatePasswordContent() {
             )}
 
             <div className="space-y-2">
-              <label className="text-[11px] uppercase tracking-[0.2em] text-[#EDEDED]/60">
+              <label className="text-[11px] uppercase tracking-[0.2em] text-[#f1f1f3]/60">
                 New Password
               </label>
               <Input
@@ -88,12 +88,12 @@ function UpdatePasswordContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="bg-[#1A1A1A]/40 border-[#EDEDED]/10 text-sm h-12 text-[#EDEDED]"
+                className="bg-[#1A1A1A]/40 border-[#f1f1f3]/10 text-sm h-12 text-[#f1f1f3]"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-[11px] uppercase tracking-[0.2em] text-[#EDEDED]/60">
+              <label className="text-[11px] uppercase tracking-[0.2em] text-[#f1f1f3]/60">
                 Confirm Password
               </label>
               <Input
@@ -103,14 +103,14 @@ function UpdatePasswordContent() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 disabled={loading}
-                className="bg-[#1A1A1A]/40 border-[#EDEDED]/10 text-sm h-12 text-[#EDEDED]"
+                className="bg-[#1A1A1A]/40 border-[#f1f1f3]/10 text-sm h-12 text-[#f1f1f3]"
               />
             </div>
 
             <Button
               type="submit"
               variant="primary"
-              className="w-full h-12 text-sm font-semibold tracking-wide bg-[#EDEDED] text-[#0A0A0A] border border-[#EDEDED]"
+              className="w-full h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3]"
               size="lg"
               disabled={loading}
             >
@@ -126,8 +126,8 @@ function UpdatePasswordContent() {
 export default function UpdatePasswordPage() {
   return (
     <Suspense fallback={
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#EDEDED]/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
+        <p className="text-[#f1f1f3]/60">Loading...</p>
       </div>
     }>
       <UpdatePasswordContent />

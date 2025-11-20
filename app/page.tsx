@@ -11,37 +11,12 @@ export default function Home() {
   const router = useRouter()
   const [checkingAuth, setCheckingAuth] = useState(false)
 
-  // Redirect authenticated users away from landing page
+  // Only redirect authenticated users away from landing page
   useEffect(() => {
     if (!loading && user) {
       if (user.email_confirmed_at) {
-        // User is logged in AND verified - check onboarding status
-        const checkOnboarding = async () => {
-          try {
-            const response = await fetch(`/api/users?userId=${user.id}`)
-            const data = await response.json()
-            
-            if (data.success && data.data) {
-              const hasName = data.data.name
-              const hasInterests = data.data.interests && data.data.interests.length > 0
-              
-              if (hasName && hasInterests) {
-                // Onboarding complete - don't auto-redirect, let user navigate
-                return
-              } else {
-                // Need onboarding
-                router.push("/onboarding")
-              }
-            } else {
-              // Need onboarding
-              router.push("/onboarding")
-            }
-          } catch (err) {
-            // Need onboarding
-            router.push("/onboarding")
-          }
-        }
-        checkOnboarding()
+        // User is logged in AND verified → go directly to /vibe
+        router.push("/vibe")
       } else {
         // User is logged in but NOT verified → go to /verify
         router.push("/verify")
@@ -57,27 +32,8 @@ export default function Home() {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     if (user && user.email_confirmed_at) {
-      // User is logged in AND verified - check onboarding
-      try {
-        const response = await fetch(`/api/users?userId=${user.id}`)
-        const data = await response.json()
-        
-        if (data.success && data.data) {
-          const hasName = data.data.name
-          const hasInterests = data.data.interests && data.data.interests.length > 0
-          
-          if (hasName && hasInterests) {
-            // Onboarding complete - don't auto-redirect
-            // User can navigate manually
-          } else {
-            router.push("/onboarding")
-          }
-        } else {
-          router.push("/onboarding")
-        }
-      } catch (err) {
-        router.push("/onboarding")
-      }
+      // User is logged in AND verified → go directly to /vibe
+      router.push("/vibe")
     } else if (user && !user.email_confirmed_at) {
       // User is logged in but NOT verified → go to /verify
       router.push("/verify")
@@ -90,10 +46,10 @@ export default function Home() {
   }
 
   // Show loading while checking auth state
-  if (loading) {
+  if (loading || (user && user.email_confirmed_at)) {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#EDEDED]/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
+        <p className="text-[#f1f1f3]/60">Loading...</p>
       </div>
     )
   }
@@ -101,47 +57,47 @@ export default function Home() {
   // Show minimal loading only while checking auth for button click
   if (checkingAuth) {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#EDEDED]/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
+        <p className="text-[#f1f1f3]/60">Loading...</p>
       </div>
     )
   }
 
   // Welcome screen - always show if user is NOT authenticated
   return (
-    <div className="fixed inset-0 bg-[#0A0A0A] w-full h-full overflow-hidden">
+    <div className="fixed inset-0 bg-[#0a0a0c] w-full h-full overflow-hidden">
       <div className="w-full h-full flex items-center justify-center px-6 py-8">
         <div className="flex flex-col items-center gap-8 w-full max-w-md">
           {/* Title Section */}
           <div className="text-center space-y-3">
-            <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-[#EDEDED] leading-tight">
+            <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-[#f1f1f3] leading-tight">
               Welcome to Narrative
             </h1>
-            <p className="text-sm sm:text-base text-[#EDEDED]/60 max-w-sm mx-auto">
+            <p className="text-sm sm:text-base text-[#f1f1f3]/60 max-w-sm mx-auto">
               Where real connection begins.
             </p>
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-4 w-full items-stretch">
-                <Button
-                  asChild
-                  variant="primary"
-                  size="lg"
-              className="w-full h-14 text-base font-semibold tracking-wide bg-[#EDEDED] text-[#0A0A0A] border border-[#EDEDED] shadow-lg hover:bg-[#EDEDED]/95 transition-all flex items-center justify-center"
-                >
+            <Button
+              asChild
+              variant="primary"
+              size="lg"
+              className="w-full h-14 text-base font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3] shadow-lg hover:bg-[#f1f1f3]/95 transition-all flex items-center justify-center"
+            >
               <Link href="/onboarding" className="w-full h-full flex items-center justify-center">Create an Account</Link>
-                </Button>
+            </Button>
             
-                <Button
+            <Button
               onClick={handleGetToChatting}
-                  variant="outline"
-                  size="lg"
+              variant="outline"
+              size="lg"
               disabled={checkingAuth}
-              className="w-full h-14 text-base font-semibold tracking-wide border-[#EDEDED]/20 text-[#EDEDED] hover:border-[#EDEDED]/40 hover:bg-[#EDEDED]/5 flex items-center justify-center"
-          >
+              className="w-full h-14 text-base font-semibold tracking-wide border-[#f1f1f3]/20 text-[#f1f1f3] hover:border-[#f1f1f3]/40 hover:bg-[#f1f1f3]/5 flex items-center justify-center"
+            >
               {checkingAuth ? "Loading..." : "Get to Chatting"}
-                </Button>
+            </Button>
           </div>
         </div>
       </div>

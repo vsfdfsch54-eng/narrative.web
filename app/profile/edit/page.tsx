@@ -44,7 +44,7 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+    <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
       {/* Phone Frame Container */}
       <div className="phone-frame-container">
         {/* Phone Frame - Black & White */}
@@ -55,7 +55,7 @@ export default function ProfileEditPage() {
               <div className="space-y-6">
                 <div>
                   <h1 className="text-2xl font-bold text-white mb-1">Edit Profile</h1>
-                  <p className="text-sm text-[#EDEDED]/60">Update your profile information</p>
+                  <p className="text-sm text-[#f1f1f3]/60">Update your profile information</p>
                 </div>
 
                 <div className="bg-white/5 border border-white/10 rounded-[20px] p-4 space-y-6">
@@ -69,7 +69,7 @@ export default function ProfileEditPage() {
                         size="xl"
                       />
                       <div className="flex-1">
-                        <p className="text-sm text-[#EDEDED]/60 mb-2">
+                        <p className="text-sm text-[#f1f1f3]/60 mb-2">
                           Profile picture
                         </p>
                         <button className="px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10 transition text-sm">
@@ -111,7 +111,7 @@ export default function ProfileEditPage() {
                           Bio
                         </label>
                         <textarea
-                          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20 text-white placeholder:text-[#EDEDED]/50 resize-none transition-all duration-200 min-h-[100px]"
+                          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20 text-white placeholder:text-[#f1f1f3]/50 resize-none transition-all duration-200 min-h-[100px]"
                           placeholder="Tell us about yourself..."
                           value={profile.bio}
                           onChange={(e) =>
@@ -166,7 +166,7 @@ export default function ProfileEditPage() {
                           }
                         >
                           {INTIMACY_TIERS.map((tier) => (
-                            <option key={tier.id} value={tier.id} className="bg-[#0A0A0A]">
+                            <option key={tier.id} value={tier.id} className="bg-[#0a0a0c]">
                               {tier.label}
                             </option>
                           ))}
@@ -183,7 +183,7 @@ export default function ProfileEditPage() {
                       </button>
                       <button
                         onClick={handleSave}
-                        className="px-4 py-2 rounded-full bg-[#EDEDED] text-[#0A0A0A] hover:bg-white/95 transition font-semibold"
+                        className="px-4 py-2 rounded-full bg-[#f1f1f3] text-[#0a0a0c] hover:bg-white/95 transition font-semibold"
                       >
                         Save Changes
                       </button>

@@ -22,13 +22,13 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark bg-[#0A0A0A]">
+    <html lang="en" className="dark bg-[#0a0a0c]">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="theme-color" content="#0A0A0A" />
+        <meta name="theme-color" content="#0a0a0c" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -77,7 +77,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.className} bg-[#0A0A0A] min-h-screen`}>
+      <body className={`${inter.className} bg-[#0a0a0c] min-h-screen`}>
         <ClientPageTransition>{children}</ClientPageTransition>
       </body>
     </html>

@@ -22,8 +22,8 @@ export default function SignedUpPage() {
 
   if (authLoading) {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#EDEDED]/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
+        <p className="text-[#f1f1f3]/60">Loading...</p>
       </div>
     )
   }
@@ -33,14 +33,14 @@ export default function SignedUpPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0A0A0A] w-full h-full overflow-hidden">
+    <div className="fixed inset-0 bg-[#0a0a0c] w-full h-full overflow-hidden">
       <div className="w-full h-full flex items-center justify-center px-6 py-8">
         <div className="flex flex-col items-center gap-8 w-full max-w-md text-center">
           <div className="space-y-4">
-            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-[#EDEDED] leading-tight">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-[#f1f1f3] leading-tight">
               You&apos;re all signed up
             </h1>
-            <p className="text-base sm:text-lg text-[#EDEDED]/80 max-w-md mx-auto">
+            <p className="text-base sm:text-lg text-[#f1f1f3]/80 max-w-md mx-auto">
               Welcome to Narrative.
             </p>
           </div>
@@ -49,7 +49,7 @@ export default function SignedUpPage() {
             onClick={handleContinue}
             variant="primary"
             size="lg"
-            className="w-full h-14 text-base font-semibold tracking-wide bg-[#EDEDED] text-[#0A0A0A] border border-[#EDEDED] shadow-lg hover:bg-[#EDEDED]/95 transition-all"
+            className="w-full h-14 text-base font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3] shadow-lg hover:bg-[#f1f1f3]/95 transition-all"
           >
             Continue
           </Button>

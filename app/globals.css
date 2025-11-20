@@ -5,15 +5,15 @@
 @layer base {
   :root {
     /* Graphite/Midnight Color System - Apple-style */
-    --bg-core: #0A0A0A;
-    --bg-elevated: #121212;
-    --bg-card: #1A1A1A;
-    --text-primary: #EDEDED;
-    --text-secondary: rgba(237, 237, 237, 0.8);
-    --text-muted: rgba(237, 237, 237, 0.6);
-    --text-label: rgba(237, 237, 237, 0.65);
-    --border-subtle: rgba(237, 237, 237, 0.08);
-    --border-light: rgba(237, 237, 237, 0.12);
+    --bg-core: #0a0a0c;
+    --bg-elevated: #121214;
+    --bg-card: #1a1a1c;
+    --text-primary: #f1f1f3;
+    --text-secondary: rgba(241, 241, 243, 0.8);
+    --text-muted: rgba(241, 241, 243, 0.6);
+    --text-label: rgba(241, 241, 243, 0.65);
+    --border-subtle: rgba(241, 241, 243, 0.08);
+    --border-light: rgba(241, 241, 243, 0.12);
     
     /* Legacy shadcn variables - Graphite theme */
     --background: 0 0% 4%;
@@ -32,9 +32,9 @@
     --accent-foreground: 0 0% 4%;
     --destructive: 0 70% 35%;
     --destructive-foreground: 0 0% 98%;
-    --border: 237 237 237 / 0.08;
-    --input: 237 237 237 / 0.08;
-    --ring: 237 237 237 / 0.2;
+    --border: 241 241 243 / 0.08;
+    --input: 241 241 243 / 0.08;
+    --ring: 241 241 243 / 0.2;
     --radius: 1rem;
   }
 }
@@ -80,7 +80,7 @@
     text-rendering: optimizeLegibility;
     min-height: 100%;
     width: 100%;
-    background: #0A0A0A;
+    background: #0a0a0c;
     position: fixed;
     overflow: hidden;
     touch-action: pan-x pan-y;
@@ -98,7 +98,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     font-variant-ligatures: common-ligatures;
     letter-spacing: -0.011em;
-    background: #0A0A0A;
+    background: #0a0a0c;
     min-height: 100vh;
     min-height: 100dvh;
     margin: 0;
@@ -126,8 +126,8 @@
     position: fixed;
     inset: 0;
     background: 
-      radial-gradient(circle at 20% 30%, rgba(237, 237, 237, 0.015) 0%, transparent 50%),
-      radial-gradient(circle at 80% 70%, rgba(237, 237, 237, 0.01) 0%, transparent 50%);
+      radial-gradient(circle at 20% 30%, rgba(241, 241, 243, 0.015) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(241, 241, 243, 0.01) 0%, transparent 50%);
     pointer-events: none;
     z-index: 0;
   }
@@ -258,7 +258,7 @@
   
   .phone-frame {
     position: relative;
-    background: #121212;
+    background: #121214;
     border-radius: 32px;
     padding: 0.5rem;
     border: 1px solid rgba(237, 237, 237, 0.1);
@@ -278,7 +278,7 @@
   }
   
   .phone-screen {
-    background: #0A0A0A;
+    background: #0a0a0c;
     border-radius: 28px;
     display: flex;
     flex-direction: column;

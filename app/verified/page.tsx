@@ -45,9 +45,9 @@ export default function VerifiedPage() {
 
   if (status === 'checking') {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <p className="text-[#EDEDED]/60">Verifying your email...</p>
+          <p className="text-[#f1f1f3]/60">Verifying your email...</p>
         </div>
       </div>
     )
@@ -55,9 +55,9 @@ export default function VerifiedPage() {
 
   if (status === 'error') {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
         <div className="text-center space-y-4 px-6">
-          <p className="text-[#EDEDED]/80">Verification error. Redirecting...</p>
+          <p className="text-[#f1f1f3]/80">Verification error. Redirecting...</p>
         </div>
       </div>
     )
@@ -65,13 +65,13 @@ export default function VerifiedPage() {
 
   // Verified - show success message
   return (
-    <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+    <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
       <div className="text-center space-y-4 px-6 max-w-md">
         <div className="text-4xl mb-4">✓</div>
-        <h1 className="text-2xl font-black tracking-tight text-[#EDEDED]">
+        <h1 className="text-2xl font-black tracking-tight text-[#f1f1f3]">
           Email Verified
         </h1>
-        <p className="text-sm text-[#EDEDED]/60">
+        <p className="text-sm text-[#f1f1f3]/60">
           Your email has been confirmed. Redirecting you now...
         </p>
       </div>

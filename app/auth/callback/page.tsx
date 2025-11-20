@@ -16,7 +16,6 @@ function AuthCallbackContent() {
         // Get the code from URL hash or query params
         const hashParams = new URLSearchParams(window.location.hash.substring(1))
         const code = hashParams.get('code') || searchParams.get('code')
-        const next = searchParams.get('next') || '/onboarding?verified=true'
 
         if (code) {
           // Exchange the code for a session
@@ -26,9 +25,8 @@ function AuthCallbackContent() {
             console.error('Error exchanging code for session:', exchangeError)
             setError('Verification failed. Please try again.')
             setLoading(false)
-            // Redirect to onboarding with error after a delay
             setTimeout(() => {
-              router.push('/onboarding?error=verification_failed')
+              router.push('/verify')
             }, 2000)
             return
           }
@@ -37,30 +35,10 @@ function AuthCallbackContent() {
             // Successfully verified and logged in
             // Check email verification status
             if (data.user.email_confirmed_at) {
-              // Email is verified, check onboarding status
-              try {
-                const response = await fetch(`/api/users?userId=${data.user.id}`)
-                const userData = await response.json()
-                
-                if (userData.success && userData.data) {
-                  const hasName = userData.data.name
-                  const hasInterests = userData.data.interests && userData.data.interests.length > 0
-                  
-                  if (hasName && hasInterests) {
-                    // Onboarding complete - redirect to /signed-up
-                    router.push('/signed-up')
-                  } else {
-                    // Onboarding not complete, redirect to /onboarding
-                    router.push('/onboarding')
-                  }
-                } else {
-                  // No user data, redirect to /onboarding
-                  router.push('/onboarding')
-                }
-              } catch (err) {
-                // Error checking, redirect to /onboarding
-                router.push('/onboarding')
-              }
+              // Email is verified → redirect directly to /vibe
+              // Refresh session to ensure state is updated
+              await supabase.auth.refreshSession()
+              router.push('/vibe')
             } else {
               // Email not verified yet, redirect to verify page
               router.push('/verify')
@@ -69,7 +47,7 @@ function AuthCallbackContent() {
             setError('No session created. Please try again.')
             setLoading(false)
             setTimeout(() => {
-              router.push('/onboarding?error=no_session')
+              router.push('/verify')
             }, 2000)
           }
         } else {
@@ -78,27 +56,8 @@ function AuthCallbackContent() {
           if (session && session.user) {
             // Check email verification
             if (session.user.email_confirmed_at) {
-              // Email verified, check onboarding status
-              try {
-                const response = await fetch(`/api/users?userId=${session.user.id}`)
-                const userData = await response.json()
-                
-                if (userData.success && userData.data) {
-                  const hasName = userData.data.name
-                  const hasInterests = userData.data.interests && userData.data.interests.length > 0
-                  
-                  if (hasName && hasInterests) {
-                    // Onboarding complete - redirect to /signed-up
-                    router.push('/signed-up')
-                  } else {
-                    router.push('/onboarding')
-                  }
-                } else {
-                  router.push('/onboarding')
-                }
-              } catch (err) {
-                router.push('/onboarding')
-              }
+              // Email verified → redirect directly to /vibe
+              router.push('/vibe')
             } else {
               // Email not verified, redirect to verify page
               router.push('/verify')
@@ -113,7 +72,7 @@ function AuthCallbackContent() {
         setError('An error occurred. Please try again.')
         setLoading(false)
         setTimeout(() => {
-          router.push('/onboarding?error=callback_error')
+          router.push('/verify')
         }, 2000)
       }
     }
@@ -123,9 +82,9 @@ function AuthCallbackContent() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <p className="text-[#EDEDED]/60">Verifying your email...</p>
+          <p className="text-[#f1f1f3]/60">Verifying your email...</p>
         </div>
       </div>
     )
@@ -133,19 +92,19 @@ function AuthCallbackContent() {
 
   if (error) {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
         <div className="text-center space-y-4 px-6">
-          <p className="text-[#EDEDED]/80">{error}</p>
-          <p className="text-[#EDEDED]/40 text-sm">Redirecting...</p>
+          <p className="text-[#f1f1f3]/80">{error}</p>
+          <p className="text-[#f1f1f3]/40 text-sm">Redirecting...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
+    <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
       <div className="text-center space-y-4">
-          <p className="text-[#EDEDED]/60">Processing...</p>
+        <p className="text-[#f1f1f3]/60">Processing...</p>
       </div>
     </div>
   )
@@ -154,12 +113,11 @@ function AuthCallbackContent() {
 export default function AuthCallback() {
   return (
     <Suspense fallback={
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#EDEDED]/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
+        <p className="text-[#f1f1f3]/60">Loading...</p>
       </div>
     }>
       <AuthCallbackContent />
     </Suspense>
   )
 }
-

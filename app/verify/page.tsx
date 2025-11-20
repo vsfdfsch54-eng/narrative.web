@@ -69,8 +69,8 @@ export default function VerifyPage() {
 
   if (authLoading) {
     return (
-      <div className="fixed inset-0 bg-[#0A0A0A] flex items-center justify-center">
-        <p className="text-[#EDEDED]/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
+        <p className="text-[#f1f1f3]/60">Loading...</p>
       </div>
     )
   }
@@ -81,18 +81,18 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0A0A0A] overflow-hidden w-full h-full">
+    <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full">
       <div className="w-full h-full flex items-center justify-center px-6 py-8">
         <div className="flex flex-col items-center gap-8 w-full max-w-md">
           <div className="text-center space-y-4">
             <div className="text-5xl mb-4">📧</div>
-            <h1 className="text-3xl font-black tracking-tight text-[#EDEDED]">
+            <h1 className="text-3xl font-black tracking-tight text-[#f1f1f3]">
               Verify Your Email
             </h1>
-            <p className="text-sm text-[#EDEDED]/60 max-w-sm mx-auto">
-              We sent a verification link to <strong className="text-[#EDEDED]">{user.email}</strong>
+            <p className="text-sm text-[#f1f1f3]/60 max-w-sm mx-auto">
+              We sent a verification link to <strong className="text-[#f1f1f3]">{user.email}</strong>
             </p>
-            <p className="text-xs text-[#EDEDED]/50 max-w-xs mx-auto">
+            <p className="text-xs text-[#f1f1f3]/50 max-w-xs mx-auto">
               Click the link in the email to verify your account. Once verified, you&apos;ll be automatically redirected.
             </p>
           </div>
@@ -103,14 +103,14 @@ export default function VerifyPage() {
               variant="outline"
               size="lg"
               disabled={resending}
-              className="w-full h-12 text-sm font-semibold tracking-wide border-[#EDEDED]/20 text-[#EDEDED] hover:border-[#EDEDED]/40 hover:bg-[#EDEDED]/5"
+              className="w-full h-12 text-sm font-semibold tracking-wide border-[#f1f1f3]/20 text-[#f1f1f3] hover:border-[#f1f1f3]/40 hover:bg-[#f1f1f3]/5"
             >
               {resending ? "Sending..." : resendSuccess ? "Email Sent!" : "Resend Verification Email"}
             </Button>
 
             <Link
               href="/"
-              className="text-center text-xs text-[#EDEDED]/60 hover:underline"
+              className="text-center text-xs text-[#f1f1f3]/60 hover:underline"
             >
               Back to Home
             </Link>
