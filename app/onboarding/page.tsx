@@ -77,15 +77,12 @@ function OnboardingContent() {
     checkOnboardingStatus()
   }, [authLoading, user, checkOnboardingStatus])
 
-  // Handle email verification - redirect to /vibe if verified and onboarding complete
+  // Handle email verification - poll for verification status and redirect
   useEffect(() => {
     if (authLoading) return
     
-    const verified = searchParams.get('verified')
-    
-    // If user just verified email (via callback)
-    if (user && user.email_confirmed_at && verified === 'true') {
-      // Check if onboarding is complete - if so, redirect to /vibe
+    // If user is verified, check onboarding status and redirect
+    if (user && user.email_confirmed_at) {
       const checkAndRedirect = async () => {
         try {
           const response = await fetch(`/api/users?userId=${user.id}`)
@@ -99,56 +96,26 @@ function OnboardingContent() {
               // Onboarding complete, redirect directly to /vibe
               router.push('/vibe')
               return
+            } else if (currentStep === 'verify') {
+              // Verified but onboarding not complete, move to interests
+              setShowVerified(true)
+              setCurrentStep('interests')
+              if (user.email && !email) {
+                setEmail(user.email)
+              }
             }
-          }
-          
-          // Onboarding not complete, show notification and continue
-          setShowVerified(true)
-          if (currentStep === 'verify') {
+          } else if (currentStep === 'verify') {
+            // Verified but no user data, move to interests
+            setShowVerified(true)
             setCurrentStep('interests')
-          }
-          if (user.email && !email) {
-            setEmail(user.email)
+            if (user.email && !email) {
+              setEmail(user.email)
+            }
           }
         } catch (err) {
           // Error checking, continue with onboarding
-          setShowVerified(true)
           if (currentStep === 'verify') {
-            setCurrentStep('interests')
-          }
-        }
-      }
-      
-      checkAndRedirect()
-    } else if (user && user.email_confirmed_at && currentStep === 'verify') {
-      // User verified but no verified param - check onboarding status
-      const checkAndRedirect = async () => {
-        try {
-          const response = await fetch(`/api/users?userId=${user.id}`)
-          const data = await response.json()
-          
-          if (data.success && data.data) {
-            const hasName = data.data.name
-            const hasInterests = data.data.interests && data.data.interests.length > 0
-            
-            if (hasName && hasInterests) {
-              // Onboarding complete, redirect directly to /vibe
-              router.push('/vibe')
-              return
-            }
-          }
-          
-          // Continue with onboarding
-          if (selectedInterests.length > 0) {
-            handleCompleteOnboarding()
-          } else {
-            setCurrentStep('interests')
-          }
-        } catch (err) {
-          // Error, continue with onboarding
-          if (selectedInterests.length > 0) {
-            handleCompleteOnboarding()
-          } else {
+            setShowVerified(true)
             setCurrentStep('interests')
           }
         }
@@ -156,7 +123,65 @@ function OnboardingContent() {
       
       checkAndRedirect()
     }
-  }, [user, searchParams, selectedInterests, email, currentStep, authLoading, router])
+  }, [user, currentStep, email, authLoading, router])
+
+  // Poll for verification status when on verify step
+  useEffect(() => {
+    if (authLoading || currentStep !== 'verify' || !user) return
+
+    // Poll every 2 seconds to check if email is verified
+    const verificationPoll = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user?.email_confirmed_at) {
+          // Email verified! Check onboarding status and redirect
+          clearInterval(verificationPoll)
+          
+          try {
+            const response = await fetch(`/api/users?userId=${session.user.id}`)
+            const data = await response.json()
+            
+            if (data.success && data.data) {
+              const hasName = data.data.name
+              const hasInterests = data.data.interests && data.data.interests.length > 0
+              
+              if (hasName && hasInterests) {
+                // Onboarding complete, redirect to /vibe
+                router.push('/vibe')
+              } else {
+                // Move to interests step
+                setShowVerified(true)
+                setCurrentStep('interests')
+                if (session.user.email && !email) {
+                  setEmail(session.user.email)
+                }
+              }
+            } else {
+              // No user data, move to interests
+              setShowVerified(true)
+              setCurrentStep('interests')
+            }
+          } catch (err) {
+            // Error, move to interests
+            setShowVerified(true)
+            setCurrentStep('interests')
+          }
+        }
+      } catch (err) {
+        console.error('Error polling verification:', err)
+      }
+    }, 2000) // Check every 2 seconds
+
+    // Cleanup after 5 minutes
+    const timeout = setTimeout(() => {
+      clearInterval(verificationPoll)
+    }, 300000)
+
+    return () => {
+      clearInterval(verificationPoll)
+      clearTimeout(timeout)
+    }
+  }, [currentStep, user, authLoading, email, router])
 
   const validatePasswordMatch = useCallback(() => {
     if (confirmPassword && password !== confirmPassword) {
