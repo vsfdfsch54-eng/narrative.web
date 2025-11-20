@@ -21,14 +21,14 @@ export async function saveVibe(userId: string, vibe: string): Promise<Vibe | nul
       vibe,
     })
     .select()
-    .single()
 
   if (error) {
     console.error('Error saving vibe:', error)
     return null
   }
 
-  return data
+  // Handle array response
+  return Array.isArray(data) ? data[0] : data
 }
 
 /**
@@ -42,18 +42,17 @@ export async function getLastVibe(userId: string): Promise<Vibe | null> {
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No vibes found
-      return null
-    }
     console.error('Error getting last vibe:', error)
     return null
   }
 
-  return data
+  if (!data || data.length === 0) {
+    return null
+  }
+
+  return data[0]
 }
 
 /**
@@ -84,7 +83,8 @@ export async function saveTopic(
   blurb?: string,
   category?: string
 ): Promise<Topic | null> {
-  const { data, error } = await supabase
+  const supabaseServer = createServerClient()
+  const { data, error } = await supabaseServer
     .from('topics')
     .insert({
       label,
@@ -93,14 +93,14 @@ export async function saveTopic(
       category,
     })
     .select()
-    .single()
 
   if (error) {
     console.error('Error saving topic:', error)
     return null
   }
 
-  return data
+  // Handle array response
+  return Array.isArray(data) ? data[0] : data
 }
 
 /**
@@ -121,14 +121,14 @@ export async function createMatch(
       status: 'active',
     })
     .select()
-    .single()
 
   if (error) {
     console.error('Error creating match:', error)
     return null
   }
 
-  return data
+  // Handle array response
+  return Array.isArray(data) ? data[0] : data
 }
 
 /**
@@ -181,7 +181,7 @@ export async function findOrCreateMatch(userId: string): Promise<ChatMatch | nul
     await supabaseServer.from('match_queue').delete().eq('user_id', otherUserId)
     
     // Create match
-    const { data: newMatch, error: matchError } = await supabaseServer
+    const { data: newMatchData, error: matchError } = await supabaseServer
       .from('chat_matches')
       .insert({
         user1_id: userId,
@@ -190,7 +190,6 @@ export async function findOrCreateMatch(userId: string): Promise<ChatMatch | nul
         relationship_tier: 'community',
       })
       .select()
-      .single()
 
     if (matchError) {
       console.error('Error creating match:', matchError)
@@ -199,7 +198,9 @@ export async function findOrCreateMatch(userId: string): Promise<ChatMatch | nul
       return null
     }
 
-    return newMatch
+    // Handle array response
+    const newMatch = Array.isArray(newMatchData) ? newMatchData[0] : newMatchData
+    return newMatch || null
   } else {
     // No one in queue, add current user to queue
     await supabaseServer
@@ -252,7 +253,6 @@ export async function sendMessage(
       text,
     })
     .select()
-    .single()
 
   if (error) {
     console.error('Error sending message:', error)
@@ -266,7 +266,8 @@ export async function sendMessage(
     .eq('id', matchId)
     .eq('status', 'pending')
 
-  return data
+  // Handle array response
+  return Array.isArray(data) ? data[0] : data
 }
 
 /**
@@ -312,14 +313,14 @@ export async function createCalendarEvent(
       group_type: groupType || null,
     })
     .select()
-    .single()
 
   if (error) {
     console.error('Error creating calendar event:', error)
     return null
   }
 
-  return data
+  // Handle array response
+  return Array.isArray(data) ? data[0] : data
 }
 
 /**
@@ -390,14 +391,14 @@ export async function submitFeedback(
       notes: notes || null,
     })
     .select()
-    .single()
 
   if (error) {
     console.error('Error submitting feedback:', error)
     return null
   }
 
-  return data
+  // Handle array response
+  return Array.isArray(data) ? data[0] : data
 }
 
 /**
