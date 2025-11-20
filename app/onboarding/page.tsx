@@ -71,7 +71,10 @@ function OnboardingContent() {
           // Check if they need interests
           if (!userData.interests || userData.interests.length === 0) {
             // They need to select interests
-            setCurrentStep('interests')
+            // Only set step if we're on initial steps
+            if (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome') {
+              setCurrentStep('interests')
+            }
             if (userData.interests) {
               setSelectedInterests(userData.interests)
             }
@@ -82,29 +85,33 @@ function OnboardingContent() {
         } else {
           // No name yet, but they're verified
           // They need to complete name, password, and interests
-          // Start at name step since email is already done
-          setCurrentStep('name')
+          // Only set step if we're on initial steps
+          if (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome') {
+            setCurrentStep('name')
+          }
         }
       } else {
         // No user data, but they're verified
         // They need to complete the flow
-        // Since they're verified, start at name step (email is done)
+        // Only set step if we're on initial steps
         if (user.email) {
           setEmail(user.email)
         }
-        setCurrentStep('name')
+        if (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome') {
+          setCurrentStep('name')
+        }
       }
     } catch (err) {
       console.error('Error checking onboarding status:', err)
-      // On error, if verified, start at name step
-      if (user.email_confirmed_at) {
+      // On error, only set step if we're on initial steps
+      if (user.email_confirmed_at && (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome')) {
         if (user.email) {
           setEmail(user.email)
         }
         setCurrentStep('name')
       }
     }
-  }, [user, router])
+  }, [user, router, currentStep])
 
   // Track if we've already done initial check to prevent re-running
   const [hasCheckedInitialStatus, setHasCheckedInitialStatus] = useState(false)
