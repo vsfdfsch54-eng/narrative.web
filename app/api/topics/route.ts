@@ -1,8 +1,8 @@
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllTopics, getTopicsByCategory } from '@/lib/supabase-helpers'
-
-export const dynamic = "force-dynamic"
-export const runtime = "nodejs" // optional but helps Vercel
 
 export async function GET(request: NextRequest) {
   // Access searchParams outside try/catch to ensure Next.js recognizes dynamic usage

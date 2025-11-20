@@ -1,8 +1,8 @@
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
+
 import { NextRequest, NextResponse } from 'next/server'
 import { createCalendarEvent, getEventsForMonth } from '@/lib/supabase-helpers'
-
-export const dynamic = "force-dynamic"
-export const runtime = "nodejs" // optional but helps Vercel
 
 export async function POST(request: NextRequest) {
   try {
