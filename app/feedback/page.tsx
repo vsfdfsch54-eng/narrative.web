@@ -199,7 +199,7 @@ export default function FeedbackPage() {
         <div className="phone-frame">
           {/* Phone Screen */}
           <div className="phone-screen">
-            <div className="phone-content pb-20 overflow-hidden">
+            <div className="phone-content px-5 py-6 sm:p-4 pb-20 overflow-hidden">
               {/* Header */}
               <div className={cn(
                 "flex items-center justify-between px-4 py-3",

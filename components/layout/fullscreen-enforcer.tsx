@@ -7,8 +7,10 @@ export function FullscreenEnforcer() {
     // Force fullscreen on mobile
     if (typeof window !== "undefined" && window.innerWidth <= 640) {
       const enforceFullscreen = () => {
-        const html = document.documentElement
-        const body = document.body
+        // Use requestAnimationFrame for better timing
+        requestAnimationFrame(() => {
+          const html = document.documentElement
+          const body = document.body
         
         // Set styles directly on elements
         html.style.width = "100vw"
@@ -44,6 +46,7 @@ export function FullscreenEnforcer() {
           nextRoot.style.left = "0"
           nextRoot.style.overflow = "hidden"
         }
+        })
       }
       
       // Target the outer fixed container
@@ -187,9 +190,24 @@ export function FullscreenEnforcer() {
       setTimeout(reapplyStyles, 100)
       setTimeout(reapplyStyles, 500)
       setTimeout(reapplyStyles, 1000)
+      setTimeout(reapplyStyles, 2000) // Additional delay for late-rendering
+      
+      // Use MutationObserver to catch dynamically added elements
+      const observer = new MutationObserver(() => {
+        reapplyStyles()
+      })
+      
+      // Observe changes to the document body
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+      })
       
       return () => {
         window.removeEventListener("resize", enforceFullscreen)
+        observer.disconnect()
       }
     }
   }, [])

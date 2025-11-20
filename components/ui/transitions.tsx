@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode } from "react"
+import { ReactNode, useEffect, useState } from "react"
 import { motion } from "framer-motion"
 
 interface PageTransitionProps {
@@ -9,19 +9,35 @@ interface PageTransitionProps {
 
 // Optimized page transition - instant for better UX
 export function ClientPageTransition({ children }: PageTransitionProps) {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 640)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
     <motion.div
       initial={false}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-      className="w-screen h-screen fixed inset-0 m-0 p-0"
+      className={isMobile ? "fixed inset-0 m-0 p-0" : "w-screen h-screen fixed inset-0 m-0 p-0"}
       style={{ 
         willChange: "opacity",
         width: '100vw',
-        height: '100vh',
+        height: isMobile ? '100dvh' : '100vh',
         margin: 0,
-        padding: 0
+        padding: 0,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0
       }}
     >
       {children}

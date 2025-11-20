@@ -203,13 +203,14 @@ export default function VibePage() {
 
   return (
     <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center">
-      {/* Phone Frame Container */}
+      {/* Phone Frame Container - Desktop only */}
       <div className="phone-frame-container">
-        {/* Phone Frame - Sleek Black */}
+        {/* Phone Frame - Desktop only */}
         <div className="phone-frame">
-          {/* Phone Screen */}
+          {/* Phone Screen - Desktop only */}
           <div className="phone-screen">
-            <div className="phone-content p-4 sm:p-5 pb-20">
+            {/* Phone Content - Direct child on mobile, nested on desktop */}
+            <div className="phone-content px-5 py-6 sm:p-5 pb-20">
               {/* Chat Icon - Top Left */}
               <motion.button
                 initial={{ opacity: 0 }}

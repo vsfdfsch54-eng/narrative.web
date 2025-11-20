@@ -125,9 +125,8 @@ export default function ConnectPage() {
         {/* Phone Frame - Black & White */}
         <div className="phone-frame">
           {/* Phone Screen */}
-
           <div className="phone-screen">
-            <div className="phone-content p-4 pb-20">
+            <div className="phone-content px-5 py-6 sm:p-4 pb-20">
               {/* Header */}
               <motion.div
                 initial={{ opacity: 0 }}

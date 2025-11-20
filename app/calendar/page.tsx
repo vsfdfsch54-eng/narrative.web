@@ -281,7 +281,8 @@ export default function CalendarPage() {
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <AnimatePresence>
+            <div className="phone-content px-5 py-6 sm:p-4 pb-20">
+              <AnimatePresence>
               {panelOpen && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -589,7 +590,8 @@ export default function CalendarPage() {
               )}
             </AnimatePresence>
 
-            <BottomNav />
+              <BottomNav />
+            </div>
           </div>
         </div>
       </div>
@@ -732,6 +734,10 @@ export default function CalendarPage() {
           </motion.div>
         )}
       </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
