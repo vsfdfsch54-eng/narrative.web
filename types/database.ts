@@ -15,21 +15,27 @@ export interface Database {
           email: string
           name: string
           avatar_url: string | null
+          interests: string[] | null
           created_at: string
+          updated_at: string | null
         }
         Insert: {
           id?: string
           email: string
           name: string
           avatar_url?: string | null
+          interests?: string[] | null
           created_at?: string
+          updated_at?: string | null
         }
         Update: {
           id?: string
           email?: string
           name?: string
           avatar_url?: string | null
+          interests?: string[] | null
           created_at?: string
+          updated_at?: string | null
         }
       }
       vibes: {

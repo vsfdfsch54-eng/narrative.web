@@ -11,12 +11,29 @@ export default function Home() {
   const { user, loading } = useAuth()
   const router = useRouter()
 
-  // Redirect to vibe page if already authenticated
+  // Redirect based on authentication status
   useEffect(() => {
-    if (!loading && user) {
-      router.push("/vibe")
+    if (!loading) {
+      if (user) {
+        // User is authenticated, redirect to vibe
+        router.push("/vibe")
+      } else {
+        // User is not authenticated, redirect to onboarding
+        router.push("/onboarding")
+      }
     }
   }, [user, loading, router])
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    )
+  }
+
+  // This should not render as we redirect, but keep as fallback
   return (
     <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
       {/* Phone Frame Container */}
@@ -50,7 +67,7 @@ export default function Home() {
                   size="lg"
                   className="w-full h-11 text-sm font-semibold tracking-wide bg-white text-slate-900 border border-white/70 shadow-[0_15px_45px_rgba(0,0,0,0.45)] hover:-translate-y-0.5 transition-all"
                 >
-                  <Link href="/login">Get Started</Link>
+                  <Link href="/onboarding">Get Started</Link>
                 </Button>
                 <Button
                   asChild

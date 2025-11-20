@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name } = body
+    const { userId, name, interests } = body
 
     if (!userId || !name) {
       return NextResponse.json({ success: false, error: 'User ID and name required' }, { status: 400 })
@@ -68,13 +68,14 @@ export async function PUT(request: NextRequest) {
       email = existingUser.email
     }
 
-    // Now upsert with email
+    // Now upsert with email and interests
     const { data, error } = await supabase
       .from('users')
       .upsert({
         id: userId,
         email: email,
         name: name,
+        interests: interests || [],
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'id'

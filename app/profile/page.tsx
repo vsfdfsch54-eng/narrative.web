@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/use-auth"
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, signOut } = useAuth()
   const [userName, setUserName] = useState("")
   const [quoteOfDay, setQuoteOfDay] = useState("")
   const [communityMembers, setCommunityMembers] = useState<{ id: string; name: string }[]>([])
@@ -323,6 +323,19 @@ export default function ProfilePage() {
                     <p className="text-xs text-white/60 text-center py-2">No recent chats</p>
                   )}
                 </div>
+              </div>
+
+              {/* Logout Button */}
+              <div className="mt-4 pt-4 border-t border-white/10 flex-shrink-0">
+                <button
+                  onClick={async () => {
+                    await signOut()
+                    router.push("/onboarding")
+                  }}
+                  className="w-full px-4 py-2.5 rounded-lg text-sm font-semibold border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:border-white/20 transition-all"
+                >
+                  Sign Out
+                </button>
               </div>
             </div>
 
