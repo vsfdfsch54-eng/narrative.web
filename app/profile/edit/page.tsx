@@ -61,132 +61,133 @@ export default function ProfileEditPage() {
                 <div className="bg-white/5 border border-white/10 rounded-[20px] p-4 space-y-6">
                   <h2 className="text-lg font-semibold text-white mb-4">Profile Information</h2>
                   <div className="space-y-6">
-              <div className="flex items-center gap-6">
-                <Avatar
-                  src={profile.avatar}
-                  alt={profile.name}
-                  fallback={profile.name.charAt(0).toUpperCase()}
-                  size="xl"
-                />
-                <div className="flex-1">
-                  <p className="text-sm text-white/60 mb-2">
-                    Profile picture
-                  </p>
-                  <button className="px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10 transition text-sm">
-                    Change Photo
-                  </button>
-                </div>
-              </div>
+                    <div className="flex items-center gap-6">
+                      <Avatar
+                        src={profile.avatar}
+                        alt={profile.name}
+                        fallback={profile.name.charAt(0).toUpperCase()}
+                        size="xl"
+                      />
+                      <div className="flex-1">
+                        <p className="text-sm text-white/60 mb-2">
+                          Profile picture
+                        </p>
+                        <button className="px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10 transition text-sm">
+                          Change Photo
+                        </button>
+                      </div>
+                    </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-white">
-                    Name
-                  </label>
-                  <Input
-                    value={profile.name}
-                    onChange={(e) =>
-                      setProfile({ ...profile, name: e.target.value })
-                    }
-                    className="bg-white/5 border-white/10 text-white"
-                  />
-                </div>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-white">
+                          Name
+                        </label>
+                        <Input
+                          value={profile.name}
+                          onChange={(e) =>
+                            setProfile({ ...profile, name: e.target.value })
+                          }
+                          className="bg-white/5 border-white/10 text-white"
+                        />
+                      </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-white">
-                    Email
-                  </label>
-                  <Input
-                    type="email"
-                    value={profile.email}
-                    onChange={(e) =>
-                      setProfile({ ...profile, email: e.target.value })
-                    }
-                    className="bg-white/5 border-white/10 text-white"
-                  />
-                </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-white">
+                          Email
+                        </label>
+                        <Input
+                          type="email"
+                          value={profile.email}
+                          onChange={(e) =>
+                            setProfile({ ...profile, email: e.target.value })
+                          }
+                          className="bg-white/5 border-white/10 text-white"
+                        />
+                      </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-white">
-                    Bio
-                  </label>
-                  <textarea
-                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20 text-white placeholder:text-white/50 resize-none transition-all duration-200 min-h-[100px]"
-                    placeholder="Tell us about yourself..."
-                    value={profile.bio}
-                    onChange={(e) =>
-                      setProfile({ ...profile, bio: e.target.value })
-                    }
-                  />
-                </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-white">
+                          Bio
+                        </label>
+                        <textarea
+                          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/20 text-white placeholder:text-white/50 resize-none transition-all duration-200 min-h-[100px]"
+                          placeholder="Tell us about yourself..."
+                          value={profile.bio}
+                          onChange={(e) =>
+                            setProfile({ ...profile, bio: e.target.value })
+                          }
+                        />
+                      </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-white">
-                      Location
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="City, Country"
-                      value={profile.location}
-                      onChange={(e) =>
-                        setProfile({ ...profile, location: e.target.value })
-                      }
-                      className="bg-white/5 border-white/10 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-white">
-                      Website
-                    </label>
-                    <Input
-                      type="url"
-                      placeholder="https://example.com"
-                      value={profile.website}
-                      onChange={(e) =>
-                        setProfile({ ...profile, website: e.target.value })
-                      }
-                      className="bg-white/5 border-white/10 text-white"
-                    />
-                  </div>
-                </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-white">
+                            Location
+                          </label>
+                          <Input
+                            type="text"
+                            placeholder="City, Country"
+                            value={profile.location}
+                            onChange={(e) =>
+                              setProfile({ ...profile, location: e.target.value })
+                            }
+                            className="bg-white/5 border-white/10 text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-white">
+                            Website
+                          </label>
+                          <Input
+                            type="url"
+                            placeholder="https://example.com"
+                            value={profile.website}
+                            onChange={(e) =>
+                              setProfile({ ...profile, website: e.target.value })
+                            }
+                            className="bg-white/5 border-white/10 text-white"
+                          />
+                        </div>
+                      </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-white">
-                    Default Intimacy Tier
-                  </label>
-                  <select
-                    className="flex h-10 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 transition-all duration-200"
-                    value={profile.intimacyTier}
-                    onChange={(e) =>
-                      setProfile({
-                        ...profile,
-                        intimacyTier: e.target.value as IntimacyTier,
-                      })
-                    }
-                  >
-                    {INTIMACY_TIERS.map((tier) => (
-                      <option key={tier.id} value={tier.id} className="bg-black">
-                        {tier.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-medium text-white">
+                          Default Intimacy Tier
+                        </label>
+                        <select
+                          className="flex h-10 w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 transition-all duration-200"
+                          value={profile.intimacyTier}
+                          onChange={(e) =>
+                            setProfile({
+                              ...profile,
+                              intimacyTier: e.target.value as IntimacyTier,
+                            })
+                          }
+                        >
+                          {INTIMACY_TIERS.map((tier) => (
+                            <option key={tier.id} value={tier.id} className="bg-black">
+                              {tier.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
 
-                  <div className="flex justify-end gap-4 pt-6 border-t border-white/10">
-                    <button
-                      onClick={() => router.back()}
-                      className="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10 transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      className="px-4 py-2 rounded-full bg-white text-black hover:bg-white/95 transition font-semibold"
-                    >
-                      Save Changes
-                    </button>
+                    <div className="flex justify-end gap-4 pt-6 border-t border-white/10">
+                      <button
+                        onClick={() => router.back()}
+                        className="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10 transition"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        className="px-4 py-2 rounded-full bg-white text-black hover:bg-white/95 transition font-semibold"
+                      >
+                        Save Changes
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
