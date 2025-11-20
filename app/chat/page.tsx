@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import { AnimatePresence } from "framer-motion"
 import { ProfileCard, Profile } from "@/components/ui/profile-card"
 import { BottomNav } from "@/components/ui/bottom-nav"
 import { cn } from "@/lib/utils"
@@ -62,34 +62,31 @@ export default function ChatPage() {
 
   if (profiles.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-black">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="w-full sm:max-w-[375px] sm:mx-auto"
-        >
-          <div className="relative bg-[#0A0A0A] rounded-[24px] p-1 border border-white/10">
-            <div className="bg-black rounded-[22px] relative flex flex-col h-[600px] sm:h-[800px] overflow-hidden">
-              <div className="flex flex-col flex-1 p-4 pb-20 overflow-y-auto scrollbar-hide min-h-0 items-center justify-center">
-                <h1 className="text-2xl font-bold text-white mb-4 text-center">
+      <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+        {/* Phone Frame Container */}
+        <div className="phone-frame-container">
+          {/* Phone Frame - Black & White */}
+          <div className="phone-frame">
+            {/* Phone Screen */}
+            <div className="phone-screen">
+              <div className="phone-content flex flex-col items-center justify-center text-center px-6 py-10 gap-6 pb-20">
+                <h1 className="text-2xl font-bold text-white">
                   Find Your Match
                 </h1>
-                <p className="text-white/60 text-center mb-6 px-4">
+                <p className="text-white/60 max-w-xs">
                   No matches yet. Start by selecting a vibe and topic to find people to connect with!
                 </p>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={() => router.push("/vibe")}
                   className="px-6 py-3 rounded-full bg-white text-black font-semibold"
                 >
                   Select Vibe & Topic
-                </motion.button>
+                </button>
               </div>
               <BottomNav />
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     )
   }
@@ -114,25 +111,17 @@ export default function ChatPage() {
           <div className="phone-screen">
             <div className="phone-content px-5 py-6 sm:p-4 pb-20">
               {/* Header */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center mb-6 flex-shrink-0"
-              >
+              <div className="text-center mb-6 flex-shrink-0">
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-[-0.02em] text-white leading-tight">
                   Find Your Match
                 </h1>
-              </motion.div>
+              </div>
 
               {/* Profile Card Container - Single Card, Full Screen */}
               <div className="flex-1 flex items-center justify-center relative min-h-0">
                 <AnimatePresence mode="wait" initial={false}>
-                  <motion.div
+                  <div
                     key={currentProfile.id}
-                    initial={{ opacity: 0, x: 8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -8 }}
-                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                     className="w-full h-full flex items-center justify-center pointer-events-auto"
                   >
                     <ProfileCard
@@ -142,34 +131,22 @@ export default function ChatPage() {
                       }}
                       onSkip={handleSkip}
                     />
-                  </motion.div>
+                  </div>
                 </AnimatePresence>
               </div>
 
               {/* Progress Indicator */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-center gap-2 flex-shrink-0 mt-4"
-              >
+              <div className="flex justify-center gap-2 flex-shrink-0 mt-4">
                 {profiles.map((_, index) => (
-                  <motion.div
+                  <div
                     key={index}
-                    layout
-                    initial={false}
-                    animate={{
-                      width: index === currentIndex ? 24 : 4,
-                    }}
-                    transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                     className={cn(
-                      "h-1 rounded-full",
-                      index === currentIndex
-                        ? "bg-white"
-                        : "bg-white/20"
+                      "h-1 rounded-full transition-all duration-200",
+                      index === currentIndex ? "w-6 bg-white" : "w-1 bg-white/20"
                     )}
                   />
                 ))}
-              </motion.div>
+              </div>
             </div>
 
             {/* Bottom Navigation */}

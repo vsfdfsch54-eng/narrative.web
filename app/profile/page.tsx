@@ -121,11 +121,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-black flex items-center justify-center px-4 py-6">
+    <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
+      {/* Phone Frame Container */}
       <div className="phone-frame-container">
+        {/* Phone Frame - Black & White */}
         <div className="phone-frame">
+          {/* Phone Screen */}
           <div className="phone-screen">
-            <div className="phone-content px-5 py-6 pb-20">
+            <div className="phone-content px-5 py-6 sm:p-4 pb-20">
               {/* Header */}
               <div className={cn(
                 "flex items-center justify-between px-4 py-3",

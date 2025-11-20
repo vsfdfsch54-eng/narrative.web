@@ -252,14 +252,12 @@ export default function ChatDetailPage() {
                 "sticky top-0 z-10 flex-shrink-0"
               )}>
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                  <button
                     onClick={() => router.push("/vibe")}
                     className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
                   >
                     <ArrowLeft className="h-5 w-5 text-white/80" />
-                  </motion.button>
+                  </button>
                   
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <span className="text-2xl">
@@ -278,9 +276,7 @@ export default function ChatDetailPage() {
                   </div>
                 </div>
                 
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={() => setShowEndModal(true)}
                   className={cn(
                     "px-3 py-1.5 rounded-full text-xs font-semibold",
@@ -291,47 +287,31 @@ export default function ChatDetailPage() {
                   )}
                 >
                   End Convo
-                </motion.button>
+                </button>
               </div>
 
               {/* Messages Area */}
               <div className="flex-1 overflow-y-auto scrollbar-hide px-4 py-4">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full">
-                    <motion.div
-                      initial={{ opacity: 0, y: 2 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                      className="text-center"
-                      style={{ willChange: "transform, opacity" }}
-                    >
+                    <div className="text-center">
                       <p className="text-white/60 text-sm mb-1">
                         Start the conversation!
                       </p>
                       <p className="text-white/50 text-xs">
                         Say hello to {profileName}
                       </p>
-                    </motion.div>
+                    </div>
                   </div>
                 ) : (
                   <>
-                    {messages.map((msg, index) => (
-                      <motion.div
-                        key={msg.id}
-                        initial={{ opacity: 0, y: 2 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ 
-                          delay: index * 0.015,
-                          duration: 0.35,
-                          ease: [0.22, 1, 0.36, 1]
-                        }}
-                        style={{ willChange: "transform, opacity" }}
-                      >
+                    {messages.map((msg) => (
+                      <div key={msg.id}>
                         <ChatBubble
                           message={msg}
                           isOwn={msg.senderId === currentUserId}
                         />
-                      </motion.div>
+                      </div>
                     ))}
                     {isTyping && <TypingIndicator />}
                   </>
@@ -364,9 +344,7 @@ export default function ChatDetailPage() {
                       )}
                     />
                   </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                  <button
                     type="submit"
                     disabled={!message.trim()}
                     className={cn(
@@ -380,7 +358,7 @@ export default function ChatDetailPage() {
                     )}
                   >
                     <Send className="h-4 w-4" />
-                  </motion.button>
+                  </button>
                 </form>
               </div>
             </div>

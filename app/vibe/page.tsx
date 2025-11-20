@@ -7,6 +7,7 @@ import { VibeChip } from "@/components/ui/vibe-chip"
 import { TopicChip } from "@/components/ui/topic-chip"
 import { Button } from "@/components/ui/button"
 import { BottomNav } from "@/components/ui/bottom-nav"
+import { PhoneFrame } from "@/components/layout/phone-frame"
 import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS } from "@/lib/constants"
 import { Vibe, Topic } from "@/lib/types"
 import { ChevronDown, Sparkles, MessageSquare, Clock } from "lucide-react"
@@ -202,15 +203,8 @@ export default function VibePage() {
   }, [selectedVibe, selectedTopic])
 
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center">
-      {/* Phone Frame Container - Desktop only */}
-      <div className="phone-frame-container">
-        {/* Phone Frame - Desktop only */}
-        <div className="phone-frame">
-          {/* Phone Screen - Desktop only */}
-          <div className="phone-screen">
-            {/* Phone Content - Direct child on mobile, nested on desktop */}
-            <div className="phone-content px-5 py-6 sm:p-5 pb-20">
+    <PhoneFrame>
+      <div className="phone-content px-5 py-6 sm:p-5 pb-20">
               {/* Chat Icon - Top Left */}
               <motion.button
                 initial={{ opacity: 0 }}
@@ -564,13 +558,8 @@ export default function VibePage() {
                   )}
                 </AnimatePresence>
               </motion.div>
-            </div>
-            
-            {/* Bottom Navigation */}
-            <BottomNav />
-          </div>
-        </div>
       </div>
-    </div>
+      <BottomNav />
+    </PhoneFrame>
   )
 }

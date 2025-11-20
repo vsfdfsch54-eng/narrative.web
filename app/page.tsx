@@ -4,6 +4,7 @@ import Link from "next/link"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
+import { PhoneFrame } from "@/components/layout/phone-frame"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 
@@ -18,11 +19,8 @@ export default function Home() {
     }
   }, [user, loading, router])
   return (
-    <div className="fixed inset-0 bg-black overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
-      <div className="phone-frame-container">
-        <div className="phone-frame">
-          <div className="phone-screen">
-            <div className="phone-content flex items-center justify-center text-center px-6 py-10 gap-6">
+    <PhoneFrame>
+      <div className="phone-content flex items-center justify-center text-center px-6 py-10 gap-6">
               <motion.span
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -73,10 +71,7 @@ export default function Home() {
                   <Link href="/vibe">See the Flow</Link>
                 </Button>
               </motion.div>
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
+    </PhoneFrame>
   )
 }
