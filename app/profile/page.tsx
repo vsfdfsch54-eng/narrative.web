@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { BottomNav } from "@/components/ui/bottom-nav"
 import { cn } from "@/lib/utils"
@@ -325,8 +326,8 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Logout Button */}
-              <div className="mt-4 pt-4 border-t border-white/10 flex-shrink-0">
+              {/* Logout and Forgot Password */}
+              <div className="mt-4 pt-4 border-t border-white/10 flex-shrink-0 space-y-2">
                 <button
                   onClick={async () => {
                     await signOut()
@@ -336,6 +337,12 @@ export default function ProfilePage() {
                 >
                   Sign Out
                 </button>
+                <Link
+                  href="/login"
+                  className="block w-full px-4 py-2.5 rounded-lg text-sm font-semibold border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:border-white/20 transition-all text-center"
+                >
+                  Forgot Password
+                </Link>
               </div>
             </div>
 

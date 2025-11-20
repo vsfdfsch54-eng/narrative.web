@@ -56,16 +56,16 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <Card className="p-3 glass-effect border-slate-700/30 bg-slate-900/30 shadow-2xl flex-1 min-h-0 flex flex-col">
-                <CardContent className="p-0 flex-1 min-h-0 flex flex-col">
-                  <form onSubmit={handleSubmit} className="space-y-3 flex-1 min-h-0 flex flex-col">
+              <Card className="p-4 glass-effect border-slate-700/30 bg-slate-900/30 shadow-2xl flex-shrink-0">
+                <CardContent className="p-0">
+                  <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
                       <div className="p-3 rounded-2xl border border-white/15 bg-white/5 text-xs text-white/80">
                         {error}
                       </div>
                     )}
 
-                    <div className="space-y-2.5 flex-shrink-0">
+                    <div className="space-y-3">
                       <div className="space-y-1">
                         <label className="text-[11px] uppercase tracking-[0.2em] text-slate-400">
                           Email
@@ -77,7 +77,7 @@ export default function LoginPage() {
                           onChange={(e) => setEmail(e.target.value)}
                           required
                           disabled={loading}
-                          className="bg-slate-900/40 border-slate-700/40 text-sm"
+                          className="bg-slate-900/40 border-slate-700/40 text-sm h-12"
                         />
                       </div>
                       <div className="space-y-1">
@@ -91,16 +91,16 @@ export default function LoginPage() {
                           onChange={(e) => setPassword(e.target.value)}
                           required
                           disabled={loading}
-                          className="bg-slate-900/40 border-slate-700/40 text-sm"
+                          className="bg-slate-900/40 border-slate-700/40 text-sm h-12"
                         />
                       </div>
                     </div>
 
-                    <div className="mt-auto space-y-2.5 flex-shrink-0">
+                    <div className="space-y-3">
                       <Button
                         type="submit"
                         variant="primary"
-                        className="w-full h-11 text-sm font-semibold tracking-wide bg-white text-slate-900 border border-white/70 shadow-[0_12px_35px_rgba(0,0,0,0.45)]"
+                        className="w-full h-12 text-sm font-semibold tracking-wide bg-white text-slate-900 border border-white/70 shadow-[0_12px_35px_rgba(0,0,0,0.45)]"
                         size="lg"
                         disabled={loading}
                       >
