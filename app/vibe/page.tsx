@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { BottomNav } from "@/components/ui/bottom-nav"
 import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS } from "@/lib/constants"
 import { Vibe, Topic } from "@/lib/types"
-import { Clock } from "lucide-react"
+import { Clock, Sparkles, MessageSquare } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 
@@ -210,26 +210,26 @@ export default function VibePage() {
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content px-4 py-6 pb-0 overflow-hidden flex flex-col h-full">
-              {/* Header */}
-              <div className="text-center mb-6 flex-shrink-0">
-                <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#f1f1f3] leading-tight mb-3">
+            <div className="phone-content px-5 py-5 pb-0 overflow-hidden flex flex-col h-full">
+              {/* Compact Header */}
+              <div className="text-center mb-5 flex-shrink-0">
+                <h1 className="text-2xl font-semibold tracking-tight text-[#f1f1f3] leading-tight mb-3">
                   Let&apos;s get started
                 </h1>
                 
-                {/* Time Limit Selector */}
+                {/* Time Limit Selector - Compact */}
                 <div className="flex items-center justify-center gap-2">
-                  <Clock className="h-4 w-4 text-[#f1f1f3]/50" />
-                  <div className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5 text-[#f1f1f3]/40" />
+                  <div className="flex items-center gap-1.5">
                     {TIME_LIMITS.map((time) => (
                       <button
                         key={time}
                         onClick={() => setSelectedTimeLimit(time)}
                         className={cn(
-                          "px-3 py-1.5 rounded-[14px] text-xs font-bold transition-all min-h-[36px] min-w-[36px] border",
+                          "px-3 py-1 rounded-lg text-[11px] font-medium transition-all border",
                           selectedTimeLimit === time 
-                            ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]" 
-                            : "bg-white/5 text-[#f1f1f3]/80 border-white/10 hover:bg-white/10"
+                            ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20" 
+                            : "bg-white/5 text-[#f1f1f3]/60 border-white/8 hover:bg-white/8 hover:border-white/12"
                         )}
                       >
                         {time}m
@@ -239,32 +239,35 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Main Content */}
-              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                {/* Your Vibe Section */}
-                <div className="flex-shrink-0 mb-8">
-                  <h2 className="text-lg font-bold text-[#f1f1f3] mb-6">
-                    Your Vibe
-                  </h2>
+              {/* Main Content - Perfectly Balanced */}
+              <div className="flex flex-col flex-1 min-h-0 justify-between">
+                {/* Top Section: Vibe */}
+                <div className="flex-shrink-0 mb-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="h-4 w-4 text-[#f1f1f3]/50" />
+                    <h2 className="text-sm font-medium text-[#f1f1f3]/80">
+                      Your Vibe
+                    </h2>
+                  </div>
                   
-                  {/* Last Vibe Option */}
+                  {/* Last Vibe - Compact */}
                   {lastVibe && !loadingLastVibe && (
                     <button
                       onClick={handleSelectLastVibe}
                       className={cn(
-                        "w-full px-4 py-2.5 rounded-[16px] text-left transition-all mb-3 text-sm font-bold border",
+                        "w-full px-3 py-2 rounded-lg text-left transition-all mb-2.5 text-xs font-medium border",
                         selectedVibe?.id === lastVibe.id
-                          ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]"
-                          : "bg-[#1A1A1A] text-[#f1f1f3] border-[#1A1A1A]"
+                          ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
+                          : "bg-white/5 text-[#f1f1f3]/70 border-white/8 hover:bg-white/8 hover:border-white/12"
                       )}
                     >
-                      <span className="text-[10px] text-[#f1f1f3]/60 font-semibold uppercase mr-2">Last:</span>
+                      <span className="text-[10px] text-[#f1f1f3]/50 font-medium uppercase mr-1.5">Last:</span>
                       <span>{lastVibe.label}</span>
                     </button>
                   )}
 
-                  {/* Horizontal Scroll Row for Vibes */}
-                  <div className="flex overflow-x-auto space-x-3 scrollbar-hide -mx-4 px-4">
+                  {/* Horizontal Scroll Row for Vibes - Compact */}
+                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-5 px-5">
                     {VIBES.map((vibe) => (
                       <VibeChip
                         key={vibe.id}
@@ -277,28 +280,31 @@ export default function VibePage() {
                   </div>
                 </div>
 
-                {/* Your Topic Section */}
+                {/* Middle Section: Topic */}
                 <div className="flex-shrink-0">
-                  <h2 className="text-lg font-bold text-[#f1f1f3] mb-6">
-                    Your Topic
-                  </h2>
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare className="h-4 w-4 text-[#f1f1f3]/50" />
+                    <h2 className="text-sm font-medium text-[#f1f1f3]/80">
+                      Your Topic
+                    </h2>
+                  </div>
 
-                  {/* Most Popular Topic */}
+                  {/* Most Popular Topic - Compact */}
                   <button
                     onClick={handleSelectMostPopular}
                     className={cn(
-                      "w-full px-4 py-2.5 rounded-[16px] text-left transition-all mb-3 text-sm font-bold border",
+                      "w-full px-3 py-2 rounded-lg text-left transition-all mb-2.5 text-xs font-medium border",
                       selectedTopic?.id === MOST_POPULAR_TOPIC.id
-                        ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]"
-                        : "bg-[#1A1A1A] text-[#f1f1f3] border-[#1A1A1A]"
+                        ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
+                        : "bg-white/5 text-[#f1f1f3]/70 border-white/8 hover:bg-white/8 hover:border-white/12"
                     )}
                   >
-                    <span className="text-[10px] text-[#f1f1f3]/60 font-semibold uppercase mr-2">Popular:</span>
+                    <span className="text-[10px] text-[#f1f1f3]/50 font-medium uppercase mr-1.5">Popular:</span>
                     <span className="line-clamp-1">{MOST_POPULAR_TOPIC.label}</span>
                   </button>
 
-                  {/* Category Buttons - Horizontal Scroll */}
-                  <div className="flex overflow-x-auto space-x-2 mb-3 scrollbar-hide -mx-4 px-4">
+                  {/* Category Buttons - Compact Horizontal Scroll */}
+                  <div className="flex overflow-x-auto space-x-1.5 mb-2.5 scrollbar-hide -mx-5 px-5">
                     {TOPIC_CATEGORIES.map((cat) => (
                       <button
                         key={cat.id}
@@ -307,10 +313,10 @@ export default function VibePage() {
                           setSelectedTopic(null)
                         }}
                         className={cn(
-                          "shrink-0 px-4 py-2.5 rounded-[16px] text-xs font-bold transition-all border",
+                          "shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all border",
                           selectedCategory === cat.id
-                            ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]"
-                            : "bg-[#1A1A1A] text-[#f1f1f3] border-[#1A1A1A]"
+                            ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
+                            : "bg-white/5 text-[#f1f1f3]/60 border-white/8 hover:bg-white/8 hover:border-white/12"
                         )}
                       >
                         {cat.label}
@@ -318,8 +324,8 @@ export default function VibePage() {
                     ))}
                   </div>
 
-                  {/* Horizontal Scroll Row for Topics */}
-                  <div className="flex overflow-x-auto space-x-3 scrollbar-hide -mx-4 px-4">
+                  {/* Horizontal Scroll Row for Topics - Compact */}
+                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-5 px-5">
                     {currentTopics.map((topic) => (
                       <TopicChip
                         key={topic.id}
@@ -333,8 +339,8 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Bottom Action Button */}
-              <div className="flex items-center justify-center mt-10 flex-shrink-0 pb-4 safe-area-inset-bottom">
+              {/* Bottom Action Button - Fixed at Bottom */}
+              <div className="flex items-center justify-center mt-4 pt-4 border-t border-white/5 flex-shrink-0 pb-2">
                 <AnimatePresence mode="wait">
                   {isComplete ? (
                     <Button
@@ -342,7 +348,7 @@ export default function VibePage() {
                       size="lg"
                       onClick={handleConnect}
                       disabled={saving}
-                      className="w-full rounded-full h-14 text-base font-bold"
+                      className="w-full rounded-xl h-11 text-sm font-semibold"
                     >
                       {saving ? "Connecting..." : "Connect"}
                     </Button>
@@ -351,7 +357,7 @@ export default function VibePage() {
                       variant="primary"
                       size="lg"
                       onClick={handleSkipAndChat}
-                      className="w-full rounded-full h-14 text-base font-bold"
+                      className="w-full rounded-xl h-11 text-sm font-semibold"
                     >
                       Skip & Chat
                     </Button>
