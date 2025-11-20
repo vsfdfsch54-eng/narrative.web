@@ -71,38 +71,86 @@ function OnboardingContent() {
     checkOnboardingStatus()
   }, [authLoading, user, checkOnboardingStatus])
 
-  // Handle email verification - auto-complete onboarding
+  // Handle email verification - redirect to /vibe if verified and onboarding complete
   useEffect(() => {
     if (authLoading) return
     
     const verified = searchParams.get('verified')
     
-    // If user just verified email (via callback or direct verification)
+    // If user just verified email (via callback)
     if (user && user.email_confirmed_at && verified === 'true') {
-      // Show verified notification
-      setShowVerified(true)
-      
-      // Check if onboarding is complete
-      checkOnboardingStatus().then(() => {
-        // If user has name and interests, they'll be redirected by checkOnboardingStatus
-        // Otherwise, move to interests step
-        if (currentStep === 'verify') {
-          setCurrentStep('interests')
+      // Check if onboarding is complete - if so, redirect to /vibe
+      const checkAndRedirect = async () => {
+        try {
+          const response = await fetch(`/api/users?userId=${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            const hasName = data.data.name
+            const hasInterests = data.data.interests && data.data.interests.length > 0
+            
+            if (hasName && hasInterests) {
+              // Onboarding complete, redirect directly to /vibe
+              router.push('/vibe')
+              return
+            }
+          }
+          
+          // Onboarding not complete, show notification and continue
+          setShowVerified(true)
+          if (currentStep === 'verify') {
+            setCurrentStep('interests')
+          }
+          if (user.email && !email) {
+            setEmail(user.email)
+          }
+        } catch (err) {
+          // Error checking, continue with onboarding
+          setShowVerified(true)
+          if (currentStep === 'verify') {
+            setCurrentStep('interests')
+          }
         }
-        // Pre-fill email if available
-        if (user.email && !email) {
-          setEmail(user.email)
-        }
-      })
-    } else if (user && user.email_confirmed_at && currentStep === 'verify') {
-      // User verified but no verified param - still move forward
-      if (selectedInterests.length > 0) {
-        handleCompleteOnboarding()
-      } else {
-        setCurrentStep('interests')
       }
+      
+      checkAndRedirect()
+    } else if (user && user.email_confirmed_at && currentStep === 'verify') {
+      // User verified but no verified param - check onboarding status
+      const checkAndRedirect = async () => {
+        try {
+          const response = await fetch(`/api/users?userId=${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            const hasName = data.data.name
+            const hasInterests = data.data.interests && data.data.interests.length > 0
+            
+            if (hasName && hasInterests) {
+              // Onboarding complete, redirect directly to /vibe
+              router.push('/vibe')
+              return
+            }
+          }
+          
+          // Continue with onboarding
+          if (selectedInterests.length > 0) {
+            handleCompleteOnboarding()
+          } else {
+            setCurrentStep('interests')
+          }
+        } catch (err) {
+          // Error, continue with onboarding
+          if (selectedInterests.length > 0) {
+            handleCompleteOnboarding()
+          } else {
+            setCurrentStep('interests')
+          }
+        }
+      }
+      
+      checkAndRedirect()
     }
-  }, [user, searchParams, selectedInterests, email, currentStep, authLoading, checkOnboardingStatus])
+  }, [user, searchParams, selectedInterests, email, currentStep, authLoading, router])
 
   const validatePasswordMatch = useCallback(() => {
     if (confirmPassword && password !== confirmPassword) {
@@ -247,8 +295,8 @@ function OnboardingContent() {
       const data = await response.json()
       
       if (data.success) {
-        // Redirect to welcome page after completing onboarding
-        router.push('/welcome')
+        // Redirect directly to /vibe after completing onboarding
+        router.push('/vibe')
       } else {
         setError(data.error || "Failed to complete onboarding")
         setLoading(false)

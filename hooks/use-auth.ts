@@ -58,9 +58,10 @@ export function useAuth() {
     try {
       // Get the current origin for redirect URL
       // Supabase will redirect to this URL after email verification
+      // The callback will check verification status and redirect appropriately
       const redirectUrl = typeof window !== 'undefined' 
-        ? `${window.location.origin}/auth/callback?next=${encodeURIComponent('/onboarding?verified=true')}`
-        : '/auth/callback?next=/onboarding?verified=true'
+        ? `${window.location.origin}/auth/callback`
+        : '/auth/callback'
 
       const { data, error } = await supabase.auth.signUp({
         email,

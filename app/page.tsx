@@ -62,14 +62,18 @@ export default function Home() {
           const hasInterests = data.data.interests && data.data.interests.length > 0
           
           if (hasName && hasInterests) {
+            // Onboarding complete, go directly to /vibe
             router.push("/vibe")
           } else {
+            // Need to complete onboarding
             router.push("/onboarding")
           }
         } else {
+          // No user data, need onboarding
           router.push("/onboarding")
         }
       } catch (err) {
+        // Error checking, go to onboarding
         router.push("/onboarding")
       }
     } else {

@@ -35,29 +35,35 @@ function AuthCallbackContent() {
 
           if (data.session && data.user) {
             // Successfully verified and logged in
-            // Check if user has completed onboarding
-            try {
-              const response = await fetch(`/api/users?userId=${data.user.id}`)
-              const userData = await response.json()
-              
-              if (userData.success && userData.data) {
-                const hasName = userData.data.name
-                const hasInterests = userData.data.interests && userData.data.interests.length > 0
+            // Check email verification status
+            if (data.user.email_confirmed_at) {
+              // Email is verified, check if onboarding is complete
+              try {
+                const response = await fetch(`/api/users?userId=${data.user.id}`)
+                const userData = await response.json()
                 
-                if (hasName && hasInterests) {
-                  // Onboarding complete, go to welcome page then main app
-                  router.push('/welcome')
+                if (userData.success && userData.data) {
+                  const hasName = userData.data.name
+                  const hasInterests = userData.data.interests && userData.data.interests.length > 0
+                  
+                  if (hasName && hasInterests) {
+                    // Onboarding complete, go DIRECTLY to /vibe
+                    router.push('/vibe')
+                  } else {
+                    // Need to complete onboarding
+                    router.push('/onboarding?verified=true')
+                  }
                 } else {
-                  // Need to complete onboarding, redirect with verified flag
+                  // No user data, need onboarding
                   router.push('/onboarding?verified=true')
                 }
-              } else {
-                // No user data, need onboarding
+              } catch (err) {
+                // Error checking user data, go to onboarding
                 router.push('/onboarding?verified=true')
               }
-            } catch (err) {
-              // Error checking user data, go to onboarding
-              router.push('/onboarding?verified=true')
+            } else {
+              // Email not verified yet, go to onboarding
+              router.push('/onboarding')
             }
           } else {
             setError('No session created. Please try again.')
@@ -70,29 +76,35 @@ function AuthCallbackContent() {
           // No code, check if user is already authenticated
           const { data: { session } } = await supabase.auth.getSession()
           if (session && session.user) {
-            // Check onboarding status
-            try {
-              const response = await fetch(`/api/users?userId=${session.user.id}`)
-              const userData = await response.json()
-              
-              if (userData.success && userData.data) {
-                const hasName = userData.data.name
-                const hasInterests = userData.data.interests && userData.data.interests.length > 0
+            // Check email verification and onboarding status
+            if (session.user.email_confirmed_at) {
+              try {
+                const response = await fetch(`/api/users?userId=${session.user.id}`)
+                const userData = await response.json()
                 
-                if (hasName && hasInterests) {
-                  router.push('/welcome')
+                if (userData.success && userData.data) {
+                  const hasName = userData.data.name
+                  const hasInterests = userData.data.interests && userData.data.interests.length > 0
+                  
+                  if (hasName && hasInterests) {
+                    // Onboarding complete, go DIRECTLY to /vibe
+                    router.push('/vibe')
+                  } else {
+                    router.push('/onboarding?verified=true')
+                  }
                 } else {
                   router.push('/onboarding?verified=true')
                 }
-              } else {
+              } catch (err) {
                 router.push('/onboarding?verified=true')
               }
-            } catch (err) {
-              router.push('/onboarding?verified=true')
+            } else {
+              // Email not verified, go to onboarding
+              router.push('/onboarding')
             }
           } else {
-            // No code and no session, redirect to onboarding
-            router.push('/onboarding')
+            // No code and no session, redirect to landing page
+            router.push('/')
           }
         }
       } catch (err: any) {
