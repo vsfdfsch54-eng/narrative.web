@@ -33,9 +33,9 @@ function OnboardingContent() {
   const checkOnboardingStatus = useCallback(async () => {
     if (!user?.id) return
     
-    // If user is not verified, redirect to verify-email page
+    // If user is not verified, redirect to verify page
     if (!user.email_confirmed_at) {
-      router.push("/verify-email")
+      router.push("/verify")
       return
     }
     
@@ -45,22 +45,57 @@ function OnboardingContent() {
       
       if (data.success && data.data) {
         const userData = data.data
+        
         // If user has name and interests, they've completed onboarding
         if (userData.name && userData.interests && userData.interests.length > 0) {
           router.push("/vibe")
           return
         }
         
-        // If user is verified but hasn't completed onboarding, pre-fill data
-        if (user.email_confirmed_at && userData.name) {
-          setName(userData.name)
-          if (userData.interests && userData.interests.length > 0) {
-            setSelectedInterests(userData.interests)
-          }
+        // User is verified but hasn't completed onboarding
+        // Pre-fill data and set appropriate step
+        if (user.email) {
+          setEmail(user.email)
         }
+        
+        if (userData.name) {
+          setName(userData.name)
+          // If they have a name, they've passed email and name steps
+          // Check if they need interests
+          if (!userData.interests || userData.interests.length === 0) {
+            // They need to select interests
+            setCurrentStep('interests')
+            if (userData.interests) {
+              setSelectedInterests(userData.interests)
+            }
+          } else {
+            // They have everything, should have been redirected above
+            router.push("/vibe")
+          }
+        } else {
+          // No name yet, but they're verified
+          // They need to complete name, password, and interests
+          // Start at name step since email is already done
+          setCurrentStep('name')
+        }
+      } else {
+        // No user data, but they're verified
+        // They need to complete the flow
+        // Since they're verified, start at name step (email is done)
+        if (user.email) {
+          setEmail(user.email)
+        }
+        setCurrentStep('name')
       }
     } catch (err) {
       console.error('Error checking onboarding status:', err)
+      // On error, if verified, start at name step
+      if (user.email_confirmed_at) {
+        if (user.email) {
+          setEmail(user.email)
+        }
+        setCurrentStep('name')
+      }
     }
   }, [user, router])
 
@@ -82,7 +117,7 @@ function OnboardingContent() {
   useEffect(() => {
     if (authLoading) return
     
-    // If user is verified, check onboarding status and redirect
+    // If user is verified, check onboarding status and set appropriate step
     if (user && user.email_confirmed_at) {
       const checkAndRedirect = async () => {
         try {
@@ -97,28 +132,40 @@ function OnboardingContent() {
               // Onboarding complete, redirect directly to /vibe
               router.push('/vibe')
               return
-            } else if (currentStep === 'verify') {
-              // Verified but onboarding not complete, move to interests
-              setShowVerified(true)
-              setCurrentStep('interests')
-              if (user.email && !email) {
+            } else {
+              // Not complete, set appropriate step
+              if (user.email) {
                 setEmail(user.email)
               }
+              
+              if (hasName) {
+                // Has name, needs interests
+                if (currentStep === 'verify') {
+                  setShowVerified(true)
+                }
+                setCurrentStep('interests')
+                if (data.data.interests) {
+                  setSelectedInterests(data.data.interests)
+                }
+              } else {
+                // Needs name (and password, then interests)
+                // Start at name step since email is already done
+                setCurrentStep('name')
+              }
             }
-          } else if (currentStep === 'verify') {
-            // Verified but no user data, move to interests
-            setShowVerified(true)
-            setCurrentStep('interests')
-            if (user.email && !email) {
+          } else {
+            // No user data, but verified - start at name step
+            if (user.email) {
               setEmail(user.email)
             }
+            setCurrentStep('name')
           }
         } catch (err) {
-          // Error checking, continue with onboarding
-          if (currentStep === 'verify') {
-            setShowVerified(true)
-            setCurrentStep('interests')
+          // Error checking, start at name step if verified
+          if (user.email) {
+            setEmail(user.email)
           }
+          setCurrentStep('name')
         }
       }
       
@@ -725,6 +772,52 @@ function OnboardingContent() {
                 </div>
                 
                 <div className="w-full space-y-2 flex-shrink-0">
+                  <Button
+                    onClick={async () => {
+                      // Manually check verification
+                      try {
+                        const { data: { session } } = await supabase.auth.getSession()
+                        if (session?.user?.email_confirmed_at) {
+                          // Verified! Check onboarding
+                          const response = await fetch(`/api/users?userId=${session.user.id}`)
+                          const data = await response.json()
+                          
+                          if (data.success && data.data) {
+                            const hasName = data.data.name
+                            const hasInterests = data.data.interests && data.data.interests.length > 0
+                            
+                            if (hasName && hasInterests) {
+                              router.push('/vibe')
+                            } else {
+                              setShowVerified(true)
+                              if (hasName) {
+                                setCurrentStep('interests')
+                                if (data.data.interests) {
+                                  setSelectedInterests(data.data.interests)
+                                }
+                              } else {
+                                setCurrentStep('name')
+                              }
+                            }
+                          } else {
+                            setShowVerified(true)
+                            setCurrentStep('name')
+                          }
+                        } else {
+                          alert('Email not verified yet. Please check your email and click the verification link.')
+                        }
+                      } catch (err) {
+                        console.error('Error checking verification:', err)
+                        alert('Error checking verification. Please try again.')
+                      }
+                    }}
+                    variant="primary"
+                    className="w-full h-12 text-sm font-semibold tracking-wide bg-[#EDEDED] text-[#0A0A0A] border border-[#EDEDED]"
+                    size="lg"
+                  >
+                    I&apos;ve Verified My Email
+                  </Button>
+                  
                   <p className="text-xs text-[#EDEDED]/40 text-center px-4">
                     You&apos;ll be automatically redirected once you click the verification link in your email.
                   </p>

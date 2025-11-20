@@ -37,8 +37,30 @@ function AuthCallbackContent() {
             // Successfully verified and logged in
             // Check email verification status
             if (data.user.email_confirmed_at) {
-              // Email is verified, redirect directly to /vibe
-              router.push('/vibe')
+              // Email is verified, check onboarding status
+              try {
+                const response = await fetch(`/api/users?userId=${data.user.id}`)
+                const userData = await response.json()
+                
+                if (userData.success && userData.data) {
+                  const hasName = userData.data.name
+                  const hasInterests = userData.data.interests && userData.data.interests.length > 0
+                  
+                  if (hasName && hasInterests) {
+                    // Onboarding complete, redirect to /vibe
+                    router.push('/vibe')
+                  } else {
+                    // Onboarding not complete, redirect to /onboarding
+                    router.push('/onboarding')
+                  }
+                } else {
+                  // No user data, redirect to /onboarding
+                  router.push('/onboarding')
+                }
+              } catch (err) {
+                // Error checking, redirect to /onboarding
+                router.push('/onboarding')
+              }
             } else {
               // Email not verified yet, redirect to verify page
               router.push('/verify')
@@ -56,8 +78,26 @@ function AuthCallbackContent() {
           if (session && session.user) {
             // Check email verification
             if (session.user.email_confirmed_at) {
-              // Email verified, redirect directly to /vibe
-              router.push('/vibe')
+              // Email verified, check onboarding status
+              try {
+                const response = await fetch(`/api/users?userId=${session.user.id}`)
+                const userData = await response.json()
+                
+                if (userData.success && userData.data) {
+                  const hasName = userData.data.name
+                  const hasInterests = userData.data.interests && userData.data.interests.length > 0
+                  
+                  if (hasName && hasInterests) {
+                    router.push('/vibe')
+                  } else {
+                    router.push('/onboarding')
+                  }
+                } else {
+                  router.push('/onboarding')
+                }
+              } catch (err) {
+                router.push('/onboarding')
+              }
             } else {
               // Email not verified, redirect to verify page
               router.push('/verify')
