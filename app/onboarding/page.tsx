@@ -106,7 +106,10 @@ function OnboardingContent() {
     }
   }, [user, router])
 
-  // Check status on mount and when user changes
+  // Track if we've already done initial check to prevent re-running
+  const [hasCheckedInitialStatus, setHasCheckedInitialStatus] = useState(false)
+
+  // Check status on mount and when user changes (only once on initial load)
   useEffect(() => {
     // Only check if auth has finished loading
     if (authLoading) return
@@ -116,12 +119,13 @@ function OnboardingContent() {
       return
     }
     
-    // Only check onboarding status if we're not actively in the middle of a step
-    // Don't interfere if user is filling out the form
-    if (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome') {
+    // Only check onboarding status once on initial load
+    // Don't interfere if user is filling out the form or has already been checked
+    if (!hasCheckedInitialStatus && (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome')) {
       checkOnboardingStatus()
+      setHasCheckedInitialStatus(true)
     }
-  }, [authLoading, user, checkOnboardingStatus, currentStep])
+  }, [authLoading, user, checkOnboardingStatus, currentStep, hasCheckedInitialStatus])
 
   // Handle email verification - poll for verification status and redirect
   useEffect(() => {
