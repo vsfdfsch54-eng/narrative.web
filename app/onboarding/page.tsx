@@ -15,12 +15,44 @@ import { supabase } from "@/lib/supabaseClient"
 type Step = 'email' | 'name' | 'password' | 'interests' | 'verify' | 'welcome'
 
 function OnboardingContent() {
-  const [currentStep, setCurrentStep] = useState<Step>('email')
-  const [email, setEmail] = useState("")
-  const [name, setName] = useState("")
+  // Load saved step from localStorage on mount
+  const getInitialStep = (): Step => {
+    if (typeof window === 'undefined') return 'email'
+    const saved = localStorage.getItem('onboarding_step')
+    if (saved && ['email', 'name', 'password', 'interests', 'verify', 'welcome'].includes(saved)) {
+      return saved as Step
+    }
+    return 'email'
+  }
+
+  const [currentStep, setCurrentStep] = useState<Step>(getInitialStep)
+  const [email, setEmail] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('onboarding_email') || ""
+    }
+    return ""
+  })
+  const [name, setName] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('onboarding_name') || ""
+    }
+    return ""
+  })
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
+  const [selectedInterests, setSelectedInterests] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('onboarding_interests')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch {
+          return []
+        }
+      }
+    }
+    return []
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [passwordMatchError, setPasswordMatchError] = useState("")
@@ -28,6 +60,34 @@ function OnboardingContent() {
   const searchParams = useSearchParams()
   const { user, signUp, loading: authLoading } = useAuth()
   const [showVerified, setShowVerified] = useState(false)
+
+  // Save step to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('onboarding_step', currentStep)
+    }
+  }, [currentStep])
+
+  // Save form data to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (email) localStorage.setItem('onboarding_email', email)
+      if (name) localStorage.setItem('onboarding_name', name)
+      if (selectedInterests.length > 0) {
+        localStorage.setItem('onboarding_interests', JSON.stringify(selectedInterests))
+      }
+    }
+  }, [email, name, selectedInterests])
+
+  // Clear saved data when onboarding is complete
+  const clearOnboardingData = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('onboarding_step')
+      localStorage.removeItem('onboarding_email')
+      localStorage.removeItem('onboarding_name')
+      localStorage.removeItem('onboarding_interests')
+    }
+  }
 
   // Check onboarding status when user changes
   const checkOnboardingStatus = useCallback(async () => {
@@ -55,6 +115,7 @@ function OnboardingContent() {
         
         // If user has name and interests, they've completed onboarding
         if (userData.name && userData.interests && userData.interests.length > 0) {
+          clearOnboardingData()
           router.push("/vibe")
           return
         }
@@ -157,6 +218,7 @@ function OnboardingContent() {
             
             if (hasName && hasInterests) {
               // Onboarding complete, redirect directly to /vibe
+              clearOnboardingData()
               router.push('/vibe')
               return
             } else {
@@ -441,6 +503,8 @@ function OnboardingContent() {
       const data = await response.json()
       
       if (data.success) {
+        // Clear saved onboarding data
+        clearOnboardingData()
         // Redirect to /signed-up page after completing onboarding
         router.push('/signed-up')
       } else {
