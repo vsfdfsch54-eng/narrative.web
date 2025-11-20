@@ -71,19 +71,22 @@ function OnboardingContent() {
 
   // Handle email verification - auto-complete onboarding
   useEffect(() => {
-    if (!user || !user.email_confirmed_at || authLoading) return
+    if (authLoading) return
     
     const verified = searchParams.get('verified')
     
-    if (verified === 'true' || user.email_confirmed_at) {
-      // User just verified email
+    // If user just verified email (via callback or direct verification)
+    if (user && user.email_confirmed_at && (verified === 'true' || currentStep === 'verify')) {
+      // User just verified email - move them forward
       if (selectedInterests.length > 0) {
+        // Already has interests, complete onboarding
         handleCompleteOnboarding()
       } else {
-        // Move to interests step if not already there
-        if (currentStep !== 'interests' && currentStep !== 'welcome') {
+        // Move to interests step if not already there or on welcome
+        if (currentStep === 'verify' || (currentStep !== 'interests' && currentStep !== 'welcome')) {
           setCurrentStep('interests')
         }
+        // Pre-fill email if available
         if (user.email && !email) {
           setEmail(user.email)
         }

@@ -1,0 +1,112 @@
+"use client"
+
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
+
+function AuthCallbackContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      try {
+        // Get the code from URL hash or query params
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const code = hashParams.get('code') || searchParams.get('code')
+        const next = searchParams.get('next') || '/onboarding?verified=true'
+
+        if (code) {
+          // Exchange the code for a session
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+          if (exchangeError) {
+            console.error('Error exchanging code for session:', exchangeError)
+            setError('Verification failed. Please try again.')
+            setLoading(false)
+            // Redirect to onboarding with error after a delay
+            setTimeout(() => {
+              router.push('/onboarding?error=verification_failed')
+            }, 2000)
+            return
+          }
+
+          if (data.session) {
+            // Successfully verified and logged in
+            // Redirect to the next page (usually onboarding)
+            router.push(next)
+          } else {
+            setError('No session created. Please try again.')
+            setLoading(false)
+            setTimeout(() => {
+              router.push('/onboarding?error=no_session')
+            }, 2000)
+          }
+        } else {
+          // No code, check if user is already authenticated
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            // User is already authenticated, redirect
+            router.push(searchParams.get('next') || '/onboarding?verified=true')
+          } else {
+            // No code and no session, redirect to onboarding
+            router.push('/onboarding')
+          }
+        }
+      } catch (err: any) {
+        console.error('Auth callback error:', err)
+        setError('An error occurred. Please try again.')
+        setLoading(false)
+        setTimeout(() => {
+          router.push('/onboarding?error=callback_error')
+        }, 2000)
+      }
+    }
+
+    handleAuthCallback()
+  }, [router, searchParams])
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-white/60">Verifying your email...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-center space-y-4 px-6">
+          <p className="text-white/80">{error}</p>
+          <p className="text-white/40 text-sm">Redirecting...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black flex items-center justify-center">
+      <div className="text-center space-y-4">
+        <p className="text-white/60">Processing...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
+  )
+}
+
