@@ -46,21 +46,100 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Trigger the matchmaking processor (non-blocking)
-    // The processor will run every 5 seconds and match users
+    // Immediately try to match with other waiting users
+    const { data: otherPendingMatches, error: searchError } = await supabase
+      .from('pending_matches')
+      .select('*')
+      .eq('status', 'searching')
+      .neq('user_id', userId)
+      .order('created_at', { ascending: true }) // FIFO: oldest first
+      .limit(1)
+
+    if (!searchError && otherPendingMatches && otherPendingMatches.length > 0) {
+      // Found a match! Pair them up immediately
+      const otherMatch = otherPendingMatches[0]
+      const otherUserId = otherMatch.user_id
+
+      // Use consistent UUID ordering for chat_matches
+      const user1Id = userId < otherUserId ? userId : otherUserId
+      const user2Id = userId < otherUserId ? otherUserId : userId
+
+      // Determine which user is user1 and which is user2
+      const isUser1 = userId === user1Id
+
+      // Create chat match with both users' selections
+      const { data: chatMatch, error: matchError } = await supabase
+        .from('chat_matches')
+        .insert({
+          user1_id: user1Id,
+          user2_id: user2Id,
+          user1_vibe: isUser1 ? (vibe || null) : (otherMatch.vibe || null),
+          user1_topic: isUser1 ? (topic || null) : (otherMatch.topic || null),
+          user1_timeframe: isUser1 ? (timeframe || null) : (otherMatch.timeframe || null),
+          user2_vibe: isUser1 ? (otherMatch.vibe || null) : (vibe || null),
+          user2_topic: isUser1 ? (otherMatch.topic || null) : (topic || null),
+          user2_timeframe: isUser1 ? (otherMatch.timeframe || null) : (timeframe || null),
+          status: 'active',
+        })
+        .select()
+        .single()
+
+      if (matchError) {
+        // If duplicate, try to get existing match
+        if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
+          const { data: existingMatch } = await supabase
+            .from('chat_matches')
+            .select('*')
+            .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
+            .single()
+
+          if (existingMatch) {
+            // Update both pending matches to matched
+            await supabase
+              .from('pending_matches')
+              .update({ status: 'matched', matched_at: new Date().toISOString() })
+              .in('user_id', [userId, otherUserId])
+
+            return NextResponse.json({ 
+              success: true, 
+              matched: true,
+              match: existingMatch,
+              otherUserId: otherUserId 
+            })
+          }
+        }
+        console.error('Error creating chat match:', matchError)
+        // Fall through to queue response
+      } else if (chatMatch) {
+        // Update both pending matches to matched
+        await supabase
+          .from('pending_matches')
+          .update({ status: 'matched', matched_at: new Date().toISOString() })
+          .in('user_id', [userId, otherUserId])
+
+        return NextResponse.json({ 
+          success: true, 
+          matched: true,
+          match: chatMatch,
+          otherUserId: otherUserId 
+        })
+      }
+    }
+
+    // No match found, user is in queue
+    // Trigger matchmaking processor in background (non-blocking)
     fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/matchmaking/process`, {
       method: 'GET',
     }).catch(err => {
-      // Non-blocking - if this fails, the cron job will handle it
+      // Non-blocking - if this fails, client-side polling will handle it
       console.log('Matchmaking processor trigger failed (non-critical):', err)
     })
 
-    // User is now in queue - the matchmaking processor will pair them
     return NextResponse.json({ 
       success: true, 
       inQueue: true,
       pendingMatch: pendingMatch,
-      message: 'Added to queue. Matching every 5 seconds...' 
+      message: 'Added to queue. Matching in progress...' 
     })
   } catch (error) {
     console.error('Error in POST /api/pending-matches:', error)

@@ -103,9 +103,15 @@ export default function ChatPage() {
         )
         .subscribe()
 
-      // Also poll every 5 seconds as backup (same interval as matchmaking processor)
+      // Poll every 2 seconds and also trigger matchmaking processor
       const interval = setInterval(async () => {
         try {
+          // Trigger matchmaking processor to pair waiting users
+          fetch('/api/matchmaking/process', { method: 'GET' }).catch(() => {
+            // Non-blocking - ignore errors
+          })
+
+          // Check if user was matched
           const response = await fetch(`/api/pending-matches?userId=${user.id}`)
           const data = await response.json()
           
@@ -135,7 +141,7 @@ export default function ChatPage() {
         } catch (error) {
           console.error('Error polling for match:', error)
         }
-      }, 5000) // Poll every 5 seconds (same as matchmaking processor)
+      }, 2000) // Poll every 2 seconds and trigger matchmaking
 
       // Cleanup after 2 minutes
       setTimeout(() => {
