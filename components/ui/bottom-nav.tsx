@@ -51,7 +51,7 @@ export function BottomNav() {
         transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
         className={cn(
           "pointer-events-auto",
-          "bg-[#0F0F0F] border-t",
+          "bg-white border-t",
         )}
         style={{
           borderColor: colors.border,
@@ -83,20 +83,20 @@ export function BottomNav() {
                   height: '56px',
                   width: '56px',
                   borderRadius: item.isActive ? radii.button : '50%',
-                  background: item.isActive ? colors.chipBg : 'transparent',
-                  color: item.isActive ? colors.chipText : colors.textSecondary,
+                  background: item.isActive ? colors.textPrimary : 'transparent',
+                  color: item.isActive ? colors.background : colors.textSecondary,
                 }}
               >
                 <Icon
                   className="h-4 w-4"
                   style={{
-                    color: item.isActive ? colors.chipText : colors.textSecondary,
+                    color: item.isActive ? colors.background : colors.textSecondary,
                   }}
                 />
                 <span
                   className="text-[11px] font-medium"
                   style={{
-                    color: item.isActive ? colors.chipText : colors.textSecondary,
+                    color: item.isActive ? colors.background : colors.textSecondary,
                   }}
                 >
                   {item.label}
