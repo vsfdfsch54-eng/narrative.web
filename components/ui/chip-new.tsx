@@ -27,10 +27,10 @@ export function Chip({ children, variant = "default", selected = false, onClick 
       onClick={onClick}
       style={{
         padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
-        borderRadius: tokens.radii.chip,
+        borderRadius: tokens.radii.pill,
         background: selected ? accentColor : tokens.colors.surfacePrimary,
         color: selected ? '#FFFFFF' : accentColor,
-        border: selected ? 'none' : `1px solid ${tokens.colors.borderStrong}`,
+        border: 'none',
         fontSize: tokens.typography.label.fontSize,
         fontWeight: 500,
         cursor: 'pointer',
@@ -38,12 +38,12 @@ export function Chip({ children, variant = "default", selected = false, onClick 
       }}
       onMouseEnter={(e) => {
         if (!selected) {
-          e.currentTarget.style.background = tokens.colors.surfaceSecondary
+          e.currentTarget.style.opacity = '0.9'
         }
       }}
       onMouseLeave={(e) => {
         if (!selected) {
-          e.currentTarget.style.background = tokens.colors.surfacePrimary
+          e.currentTarget.style.opacity = '1'
         }
       }}
     >

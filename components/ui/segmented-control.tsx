@@ -15,12 +15,11 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
     <div
       style={{
         display: 'flex',
-        gap: tokens.spacing[8],
+        gap: tokens.spacing[14],
         padding: tokens.spacing[8],
-        background: tokens.colors.surfacePrimary,
+        background: 'transparent',
         borderRadius: tokens.radii.pill,
-        border: `1px solid ${tokens.colors.borderSubtle}`,
-        boxShadow: tokens.shadows.card,
+        border: 'none',
       }}
     >
       {options.map((option) => {
@@ -34,8 +33,8 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
               flex: 1,
               padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
               borderRadius: tokens.radii.pill,
-              background: isSelected ? tokens.colors.backgroundApp : 'transparent',
-              color: isSelected ? tokens.colors.textPrimaryOnDark : tokens.colors.textPrimary,
+              background: tokens.colors.surfacePrimary,
+              color: tokens.colors.textPrimary,
               border: 'none',
               ...tokens.typography.label,
               cursor: 'pointer',

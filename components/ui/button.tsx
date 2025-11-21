@@ -33,17 +33,17 @@ export function Button({
     primary: {
       background: tokens.colors.surfacePrimary,
       color: tokens.colors.textPrimary,
-      border: `1px solid ${tokens.colors.borderSubtle}`,
+      border: 'none',
     },
     secondary: {
-      background: 'transparent',
-      color: tokens.colors.textPrimaryOnDark,
-      border: `1px solid ${tokens.colors.borderMedium}`,
+      background: tokens.colors.surfacePrimary,
+      color: tokens.colors.textPrimary,
+      border: 'none',
     },
     outline: {
       background: 'transparent',
       color: tokens.colors.textPrimaryOnDark,
-      border: `1px solid ${tokens.colors.borderMedium}`,
+      border: 'none',
     },
     ghost: {
       background: 'transparent',
@@ -62,7 +62,6 @@ export function Button({
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
     transition: 'all 0.15s ease',
-    boxShadow: variant === 'primary' ? tokens.shadows.card : 'none',
   }
 
   const buttonClasses = cn(
@@ -87,16 +86,6 @@ export function Button({
       disabled={disabled}
       className={buttonClasses}
       style={buttonStyles}
-      onMouseEnter={(e) => {
-        if (!disabled && variant === 'ghost') {
-          e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled && variant === 'ghost') {
-          e.currentTarget.style.background = 'transparent'
-        }
-      }}
       {...(props as any)}
     >
       {children}

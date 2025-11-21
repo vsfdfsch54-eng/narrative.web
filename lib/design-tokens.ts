@@ -1,23 +1,16 @@
 /**
  * Narrative Design Tokens
- * Midnight Black + Eggshell Floating Pill Design System
+ * Pure Black Background + Floating White Pills/Circles
  */
 
 export const tokens = {
   colors: {
-    backgroundApp: '#0C0C0E',
-    backgroundSoft: '#111114',
-    surfacePrimary: '#F8F8F9',
-    surfaceSecondary: '#F3F3F4',
-    borderSubtle: 'rgba(255,255,255,0.08)',
-    borderMedium: 'rgba(255,255,255,0.12)',
-    borderStrong: 'rgba(255,255,255,0.16)',
-    textPrimary: '#1A1A1C',
-    textSecondary: '#5E5E63',
-    textMuted: '#8A8A90',
-    textPrimaryOnDark: '#F2F2F3',
-    textSecondaryOnDark: '#BEBEC4',
-    textDark: '#1A1A1C',
+    backgroundApp: '#0B0B0D',
+    surfacePrimary: '#FFFFFF',
+    textPrimary: '#000000',
+    textPrimaryOnDark: '#FFFFFF',
+    textSecondary: 'rgba(255,255,255,0.60)',
+    textMuted: 'rgba(0,0,0,0.40)',
     accentBlue: '#4A6CF6',
     accentGreen: '#38B57A',
     accentOrange: '#E69A3B',
@@ -25,16 +18,13 @@ export const tokens = {
     accentPink: '#C970A8',
   },
   radii: {
-    pill: '24px',
-    card: '24px',
-    button: '24px',
-    input: '24px',
-    popover: '20px',
-    chip: '24px',
+    pill: '28px',
+    circle: '50%',
+    button: '28px',
+    input: '28px',
   },
   shadows: {
-    card: '0 8px 32px rgba(0,0,0,0.35)',
-    elevated: '0 12px 40px rgba(0,0,0,0.40)',
+    dock: '0 8px 28px rgba(0,0,0,0.45)',
   },
   typography: {
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif',
@@ -66,10 +56,13 @@ export const tokens = {
   spacing: {
     4: '4px',
     8: '8px',
+    10: '10px',
     12: '12px',
     14: '14px',
     16: '16px',
+    18: '18px',
     20: '20px',
+    22: '22px',
     28: '28px',
   },
   layout: {

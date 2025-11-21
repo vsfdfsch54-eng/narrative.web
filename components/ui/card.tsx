@@ -1,7 +1,6 @@
 "use client"
 
 import { ReactNode } from "react"
-import { tokens } from "@/lib/design-tokens"
 import { cn } from "@/lib/utils"
 
 interface CardProps {
@@ -17,11 +16,6 @@ export function Card({ children, className, padding = true, variant = "default",
     <div
       className={cn(className)}
       style={{
-        background: tokens.colors.surfacePrimary,
-        borderRadius: tokens.radii.card,
-        boxShadow: tokens.shadows.card,
-        border: `1px solid ${tokens.colors.borderSubtle}`,
-        padding: padding ? tokens.layout.verticalSpacingMedium : 0,
         ...style,
       }}
     >

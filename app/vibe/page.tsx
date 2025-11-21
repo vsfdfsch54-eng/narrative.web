@@ -11,7 +11,6 @@ import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import { ChevronDown, Compass, Mic, Newspaper, CircleDot } from "lucide-react"
 import { AppShell } from "@/components/AppShell"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { tokens } from "@/lib/design-tokens"
@@ -154,7 +153,7 @@ export default function VibePage() {
     return (
       <AppShell>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
-          <p style={{ color: tokens.colors.textSecondaryOnDark }}>Loading...</p>
+          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
         </div>
       </AppShell>
     )
@@ -162,7 +161,7 @@ export default function VibePage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingLarge }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingLarge, paddingBottom: '160px' }}>
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ 
             ...tokens.typography.title,
@@ -174,7 +173,7 @@ export default function VibePage() {
           </h1>
           <p style={{ 
             ...tokens.typography.body,
-            color: tokens.colors.textSecondaryOnDark,
+            color: tokens.colors.textSecondary,
             margin: 0,
           }}>
             Choose your energy and topic to connect
@@ -204,10 +203,10 @@ export default function VibePage() {
           </div>
         </div>
 
-        <Card>
+        <div>
           <h2 style={{ 
             ...tokens.typography.heading,
-            color: tokens.colors.textPrimary,
+            color: tokens.colors.textPrimaryOnDark,
             margin: 0,
             marginBottom: tokens.layout.verticalSpacingMedium,
             textAlign: 'center',
@@ -225,7 +224,7 @@ export default function VibePage() {
                 padding: `0 ${tokens.spacing[20]}`,
                 borderRadius: tokens.radii.input,
                 background: tokens.colors.surfacePrimary,
-                border: `1px solid ${tokens.colors.borderSubtle}`,
+                border: 'none',
                 color: tokens.colors.textPrimary,
                 display: 'flex',
                 alignItems: 'center',
@@ -233,7 +232,6 @@ export default function VibePage() {
                 ...tokens.typography.body,
                 fontWeight: 500,
                 cursor: 'pointer',
-                boxShadow: tokens.shadows.card,
               }}
             >
               <div className="flex items-center gap-2">
@@ -262,10 +260,9 @@ export default function VibePage() {
               >
                 <div style={{ 
                   background: tokens.colors.surfacePrimary, 
-                  border: `1px solid ${tokens.colors.borderSubtle}`, 
-                  borderRadius: tokens.radii.popover, 
+                  border: 'none', 
+                  borderRadius: tokens.radii.pill, 
                   overflow: 'hidden',
-                  boxShadow: tokens.shadows.elevated,
                 }}>
                   {TOPIC_CATEGORIES.map((category) => {
                     const CategoryIcon = category.icon
@@ -283,7 +280,7 @@ export default function VibePage() {
                           gap: tokens.spacing[12],
                           padding: `0 ${tokens.spacing[16]}`,
                           height: '46px',
-                          background: selectedCategory === category.id ? tokens.colors.surfaceSecondary : 'transparent',
+                          background: selectedCategory === category.id ? 'rgba(0,0,0,0.05)' : 'transparent',
                           border: 'none',
                           color: tokens.colors.textPrimary,
                           ...tokens.typography.body,
@@ -293,7 +290,7 @@ export default function VibePage() {
                         }}
                         onMouseEnter={(e) => {
                           if (selectedCategory !== category.id) {
-                            e.currentTarget.style.background = tokens.colors.surfaceSecondary
+                            e.currentTarget.style.background = 'rgba(0,0,0,0.05)'
                           }
                         }}
                         onMouseLeave={(e) => {
@@ -332,7 +329,7 @@ export default function VibePage() {
               ))}
             </div>
           </div>
-        </Card>
+        </div>
 
         <div>
           <SegmentedControl

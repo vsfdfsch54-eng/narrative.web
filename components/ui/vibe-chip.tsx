@@ -62,8 +62,7 @@ export function VibeChip({
         gap: tokens.spacing[12],
         background: tokens.colors.surfacePrimary,
         color: tokens.colors.textPrimary,
-        border: `1px solid ${tokens.colors.borderSubtle}`,
-        boxShadow: tokens.shadows.card,
+        border: 'none',
         ...tokens.typography.label,
         willChange: "transform"
       }}

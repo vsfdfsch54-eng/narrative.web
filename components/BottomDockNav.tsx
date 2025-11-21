@@ -57,19 +57,17 @@ export function BottomDockNav() {
       transition={{ duration: 0.18 }}
       style={{
         position: 'fixed',
-        bottom: `calc(env(safe-area-inset-bottom) + 12px)`,
+        bottom: `calc(env(safe-area-inset-bottom) + 16px)`,
         left: '50%',
         transform: 'translateX(-50%)',
         background: tokens.colors.surfacePrimary,
-        borderRadius: '32px',
-        padding: `${tokens.spacing[8]} 14px`,
-        boxShadow: tokens.shadows.card,
-        border: `1px solid ${tokens.colors.borderSubtle}`,
+        borderRadius: '28px',
+        padding: '10px 18px',
+        boxShadow: tokens.shadows.dock,
         zIndex: 9999,
-        maxWidth: '360px',
         display: 'flex',
         alignItems: 'center',
-        gap: tokens.spacing[8],
+        gap: '22px',
       }}
     >
       {navItems.map((item) => {
@@ -87,8 +85,8 @@ export function BottomDockNav() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: active ? 'rgba(0,0,0,0.08)' : 'transparent',
-              borderRadius: '50px',
+              background: active ? tokens.colors.surfacePrimary : 'transparent',
+              borderRadius: '50%',
               padding: active ? tokens.spacing[8] : 0,
               border: 'none',
               cursor: 'pointer',

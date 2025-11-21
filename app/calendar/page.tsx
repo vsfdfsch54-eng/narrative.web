@@ -2,12 +2,10 @@
 
 import { useMemo, useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChevronLeft, ChevronRight, Info, Plus, Sparkles, Users, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Plus, Sparkles, Users, X } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { SectionHeader } from "@/components/ui/section-header"
 import { tokens } from "@/lib/design-tokens"
 
 const monthNames = [
@@ -101,23 +99,16 @@ export default function CalendarPage() {
         setLoadingEvents(false)
         return
       }
-      
-      const year = currentDate.getFullYear()
-      const month = currentDate.getMonth()
-      
+
+      setLoadingEvents(true)
       try {
-        const response = await fetch(`/api/calendar?userId=${userId}&year=${year}&month=${month}`)
+        const response = await fetch(`/api/calendar?userId=${userId}&month=${currentDate.getMonth() + 1}&year=${currentDate.getFullYear()}`)
         const data = await response.json()
         if (data.success && data.data) {
-          const calendarEvents = data.data.map((event: any) => ({
-            day: event.day,
-            title: event.title,
-            time: event.time_slot || "All day",
-            tag: event.group_type === 'inner' ? 'Inner Circle' : 
-                 event.group_type === 'close' ? 'Close Friends' : 
-                 event.group_type === 'community' ? 'Community' : 'General'
-          }))
-          setEvents(calendarEvents)
+          setEvents(data.data.map((e: any) => ({
+            ...e,
+            day: new Date(e.date).getDate(),
+          })))
         } else {
           setEvents([])
         }
@@ -128,40 +119,42 @@ export default function CalendarPage() {
         setLoadingEvents(false)
       }
     }
-    
+
     loadEvents()
-  }, [currentDate, user, authLoading])
-
-  const eventsForDay = events.filter((event) => event.day === selectedDay)
-
-  const handleDaySelect = (day: number) => {
-    setSelectedDay(day)
-    setPanelOpen(true)
-  }
+  }, [user, currentDate, authLoading])
 
   const changeMonth = (direction: "prev" | "next") => {
     setCurrentDate((prev) => {
-      const next = new Date(prev)
-      next.setMonth(prev.getMonth() + (direction === "next" ? 1 : -1))
-      return next
+      const newDate = new Date(prev)
+      if (direction === "prev") {
+        newDate.setMonth(prev.getMonth() - 1)
+      } else {
+        newDate.setMonth(prev.getMonth() + 1)
+      }
+      return newDate
     })
-    setSelectedDay(null)
-    setPanelOpen(false)
   }
 
-  const handlePlannerField = (field: keyof typeof plannerFields, value: string) => {
+  const handleDaySelect = (day: number) => {
+    if (selectedDay === day) {
+      setSelectedDay(null)
+      setPanelOpen(false)
+    } else {
+      setSelectedDay(day)
+      setPanelOpen(true)
+    }
+  }
+
+  const eventsForDay = events.filter((event) => event.day === selectedDay)
+
+  const handlePlannerField = (field: keyof typeof plannerFields, value: any) => {
     setPlannerFields((prev) => ({ ...prev, [field]: value }))
   }
 
   const handlePlannerSubmit = async () => {
     const userId = getUserId()
-    if (!userId || !selectedDay) {
-      setShowPlanner(false)
-      return
-    }
-    
-    if (!plannerFields.title.trim()) {
-      setSaveError("Please enter a title for your event")
+    if (!userId || !selectedDay || !plannerFields.title.trim()) {
+      setSaveError("Please fill in all required fields")
       return
     }
 
@@ -169,42 +162,27 @@ export default function CalendarPage() {
     setSaveError(null)
 
     try {
-      const groupTypeMap: { [key: string]: 'inner' | 'close' | 'community' } = {
-        'Inner Circle': 'inner',
-        'Close Friends': 'close',
-        'Community': 'community'
-      }
-      
+      const eventDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        selectedDay,
+      )
+
       const response = await fetch('/api/calendar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
-          day: selectedDay,
-          title: plannerFields.title.trim(),
-          location: null,
-          timeSlot: null,
-          groupType: groupTypeMap[plannerFields.inviteGroup] || 'community'
-        })
+          title: plannerFields.title,
+          date: eventDate.toISOString(),
+          tag: plannerFields.inviteGroup,
+          privacy: plannerFields.privacy,
+          notes: plannerFields.notes,
+        }),
       })
-      
+
       const data = await response.json()
-      if (data.success && data.data) {
-        const year = currentDate.getFullYear()
-        const month = currentDate.getMonth()
-        const reloadResponse = await fetch(`/api/calendar?userId=${userId}&year=${year}&month=${month}`)
-        const reloadData = await reloadResponse.json()
-        if (reloadData.success && reloadData.data) {
-          const calendarEvents = reloadData.data.map((event: any) => ({
-            day: event.day,
-            title: event.title,
-            time: event.time_slot || "All day",
-            tag: event.group_type === 'inner' ? 'Inner Circle' : 
-                 event.group_type === 'close' ? 'Close Friends' : 
-                 event.group_type === 'community' ? 'Community' : 'General'
-          }))
-          setEvents(calendarEvents)
-        }
+      if (data.success) {
         setShowPlanner(false)
         setPlannerFields({
           title: "",
@@ -213,19 +191,26 @@ export default function CalendarPage() {
           vibe: "Curious",
           notes: "",
         })
-        setSaveError(null)
+        const newEvents = [...events, {
+          id: data.data.id,
+          title: plannerFields.title,
+          day: selectedDay,
+          tag: plannerFields.inviteGroup,
+          time: eventDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        }]
+        setEvents(newEvents)
       } else {
-        setSaveError(data.error || "Failed to save event. Please try again.")
+        setSaveError(data.error || "Failed to save event")
       }
     } catch (error) {
       console.error('Error saving event:', error)
-      setSaveError("Network error. Please check your connection and try again.")
+      setSaveError("Failed to save event")
     } finally {
       setSavingEvent(false)
     }
   }
 
-  if (authLoading) {
+  if (authLoading || loadingEvents) {
     return (
       <AppShell>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
@@ -236,11 +221,11 @@ export default function CalendarPage() {
   }
 
   const CreateMomentCard = ({ compact = false }: { compact?: boolean }) => (
-    <Card>
+    <div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-          <Plus className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
-          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>Create new moment</p>
+          <Plus className="w-4 h-4" style={{ color: tokens.colors.textPrimaryOnDark }} />
+          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimaryOnDark, margin: 0 }}>Create new moment</p>
         </div>
         {!compact && (
           <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0 }}>
@@ -259,175 +244,157 @@ export default function CalendarPage() {
           Start a plan
         </Button>
       </div>
-    </Card>
+    </div>
   )
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
-        {/* Calendar Card */}
-        <Card>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.verticalSpacingLarge }}>
-            <h1 style={{ 
-              ...tokens.typography.heading,
-              color: tokens.colors.textPrimary,
-              margin: 0,
-            }}>
-              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingLarge, paddingBottom: '120px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.verticalSpacingLarge }}>
+          <h1 style={{ 
+            ...tokens.typography.heading,
+            color: tokens.colors.textPrimaryOnDark,
+            margin: 0,
+          }}>
+            {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+            <motion.button
+              type="button"
+              onClick={() => changeMonth("prev")}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: tokens.colors.surfacePrimary,
+                border: 'none',
+                color: tokens.colors.textPrimary,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </motion.button>
+            <motion.button
+              type="button"
+              onClick={() => changeMonth("next")}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: tokens.colors.surfacePrimary,
+                border: 'none',
+                color: tokens.colors.textPrimary,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Day Headers */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(7, 1fr)', 
+          gap: tokens.spacing[12],
+          marginBottom: tokens.spacing[16],
+        }}>
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+            <span 
+              key={day} 
+              style={{ 
+                textAlign: 'center',
+                ...tokens.typography.label,
+                color: tokens.colors.textSecondary,
+                fontWeight: 500,
+              }}
+            >
+              {day}
+            </span>
+          ))}
+        </div>
+
+        {/* Calendar Days */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(7, 1fr)', 
+          gap: tokens.spacing[12],
+        }}>
+          {Array.from({ length: firstDay }).map((_, index) => (
+            <div key={`empty-${index}`} />
+          ))}
+          {Array.from({ length: totalDays }).map((_, index) => {
+            const day = index + 1
+            const today = new Date()
+            const isToday =
+              today.getDate() === day &&
+              today.getMonth() === currentDate.getMonth() &&
+              today.getFullYear() === currentDate.getFullYear()
+            const dayEvents = events.filter((event) => event.day === day)
+            const isSelected = selectedDay === day
+
+            return (
               <motion.button
+                key={day}
                 type="button"
-                onClick={() => changeMonth("prev")}
-                whileTap={{ scale: 0.98 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => handleDaySelect(day)}
                 style={{
-                  padding: tokens.spacing[12],
-                  borderRadius: tokens.radii.button,
+                  width: '43px',
+                  height: '43px',
+                  borderRadius: '50%',
                   background: tokens.colors.surfacePrimary,
-                  border: `1px solid ${tokens.colors.borderSubtle}`,
+                  border: 'none',
                   color: tokens.colors.textPrimary,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  overflow: 'visible',
                   cursor: 'pointer',
-                  boxShadow: tokens.shadows.card,
+                  outline: isSelected ? '2px solid #000000' : 'none',
+                  outlineOffset: '2px',
                 }}
               >
-                <ChevronLeft className="w-4 h-4" />
-              </motion.button>
-              <motion.button
-                type="button"
-                onClick={() => changeMonth("next")}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  padding: tokens.spacing[12],
-                  borderRadius: tokens.radii.button,
-                  background: tokens.colors.surfacePrimary,
-                  border: `1px solid ${tokens.colors.borderSubtle}`,
-                  color: tokens.colors.textPrimary,
-                  cursor: 'pointer',
-                  boxShadow: tokens.shadows.card,
-                }}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </motion.button>
-            </div>
-          </div>
-
-          {/* Category Legend */}
-          <div style={{ 
-            padding: tokens.spacing[16],
-            background: tokens.colors.surfaceSecondary,
-            borderRadius: tokens.radii.input,
-            border: `1px solid ${tokens.colors.borderSubtle}`,
-            marginBottom: tokens.layout.verticalSpacingMedium,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], marginBottom: tokens.spacing[8] }}>
-              <Info className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.layout.verticalSpacingMedium }}>
-                {Object.entries(tagColors).map(([tag, meta]) => (
-                  <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[8] }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: meta.dot }} />
-                    <span style={{ ...tokens.typography.label, color: tokens.colors.textSecondary }}>{tag}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Day Headers */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(7, 1fr)', 
-            gap: tokens.spacing[12],
-            marginBottom: tokens.spacing[16],
-          }}>
-            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-              <span 
-                key={day} 
-                style={{ 
-                  textAlign: 'center',
-                  ...tokens.typography.label,
-                  color: tokens.colors.textSecondary,
-                  fontWeight: 500,
-                }}
-              >
-                {day}
-              </span>
-            ))}
-          </div>
-
-          {/* Calendar Days */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(7, 1fr)', 
-            gap: tokens.spacing[12],
-          }}>
-            {Array.from({ length: firstDay }).map((_, index) => (
-              <div key={`empty-${index}`} />
-            ))}
-            {Array.from({ length: totalDays }).map((_, index) => {
-              const day = index + 1
-              const today = new Date()
-              const isToday =
-                today.getDate() === day &&
-                today.getMonth() === currentDate.getMonth() &&
-                today.getFullYear() === currentDate.getFullYear()
-              const dayEvents = events.filter((event) => event.day === day)
-              const eventTag = dayEvents.length > 0 ? dayEvents[0].tag : null
-              const eventColor = eventTag ? tagColors[eventTag]?.color : null
-
-              return (
-                <motion.button
-                  key={day}
-                  type="button"
-                  whileTap={{ scale: 0.96 }}
-                  onClick={() => handleDaySelect(day)}
-                  style={{
-                    aspectRatio: '1',
-                    borderRadius: tokens.radii.pill,
-                    border: `1px solid ${tokens.colors.borderSubtle}`,
-                    background: selectedDay === day 
-                      ? tokens.colors.surfacePrimary 
-                      : '#F7F7F8',
-                    color: selectedDay === day ? tokens.colors.textPrimary : tokens.colors.textSecondary,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <span style={{ 
-                    ...tokens.typography.body, 
-                    fontWeight: isToday ? 600 : 400,
+                <span style={{ 
+                  ...tokens.typography.body, 
+                  fontWeight: isToday ? 600 : 400,
+                }}>
+                  {day}
+                </span>
+                {dayEvents.length > 0 && (
+                  <div style={{ 
+                    position: 'absolute', 
+                    bottom: '4px', 
+                    display: 'flex', 
+                    gap: '2px',
                   }}>
-                    {day}
-                  </span>
-                  {dayEvents.length > 0 && (
-                    <div style={{ 
-                      position: 'absolute', 
-                      bottom: tokens.spacing[8], 
-                      display: 'flex', 
-                      gap: '2px',
-                    }}>
-                      {dayEvents.slice(0, 3).map((event, idx) => (
-                        <span 
-                          key={idx} 
-                          style={{ 
-                            width: '4px', 
-                            height: '4px', 
-                            borderRadius: '50%', 
-                            background: tagColors[event.tag]?.dot || tokens.colors.textMuted 
-                          }} 
-                        />
-                      ))}
-                    </div>
-                  )}
-                </motion.button>
-              )
-            })}
-          </div>
-        </Card>
+                    {dayEvents.slice(0, 3).map((event, idx) => (
+                      <span 
+                        key={idx} 
+                        style={{ 
+                          width: '6px', 
+                          height: '6px', 
+                          borderRadius: '50%', 
+                          background: tokens.colors.surfacePrimary,
+                        }} 
+                      />
+                    ))}
+                  </div>
+                )}
+              </motion.button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Day Panel */}
@@ -449,21 +416,21 @@ export default function CalendarPage() {
               transition={{ duration: 0.2 }}
               className="w-full"
               style={{
-                background: tokens.colors.surfacePrimary,
-                borderTopLeftRadius: tokens.radii.card,
-                borderTopRightRadius: tokens.radii.card,
+                background: tokens.colors.backgroundApp,
+                borderTopLeftRadius: '28px',
+                borderTopRightRadius: '28px',
                 maxHeight: '80vh',
                 overflow: 'hidden',
                 padding: tokens.spacing[20],
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[28] }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.verticalSpacingLarge }}>
                 <div>
-                  <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Selected</p>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Selected</p>
                   <h2 style={{ 
                     ...tokens.typography.heading,
-                    color: tokens.colors.textPrimary,
+                    color: tokens.colors.textPrimaryOnDark,
                     margin: 0,
                   }}>
                     {monthNames[currentDate.getMonth()]} {selectedDay}
@@ -477,7 +444,7 @@ export default function CalendarPage() {
                     padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                     borderRadius: tokens.radii.button,
                     background: tokens.colors.surfacePrimary,
-                    border: `1px solid ${tokens.colors.borderSubtle}`,
+                    border: 'none',
                     color: tokens.colors.textPrimary,
                     ...tokens.typography.label,
                     cursor: 'pointer',
@@ -489,9 +456,9 @@ export default function CalendarPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingMedium, overflowY: 'auto', maxHeight: '60vh' }}>
                 {eventsForDay.length > 0 && (
-                  <Card>
+                  <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[16] }}>
-                      <span style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary }}>Events</span>
+                      <span style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimaryOnDark }}>Events</span>
                       <button
                         type="button"
                         onClick={() => console.log("Edit events for day", selectedDay)}
@@ -508,20 +475,21 @@ export default function CalendarPage() {
                     </div>
                     <div style={{ display: 'flex', gap: tokens.spacing[16], overflowX: 'auto' }}>
                       {eventsForDay.map((event) => {
-                        const eventColor = tagColors[event.tag]?.color || tokens.colors.textPrimary
+                        const eventColor = tagColors[event.tag]?.color || tokens.colors.accentBlue
                         return (
-                          <Card 
-                            key={event.title} 
+                          <div 
+                            key={event.title}
                             style={{ 
                               minWidth: '200px',
-                              background: `${eventColor}15`,
-                              borderColor: `${eventColor}40`,
+                              padding: tokens.spacing[16],
+                              borderRadius: tokens.radii.pill,
+                              background: tokens.colors.surfacePrimary,
                             }}
                           >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
                               <div>
-                                <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textDark, margin: 0 }}>{event.title}</p>
-                                <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0 }}>{event.time}</p>
+                                <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>{event.title}</p>
+                                <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>{event.time}</p>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <span style={{
@@ -530,17 +498,17 @@ export default function CalendarPage() {
                                   borderRadius: tokens.radii.button,
                                   background: `${eventColor}30`,
                                   color: tokens.colors.textPrimary,
-                                  border: `1px solid ${eventColor}50`,
+                                  border: 'none',
                                 }}>
                                   {event.tag}
                                 </span>
                               </div>
                             </div>
-                          </Card>
+                          </div>
                         )
                       })}
                     </div>
-                  </Card>
+                  </div>
                 )}
 
                 {eventsForDay.length === 0 ? (
@@ -549,18 +517,18 @@ export default function CalendarPage() {
                   <CreateMomentCard compact />
                 )}
                 
-                <Card>
+                <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], marginBottom: tokens.spacing[16] }}>
                     <Sparkles className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
-                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textDark, margin: 0 }}>Suggested hangouts</p>
+                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimaryOnDark, margin: 0 }}>Suggested hangouts</p>
                   </div>
                   {suggestions.length > 0 ? (
                     <div style={{ display: 'flex', gap: tokens.spacing[16], overflowX: 'auto' }}>
                       {suggestions.map((suggestion) => (
-                        <Card key={suggestion.title} style={{ minWidth: '190px' }}>
-                          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textDark, margin: 0 }}>{suggestion.title}</p>
-                          <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0 }}>{suggestion.detail}</p>
-                        </Card>
+                        <div key={suggestion.title} style={{ minWidth: '190px', padding: tokens.spacing[16], borderRadius: tokens.radii.pill, background: tokens.colors.surfacePrimary }}>
+                          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>{suggestion.title}</p>
+                          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>{suggestion.detail}</p>
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -568,15 +536,15 @@ export default function CalendarPage() {
                       No suggestions available
                     </p>
                   )}
-                </Card>
+                </div>
 
-                <Card>
+                <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], marginBottom: tokens.spacing[16] }}>
                     <Users className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
-                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>People</p>
+                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimaryOnDark, margin: 0 }}>People</p>
                   </div>
                   <div style={{ marginBottom: tokens.spacing[16] }}>
-                    <label style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[8], display: 'block' }}>Viewing</label>
+                    <label style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[8], display: 'block' }}>Viewing</label>
                     <select
                       value={selectedFriendGroup}
                       onChange={(e) => setSelectedFriendGroup(e.target.value as keyof typeof friends)}
@@ -586,7 +554,7 @@ export default function CalendarPage() {
                         padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                         borderRadius: tokens.radii.input,
                         background: tokens.colors.surfacePrimary,
-                        border: `1px solid ${tokens.colors.borderSubtle}`,
+                        border: 'none',
                         color: tokens.colors.textPrimary,
                         ...tokens.typography.body,
                         cursor: 'pointer',
@@ -602,9 +570,9 @@ export default function CalendarPage() {
                   {friends[selectedFriendGroup].length > 0 ? (
                     <div style={{ display: 'flex', gap: tokens.spacing[16], overflowX: 'auto' }}>
                       {friends[selectedFriendGroup].map((person) => (
-                        <Card key={person} style={{ minWidth: '120px' }}>
+                        <div key={person} style={{ minWidth: '120px', padding: tokens.spacing[16], borderRadius: tokens.radii.pill, background: tokens.colors.surfacePrimary }}>
                           <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimary, margin: 0 }}>{person}</p>
-                        </Card>
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -612,7 +580,7 @@ export default function CalendarPage() {
                       No {selectedFriendGroup.toLowerCase()} yet
                     </p>
                   )}
-                </Card>
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -637,7 +605,7 @@ export default function CalendarPage() {
               exit={{ scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
               className="w-full"
-              style={{ maxWidth: '360px', background: tokens.colors.surfacePrimary, borderRadius: tokens.radii.card, padding: tokens.layout.verticalSpacingLarge, boxShadow: tokens.shadows.elevated }}
+              style={{ maxWidth: '360px', background: tokens.colors.surfacePrimary, borderRadius: '28px', padding: tokens.layout.verticalSpacingLarge }}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.verticalSpacingLarge }}>
@@ -653,8 +621,8 @@ export default function CalendarPage() {
                     padding: tokens.spacing[12],
                     borderRadius: tokens.radii.button,
                     background: tokens.colors.surfacePrimary,
-                    border: `1px solid ${tokens.colors.borderSubtle}`,
-                    color: tokens.colors.textSecondary,
+                    border: 'none',
+                    color: tokens.colors.textMuted,
                     cursor: 'pointer',
                   }}
                 >
@@ -674,7 +642,7 @@ export default function CalendarPage() {
                       padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                       borderRadius: tokens.radii.input,
                       background: tokens.colors.surfacePrimary,
-                      border: `1px solid ${tokens.colors.borderSubtle}`,
+                      border: 'none',
                       color: tokens.colors.textPrimary,
                       ...tokens.typography.body,
                     }}
@@ -691,7 +659,7 @@ export default function CalendarPage() {
                       padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                       borderRadius: tokens.radii.input,
                       background: tokens.colors.surfacePrimary,
-                      border: `1px solid ${tokens.colors.borderSubtle}`,
+                      border: 'none',
                       color: tokens.colors.textPrimary,
                       ...tokens.typography.body,
                       cursor: 'pointer',
@@ -719,7 +687,7 @@ export default function CalendarPage() {
                           borderRadius: tokens.radii.button,
                           background: plannerFields.privacy === mode ? tokens.colors.backgroundApp : tokens.colors.surfacePrimary,
                           color: plannerFields.privacy === mode ? tokens.colors.textPrimaryOnDark : tokens.colors.textPrimary,
-                          border: `1px solid ${tokens.colors.borderSubtle}`,
+                          border: 'none',
                           ...tokens.typography.body,
                           textTransform: 'capitalize',
                           cursor: 'pointer',
@@ -743,7 +711,7 @@ export default function CalendarPage() {
                       padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                       borderRadius: tokens.radii.input,
                       background: tokens.colors.surfacePrimary,
-                      border: `1px solid ${tokens.colors.borderSubtle}`,
+                      border: 'none',
                       color: tokens.colors.textPrimary,
                       ...tokens.typography.body,
                       resize: 'none',
@@ -755,10 +723,10 @@ export default function CalendarPage() {
                   <div style={{
                     padding: tokens.spacing[16],
                     borderRadius: tokens.radii.input,
-                    border: `1px solid ${tokens.colors.borderSubtle}`,
+                    border: 'none',
                     background: tokens.colors.surfacePrimary,
                     ...tokens.typography.label,
-                    color: tokens.colors.textSecondary,
+                    color: tokens.colors.textMuted,
                   }}>
                     {saveError}
                   </div>

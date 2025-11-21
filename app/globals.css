@@ -83,7 +83,7 @@
     text-rendering: optimizeLegibility;
     min-height: 100%;
     width: 100%;
-    background: #0C0C0E;
+    background: #0B0B0D;
     position: fixed;
     overflow: hidden;
     touch-action: pan-x pan-y;
@@ -101,7 +101,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     font-variant-ligatures: common-ligatures;
     letter-spacing: -0.011em;
-    background: #0C0C0E;
+    background: #0B0B0D;
     min-height: 100vh;
     min-height: 100dvh;
     margin: 0;
@@ -192,7 +192,7 @@
   }
   
   .sleek-chip.selected {
-    background: #0C0C0E;
+    background: #0B0B0D;
     border-color: #FFFFFF;
     color: #000000;
   }
@@ -283,7 +283,7 @@
   }
   
   .phone-screen {
-    background: #0C0C0E;
+    background: #0B0B0D;
     border-radius: 28px;
     display: flex;
     flex-direction: column;
