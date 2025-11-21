@@ -2,15 +2,17 @@
 
 import { cn } from "@/lib/utils"
 import { components } from "@/lib/design-system"
+import React from "react"
 
 interface CardProps {
   children: React.ReactNode
   className?: string
   padding?: boolean
   variant?: "default" | "outlined"
+  style?: React.CSSProperties
 }
 
-export function Card({ children, className, padding = true, variant = "default" }: CardProps) {
+export function Card({ children, className, padding = true, variant = "default", style }: CardProps) {
   return (
     <div
       className={cn(
@@ -22,6 +24,7 @@ export function Card({ children, className, padding = true, variant = "default" 
         border: variant === "outlined" ? `1px solid ${components.card.border}` : 'none',
         boxShadow: variant === "outlined" ? components.card.shadow : 'none',
         padding: padding ? components.card.padding : 0,
+        ...style,
       }}
     >
       {children}

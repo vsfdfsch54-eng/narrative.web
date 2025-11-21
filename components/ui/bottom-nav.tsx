@@ -82,7 +82,7 @@ export function BottomNav() {
                 style={{
                   height: '56px',
                   width: '56px',
-                  borderRadius: item.isActive ? radii.md : '50%',
+                  borderRadius: item.isActive ? radii.button : '50%',
                   background: item.isActive ? colors.chipBg : 'transparent',
                   color: item.isActive ? colors.chipText : colors.textSecondary,
                 }}
