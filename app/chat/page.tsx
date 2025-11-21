@@ -107,11 +107,25 @@ export default function ChatPage() {
       const interval = setInterval(async () => {
         try {
           // Trigger matchmaking processor to pair any waiting users
-          fetch('/api/matchmaking/process', { 
+          // Use absolute URL to ensure it works
+          const matchmakingUrl = `${window.location.origin}/api/matchmaking/process`
+          fetch(matchmakingUrl, { 
             method: 'GET',
-            cache: 'no-store'
-          }).catch(() => {
-            // Non-blocking - ignore errors
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache',
+            }
+          }).then(response => {
+            if (!response.ok) {
+              console.error(`[ChatPage] Matchmaking processor returned ${response.status}`)
+            }
+            return response.json()
+          }).then(data => {
+            if (data.success && data.matched > 0) {
+              console.log(`[ChatPage] Matchmaking processor matched ${data.matched} pair(s)`)
+            }
+          }).catch(err => {
+            console.error('[ChatPage] Error calling matchmaking processor:', err)
           })
 
           // Check if user was matched

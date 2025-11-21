@@ -226,11 +226,19 @@ export async function POST(request: NextRequest) {
 
     // Always trigger matchmaking processor as a backup
     // This ensures that even if immediate matching failed, the processor will catch it
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || request.headers.get('origin') || 'http://localhost:3000'}/api/matchmaking/process`, {
+    // Use absolute URL from request
+    const origin = request.headers.get('origin') || request.headers.get('host') || 'localhost:3000'
+    const protocol = request.headers.get('x-forwarded-proto') || (origin.includes('localhost') ? 'http' : 'https')
+    const baseUrl = `${protocol}://${origin.replace(/^https?:\/\//, '')}`
+    
+    fetch(`${baseUrl}/api/matchmaking/process`, {
       method: 'GET',
       cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache',
+      }
     }).catch(err => {
-      console.log('Failed to trigger matchmaking processor (non-critical):', err)
+      console.error('[PendingMatches] Failed to trigger matchmaking processor:', err)
     })
 
     return NextResponse.json({ 

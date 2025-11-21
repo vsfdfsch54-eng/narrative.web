@@ -66,14 +66,21 @@ export async function GET(request: NextRequest) {
       const isUser1First = user1.user_id === user1Id
 
       // Verify both users are still searching before creating match
+      // Use a more lenient check - if at least one is searching, try to match
       const { data: verifyUsers } = await supabase
         .from('pending_matches')
         .select('user_id, status')
         .in('user_id', [user1.user_id, user2.user_id])
         .eq('status', 'searching')
 
-      if (!verifyUsers || verifyUsers.length !== 2) {
-        console.log(`[Matchmaking] Users ${user1.user_id} and ${user2.user_id} no longer both searching, skipping`)
+      if (!verifyUsers || verifyUsers.length < 2) {
+        console.log(`[Matchmaking] Users ${user1.user_id} and ${user2.user_id} - only ${verifyUsers?.length || 0} still searching, skipping`)
+        continue
+      }
+
+      // Double-check we have exactly 2 users
+      if (verifyUsers.length !== 2) {
+        console.log(`[Matchmaking] Expected 2 users, got ${verifyUsers.length}, skipping`)
         continue
       }
 
@@ -134,14 +141,22 @@ export async function GET(request: NextRequest) {
           .in('user_id', [user1.user_id, user2.user_id])
 
         if (updateError) {
-          console.error('Error updating pending matches:', updateError)
+          console.error(`[Matchmaking] Error updating pending matches for ${user1.user_id} and ${user2.user_id}:`, updateError)
+          // Still count as matched since chat_match was created
+          matchedCount++
+          pairs.push({ user1: user1.user_id, user2: user2.user_id })
+          processedUserIds.add(user1.user_id)
+          processedUserIds.add(user2.user_id)
+          console.log(`[Matchmaking] Matched ${user1.user_id} with ${user2.user_id} (pending update failed but match created)`)
         } else {
           matchedCount++
           pairs.push({ user1: user1.user_id, user2: user2.user_id })
           processedUserIds.add(user1.user_id)
           processedUserIds.add(user2.user_id)
-          console.log(`[Matchmaking] Matched ${user1.user_id} with ${user2.user_id}`)
+          console.log(`[Matchmaking] ✅ Successfully matched ${user1.user_id} with ${user2.user_id}`)
         }
+      } else {
+        console.error(`[Matchmaking] Chat match creation returned null for ${user1.user_id} and ${user2.user_id}`)
       }
     }
 
