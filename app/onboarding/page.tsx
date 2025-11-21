@@ -5,21 +5,20 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Notification } from "@/components/ui/notification"
 import { useAuth } from "@/hooks/use-auth"
 import { INTERESTS, INTEREST_CATEGORIES, getAllCategories } from "@/lib/interests"
 import { cn } from "@/lib/utils"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft } from "lucide-react"
 import { supabase } from "@/lib/supabaseClient"
+import { tokens } from "@/lib/design-tokens"
 
-type Step = 'email' | 'name' | 'password' | 'interests' | 'verify' | 'welcome'
+type Step = 'email' | 'name' | 'password' | 'interests' | 'verify'
 
 function OnboardingContent() {
-  // Load saved step from localStorage on mount
   const getInitialStep = (): Step => {
     if (typeof window === 'undefined') return 'email'
     const saved = localStorage.getItem('onboarding_step')
-    if (saved && ['email', 'name', 'password', 'interests', 'verify', 'welcome'].includes(saved)) {
+    if (saved && ['email', 'name', 'password', 'interests', 'verify'].includes(saved)) {
       return saved as Step
     }
     return 'email'
@@ -57,28 +56,22 @@ function OnboardingContent() {
   const [error, setError] = useState("")
   const [passwordMatchError, setPasswordMatchError] = useState("")
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { user, signUp, loading: authLoading } = useAuth()
-  const [showVerified, setShowVerified] = useState(false)
 
-  // Save step to localStorage whenever it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('onboarding_step', currentStep)
     }
   }, [currentStep])
 
-  // Save form data to localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (email) localStorage.setItem('onboarding_email', email)
       if (name) localStorage.setItem('onboarding_name', name)
-      // Always save interests, even if empty (to clear previous selections)
       localStorage.setItem('onboarding_interests', JSON.stringify(selectedInterests))
     }
   }, [email, name, selectedInterests])
 
-  // Clear saved data when onboarding is complete
   const clearOnboardingData = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('onboarding_step')
@@ -88,121 +81,11 @@ function OnboardingContent() {
     }
   }
 
-  // Check onboarding status when user changes
-  const checkOnboardingStatus = useCallback(async () => {
-    if (!user?.id) return
-    
-    // If email confirmation is enabled in Supabase and user is not verified, redirect to verify page
-    // Note: If email confirmation is disabled, user.email_confirmed_at will be true immediately
-    if (!user.email_confirmed_at) {
-      // Check if we're already on verify step - if so, don't redirect
-      if (currentStep !== 'verify') {
-        router.push("/verify")
-      }
-      return
-    }
-    
-    // Don't interfere if user is actively filling out the form
-    // Only redirect if they've completed everything
-    
-    try {
-      const response = await fetch(`/api/users?userId=${user.id}`)
-      const data = await response.json()
-      
-      if (data.success && data.data) {
-        const userData = data.data
-        
-        // If user has name and interests, they've completed onboarding
-        // Don't redirect - let them stay on the page to see completion
-        // They can navigate manually when ready
-        
-        // User is verified but hasn't completed onboarding
-        // Pre-fill data and set appropriate step
-        if (user.email) {
-          setEmail(user.email)
-        }
-        
-        if (userData.name) {
-          setName(userData.name)
-          // If they have a name, they've passed email and name steps
-          // Check if they need interests
-          if (!userData.interests || userData.interests.length === 0) {
-            // They need to select interests
-            // Only set step if we're on initial steps
-            if (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome') {
-              setCurrentStep('interests')
-            }
-            if (userData.interests) {
-              setSelectedInterests(userData.interests)
-            }
-          } else {
-            // They have everything - don't redirect, let them continue
-          }
-        } else {
-          // No name yet, but they're verified
-          // They need to complete name, password, and interests
-          // Only set step if we're on initial steps
-          if (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome') {
-            setCurrentStep('name')
-          }
-        }
-      } else {
-        // No user data, but they're verified
-        // They need to complete the flow
-        // Only set step if we're on initial steps
-        if (user.email) {
-          setEmail(user.email)
-        }
-        if (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome') {
-          setCurrentStep('name')
-        }
-      }
-    } catch (err) {
-      console.error('Error checking onboarding status:', err)
-      // On error, only set step if we're on initial steps
-      if (user.email_confirmed_at && (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome')) {
-        if (user.email) {
-          setEmail(user.email)
-        }
-        setCurrentStep('name')
-      }
-    }
-  }, [user, router, currentStep])
-
-  // Track if we've already done initial check to prevent re-running
-  const [hasCheckedInitialStatus, setHasCheckedInitialStatus] = useState(false)
-
-  // Check status on mount and when user changes (only once on initial load)
   useEffect(() => {
-    // Only check if auth has finished loading
-    if (authLoading) return
+    if (authLoading || !user) return
     
-    if (!user) {
-      // No user, show signup form - do nothing, just render
-      return
-    }
-    
-    // Only check onboarding status once on initial load
-    // Don't interfere if user is filling out the form or has already been checked
-    if (!hasCheckedInitialStatus && (currentStep === 'email' || currentStep === 'verify' || currentStep === 'welcome')) {
-      checkOnboardingStatus()
-      setHasCheckedInitialStatus(true)
-    }
-  }, [authLoading, user, checkOnboardingStatus, currentStep, hasCheckedInitialStatus])
-
-  // Handle email verification - poll for verification status and redirect
-  useEffect(() => {
-    if (authLoading) return
-    
-    // Only run this check on initial load or when coming from verify step
-    // Don't interfere if user is actively filling out name/password/interests
-    if (currentStep !== 'email' && currentStep !== 'verify' && currentStep !== 'welcome') {
-      return
-    }
-    
-    // If user is verified, check onboarding status and set appropriate step
-    if (user && user.email_confirmed_at) {
-      const checkAndRedirect = async () => {
+    if (user.email_confirmed_at) {
+      const checkComplete = async () => {
         try {
           const response = await fetch(`/api/users?userId=${user.id}`)
           const data = await response.json()
@@ -212,116 +95,71 @@ function OnboardingContent() {
             const hasInterests = data.data.interests && data.data.interests.length > 0
             
             if (hasName && hasInterests) {
-              // Onboarding complete - redirect to /vibe
               clearOnboardingData()
               router.push('/vibe')
               return
-            } else {
-              // Not complete, set appropriate step
-              if (user.email) {
-                setEmail(user.email)
-              }
-              
-              if (hasName) {
-                // Has name, needs interests
-                if (currentStep === 'verify') {
-                  setShowVerified(true)
-                }
-                setCurrentStep('interests')
-                if (data.data.interests) {
-                  setSelectedInterests(data.data.interests)
-                }
-              } else {
-                // Needs name (and password, then interests)
-                // Only set step if we're on email or verify step
-                if (currentStep === 'email' || currentStep === 'verify') {
-                  setCurrentStep('name')
-                }
-              }
             }
-          } else {
-            // No user data, but verified - start at name step
-            // Only set step if we're on email or verify step
-            if (user.email) {
-              setEmail(user.email)
-            }
-            if (currentStep === 'email' || currentStep === 'verify') {
+            
+            if (user.email) setEmail(user.email)
+            if (data.data.name) setName(data.data.name)
+            if (data.data.interests) setSelectedInterests(data.data.interests)
+            
+            if (hasName && !hasInterests) {
+              setCurrentStep('interests')
+            } else if (!hasName) {
               setCurrentStep('name')
             }
-          }
-        } catch (err) {
-          // Error checking, start at name step if verified
-          if (user.email) {
-            setEmail(user.email)
-          }
-          if (currentStep === 'email' || currentStep === 'verify') {
+          } else {
+            if (user.email) setEmail(user.email)
             setCurrentStep('name')
           }
+        } catch (err) {
+          console.error('Error checking onboarding:', err)
         }
       }
-      
-      checkAndRedirect()
+      checkComplete()
     }
-  }, [user, currentStep, email, authLoading, router])
+  }, [user, authLoading, router])
 
-  // Poll for verification status when on verify step
   useEffect(() => {
     if (authLoading || currentStep !== 'verify' || !user) return
 
-    // Poll every 2 seconds to check if email is verified
     const verificationPoll = setInterval(async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user?.email_confirmed_at) {
-          // Email verified! Check onboarding status and redirect
           clearInterval(verificationPoll)
+          const response = await fetch(`/api/users?userId=${session.user.id}`)
+          const data = await response.json()
           
-          try {
-            const response = await fetch(`/api/users?userId=${session.user.id}`)
-            const data = await response.json()
+          if (data.success && data.data) {
+            const hasName = data.data.name
+            const hasInterests = data.data.interests && data.data.interests.length > 0
             
-            if (data.success && data.data) {
-              const hasName = data.data.name
-              const hasInterests = data.data.interests && data.data.interests.length > 0
-              
-              if (hasName && hasInterests) {
-                // Onboarding complete - redirect to /vibe
-                clearOnboardingData()
-                router.push('/vibe')
-              } else {
-                // Move to interests step
-                setShowVerified(true)
-                setCurrentStep('interests')
-                if (session.user.email && !email) {
-                  setEmail(session.user.email)
-                }
-              }
-            } else {
-              // No user data, move to interests
-              setShowVerified(true)
+            if (hasName && hasInterests) {
+              clearOnboardingData()
+              router.push('/vibe')
+            } else if (hasName) {
               setCurrentStep('interests')
+              if (data.data.interests) setSelectedInterests(data.data.interests)
+            } else {
+              setCurrentStep('name')
             }
-          } catch (err) {
-            // Error, move to interests
-            setShowVerified(true)
-            setCurrentStep('interests')
+          } else {
+            setCurrentStep('name')
           }
         }
       } catch (err) {
         console.error('Error polling verification:', err)
       }
-    }, 2000) // Check every 2 seconds
+    }, 2000)
 
-    // Cleanup after 5 minutes
-    const timeout = setTimeout(() => {
-      clearInterval(verificationPoll)
-    }, 300000)
-
+    const timeout = setTimeout(() => clearInterval(verificationPoll), 300000)
     return () => {
       clearInterval(verificationPoll)
       clearTimeout(timeout)
     }
-  }, [currentStep, user, authLoading, email, router])
+  }, [currentStep, user, authLoading, router])
 
   const validatePasswordMatch = useCallback(() => {
     if (confirmPassword && password !== confirmPassword) {
@@ -340,14 +178,13 @@ function OnboardingContent() {
   }, [password, confirmPassword, validatePasswordMatch])
 
   const handleInterestToggle = (interestId: string) => {
-    if (loading) return // Prevent toggling while loading
+    if (loading) return
     
     setSelectedInterests(prev => {
       const newInterests = prev.includes(interestId)
         ? prev.filter(id => id !== interestId)
         : [...prev, interestId]
       
-      // Save to localStorage immediately
       if (typeof window !== 'undefined') {
         localStorage.setItem('onboarding_interests', JSON.stringify(newInterests))
       }
@@ -355,10 +192,7 @@ function OnboardingContent() {
       return newInterests
     })
     
-    // Clear any previous errors
-    if (error) {
-      setError("")
-    }
+    if (error) setError("")
   }
 
   const handleNext = () => {
@@ -388,11 +222,7 @@ function OnboardingContent() {
       setCurrentStep('interests')
     } else if (currentStep === 'interests') {
       if (selectedInterests.length === 0) {
-        setError("Please select at least one interest to continue")
-        return
-      }
-      if (selectedInterests.length > 20) {
-        setError("Please select no more than 20 interests")
+        setError("Please select at least one interest")
         return
       }
       handleSubmit()
@@ -412,11 +242,8 @@ function OnboardingContent() {
 
   const handleSubmit = async () => {
     setError("")
-    console.log('handleSubmit called, user:', user?.id, 'verified:', user?.email_confirmed_at, 'interests:', selectedInterests.length)
     
-    // If user is already authenticated and verified, just complete onboarding
     if (user && user.email_confirmed_at) {
-      console.log('User verified, calling handleCompleteOnboarding')
       await handleCompleteOnboarding()
       return
     }
@@ -424,35 +251,20 @@ function OnboardingContent() {
     setLoading(true)
 
     try {
-      // Create Supabase Auth account
       const result = await signUp(email, password, name)
       
       if (!result.success) {
-        // Show user-friendly error message
-        const errorMessage = result.error || "Failed to create account"
-        setError(errorMessage)
+        setError(result.error || "Failed to create account")
         setLoading(false)
-        
-        // If duplicate email, suggest signing in
-        if (errorMessage.includes('already exists') || errorMessage.includes('already registered')) {
-          // Keep error message, user can click "Sign in" link
-        }
         return
       }
 
-      // Check if signup was successful
       if (!result.data?.user) {
         setError("Account creation failed. Please try again.")
         setLoading(false)
         return
       }
 
-      // Log for debugging
-      console.log('Signup successful, user:', result.data.user.id)
-      console.log('Email confirmation required:', !result.data.user.email_confirmed_at)
-      console.log('User email:', result.data.user.email)
-
-      // Save user data with interests immediately
       if (result.data.user.id) {
         const userId = result.data.user.id
         
@@ -466,27 +278,16 @@ function OnboardingContent() {
           })
         })
 
-        const userData = await response.json()
-        
-        if (!userData.success) {
-          console.error('Error saving user data:', userData.error)
-        }
+        await response.json()
       }
 
-      // Check if email confirmation is required
-      // If email is already confirmed (email confirmation disabled in Supabase), redirect to /vibe
       if (result.data.user.email_confirmed_at) {
-        console.log('Email already confirmed - email confirmation is disabled in Supabase')
-        // User is already verified, clear onboarding data and redirect to /vibe
         clearOnboardingData()
         setLoading(false)
         router.push('/vibe')
         return
       }
 
-      // Email confirmation is required - move to verify step
-      // Note: We don't try to resend here since Supabase should send automatically on signup
-      console.log('Email confirmation required, moving to verify step')
       setLoading(false)
       setCurrentStep('verify')
     } catch (err: any) {
@@ -503,29 +304,23 @@ function OnboardingContent() {
       return
     }
     
-    console.log('handleCompleteOnboarding called, userId:', user.id, 'interests:', selectedInterests)
     setLoading(true)
     setError("")
     
     try {
-      // Validate interests first
       if (selectedInterests.length === 0) {
         setError("Please select at least one interest")
         setLoading(false)
         return
       }
       
-      // Get existing user data
       const userResponse = await fetch(`/api/users?userId=${user.id}`)
       const userData = await userResponse.json()
-      console.log('User data response:', userData)
       
       const existingName = userData.success && userData.data?.name 
         ? userData.data.name 
         : name.trim() || user.email?.split('@')[0] || 'User'
       
-      // Save user data with interests
-      console.log('Saving user data:', { userId: user.id, name: existingName, interests: selectedInterests })
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -537,17 +332,12 @@ function OnboardingContent() {
       })
 
       const data = await response.json()
-      console.log('Save response:', data)
       
       if (data.success) {
-        // Clear saved onboarding data
         clearOnboardingData()
         setLoading(false)
-        console.log('Onboarding complete, redirecting to /vibe')
-        // After completing onboarding, redirect to /vibe
         router.push('/vibe')
       } else {
-        console.error('Failed to save:', data.error)
         setError(data.error || "Failed to complete onboarding. Please try again.")
         setLoading(false)
       }
@@ -560,549 +350,588 @@ function OnboardingContent() {
 
   const categories = getAllCategories()
 
-  // Show loading ONLY while auth is actually loading (first time check)
-  // Once authLoading is false, we can render the form
   if (authLoading) {
     return (
-      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
-        <p className="text-[#f1f1f3]/60">Loading...</p>
+      <div style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        background: tokens.colors.backgroundApp, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
       </div>
     )
   }
 
-  // If user is authenticated, verified, and has completed onboarding, they will be redirected
-  // But don't block rendering - let the redirect happen naturally
+  const stepNumber = currentStep === 'email' ? 1 : currentStep === 'name' ? 2 : currentStep === 'password' ? 3 : currentStep === 'interests' ? 4 : 5
 
-  // Step 1: Email
-  if (currentStep === 'email') {
-    return (
-      <>
-        {showVerified && (
-          <Notification
-            message="Email verified successfully!"
-            type="success"
-            duration={4000}
-            onClose={() => setShowVerified(false)}
-          />
-        )}
-        <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0">
-        <div className="phone-frame-container">
-          <div className="phone-frame">
-            <div className="phone-screen">
-              <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
-                <div className="text-center space-y-2 flex-shrink-0">
-                  <h1 className="text-2xl font-black tracking-tight text-[#f1f1f3]">
-                    Sign Up
-                  </h1>
-                  <p className="text-xs text-[#f1f1f3]/60">
-                    Step 1 of 4
-                  </p>
-                </div>
-
-                <div className="flex-1 flex flex-col justify-center space-y-4">
-                  {error && (
-                    <div className="p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-xs text-red-400">
-                      {error}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-[#f1f1f3]/60">
-                      Email
-                    </label>
-                    <Input
-                      type="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && email.trim() && email.includes('@')) {
-                          handleNext()
-                        }
-                      }}
-                      required
-                      disabled={loading || !!user}
-                      className="bg-white/5 border-[#f1f1f3]/10 text-sm text-[#f1f1f3] h-12"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                <div className="flex-shrink-0 space-y-2">
-                  <Button
-                    onClick={handleNext}
-                    variant="primary"
-                    className="w-full h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3]"
-                    size="lg"
-                    disabled={loading || !email.trim() || !email.includes('@')}
-                  >
-                    Continue
-                  </Button>
-                  
-                  {!user && (
-                    <div className="text-center text-[11px] text-[#f1f1f3]/60">
-                      Already have an account?{" "}
-                      <Link href="/login" className="text-[#f1f1f3] underline-offset-4 hover:underline">
-                        Sign in
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
+  return (
+    <div style={{ 
+      minHeight: '100vh', 
+      background: tokens.colors.backgroundApp,
+      paddingTop: 'env(safe-area-inset-top)',
+      paddingBottom: 'env(safe-area-inset-bottom)',
+    }}>
+      <div style={{
+        maxWidth: tokens.layout.maxWidth,
+        margin: '0 auto',
+        padding: `${tokens.layout.topTitleSpacing} ${tokens.layout.paddingHorizontal}`,
+      }}>
+        {currentStep === 'email' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing }}>
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{ 
+                ...tokens.typography.title,
+                color: tokens.colors.textPrimaryOnDark,
+                margin: 0,
+                marginBottom: tokens.spacing[8],
+              }}>
+                Sign Up
+              </h1>
+              <p style={{ 
+                ...tokens.typography.label,
+                color: tokens.colors.textSecondary,
+                margin: 0,
+              }}>
+                Step {stepNumber} of 4
+              </p>
             </div>
-          </div>
-        </div>
-      </div>
-      </>
-    )
-  }
 
-  // Step 2: Name
-  if (currentStep === 'name') {
-    return (
-      <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0">
-        <div className="phone-frame-container">
-          <div className="phone-frame">
-            <div className="phone-screen">
-              <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
-                <div className="text-center space-y-2 flex-shrink-0">
-                  <h1 className="text-2xl font-black tracking-tight text-[#f1f1f3]">
-                    What&apos;s your name?
-                  </h1>
-                  <p className="text-xs text-[#f1f1f3]/60">
-                    Step 2 of 4
-                  </p>
-                </div>
-
-                <div className="flex-1 flex flex-col justify-center space-y-4">
-                  {error && (
-                    <div className="p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-xs text-red-400">
-                      {error}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <label className="text-[11px] uppercase tracking-[0.2em] text-[#f1f1f3]/60">
-                      Name
-                    </label>
-                    <Input
-                      type="text"
-                      placeholder="Your name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && name.trim()) {
-                          handleNext()
-                        }
-                      }}
-                      required
-                      disabled={loading}
-                      className="bg-white/5 border-[#f1f1f3]/10 text-sm text-[#f1f1f3] h-12"
-                      autoFocus
-                    />
-                  </div>
-                </div>
-
-                <div className="flex-shrink-0 flex gap-2">
-                  <Button
-                    onClick={handleBack}
-                    variant="outline"
-                    className="flex-1 h-12 text-sm font-semibold border-[#f1f1f3]/10 bg-white/5 text-[#f1f1f3] hover:bg-white/10"
-                    size="lg"
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleNext}
-                    variant="primary"
-                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3]"
-                    size="lg"
-                    disabled={loading || !name.trim()}
-                  >
-                    Continue
-                  </Button>
-                </div>
+            {error && (
+              <div style={{
+                padding: tokens.spacing[16],
+                borderRadius: tokens.radii.input,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#FCA5A5',
+                ...tokens.typography.label,
+              }}>
+                {error}
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+            )}
 
-  // Step 3: Password
-  if (currentStep === 'password') {
-    return (
-      <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0">
-        <div className="phone-frame-container">
-          <div className="phone-frame">
-            <div className="phone-screen">
-              <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
-                <div className="text-center space-y-2 flex-shrink-0">
-                  <h1 className="text-2xl font-black tracking-tight text-[#f1f1f3]">
-                    Create a password
-                  </h1>
-                  <p className="text-xs text-[#f1f1f3]/60">
-                    Step 3 of 4
-                  </p>
-                </div>
-
-                <div className="flex-1 flex flex-col justify-center space-y-4">
-                  {error && (
-                    <div className="p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-xs text-red-400">
-                      {error}
-                    </div>
-                  )}
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase tracking-[0.2em] text-[#f1f1f3]/60">
-                        Password
-                      </label>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        minLength={6}
-                        disabled={loading}
-                        className="bg-white/5 border-[#f1f1f3]/10 text-sm text-[#f1f1f3] h-12"
-                        autoFocus
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[11px] uppercase tracking-[0.2em] text-[#f1f1f3]/60">
-                        Confirm Password
-                      </label>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && password.length >= 6 && validatePasswordMatch()) {
-                            handleNext()
-                          }
-                        }}
-                        required
-                        disabled={loading}
-                        className={cn(
-                          "bg-white/5 border-[#f1f1f3]/10 text-sm text-[#f1f1f3] h-12",
-                          passwordMatchError && "border-red-500/50"
-                        )}
-                      />
-                      {passwordMatchError && (
-                        <p className="text-[10px] text-red-400 mt-0.5">{passwordMatchError}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex-shrink-0 flex gap-2">
-                  <Button
-                    onClick={handleBack}
-                    variant="outline"
-                    className="flex-1 h-12 text-sm font-semibold border-[#f1f1f3]/10 bg-white/5 text-[#f1f1f3] hover:bg-white/10"
-                    size="lg"
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleNext}
-                    variant="primary"
-                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3]"
-                    size="lg"
-                    disabled={loading || password.length < 6 || !!passwordMatchError}
-                  >
-                    Continue
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Step 4: Interests
-  if (currentStep === 'interests') {
-    return (
-      <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0">
-        <div className="phone-frame-container">
-          <div className="phone-frame">
-            <div className="phone-screen">
-              <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col h-full">
-                {/* Header */}
-                <div className="text-center space-y-2 flex-shrink-0">
-                  <h1 className="text-2xl font-black tracking-tight text-[#f1f1f3]">
-                    Select your interests
-                  </h1>
-                  <p className="text-xs text-[#f1f1f3]/60">
-                    Step 4 of 4 • {selectedInterests.length} selected
-                  </p>
-                </div>
-
-                {/* Error Message */}
-                {error && (
-                  <div className="flex-shrink-0 p-3 rounded-lg border border-red-500/30 bg-red-500/10 text-xs text-red-400">
-                    {error}
-                  </div>
-                )}
-
-                {/* Scrollable Interests List */}
-                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide pr-1">
-                  <div className="space-y-4 pb-2">
-                    {categories.map((category) => {
-                      const categoryInterests = INTERESTS.filter(i => i.category === category)
-                      if (categoryInterests.length === 0) return null
-                      
-                      return (
-                        <div key={category} className="space-y-2.5">
-                          <h3 className="text-xs font-semibold text-[#f1f1f3]/80 uppercase tracking-wider">
-                            {category}
-                          </h3>
-                          <div className="flex flex-wrap gap-2">
-                            {categoryInterests.map((interest) => {
-                              const isSelected = selectedInterests.includes(interest.id)
-                              return (
-                                <button
-                                  key={interest.id}
-                                  type="button"
-                                  onClick={() => {
-                                    if (!loading) {
-                                      handleInterestToggle(interest.id)
-                                    }
-                                  }}
-                                  disabled={loading}
-                                  className={cn(
-                                    "px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
-                                    "border min-h-[36px] flex items-center justify-center",
-                                    "touch-manipulation select-none",
-                                    isSelected
-                                      ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3] shadow-sm"
-                                      : "bg-white/5 text-[#f1f1f3]/80 border-[#f1f1f3]/10 hover:bg-white/10 hover:border-[#f1f1f3]/20 active:scale-95",
-                                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
-                                  )}
-                                  aria-pressed={isSelected}
-                                >
-                                  {interest.emoji && <span className="mr-1.5">{interest.emoji}</span>}
-                                  <span>{interest.label}</span>
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="flex-shrink-0 flex gap-2 pt-3 border-t border-[#f1f1f3]/10">
-                  <Button
-                    onClick={handleBack}
-                    variant="outline"
-                    className="flex-1 h-12 text-sm font-semibold border-[#f1f1f3]/10 bg-white/5 text-[#f1f1f3] hover:bg-white/10"
-                    size="lg"
-                    disabled={loading}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      console.log('Continue button clicked, interests:', selectedInterests.length)
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+              <div>
+                <label style={{ 
+                  ...tokens.typography.label,
+                  color: tokens.colors.textSecondary,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  marginBottom: tokens.spacing[8],
+                  display: 'block',
+                }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && email.trim() && email.includes('@')) {
                       handleNext()
-                    }}
-                    variant="primary"
-                    className="flex-1 h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3] hover:bg-[#f1f1f3]/95 disabled:opacity-50 disabled:cursor-not-allowed"
-                    size="lg"
-                    disabled={loading || selectedInterests.length === 0}
-                    type="button"
-                  >
-                    {loading ? "Saving..." : selectedInterests.length === 0 ? "Select at least 1" : `Continue (${selectedInterests.length})`}
-                  </Button>
-                </div>
+                    }
+                  }}
+                  disabled={loading || !!user}
+                  style={{
+                    width: '100%',
+                    padding: `12px ${tokens.spacing[18]}`,
+                    borderRadius: tokens.radii.input,
+                    background: tokens.colors.pillPrimary,
+                    border: 'none',
+                    color: tokens.colors.textOnPill,
+                    boxShadow: tokens.shadows.pill,
+                    ...tokens.typography.body,
+                  }}
+                  autoFocus
+                />
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
-  // Step 5: Verify Email
-  if (currentStep === 'verify') {
-    return (
-      <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0">
-        <div className="phone-frame-container">
-          <div className="phone-frame">
-            <div className="phone-screen">
-              <div className="phone-content p-4 gap-4 items-center justify-center overflow-hidden flex flex-col">
-                <div className="text-center space-y-3 w-full flex-shrink-0">
-                  <div className="text-4xl mb-2">📧</div>
-                  <h1 className="text-2xl font-black tracking-tight text-[#f1f1f3]">
-                    Check your email
-                  </h1>
-                  <p className="text-sm text-[#f1f1f3]/60 px-4">
-                    We sent a verification link to <strong>{user?.email || email}</strong>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+              <Button
+                onClick={handleNext}
+                variant="primary"
+                disabled={loading || !email.trim() || !email.includes('@')}
+                style={{ width: '100%' }}
+              >
+                Continue
+              </Button>
+              
+              {!user && (
+                <p style={{ 
+                  textAlign: 'center',
+                  ...tokens.typography.label,
+                  color: tokens.colors.textSecondary,
+                }}>
+                  Already have an account?{" "}
+                  <Link href="/login" style={{ color: tokens.colors.textPrimaryOnDark, textDecoration: 'underline' }}>
+                    Sign in
+                  </Link>
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {currentStep === 'name' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing }}>
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{ 
+                ...tokens.typography.title,
+                color: tokens.colors.textPrimaryOnDark,
+                margin: 0,
+                marginBottom: tokens.spacing[8],
+              }}>
+                What&apos;s your name?
+              </h1>
+              <p style={{ 
+                ...tokens.typography.label,
+                color: tokens.colors.textSecondary,
+                margin: 0,
+              }}>
+                Step {stepNumber} of 4
+              </p>
+            </div>
+
+            {error && (
+              <div style={{
+                padding: tokens.spacing[16],
+                borderRadius: tokens.radii.input,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#FCA5A5',
+                ...tokens.typography.label,
+              }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+              <div>
+                <label style={{ 
+                  ...tokens.typography.label,
+                  color: tokens.colors.textSecondary,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  marginBottom: tokens.spacing[8],
+                  display: 'block',
+                }}>
+                  Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && name.trim()) {
+                      handleNext()
+                    }
+                  }}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: `12px ${tokens.spacing[18]}`,
+                    borderRadius: tokens.radii.input,
+                    background: tokens.colors.pillPrimary,
+                    border: 'none',
+                    color: tokens.colors.textOnPill,
+                    boxShadow: tokens.shadows.pill,
+                    ...tokens.typography.body,
+                  }}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: tokens.spacing[16] }}>
+              <Button
+                onClick={handleBack}
+                variant="secondary"
+                style={{ flex: 1 }}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleNext}
+                variant="primary"
+                disabled={loading || !name.trim()}
+                style={{ flex: 1 }}
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 'password' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing }}>
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{ 
+                ...tokens.typography.title,
+                color: tokens.colors.textPrimaryOnDark,
+                margin: 0,
+                marginBottom: tokens.spacing[8],
+              }}>
+                Create a password
+              </h1>
+              <p style={{ 
+                ...tokens.typography.label,
+                color: tokens.colors.textSecondary,
+                margin: 0,
+              }}>
+                Step {stepNumber} of 4
+              </p>
+            </div>
+
+            {error && (
+              <div style={{
+                padding: tokens.spacing[16],
+                borderRadius: tokens.radii.input,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#FCA5A5',
+                ...tokens.typography.label,
+              }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+              <div>
+                <label style={{ 
+                  ...tokens.typography.label,
+                  color: tokens.colors.textSecondary,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  marginBottom: tokens.spacing[8],
+                  display: 'block',
+                }}>
+                  Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: `12px ${tokens.spacing[18]}`,
+                    borderRadius: tokens.radii.input,
+                    background: tokens.colors.pillPrimary,
+                    border: 'none',
+                    color: tokens.colors.textOnPill,
+                    boxShadow: tokens.shadows.pill,
+                    ...tokens.typography.body,
+                  }}
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label style={{ 
+                  ...tokens.typography.label,
+                  color: tokens.colors.textSecondary,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  marginBottom: tokens.spacing[8],
+                  display: 'block',
+                }}>
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && password.length >= 6 && validatePasswordMatch()) {
+                      handleNext()
+                    }
+                  }}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: `12px ${tokens.spacing[18]}`,
+                    borderRadius: tokens.radii.input,
+                    background: tokens.colors.pillPrimary,
+                    border: passwordMatchError ? '1px solid rgba(239, 68, 68, 0.5)' : 'none',
+                    color: tokens.colors.textOnPill,
+                    boxShadow: tokens.shadows.pill,
+                    ...tokens.typography.body,
+                  }}
+                />
+                {passwordMatchError && (
+                  <p style={{ 
+                    ...tokens.typography.label,
+                    color: '#FCA5A5',
+                    marginTop: tokens.spacing[4],
+                    margin: 0,
+                  }}>
+                    {passwordMatchError}
                   </p>
-                  <p className="text-xs text-[#f1f1f3]/50 px-4">
-                    Click the link in the email to verify your account. Once verified, you&apos;ll be automatically signed in.
-                  </p>
-                </div>
+                )}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: tokens.spacing[16] }}>
+              <Button
+                onClick={handleBack}
+                variant="secondary"
+                style={{ flex: 1 }}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleNext}
+                variant="primary"
+                disabled={loading || password.length < 6 || !!passwordMatchError}
+                style={{ flex: 1 }}
+              >
+                Continue
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 'interests' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, paddingBottom: '120px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{ 
+                ...tokens.typography.title,
+                color: tokens.colors.textPrimaryOnDark,
+                margin: 0,
+                marginBottom: tokens.spacing[8],
+              }}>
+                Select your interests
+              </h1>
+              <p style={{ 
+                ...tokens.typography.label,
+                color: tokens.colors.textSecondary,
+                margin: 0,
+              }}>
+                Step {stepNumber} of 4 • {selectedInterests.length} selected
+              </p>
+            </div>
+
+            {error && (
+              <div style={{
+                padding: tokens.spacing[16],
+                borderRadius: tokens.radii.input,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#FCA5A5',
+                ...tokens.typography.label,
+              }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ 
+              maxHeight: '50vh', 
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: tokens.layout.elementSpacing,
+            }}>
+              {categories.map((category) => {
+                const categoryInterests = INTERESTS.filter(i => i.category === category)
+                if (categoryInterests.length === 0) return null
                 
-                <div className="w-full space-y-3 flex-shrink-0">
-                  <Button
-                    onClick={async () => {
-                      // Resend verification email
-                      setLoading(true)
-                      try {
-                        const emailToUse = user?.email || email
-                        if (!emailToUse) {
-                          alert('No email address found. Please go back and enter your email.')
-                          setLoading(false)
-                          return
-                        }
+                return (
+                  <div key={category} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+                    <h3 style={{ 
+                      ...tokens.typography.label,
+                      color: tokens.colors.textPrimaryOnDark,
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                    }}>
+                      {category}
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[12] }}>
+                      {categoryInterests.map((interest) => {
+                        const isSelected = selectedInterests.includes(interest.id)
+                        return (
+                          <button
+                            key={interest.id}
+                            type="button"
+                            onClick={() => handleInterestToggle(interest.id)}
+                            disabled={loading}
+                            style={{
+                              padding: `12px ${tokens.spacing[18]}`,
+                              borderRadius: tokens.radii.pill,
+                              background: isSelected ? tokens.colors.pillPrimary : 'transparent',
+                              border: isSelected ? 'none' : `1px solid ${tokens.colors.textSecondary}`,
+                              color: isSelected ? tokens.colors.textOnPill : tokens.colors.textSecondary,
+                              boxShadow: isSelected ? tokens.shadows.pill : 'none',
+                              ...tokens.typography.label,
+                              cursor: loading ? 'not-allowed' : 'pointer',
+                              opacity: loading ? 0.5 : 1,
+                            }}
+                          >
+                            {interest.emoji && <span style={{ marginRight: tokens.spacing[8] }}>{interest.emoji}</span>}
+                            {interest.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
 
-                        console.log('Resending verification email to:', emailToUse)
-                        console.log('Redirect URL:', `${window.location.origin}/auth/callback`)
-
-                        const { data, error } = await supabase.auth.resend({
-                          type: 'signup',
-                          email: emailToUse,
-                          options: {
-                            emailRedirectTo: `${window.location.origin}/auth/callback`,
-                          },
-                        })
-
-                        console.log('Resend response:', { data, error })
-
-                        if (error) {
-                          console.error('Error resending email:', error)
-                          alert(`Error: ${error.message}\n\nPlease check:\n1. Supabase email settings are configured\n2. Your email address is valid\n3. Check spam folder`)
-                        } else {
-                          alert('Verification email sent! Please check your inbox and spam folder.')
-                        }
-                      } catch (err: any) {
-                        console.error('Error resending email:', err)
-                        alert(`Error: ${err.message || 'Failed to resend email'}\n\nPlease check Supabase email configuration.`)
-                      } finally {
-                        setLoading(false)
-                      }
-                    }}
-                    variant="outline"
-                    className="w-full h-12 text-sm font-semibold border-[#f1f1f3]/20 text-[#f1f1f3] hover:border-[#f1f1f3]/40 hover:bg-[#f1f1f3]/5"
-                    size="lg"
-                    disabled={loading}
-                  >
-                    {loading ? "Sending..." : "Resend Verification Email"}
-                  </Button>
-
-                  <Button
-                    onClick={async () => {
-                      // Manually check verification
-                      setLoading(true)
-                      try {
-                        const { data: { session } } = await supabase.auth.getSession()
-                        if (session?.user?.email_confirmed_at) {
-                          // Verified! Check onboarding
-                          const response = await fetch(`/api/users?userId=${session.user.id}`)
-                          const data = await response.json()
-                          
-                          if (data.success && data.data) {
-                            const hasName = data.data.name
-                            const hasInterests = data.data.interests && data.data.interests.length > 0
-                            
-                            if (hasName && hasInterests) {
-                              // Onboarding complete - redirect to /vibe
-                              clearOnboardingData()
-                              router.push('/vibe')
-                            } else {
-                              setShowVerified(true)
-                              if (hasName) {
-                                setCurrentStep('interests')
-                                if (data.data.interests) {
-                                  setSelectedInterests(data.data.interests)
-                                }
-                              } else {
-                                setCurrentStep('name')
-                              }
-                            }
-                          } else {
-                            setShowVerified(true)
-                            setCurrentStep('name')
-                          }
-                        } else {
-                          alert('Email not verified yet. Please check your email and click the verification link. Make sure to check your spam folder!')
-                        }
-                      } catch (err) {
-                        console.error('Error checking verification:', err)
-                        alert('Error checking verification. Please try again.')
-                      } finally {
-                        setLoading(false)
-                      }
-                    }}
-                    variant="primary"
-                    className="w-full h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3]"
-                    size="lg"
-                    disabled={loading}
-                  >
-                    I&apos;ve Verified My Email
-                  </Button>
-                  
-                  <p className="text-xs text-[#f1f1f3]/40 text-center px-4">
-                    Check your email ({email}) and click the verification link. Don&apos;t forget to check your spam folder!
-                  </p>
-                </div>
-              </div>
+            <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.layout.elementSpacing }}>
+              <Button
+                onClick={handleBack}
+                variant="secondary"
+                style={{ flex: 1 }}
+                disabled={loading}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleNext}
+                variant="primary"
+                disabled={loading || selectedInterests.length === 0}
+                style={{ flex: 1 }}
+              >
+                {loading ? "Saving..." : selectedInterests.length === 0 ? "Select at least 1" : `Continue (${selectedInterests.length})`}
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
-    )
-  }
+        )}
 
-  // Step 6: Welcome
-  if (currentStep === 'welcome') {
-    return (
-      <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0">
-        <div className="phone-frame-container">
-          <div className="phone-frame">
-            <div className="phone-screen">
-              <div className="phone-content p-4 gap-4 items-center justify-center overflow-hidden flex flex-col">
-                <div className="text-center space-y-4 w-full flex-shrink-0">
-                  <div className="text-5xl mb-4">🎉</div>
-                  <h1 className="text-3xl font-black tracking-tight text-[#f1f1f3]">
-                    Welcome to Narrative
-                  </h1>
-                  <p className="text-sm text-[#f1f1f3]/60 px-4">
-                    Your account is ready! Redirecting you now...
-                  </p>
-                </div>
-              </div>
+        {currentStep === 'verify' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, textAlign: 'center' }}>
+            <div style={{ fontSize: '48px', marginBottom: tokens.spacing[16] }}>📧</div>
+            <h1 style={{ 
+              ...tokens.typography.title,
+              color: tokens.colors.textPrimaryOnDark,
+              margin: 0,
+              marginBottom: tokens.spacing[8],
+            }}>
+              Check your email
+            </h1>
+            <p style={{ 
+              ...tokens.typography.body,
+              color: tokens.colors.textSecondary,
+              margin: 0,
+              marginBottom: tokens.layout.elementSpacing,
+            }}>
+              We sent a verification link to <strong>{user?.email || email}</strong>
+            </p>
+            <p style={{ 
+              ...tokens.typography.label,
+              color: tokens.colors.textSecondary,
+              margin: 0,
+              marginBottom: tokens.layout.sectionSpacing,
+            }}>
+              Click the link in the email to verify your account.
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+              <Button
+                onClick={async () => {
+                  setLoading(true)
+                  try {
+                    const emailToUse = user?.email || email
+                    if (!emailToUse) {
+                      alert('No email address found.')
+                      setLoading(false)
+                      return
+                    }
+
+                    const { error } = await supabase.auth.resend({
+                      type: 'signup',
+                      email: emailToUse,
+                      options: {
+                        emailRedirectTo: `${window.location.origin}/auth/callback`,
+                      },
+                    })
+
+                    if (error) {
+                      alert(`Error: ${error.message}`)
+                    } else {
+                      alert('Verification email sent!')
+                    }
+                  } catch (err: any) {
+                    alert(`Error: ${err.message || 'Failed to resend email'}`)
+                  } finally {
+                    setLoading(false)
+                  }
+                }}
+                variant="secondary"
+                disabled={loading}
+                style={{ width: '100%' }}
+              >
+                {loading ? "Sending..." : "Resend Email"}
+              </Button>
+
+              <Button
+                onClick={async () => {
+                  setLoading(true)
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (session?.user?.email_confirmed_at) {
+                      const response = await fetch(`/api/users?userId=${session.user.id}`)
+                      const data = await response.json()
+                      
+                      if (data.success && data.data) {
+                        const hasName = data.data.name
+                        const hasInterests = data.data.interests && data.data.interests.length > 0
+                        
+                        if (hasName && hasInterests) {
+                          clearOnboardingData()
+                          router.push('/vibe')
+                        } else if (hasName) {
+                          setCurrentStep('interests')
+                          if (data.data.interests) setSelectedInterests(data.data.interests)
+                        } else {
+                          setCurrentStep('name')
+                        }
+                      } else {
+                        setCurrentStep('name')
+                      }
+                    } else {
+                      alert('Email not verified yet. Please check your email and click the verification link.')
+                    }
+                  } catch (err) {
+                    alert('Error checking verification. Please try again.')
+                  } finally {
+                    setLoading(false)
+                  }
+                }}
+                variant="primary"
+                disabled={loading}
+                style={{ width: '100%' }}
+              >
+                I&apos;ve Verified My Email
+              </Button>
             </div>
           </div>
-        </div>
+        )}
       </div>
-    )
-  }
-
-  return null
+    </div>
+  )
 }
 
 export default function OnboardingPage() {
   return (
     <Suspense fallback={
-      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
-        <p className="text-[#f1f1f3]/60">Loading...</p>
+      <div style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        background: tokens.colors.backgroundApp, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
       </div>
     }>
       <OnboardingContent />

@@ -51,56 +51,64 @@ export function BottomDockNav() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.18 }}
+    <div
       style={{
         position: 'fixed',
         bottom: `calc(env(safe-area-inset-bottom) + 16px)`,
         left: '50%',
         transform: 'translateX(-50%)',
-        background: tokens.colors.pillPrimary,
-        borderRadius: '28px',
-        padding: '10px 20px',
-        boxShadow: tokens.shadows.dock,
         zIndex: 9999,
         display: 'flex',
+        justifyContent: 'center',
         alignItems: 'center',
-        gap: '22px',
       }}
     >
-      {navItems.map((item) => {
-        const Icon = item.icon
-        const active = isActive(item.path)
-        
-        return (
-          <motion.button
-            key={item.path}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => router.push(item.path)}
-            style={{
-              width: '46px',
-              height: '46px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: active ? tokens.colors.pillSecondary : 'transparent',
-              borderRadius: '50%',
-              padding: active ? tokens.spacing[8] : 0,
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <Icon 
-              className="w-5 h-5" 
-              style={{ 
-                color: active ? tokens.colors.textOnPill : tokens.colors.textMuted,
-              }} 
-            />
-          </motion.button>
-        )
-      })}
-    </motion.div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18 }}
+        style={{
+          background: tokens.colors.pillPrimary,
+          borderRadius: '28px',
+          padding: '10px 20px',
+          boxShadow: tokens.shadows.dock,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '22px',
+        }}
+      >
+        {navItems.map((item) => {
+          const Icon = item.icon
+          const active = isActive(item.path)
+          
+          return (
+            <motion.button
+              key={item.path}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push(item.path)}
+              style={{
+                width: '46px',
+                height: '46px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: active ? tokens.colors.pillSecondary : 'transparent',
+                borderRadius: '50%',
+                padding: active ? tokens.spacing[8] : 0,
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <Icon 
+                className="w-5 h-5" 
+                style={{ 
+                  color: active ? tokens.colors.textOnPill : tokens.colors.textMuted,
+                }} 
+              />
+            </motion.button>
+          )
+        })}
+      </motion.div>
+    </div>
   )
 }
