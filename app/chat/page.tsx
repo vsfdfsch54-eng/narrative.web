@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
 import { Loader2 } from "lucide-react"
-import { createBrowserClient } from "@supabase/ssr"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function ChatPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -69,10 +69,6 @@ export default function ChatPage() {
     }
 
     const pollForMatch = async () => {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      )
       
       // Subscribe to realtime changes on pending_matches for this user
       const channel = supabase
@@ -85,8 +81,8 @@ export default function ChatPage() {
             table: 'pending_matches',
             filter: `user_id=eq.${user.id}`,
           },
-          async (payload) => {
-            const pendingMatch = payload.new as any
+          async (payload: { new: any }) => {
+            const pendingMatch = payload.new
             if (pendingMatch.status === 'matched') {
               // User was matched! Find the chat match
               const { data: matches, error } = await supabase
