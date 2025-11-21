@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
     const supabase = createServerClient()
     
     // Get all users waiting for a match (FIFO order)
-    // Use a small delay to ensure database consistency
     const { data: waitingUsers, error: fetchError } = await supabase
       .from('pending_matches')
       .select('*')
@@ -22,7 +21,7 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: true }) // FIFO: oldest first
 
     if (fetchError) {
-      console.error('Error fetching waiting users:', fetchError)
+      console.error('[Matchmaking] Error fetching waiting users:', fetchError)
       return NextResponse.json(
         { error: 'Failed to fetch waiting users', details: fetchError.message },
         { status: 500 }
@@ -30,6 +29,11 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`[Matchmaking] Found ${waitingUsers?.length || 0} users waiting`)
+
+    // Log all waiting user IDs for debugging
+    if (waitingUsers && waitingUsers.length > 0) {
+      console.log(`[Matchmaking] Waiting user IDs:`, waitingUsers.map(u => u.user_id))
+    }
 
     if (!waitingUsers || waitingUsers.length < 2) {
       return NextResponse.json({ 
@@ -60,6 +64,18 @@ export async function GET(request: NextRequest) {
 
       // Determine which user's data goes where
       const isUser1First = user1.user_id === user1Id
+
+      // Verify both users are still searching before creating match
+      const { data: verifyUsers } = await supabase
+        .from('pending_matches')
+        .select('user_id, status')
+        .in('user_id', [user1.user_id, user2.user_id])
+        .eq('status', 'searching')
+
+      if (!verifyUsers || verifyUsers.length !== 2) {
+        console.log(`[Matchmaking] Users ${user1.user_id} and ${user2.user_id} no longer both searching, skipping`)
+        continue
+      }
 
       // Create chat match
       const { data: chatMatch, error: matchError } = await supabase

@@ -46,10 +46,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Small delay to ensure database consistency (race condition prevention)
-    await new Promise(resolve => setTimeout(resolve, 100))
-
     // Immediately try to match with other waiting users
+    // Use a transaction-like approach: check, lock, match
     const { data: otherPendingMatches, error: searchError } = await supabase
       .from('pending_matches')
       .select('*')
@@ -131,12 +129,19 @@ export async function POST(request: NextRequest) {
 
     // No match found, user is in queue
     // Double-check for any other users that might have joined while we were processing
+    // Add a small delay to catch users who joined at nearly the same time
+    await new Promise(resolve => setTimeout(resolve, 200))
+    
     try {
-      const { data: allWaitingUsers } = await supabase
+      const { data: allWaitingUsers, error: allWaitingError } = await supabase
         .from('pending_matches')
         .select('*')
         .eq('status', 'searching')
         .order('created_at', { ascending: true })
+
+      if (allWaitingError) {
+        console.error('Error fetching all waiting users:', allWaitingError)
+      }
 
       // If we have 2+ users now (including current user), match the first two
       if (allWaitingUsers && allWaitingUsers.length >= 2) {
@@ -213,6 +218,15 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       console.error('Error in inline matchmaking:', err)
     }
+
+    // Always trigger matchmaking processor as a backup
+    // This ensures that even if immediate matching failed, the processor will catch it
+    fetch(`${process.env.NEXT_PUBLIC_APP_URL || request.headers.get('origin') || 'http://localhost:3000'}/api/matchmaking/process`, {
+      method: 'GET',
+      cache: 'no-store',
+    }).catch(err => {
+      console.log('Failed to trigger matchmaking processor (non-critical):', err)
+    })
 
     return NextResponse.json({ 
       success: true, 

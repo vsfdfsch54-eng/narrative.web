@@ -199,7 +199,8 @@ export default function VibePage() {
           vibe: null,
           topic: null,
           timeframe: null,
-        })
+        }),
+        cache: 'no-store'
       })
       
       if (!response.ok) {
