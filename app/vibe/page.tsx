@@ -166,8 +166,8 @@ export default function VibePage() {
         flexDirection: 'column', 
         gap: tokens.spacing[20], 
         paddingTop: tokens.spacing[20], 
-        paddingBottom: '140px',
-        height: 'calc(100vh - 140px)',
+        paddingBottom: '180px',
+        minHeight: '100vh',
       }}>
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ 
@@ -340,45 +340,37 @@ export default function VibePage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Spacer to push buttons to bottom */}
-        <div style={{ flex: 1, minHeight: '20px' }} />
-
-        {/* Buttons at bottom - always visible */}
-        <div style={{ 
-          display: 'flex', 
-          gap: tokens.spacing[16], 
-          paddingTop: tokens.spacing[20],
-          width: '100%',
-        }}>
-          {canConnect ? (
-            <Button
-              variant="primary"
-              onClick={handleConnect}
-              disabled={saving}
-              style={{ width: '100%' }}
-            >
-              {saving ? "Connecting..." : "Connect"}
-            </Button>
-          ) : (
-            <>
-              <Button
-                variant="secondary"
-                onClick={handleSkip}
-                style={{ flex: 1 }}
-              >
-                Skip
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => router.push("/chat")}
-                style={{ flex: 1 }}
-              >
-                Chat
-              </Button>
-            </>
-          )}
-        </div>
+      {/* Fixed button at bottom */}
+      <div style={{
+        position: 'fixed',
+        bottom: 'calc(env(safe-area-inset-bottom) + 100px)',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: tokens.layout.maxWidth,
+        padding: `0 ${tokens.layout.paddingHorizontal}`,
+        zIndex: 1000,
+      }}>
+        {canConnect ? (
+          <Button
+            variant="primary"
+            onClick={handleConnect}
+            disabled={saving}
+            style={{ width: '100%' }}
+          >
+            {saving ? "Connecting..." : "Connect"}
+          </Button>
+        ) : (
+          <Button
+            variant="secondary"
+            onClick={handleSkip}
+            style={{ width: '100%' }}
+          >
+            Skip and Chat
+          </Button>
+        )}
       </div>
     </AppShell>
   )
