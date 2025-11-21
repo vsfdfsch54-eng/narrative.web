@@ -100,7 +100,7 @@ export default function ChatPage() {
               const activeMatches = matches.filter((m: any) => m.status === 'active')
               if (activeMatches.length > 0) {
                 const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
-                const otherUserId = randomMatch.user1_id === user.id ? match.user2_id : match.user1_id
+                const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
                 router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
               }
             }
