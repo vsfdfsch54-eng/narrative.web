@@ -42,11 +42,17 @@ export async function GET(request: NextRequest) {
 
     let matchedCount = 0
     const pairs: Array<{ user1: string, user2: string }> = []
+    const processedUserIds = new Set<string>()
 
     // Pair users in FIFO order (first two, then next two, etc.)
     for (let i = 0; i < waitingUsers.length - 1; i += 2) {
       const user1 = waitingUsers[i]
       const user2 = waitingUsers[i + 1]
+
+      // Skip if either user was already processed in this run
+      if (processedUserIds.has(user1.user_id) || processedUserIds.has(user2.user_id)) {
+        continue
+      }
 
       // Use consistent UUID ordering for chat_matches
       const user1Id = user1.user_id < user2.user_id ? user1.user_id : user2.user_id
