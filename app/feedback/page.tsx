@@ -513,11 +513,10 @@ export default function FeedbackPage() {
                         >
                           {loading ? "Submitting..." : hasAnyRating ? "Submit Feedback" : "Skip Feedback"}
                         </button>
-                      </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
         {/* Report Modal */}
