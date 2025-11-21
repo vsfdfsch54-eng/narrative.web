@@ -267,11 +267,14 @@ export default function ChatDetailPage() {
       
       const data = await response.json()
       if (data.success) {
-        // Show success feedback (could add a toast notification here)
-        console.log('Added to community!')
+        // Show success feedback
+        alert(`${profileName} will receive a notification to add you back!`)
+      } else {
+        alert('Failed to send community request. Please try again.')
       }
     } catch (error) {
       console.error('Error adding to community:', error)
+      alert('Failed to send community request. Please try again.')
     }
   }
 

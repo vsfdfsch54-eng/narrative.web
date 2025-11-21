@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Save, Users, Edit2 } from "lucide-react"
+import { Save, Users, Edit2, Bell, Check, X } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { Button } from "@/components/ui/button"
@@ -20,6 +20,8 @@ export default function ProfilePage() {
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [isEditingName, setIsEditingName] = useState(false)
   const [tempName, setTempName] = useState("")
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [loadingNotifications, setLoadingNotifications] = useState(true)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -94,6 +96,31 @@ export default function ProfilePage() {
     }
 
     loadRecentChats()
+
+    // Load notifications
+    const loadNotifications = async () => {
+      setLoadingNotifications(true)
+      try {
+        const response = await fetch(`/api/notifications?userId=${user.id}`)
+        const data = await response.json()
+        if (data.success && data.data) {
+          setNotifications(data.data)
+        } else {
+          setNotifications([])
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error)
+        setNotifications([])
+      } finally {
+        setLoadingNotifications(false)
+      }
+    }
+
+    loadNotifications()
+    
+    // Poll for new notifications every 5 seconds
+    const notificationInterval = setInterval(loadNotifications, 5000)
+    return () => clearInterval(notificationInterval)
   }, [user])
 
   const handleSaveQuote = () => {
@@ -130,6 +157,57 @@ export default function ProfilePage() {
       console.error('Error saving name:', error)
       setTempName(userName)
       setIsEditingName(false)
+    }
+  }
+
+  const handleAcceptNotification = async (notificationId: string) => {
+    if (!user?.id) return
+    
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notificationId,
+          userId: user.id,
+          action: 'accept',
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        // Remove notification from list
+        setNotifications(prev => prev.filter(n => n.id !== notificationId))
+        alert('Added to community!')
+      } else {
+        alert('Failed to accept request. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error accepting notification:', error)
+      alert('Failed to accept request. Please try again.')
+    }
+  }
+
+  const handleDismissNotification = async (notificationId: string) => {
+    if (!user?.id) return
+    
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notificationId,
+          userId: user.id,
+          action: 'read',
+        })
+      })
+      
+      if (response.ok) {
+        // Remove notification from list
+        setNotifications(prev => prev.filter(n => n.id !== notificationId))
+      }
+    } catch (error) {
+      console.error('Error dismissing notification:', error)
     }
   }
 

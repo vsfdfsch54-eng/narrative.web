@@ -18,6 +18,13 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient()
     
+    // Check if relationship already exists
+    const { data: existing } = await supabase
+      .from('relationships')
+      .select('*')
+      .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
+      .single()
+
     // Create relationship (or update if exists)
     const { data, error } = await supabase
       .from('relationships')
@@ -38,6 +45,28 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create relationship' },
         { status: 500 }
       )
+    }
+
+    // If relationship didn't exist before, create notification for user2
+    if (!existing) {
+      // Get user1's name for the notification
+      const { data: senderData } = await supabase
+        .from('users')
+        .select('name')
+        .eq('id', user1Id)
+        .single()
+
+      const senderName = senderData?.name || 'Someone'
+
+      // Create notification for user2
+      await supabase
+        .from('notifications')
+        .insert({
+          recipient_id: user2Id,
+          sender_id: user1Id,
+          type: 'community_request',
+          message: `${senderName} wants to add you to their community`,
+        })
     }
 
     // Handle array response from upsert

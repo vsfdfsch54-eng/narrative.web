@@ -257,13 +257,40 @@ function OnboardingContent() {
       return
     }
     
+    // Validate before submitting
+    if (!email.trim() || !email.includes('@') || !email.includes('.')) {
+      setError("Please enter a valid email address")
+      return
+    }
+    
+    if (!name.trim()) {
+      setError("Please enter your name")
+      return
+    }
+    
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters")
+      return
+    }
+    
+    if (!validatePasswordMatch()) {
+      setError("Passwords do not match")
+      return
+    }
+    
+    if (selectedInterests.length === 0) {
+      setError("Please select at least one interest")
+      return
+    }
+    
     setLoading(true)
 
     try {
-      const result = await signUp(email, password, name)
+      const result = await signUp(email.trim(), password, name.trim())
       
       if (!result.success) {
-        setError(result.error || "Failed to create account")
+        const errorMessage = result.error || "Failed to create account"
+        setError(errorMessage)
         setLoading(false)
         return
       }
@@ -277,17 +304,27 @@ function OnboardingContent() {
       if (result.data.user.id) {
         const userId = result.data.user.id
         
-        const response = await fetch('/api/users', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId,
-            name: name.trim(),
-            interests: selectedInterests
+        try {
+          const response = await fetch('/api/users', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              name: name.trim(),
+              interests: selectedInterests
+            })
           })
-        })
 
-        await response.json()
+          const userData = await response.json()
+          
+          if (!userData.success) {
+            console.error('Error saving user data:', userData.error)
+            // Don't fail the entire flow, but log the error
+          }
+        } catch (userError) {
+          console.error('Error calling /api/users:', userError)
+          // Don't fail the entire flow
+        }
       }
 
       if (result.data.user.email_confirmed_at) {
