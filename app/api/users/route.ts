@@ -3,6 +3,7 @@ export const runtime = "nodejs"
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
+import { autoMatchUser } from '@/lib/supabase-helpers'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -119,6 +120,18 @@ export async function PUT(request: NextRequest) {
     const finalData = Array.isArray(upsertData) ? upsertData[0] : upsertData
     if (!finalData) {
       return NextResponse.json({ success: false, error: 'Failed to save user data' }, { status: 500 })
+    }
+
+    // Automatically match this user with all existing users
+    // Only do this if this is a new user (checking if they have interests means onboarding is complete)
+    if (interests && interests.length > 0) {
+      try {
+        await autoMatchUser(userId)
+        console.log(`Auto-matched user ${userId} with existing users`)
+      } catch (matchError) {
+        // Don't fail the user update if matching fails
+        console.error('Error auto-matching user:', matchError)
+      }
     }
 
     return NextResponse.json({ success: true, data: finalData })

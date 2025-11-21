@@ -518,3 +518,93 @@ export async function getRecentChats(userId: string, limit: number = 10): Promis
   return data || []
 }
 
+/**
+ * Automatically match a new user with all existing users (server-side)
+ * Creates matches with all other users who don't already have a match with this user
+ */
+export async function autoMatchUser(newUserId: string): Promise<ChatMatch[]> {
+  const supabaseServer = createServerClient()
+  const createdMatches: ChatMatch[] = []
+
+  try {
+    // Get all existing users except the new user
+    const { data: allUsers, error: usersError } = await supabaseServer
+      .from('users')
+      .select('id')
+      .neq('id', newUserId)
+
+    if (usersError) {
+      console.error('Error fetching users for auto-matching:', usersError)
+      return []
+    }
+
+    if (!allUsers || allUsers.length === 0) {
+      console.log('No other users to match with')
+      return []
+    }
+
+    // Get existing matches for the new user to avoid duplicates
+    const { data: existingMatches, error: matchesError } = await supabaseServer
+      .from('chat_matches')
+      .select('user1_id, user2_id')
+      .or(`user1_id.eq.${newUserId},user2_id.eq.${newUserId}`)
+
+    if (matchesError) {
+      console.error('Error fetching existing matches:', matchesError)
+      return []
+    }
+
+    // Create a set of user IDs that are already matched
+    const alreadyMatched = new Set<string>()
+    if (existingMatches) {
+      existingMatches.forEach(match => {
+        if (match.user1_id === newUserId) {
+          alreadyMatched.add(match.user2_id)
+        } else {
+          alreadyMatched.add(match.user1_id)
+        }
+      })
+    }
+
+    // Create matches with all users who aren't already matched
+    const usersToMatch = allUsers.filter(user => !alreadyMatched.has(user.id))
+
+    if (usersToMatch.length === 0) {
+      console.log('User already matched with all existing users')
+      return []
+    }
+
+    // Create matches in batches to avoid overwhelming the database
+    const batchSize = 10
+    for (let i = 0; i < usersToMatch.length; i += batchSize) {
+      const batch = usersToMatch.slice(i, i + batchSize)
+      const matchesToInsert = batch.map(user => ({
+        user1_id: newUserId,
+        user2_id: user.id,
+        status: 'active' as const,
+      }))
+
+      const { data: insertedMatches, error: insertError } = await supabaseServer
+        .from('chat_matches')
+        .insert(matchesToInsert)
+        .select()
+
+      if (insertError) {
+        console.error('Error creating auto-matches:', insertError)
+        // Continue with next batch even if this one fails
+        continue
+      }
+
+      if (insertedMatches) {
+        createdMatches.push(...insertedMatches)
+      }
+    }
+
+    console.log(`Auto-matched user ${newUserId} with ${createdMatches.length} users`)
+    return createdMatches
+  } catch (error) {
+    console.error('Error in autoMatchUser:', error)
+    return []
+  }
+}
+
