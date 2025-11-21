@@ -220,32 +220,34 @@ export default function CalendarPage() {
     )
   }
 
-  const CreateMomentCard = ({ compact = false }: { compact?: boolean }) => (
-    <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-          <Plus className="w-4 h-4" style={{ color: tokens.colors.textOnPill }} />
-          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textOnPill, margin: 0 }}>Create new moment</p>
+  const CreateMomentCard = ({ compact = false }: { compact?: boolean }) => {
+    return (
+      <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+            <Plus className="w-4 h-4" style={{ color: tokens.colors.textOnPill }} />
+            <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textOnPill, margin: 0 }}>Create new moment</p>
+          </div>
+          {!compact && (
+            <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>
+              Curate a hangout, save a ritual, or plan something spontaneous.
+            </p>
+          )}
+          <Button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setSaveError(null)
+              setShowPlanner(true)
+            }}
+            style={{ width: '100%' }}
+          >
+            Start a plan
+          </Button>
         </div>
-        {!compact && (
-          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>
-            Curate a hangout, save a ritual, or plan something spontaneous.
-          </p>
-        )}
-        <Button
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            setSaveError(null)
-            setShowPlanner(true)
-          }}
-          style={{ width: '100%' }}
-        >
-          Start a plan
-        </Button>
       </div>
-    </div>
-  )
+    )
+  }
 
   return (
     <AppShell>
@@ -276,7 +278,7 @@ export default function CalendarPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: tokens.shadows.pillUnselected
+                boxShadow: tokens.shadows.pillUnselected,
               }}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -296,7 +298,7 @@ export default function CalendarPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: tokens.shadows.pillUnselected
+                boxShadow: tokens.shadows.pillUnselected,
               }}
             >
               <ChevronRight className="w-4 h-4" />
@@ -450,7 +452,7 @@ export default function CalendarPage() {
                     background: tokens.colors.pillUnselected,
                     border: 'none',
                     color: tokens.colors.textOnPill,
-                    boxShadow: tokens.shadows.pillUnselected
+                    boxShadow: tokens.shadows.pillUnselected,
                     ...tokens.typography.label,
                     cursor: 'pointer',
                   }}
@@ -489,7 +491,7 @@ export default function CalendarPage() {
                               padding: tokens.spacing[16],
                               borderRadius: tokens.radii.pill,
                               background: tokens.colors.pillUnselected,
-                              boxShadow: tokens.shadows.pillUnselected
+                              boxShadow: tokens.shadows.pillUnselected,
                             }}
                           >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
@@ -562,7 +564,7 @@ export default function CalendarPage() {
                         background: tokens.colors.pillUnselected,
                         border: 'none',
                         color: tokens.colors.textOnPill,
-                        boxShadow: tokens.shadows.pillUnselected
+                        boxShadow: tokens.shadows.pillUnselected,
                         ...tokens.typography.body,
                         cursor: 'pointer',
                       }}
@@ -651,7 +653,7 @@ export default function CalendarPage() {
                       background: tokens.colors.pillUnselected,
                       border: 'none',
                       color: tokens.colors.textOnPill,
-                      boxShadow: tokens.shadows.pillUnselected
+                      boxShadow: tokens.shadows.pillUnselected,
                       ...tokens.typography.body,
                     }}
                   />
@@ -669,7 +671,7 @@ export default function CalendarPage() {
                       background: tokens.colors.pillUnselected,
                       border: 'none',
                       color: tokens.colors.textOnPill,
-                      boxShadow: tokens.shadows.pillUnselected
+                      boxShadow: tokens.shadows.pillUnselected,
                       ...tokens.typography.body,
                       cursor: 'pointer',
                     }}
@@ -723,7 +725,7 @@ export default function CalendarPage() {
                       background: tokens.colors.pillUnselected,
                       border: 'none',
                       color: tokens.colors.textOnPill,
-                      boxShadow: tokens.shadows.pillUnselected
+                      boxShadow: tokens.shadows.pillUnselected,
                       ...tokens.typography.body,
                       resize: 'none',
                     }}
@@ -736,7 +738,7 @@ export default function CalendarPage() {
                     borderRadius: tokens.radii.input,
                     border: 'none',
                     background: tokens.colors.pillUnselected,
-                    boxShadow: tokens.shadows.pillUnselected
+                    boxShadow: tokens.shadows.pillUnselected,
                     ...tokens.typography.label,
                     color: tokens.colors.textMuted,
                   }}>
