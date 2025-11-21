@@ -61,6 +61,8 @@ export async function POST(request: NextRequest) {
       const otherMatch = otherPendingMatches[0]
       const otherUserId = otherMatch.user_id
 
+      console.log(`[PendingMatches] Immediate match found: ${userId} <-> ${otherUserId}`)
+
       // Use consistent UUID ordering for chat_matches
       const user1Id = userId < otherUserId ? userId : otherUserId
       const user2Id = userId < otherUserId ? otherUserId : userId
