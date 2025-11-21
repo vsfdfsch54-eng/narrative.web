@@ -11,50 +11,35 @@ export const VIBES: Vibe[] = [
   { id: 'curious', label: 'Curious', icon: '🔍', color: 'green', description: 'Eager to learn and explore' },
 ]
 
-// News Topics
+// News Topics (2025)
 export const NEWS_TOPICS: Topic[] = [
-  { id: 'news', label: 'News', icon: '📰', category: 'news' },
-  { id: 'trending', label: "What's Trending", icon: '🔥', category: 'news' },
-  { id: 'current-events', label: 'Current Events', icon: '🌍', category: 'news' },
-  { id: 'breaking-news', label: 'Breaking News', icon: '⚡', category: 'news' },
-  { id: 'world-news', label: 'World News', icon: '🌎', category: 'news' },
-  { id: 'tech-news', label: 'Tech News', icon: '💻', category: 'news' },
-  { id: 'ai-chatgpt', label: 'AI & ChatGPT', icon: '🤖', category: 'news' },
-  { id: 'climate', label: 'Climate Change', icon: '🌱', category: 'news' },
-  { id: 'elections', label: 'Elections 2024', icon: '🗳️', category: 'news' },
-  { id: 'crypto', label: 'Crypto & Web3', icon: '₿', category: 'news' },
-  { id: 'sustainability', label: 'Sustainability', icon: '♻️', category: 'news' },
+  { id: 'us-election-cycle', label: 'US Election Cycle', icon: '🗳️', category: 'news' },
+  { id: 'ai-safety-regulations', label: 'AI Safety Regulations', icon: '🤖', category: 'news' },
+  { id: 'crypto-market-surge', label: 'Crypto Market Surge', icon: '₿', category: 'news' },
+  { id: 'climate-events-2025', label: 'Climate Events 2025', icon: '🌱', category: 'news' },
+  { id: 'global-tech-layoffs', label: 'Global Tech Layoffs', icon: '💻', category: 'news' },
 ]
 
-// Pop Culture Topics
+// Pop Culture Topics (2025)
 export const POP_CULTURE_TOPICS: Topic[] = [
-  { id: 'pop-culture', label: 'Pop Culture', icon: '⭐', category: 'pop-culture' },
-  { id: 'entertainment', label: 'Entertainment', icon: '🎬', category: 'pop-culture' },
-  { id: 'celebrities', label: 'Celebrities', icon: '✨', category: 'pop-culture' },
-  { id: 'movies', label: 'Movies', icon: '🎥', category: 'pop-culture' },
-  { id: 'tv-shows', label: 'TV Shows', icon: '📺', category: 'pop-culture' },
-  { id: 'music-pop', label: 'Music', icon: '🎵', category: 'pop-culture' },
-  { id: 'fashion', label: 'Fashion', icon: '👗', category: 'pop-culture' },
-  { id: 'social-media', label: 'Social Media Trends', icon: '📱', category: 'pop-culture' },
-  { id: 'tiktok', label: 'TikTok Trends', icon: '🎵', category: 'pop-culture' },
-  { id: 'streaming', label: 'Streaming Wars', icon: '📺', category: 'pop-culture' },
-  { id: 'gaming-pop', label: 'Gaming Culture', icon: '🎮', category: 'pop-culture' },
-  { id: 'memes', label: 'Memes & Viral', icon: '😂', category: 'pop-culture' },
+  { id: 'coachella-2025', label: 'Coachella 2025', icon: '🎵', category: 'pop-culture' },
+  { id: 'tiktok-trends', label: 'TikTok Trends', icon: '📱', category: 'pop-culture' },
+  { id: 'taylor-swift-mirrorball', label: 'Taylor Swift Mirrorball Tour', icon: '✨', category: 'pop-culture' },
+  { id: 'ufc-306', label: 'UFC 306', icon: '🥊', category: 'pop-culture' },
+  { id: 'iphone-17-leaks', label: 'New iPhone 17 leaks', icon: '📱', category: 'pop-culture' },
 ]
 
-// General Topics
+// General Topics (2025)
 export const GENERAL_TOPICS: Topic[] = [
-  { id: 'technology', label: 'Technology', icon: '💻', category: 'general' },
-  { id: 'art-design', label: 'Art & Design', icon: '🎨', category: 'general' },
-  { id: 'science', label: 'Science', icon: '🔬', category: 'general' },
-  { id: 'philosophy', label: 'Philosophy', icon: '🤔', category: 'general' },
-  { id: 'travel', label: 'Travel', icon: '✈️', category: 'general' },
-  { id: 'literature', label: 'Literature', icon: '📚', category: 'general' },
-  { id: 'food-culture', label: 'Food & Culture', icon: '🍜', category: 'general' },
-  { id: 'sports', label: 'Sports', icon: '⚽', category: 'general' },
-  { id: 'gaming', label: 'Gaming', icon: '🎮', category: 'general' },
-  { id: 'photography', label: 'Photography', icon: '📸', category: 'general' },
-  { id: 'wellness', label: 'Wellness', icon: '🧘', category: 'general' },
+  { id: 'advice', label: 'Advice', icon: '💡', category: 'general' },
+  { id: 'life', label: 'Life', icon: '🌍', category: 'general' },
+  { id: 'random', label: 'Random', icon: '🎲', category: 'general' },
+  { id: 'relationships', label: 'Relationships', icon: '💕', category: 'general' },
+]
+
+// Sports Topics (2025)
+export const SPORTS_TOPICS: Topic[] = [
+  { id: 'sports', label: 'Sports', icon: '⚽', category: 'sports' },
 ]
 
 // All topics combined
@@ -62,6 +47,7 @@ export const TOPICS: Topic[] = [
   ...NEWS_TOPICS,
   ...POP_CULTURE_TOPICS,
   ...GENERAL_TOPICS,
+  ...SPORTS_TOPICS,
 ]
 
 export const INTIMACY_TIERS: { id: IntimacyTier; label: string; color: string; description: string }[] = [

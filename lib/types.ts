@@ -29,7 +29,7 @@ export interface Topic {
   label: string
   icon: string
   description?: string
-  category?: 'news' | 'pop-culture' | 'general'
+  category?: 'news' | 'pop-culture' | 'general' | 'sports'
 }
 
 export interface Match {

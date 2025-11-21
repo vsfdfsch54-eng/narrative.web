@@ -40,7 +40,7 @@ export function TopicChip({
       }}
       onClick={onClick}
       className={cn(
-        "shrink-0 px-[14px] py-[8px] rounded-[16px]",
+        "shrink-0 px-3 rounded-[20px]",
         "font-semibold text-base tracking-tight",
         "transition-all duration-300",
         "touch-manipulation",
@@ -49,13 +49,14 @@ export function TopicChip({
         "text-black"
       )}
       style={{
-        height: '44px',
+        height: '48px',
+        padding: '12px',
         background: selected ? '#F2F2F2' : '#FFFFFF',
         border: selected
           ? '2px solid #000000'
-          : '1px solid rgba(0,0,0,0.2)',
+          : '1.25px solid rgba(0,0,0,0.20)',
         boxShadow: selected 
-          ? '0 2px 8px rgba(0,0,0,0.25)' 
+          ? '0 1px 4px rgba(0,0,0,0.25)' 
           : 'none',
         willChange: "transform"
       }}

@@ -1,21 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { VibeChip } from "@/components/ui/vibe-chip"
 import { TopicChip } from "@/components/ui/topic-chip"
 import { TopMenu } from "@/components/ui/top-menu"
-import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS } from "@/lib/constants"
+import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS, SPORTS_TOPICS } from "@/lib/constants"
 import { Vibe, Topic } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
+import { ChevronDown } from "lucide-react"
 
-// Reordered: General, Pop Culture, News
+// Topic Categories with 2025 subtopics
 const TOPIC_CATEGORIES = [
   { id: "general", label: "General", topics: GENERAL_TOPICS },
   { id: "pop-culture", label: "Pop Culture", topics: POP_CULTURE_TOPICS },
   { id: "news", label: "News", topics: NEWS_TOPICS },
+  { id: "sports", label: "Sports", topics: SPORTS_TOPICS },
 ] as const
 
 const TIME_LIMITS = [5, 15, 30]
@@ -26,10 +28,12 @@ export default function VibePage() {
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
   const [selectedTimeLimit, setSelectedTimeLimit] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
   const [topics, setTopics] = useState<{ [key: string]: Topic[] }>({
     news: NEWS_TOPICS,
     'pop-culture': POP_CULTURE_TOPICS,
-    general: GENERAL_TOPICS
+    general: GENERAL_TOPICS,
+    sports: SPORTS_TOPICS
   })
   const [loadingTopics, setLoadingTopics] = useState(false)
   const router = useRouter()
@@ -153,14 +157,16 @@ export default function VibePage() {
         <div className="phone-frame">
           <div className="phone-screen">
             <div 
-              className="phone-content px-5 overflow-y-auto flex flex-col h-full relative z-10" 
+              className="phone-content overflow-y-auto flex flex-col h-full relative z-10" 
               style={{ 
                 paddingTop: '24px',
-                paddingBottom: 'calc(env(safe-area-inset-bottom) + 100px)'
+                paddingBottom: 'calc(env(safe-area-inset-bottom) + 100px)',
+                maxWidth: '100%',
+                margin: '0 auto'
               }}
             >
               {/* Top Menu - Three dots in top left */}
-              <div className="flex-shrink-0 mb-6 flex items-start justify-between">
+              <div className="flex-shrink-0 mb-8 flex items-start justify-between px-5">
                 <TopMenu />
                 {/* Logo - 13px, low contrast, centered */}
                 <div className="flex-1 flex justify-center">
@@ -172,16 +178,16 @@ export default function VibePage() {
                 <div className="w-10" />
               </div>
 
-              {/* Main Title - 32px bold, centered */}
-              <div className="flex-shrink-0 mb-5 text-center">
-                <h1 className="text-[32px] font-bold text-[#F5F5F5] leading-tight">
+              {/* Main Title - 32px bold, centered, 32px spacing */}
+              <div className="flex-shrink-0 mb-8 text-center px-5">
+                <h1 className="text-[32px] font-bold text-[#FFFFFF] leading-tight">
                   Select Your Vibe
                 </h1>
               </div>
 
-              {/* Vibe Section - 20px spacing, chip rows 12px above + 12px below */}
-              <div className="flex-shrink-0 mb-5">
-                <p className="text-[14px] text-[rgba(255,255,255,0.55)] max-w-[90%] mx-auto mb-3 text-center">
+              {/* Vibe Section - 32px spacing, 16px between heading/description, 16px between description/chips */}
+              <div className="flex-shrink-0 mb-8 px-5">
+                <p className="text-[14px] text-[rgba(255,255,255,0.55)] max-w-full mx-auto mb-4 text-center">
                   Vibes describe your current mood or energy and help match you with someone who feels the same way.
                 </p>
                 <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
@@ -189,8 +195,7 @@ export default function VibePage() {
                   overflowY: 'hidden',
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch',
-                  marginTop: '12px',
-                  marginBottom: '12px'
+                  marginTop: '16px'
                 }}>
                   <div className="flex gap-2">
                     {VIBES.map((vibe) => (
@@ -206,19 +211,75 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Topic Section - 20px spacing, chip rows 12px above + 12px below */}
-              <div className="flex-shrink-0 mb-5">
-                <h2 className="text-[28px] font-bold text-[#F5F5F5] mb-3">Choose a Topic</h2>
-                <p className="text-[14px] text-[rgba(255,255,255,0.55)] mb-3">
+              {/* Topic Section - 32px spacing */}
+              <div className="flex-shrink-0 mb-8 px-5">
+                <h2 className="text-[28px] font-bold text-[#FFFFFF] mb-4 text-center">Choose a Topic</h2>
+                <p className="text-[14px] text-[rgba(255,255,255,0.55)] mb-4 text-center">
                   Topics are what you want to talk about. They guide the conversation so you connect with the right person.
                 </p>
+                
+                {/* Topic Category Dropdown - 16px spacing from description */}
+                <div className="relative mb-4" ref={dropdownRef}>
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                    className={cn(
+                      "w-full h-[48px] rounded-[20px]",
+                      "bg-white text-black",
+                      "border-[1.25px] border-[rgba(0,0,0,0.20)]",
+                      "flex items-center justify-between px-3",
+                      "font-semibold text-base",
+                      "transition-all duration-300"
+                    )}
+                  >
+                    <span>{TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.label || "General"}</span>
+                    <ChevronDown 
+                      className={cn(
+                        "w-5 h-5 transition-transform duration-300",
+                        isCategoryDropdownOpen && "rotate-180"
+                      )}
+                    />
+                  </motion.button>
+                  
+                  {/* Dropdown Menu */}
+                  {isCategoryDropdownOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute top-full left-0 right-0 mt-2 z-50"
+                    >
+                      <div className="bg-[#1A1A1A] border border-[rgba(255,255,255,0.1)] rounded-[16px] overflow-hidden shadow-lg">
+                        {TOPIC_CATEGORIES.map((category) => (
+                          <button
+                            key={category.id}
+                            onClick={() => {
+                              setSelectedCategory(category.id)
+                              setIsCategoryDropdownOpen(false)
+                            }}
+                            className={cn(
+                              "w-full px-4 py-3 text-left",
+                              "text-[#FFFFFF] text-base font-medium",
+                              "transition-all duration-200",
+                              "hover:bg-[rgba(255,255,255,0.05)]",
+                              selectedCategory === category.id && "bg-[rgba(255,255,255,0.1)]"
+                            )}
+                          >
+                            {category.label}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+                
+                {/* Topic Chips - 16px spacing from dropdown */}
                 <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
                   alignItems: 'center', 
                   overflowY: 'hidden',
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch',
-                  marginTop: '12px',
-                  marginBottom: '12px'
+                  marginTop: '16px'
                 }}>
                   <div className="flex gap-2">
                     {currentTopics.map((topic) => (
@@ -234,10 +295,11 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Duration Segmented Control - 20px spacing */}
-              <div className="flex-shrink-0 mb-5">
+              {/* Duration Segmented Control - 32px spacing, 48px height */}
+              <div className="flex-shrink-0 mb-8 px-5">
                 <div 
-                  className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(255,255,255,0.05)] relative overflow-hidden"
+                  className="flex items-center gap-1 p-1 rounded-[20px] bg-[rgba(255,255,255,0.05)] relative overflow-hidden"
+                  style={{ height: '48px' }}
                 >
                   {TIME_LIMITS.map((time) => (
                     <motion.button
@@ -245,10 +307,11 @@ export default function VibePage() {
                       onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
                       whileTap={{ scale: 0.97 }}
                       className={cn(
-                        "flex-1 px-4 py-2.5 rounded-[12px] text-base font-medium transition-all duration-300 relative z-10",
+                        "flex-1 h-full rounded-[20px] text-base font-semibold transition-all duration-300 relative z-10",
+                        "px-3",
                         selectedTimeLimit === time 
-                          ? "bg-white text-black font-semibold"
-                          : "bg-transparent text-[#F5F5F5]"
+                          ? "bg-white text-black"
+                          : "bg-transparent text-[#FFFFFF]"
                       )}
                     >
                       {time}m
@@ -286,7 +349,8 @@ export default function VibePage() {
                 onClick={handleConnect}
                 disabled={saving || !canConnect}
                 className={cn(
-                  "flex-1 h-[48px] rounded-[24px] text-base font-bold transition-all duration-300",
+                  "flex-1 h-[48px] rounded-[20px] text-base font-bold transition-all duration-300",
+                  "px-3",
                   canConnect
                     ? "bg-white text-black"
                     : "bg-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.3)]",
@@ -313,8 +377,9 @@ export default function VibePage() {
                 }}
                 onClick={handleSkip}
                 className={cn(
-                  "flex-1 h-[48px] rounded-[24px] text-base font-bold transition-all duration-300",
-                  "bg-transparent text-[#F5F5F5]"
+                  "flex-1 h-[48px] rounded-[20px] text-base font-bold transition-all duration-300",
+                  "px-3",
+                  "bg-transparent text-[#FFFFFF]"
                 )}
                 style={{
                   border: '1px solid rgba(255,255,255,0.3)'
