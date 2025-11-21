@@ -20,13 +20,19 @@ const TOPIC_CATEGORIES = [
   { id: "news", label: "News", topics: NEWS_TOPICS },
 ] as const
 
+const TIME_LIMITS = [5, 15, 30]
+
 // Fallback vibe if none found in database
 const FALLBACK_VIBE: Vibe = { id: 'curious', label: 'Curious', icon: '🔍', color: 'gray', description: 'Eager to learn and explore' }
+
+// Most popular vibe (first one or predefined)
+const MOST_POPULAR_VIBE = VIBES[0] || FALLBACK_VIBE
 
 export default function VibePage() {
   const [selectedVibe, setSelectedVibe] = useState<Vibe | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("general")
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
+  const [selectedTimeLimit, setSelectedTimeLimit] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [lastVibe, setLastVibe] = useState<Vibe | null>(null)
   const [loadingLastVibe, setLoadingLastVibe] = useState(true)
@@ -56,8 +62,10 @@ export default function VibePage() {
 
   const currentCategory = TOPIC_CATEGORIES.find((cat) => cat.id === selectedCategory)
   const currentTopics = topics[selectedCategory] || currentCategory?.topics || []
-  // Connect shows when vibe AND topic are selected
-  const canConnect = selectedVibe && selectedTopic
+  // Most popular topic (first one from current category)
+  const mostPopularTopic = currentTopics[0] || null
+  // Connect shows when vibe OR topic OR both are selected
+  const canConnect = selectedVibe || selectedTopic
 
   // Load last vibe from database
   useEffect(() => {
@@ -179,6 +187,16 @@ export default function VibePage() {
     }
   }
 
+  const handleSelectMostPopularVibe = () => {
+    setSelectedVibe(MOST_POPULAR_VIBE)
+  }
+
+  const handleSelectMostPopularTopic = () => {
+    if (mostPopularTopic) {
+      setSelectedTopic(mostPopularTopic)
+    }
+  }
+
   // Show loading while checking auth
   if (loading || !user || (user && !user.email_confirmed_at)) {
     return (
@@ -193,20 +211,38 @@ export default function VibePage() {
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content px-5 py-8 pb-0 overflow-hidden flex flex-col h-full">
-              {/* Minimalist Header */}
-              <div className="flex-shrink-0 mb-10">
-                <h1 className="text-2xl font-semibold text-[#f1f1f3] text-center">
+            <div className="phone-content px-5 py-12 pb-0 overflow-hidden flex flex-col h-full">
+              {/* Top Section: Time Frame Box */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 mb-6 flex-shrink-0">
+                <h1 className="text-3xl font-light text-[#f1f1f3] text-center mb-4">
                   Select how you want to connect
                 </h1>
+                
+                {/* Time Selection - Centered */}
+                <div className="flex items-center justify-center gap-2">
+                  {TIME_LIMITS.map((time) => (
+                    <button
+                      key={time}
+                      onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
+                      className={cn(
+                        "flex-1 max-w-[80px] px-4 py-2.5 rounded-lg text-xs font-medium transition-all border",
+                        selectedTimeLimit === time 
+                          ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20" 
+                          : "bg-[#0a0a0c] text-[#f1f1f3] border-white/10 hover:border-white/20"
+                      )}
+                    >
+                      {time}m
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Main Content - Two Sections */}
-              <div className="flex flex-col flex-1 min-h-0 gap-8 mb-8">
-                {/* Vibe Section */}
-                <div className="flex-shrink-0">
+              {/* Main Content - Two Boxes */}
+              <div className="flex flex-col flex-1 min-h-0 gap-6 mb-6">
+                {/* Vibe Box */}
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex-shrink-0">
                   {/* Header with Last Vibe Pill */}
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-3">
                     <h2 className="text-base font-medium text-[#f1f1f3]">Vibe</h2>
                     {lastVibe && !loadingLastVibe && (
                       <button
@@ -225,8 +261,21 @@ export default function VibePage() {
                     )}
                   </div>
 
-                  {/* Locked Horizontal Scroll Row for Vibes - Fixed Height, No Vertical Movement */}
-                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-5 px-5" style={{ height: '56px', alignItems: 'center', overflowY: 'hidden' }}>
+                  {/* Most Popular Vibe Pill */}
+                  <button
+                    onClick={handleSelectMostPopularVibe}
+                    className={cn(
+                      "w-full px-4 py-2 rounded-full text-sm font-medium transition-all border mb-3",
+                      selectedVibe?.id === MOST_POPULAR_VIBE.id
+                        ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
+                        : "bg-[#0a0a0c] text-[#f1f1f3] border-white/10 hover:border-white/20"
+                    )}
+                  >
+                    Most Popular Vibe
+                  </button>
+
+                  {/* Locked Horizontal Scroll Row for Vibes */}
+                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-4 px-4" style={{ height: '56px', alignItems: 'center', overflowY: 'hidden' }}>
                     {VIBES.map((vibe) => (
                       <VibeChip
                         key={vibe.id}
@@ -239,9 +288,25 @@ export default function VibePage() {
                   </div>
                 </div>
 
-                {/* Topic Section */}
-                <div className="flex-shrink-0">
-                  <h2 className="text-base font-medium text-[#f1f1f3] mb-4">Topic</h2>
+                {/* Topic Box */}
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex-shrink-0">
+                  {/* Header with Most Popular Topic Pill */}
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-base font-medium text-[#f1f1f3]">Topic</h2>
+                    {mostPopularTopic && (
+                      <button
+                        onClick={handleSelectMostPopularTopic}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1.5",
+                          selectedTopic?.id === mostPopularTopic.id
+                            ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
+                            : "bg-[#0a0a0c] text-[#f1f1f3] border-white/10 hover:border-white/20"
+                        )}
+                      >
+                        Most Popular Topic Today
+                      </button>
+                    )}
+                  </div>
 
                   {/* Dropdown Menu for Categories */}
                   <div className="relative mb-4">
@@ -262,8 +327,8 @@ export default function VibePage() {
                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#f1f1f3]/60 pointer-events-none" />
                   </div>
 
-                  {/* Locked Horizontal Scroll Row for Topics - Fixed Height, No Vertical Movement */}
-                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-5 px-5" style={{ height: '56px', alignItems: 'center', overflowY: 'hidden' }}>
+                  {/* Locked Horizontal Scroll Row for Topics */}
+                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-4 px-4" style={{ height: '56px', alignItems: 'center', overflowY: 'hidden' }}>
                     {currentTopics.map((topic) => (
                       <TopicChip
                         key={topic.id}
@@ -277,32 +342,30 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Bottom Section: Connect Button - Centered */}
-              <div className="flex-shrink-0 pt-6 pb-2 flex justify-center">
-                <div className="w-full max-w-md">
-                  <AnimatePresence mode="wait">
-                    {canConnect ? (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        onClick={handleConnect}
-                        disabled={saving}
-                        className="w-full rounded-xl h-12 text-sm font-semibold"
-                      >
-                        {saving ? "Connecting..." : "Connect"}
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        onClick={handleSkipAndChat}
-                        className="w-full rounded-xl h-12 text-sm font-semibold"
-                      >
-                        Skip & Chat
-                      </Button>
-                    )}
-                  </AnimatePresence>
-                </div>
+              {/* Bottom Section: Connect/Skip & Chat Buttons */}
+              <div className="flex-shrink-0 pt-6 pb-2 flex flex-col items-center gap-3">
+                <AnimatePresence mode="wait">
+                  {canConnect ? (
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={handleConnect}
+                      disabled={saving}
+                      className="w-full max-w-md rounded-xl h-14 text-base font-semibold"
+                    >
+                      {saving ? "Connecting..." : "Connect"}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={handleSkipAndChat}
+                      className="w-full max-w-md rounded-xl h-14 text-base font-semibold"
+                    >
+                      Skip & Chat
+                    </Button>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
             
