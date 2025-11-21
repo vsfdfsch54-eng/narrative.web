@@ -178,6 +178,8 @@ export default function VibePage() {
       return
     }
     
+    setSaving(true)
+    
     try {
       // Create pending match without vibe/topic/timeframe (instant matching)
       const response = await fetch('/api/pending-matches', {
@@ -191,19 +193,29 @@ export default function VibePage() {
         })
       })
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
       
       if (data.success && data.matched && data.match) {
         // Matched immediately! Navigate to chat
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
-      } else {
+      } else if (data.success && data.inQueue) {
         // In queue, navigate to chat page which will poll for matches
+        router.push("/chat")
+      } else {
+        // Error or unexpected response, still navigate to chat
+        console.error('Unexpected response from pending-matches:', data)
         router.push("/chat")
       }
     } catch (error) {
       console.error('Error joining match queue:', error)
-      // Still navigate to chat page
+      // Still navigate to chat page even if there's an error
       router.push("/chat")
+    } finally {
+      setSaving(false)
     }
   }
 
