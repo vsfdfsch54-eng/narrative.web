@@ -63,13 +63,13 @@ export function TopNav() {
   return (
     <div
       style={{
-        height: '68px',
+        height: '64px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: `0 ${tokens.spacing[24]}`,
+        padding: `0 ${tokens.spacing[20]}`,
         background: tokens.colors.backgroundApp,
-        borderBottom: `1px solid rgba(0,0,0,0.04)`,
+        borderBottom: `1px solid rgba(0,0,0,0.05)`,
         position: 'sticky',
         top: 0,
         zIndex: 100,
@@ -77,9 +77,7 @@ export function TopNav() {
     >
       <h1
         style={{
-          fontSize: '20px',
-          fontWeight: 600,
-          letterSpacing: '0.01em',
+          ...tokens.typography.headingM,
           color: tokens.colors.textPrimary,
           margin: 0,
         }}
@@ -92,16 +90,15 @@ export function TopNav() {
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsOpen(!isOpen)}
           style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '9999px',
-            background: tokens.colors.surfaceCard,
-            border: 'none',
+            width: '40px',
+            height: '40px',
+            borderRadius: tokens.radii.button,
+            background: tokens.colors.surfacePrimary,
+            border: `1px solid ${tokens.colors.borderStrong}`,
             color: tokens.colors.textSecondary,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: tokens.shadows.card,
             cursor: 'pointer',
           }}
         >
@@ -127,13 +124,14 @@ export function TopNav() {
                 transition={{ duration: 0.15 }}
                 style={{
                   position: 'absolute',
-                  top: '52px',
+                  top: '48px',
                   right: 0,
                   zIndex: 50,
                   minWidth: '180px',
-                  background: tokens.colors.surfaceCard,
+                  background: tokens.colors.surfacePrimary,
                   borderRadius: tokens.radii.popover,
                   boxShadow: tokens.shadows.elevated,
+                  border: `1px solid ${tokens.colors.borderMedium}`,
                   overflow: 'hidden',
                   padding: `${tokens.spacing[8]} 0`,
                 }}
@@ -159,11 +157,11 @@ export function TopNav() {
                         border: 'none',
                         color: item.isActive ? tokens.colors.textPrimary : tokens.colors.textSecondary,
                         cursor: 'pointer',
-                        fontSize: tokens.typography.body.fontSize,
+                        ...tokens.typography.body,
                         fontWeight: item.isActive ? 500 : 400,
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(15,23,42,0.03)'
+                        e.currentTarget.style.background = tokens.colors.surfaceSecondary
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = 'transparent'

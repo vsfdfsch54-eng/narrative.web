@@ -162,10 +162,10 @@ export default function VibePage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[32] }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ 
-            ...tokens.typography.headingL,
+            ...tokens.typography.headingXL,
             color: tokens.colors.textPrimary,
             margin: 0,
             marginBottom: tokens.spacing[8],
@@ -181,7 +181,6 @@ export default function VibePage() {
           </p>
         </div>
 
-        {/* Vibes */}
         <div>
           <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
             alignItems: 'center', 
@@ -205,13 +204,12 @@ export default function VibePage() {
           </div>
         </div>
 
-        {/* Topic Section */}
         <Card>
           <h2 style={{ 
             ...tokens.typography.headingM,
             color: tokens.colors.textPrimary,
             margin: 0,
-            marginBottom: tokens.spacing[20],
+            marginBottom: tokens.spacing[16],
             textAlign: 'center',
           }}>
             Choose a Topic
@@ -226,8 +224,8 @@ export default function VibePage() {
                 height: '44px',
                 padding: `0 ${tokens.spacing[16]}`,
                 borderRadius: tokens.radii.input,
-                background: tokens.colors.surfaceCard,
-                border: `1px solid ${tokens.colors.borderSubtle}`,
+                background: tokens.colors.surfacePrimary,
+                border: `1px solid ${tokens.colors.borderStrong}`,
                 color: tokens.colors.textPrimary,
                 display: 'flex',
                 alignItems: 'center',
@@ -261,8 +259,8 @@ export default function VibePage() {
                 className="absolute top-full left-0 right-0 mt-2 z-50"
               >
                 <div style={{ 
-                  background: tokens.colors.surfaceCard, 
-                  border: `1px solid ${tokens.colors.borderSubtle}`, 
+                  background: tokens.colors.surfacePrimary, 
+                  border: `1px solid rgba(0,0,0,0.09)`, 
                   borderRadius: tokens.radii.popover, 
                   overflow: 'hidden',
                   boxShadow: tokens.shadows.elevated,
@@ -283,7 +281,7 @@ export default function VibePage() {
                           gap: tokens.spacing[12],
                           padding: `0 ${tokens.spacing[16]}`,
                           height: '44px',
-                          background: selectedCategory === category.id ? 'rgba(15,23,42,0.03)' : 'transparent',
+                          background: selectedCategory === category.id ? tokens.colors.surfaceSecondary : 'transparent',
                           border: 'none',
                           color: tokens.colors.textPrimary,
                           ...tokens.typography.body,
@@ -293,7 +291,7 @@ export default function VibePage() {
                         }}
                         onMouseEnter={(e) => {
                           if (selectedCategory !== category.id) {
-                            e.currentTarget.style.background = 'rgba(15,23,42,0.03)'
+                            e.currentTarget.style.background = tokens.colors.surfaceSecondary
                           }
                         }}
                         onMouseLeave={(e) => {
@@ -334,7 +332,6 @@ export default function VibePage() {
           </div>
         </Card>
 
-        {/* Duration */}
         <div>
           <SegmentedControl
             options={TIME_LIMITS.map(t => ({ value: String(t), label: `${t}m` }))}
@@ -343,8 +340,7 @@ export default function VibePage() {
           />
         </div>
 
-        {/* Actions */}
-        <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.spacing[24] }}>
+        <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.spacing[16] }}>
           <Button
             variant="primary"
             onClick={handleConnect}

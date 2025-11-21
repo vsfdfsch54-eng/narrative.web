@@ -151,9 +151,8 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[24] }}>
-        {/* User Identity Card */}
-        <Card style={{ textAlign: 'center', padding: tokens.spacing[32] }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
+        <Card style={{ textAlign: 'center', padding: tokens.spacing[24] }}>
           <div style={{ fontSize: '64px', marginBottom: tokens.spacing[16] }}>👤</div>
           {isEditingName ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
@@ -164,8 +163,8 @@ export default function ProfilePage() {
                 style={{
                   ...tokens.typography.headingM,
                   color: tokens.colors.textPrimary,
-                  background: tokens.colors.surfaceCard,
-                  border: `1px solid ${tokens.colors.borderSubtle}`,
+                  background: tokens.colors.surfaceSecondary,
+                  border: `1px solid ${tokens.colors.borderStrong}`,
                   borderRadius: tokens.radii.input,
                   padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
                   textAlign: 'center',
@@ -207,7 +206,7 @@ export default function ProfilePage() {
               </motion.button>
             </div>
           )}
-          <div style={{ marginTop: tokens.spacing[24] }}>
+          <div style={{ marginTop: tokens.spacing[20] }}>
             <textarea
               value={quoteOfDay}
               onChange={(e) => setQuoteOfDay(e.target.value)}
@@ -217,8 +216,8 @@ export default function ProfilePage() {
                 width: '100%',
                 minHeight: '80px',
                 padding: tokens.spacing[16],
-                background: tokens.colors.backgroundApp,
-                border: `1px solid ${tokens.colors.borderSubtle}`,
+                background: tokens.colors.surfaceSecondary,
+                border: `1px solid ${tokens.colors.borderStrong}`,
                 borderRadius: tokens.radii.input,
                 color: tokens.colors.textPrimary,
                 ...tokens.typography.body,
@@ -233,7 +232,7 @@ export default function ProfilePage() {
                 style={{
                   padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
                   borderRadius: tokens.radii.button,
-                  background: tokens.colors.accentPrimary,
+                  background: tokens.colors.accentBlue,
                   color: '#FFFFFF',
                   border: 'none',
                   cursor: 'pointer',
@@ -245,22 +244,21 @@ export default function ProfilePage() {
           </div>
         </Card>
 
-        {/* My Friends Card */}
         <Card>
           <SectionHeader title="My Friends" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
             <div style={{ 
               padding: tokens.spacing[16],
               borderBottom: `1px solid ${tokens.colors.borderSubtle}`,
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentWarning }} />
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentOrange }} />
                   <p style={{ ...tokens.typography.caption, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Inner Circle</p>
                 </div>
                 <span style={{ ...tokens.typography.caption, color: tokens.colors.textMuted }}>0</span>
               </div>
-              <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: tokens.typography.caption.fontSize }}>No inner circle members yet</p>
+              <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>No inner circle members yet</p>
             </div>
 
             <div style={{ 
@@ -269,18 +267,18 @@ export default function ProfilePage() {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentPrimary }} />
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentBlue }} />
                   <p style={{ ...tokens.typography.caption, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Close Friends</p>
                 </div>
                 <span style={{ ...tokens.typography.caption, color: tokens.colors.textMuted }}>0</span>
               </div>
-              <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: tokens.typography.caption.fontSize }}>No close friends yet</p>
+              <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>No close friends yet</p>
             </div>
 
             <div style={{ padding: tokens.spacing[16] }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentSuccess }} />
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentGreen }} />
                   <p style={{ ...tokens.typography.caption, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Community</p>
                 </div>
                 <span style={{ ...tokens.typography.caption, color: tokens.colors.textMuted }}>{communityMembers.length}</span>
@@ -294,10 +292,10 @@ export default function ProfilePage() {
                       onClick={() => router.push(`/chat/${member.id}`)}
                       style={{
                         padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
-                        borderRadius: tokens.radii.button,
-                        background: tokens.colors.surfaceCard,
+                        borderRadius: tokens.radii.chip,
+                        background: tokens.colors.surfacePrimary,
                         color: tokens.colors.textPrimary,
-                        border: `1px solid ${tokens.colors.borderSubtle}`,
+                        border: `1px solid ${tokens.colors.borderStrong}`,
                         ...tokens.typography.caption,
                         whiteSpace: 'nowrap',
                         cursor: 'pointer',
@@ -308,17 +306,16 @@ export default function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: tokens.typography.caption.fontSize }}>No community members yet</p>
+                <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>No community members yet</p>
               )}
             </div>
           </div>
         </Card>
 
-        {/* Recent Chats Card */}
         <Card>
           <SectionHeader title="Recent Chats" />
           {loadingChats ? (
-            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[24] }}>
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[20] }}>
               Loading...
             </p>
           ) : recentChats.length > 0 ? (
@@ -334,7 +331,7 @@ export default function ProfilePage() {
                     alignItems: 'center',
                     gap: tokens.spacing[16],
                     padding: tokens.spacing[16],
-                    background: tokens.colors.backgroundApp,
+                    background: tokens.colors.surfaceSecondary,
                     border: `1px solid ${tokens.colors.borderSubtle}`,
                     borderRadius: tokens.radii.input,
                     textAlign: 'left',
@@ -357,14 +354,13 @@ export default function ProfilePage() {
               ))}
             </div>
           ) : (
-            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[24] }}>
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[20] }}>
               No recent chats
             </p>
           )}
         </Card>
 
-        {/* Sign Out Button */}
-        <div style={{ marginTop: tokens.spacing[24] }}>
+        <div style={{ marginTop: tokens.spacing[16] }}>
           <Button
             variant="secondary"
             onClick={async () => {

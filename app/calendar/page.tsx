@@ -25,18 +25,18 @@ const suggestions: any[] = []
 
 const tagColors: Record<string, { dot: string; label: string; color: string }> = {
   "Inner Circle": {
-    dot: tokens.colors.accentWarning,
-    color: tokens.colors.accentWarning,
+    dot: tokens.colors.accentOrange,
+    color: tokens.colors.accentOrange,
     label: "Core people",
   },
   "Close Friends": {
-    dot: tokens.colors.accentPrimary,
-    color: tokens.colors.accentPrimary,
+    dot: tokens.colors.accentBlue,
+    color: tokens.colors.accentBlue,
     label: "Trusted circle",
   },
   Community: {
-    dot: tokens.colors.accentSuccess,
-    color: tokens.colors.accentSuccess,
+    dot: tokens.colors.accentGreen,
+    color: tokens.colors.accentGreen,
     label: "Extended network",
   },
 }
@@ -264,7 +264,7 @@ export default function CalendarPage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[24] }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
         {/* Calendar Card */}
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[24] }}>
@@ -283,8 +283,8 @@ export default function CalendarPage() {
                 style={{
                   padding: tokens.spacing[12],
                   borderRadius: tokens.radii.button,
-                  background: tokens.colors.surfaceCard,
-                  border: `1px solid ${tokens.colors.borderSubtle}`,
+                  background: tokens.colors.surfacePrimary,
+                  border: `1px solid ${tokens.colors.borderMedium}`,
                   color: tokens.colors.textSecondary,
                   cursor: 'pointer',
                 }}
@@ -298,8 +298,8 @@ export default function CalendarPage() {
                 style={{
                   padding: tokens.spacing[12],
                   borderRadius: tokens.radii.button,
-                  background: tokens.colors.surfaceCard,
-                  border: `1px solid ${tokens.colors.borderSubtle}`,
+                  background: tokens.colors.surfacePrimary,
+                  border: `1px solid ${tokens.colors.borderMedium}`,
                   color: tokens.colors.textSecondary,
                   cursor: 'pointer',
                 }}
@@ -314,7 +314,7 @@ export default function CalendarPage() {
             padding: tokens.spacing[16],
             background: tokens.colors.backgroundApp,
             borderRadius: tokens.radii.input,
-            marginBottom: tokens.spacing[24],
+            marginBottom: tokens.spacing[20],
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], marginBottom: tokens.spacing[8] }}>
               <Info className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
@@ -385,8 +385,8 @@ export default function CalendarPage() {
                       ? tokens.colors.textPrimary 
                       : eventColor 
                       ? `${eventColor}15`
-                      : tokens.colors.surfaceCard,
-                    color: selectedDay === day ? tokens.colors.surfaceCard : tokens.colors.textPrimary,
+                      : tokens.colors.surfacePrimary,
+                    color: selectedDay === day ? tokens.colors.surfacePrimary : tokens.colors.textPrimary,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -448,12 +448,12 @@ export default function CalendarPage() {
               transition={{ duration: 0.2 }}
               className="w-full"
               style={{
-                background: tokens.colors.surfaceCard,
+                background: tokens.colors.surfacePrimary,
                 borderTopLeftRadius: tokens.radii.card,
                 borderTopRightRadius: tokens.radii.card,
                 maxHeight: '80vh',
                 overflow: 'hidden',
-                padding: tokens.spacing[24],
+                padding: tokens.spacing[20],
               }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -475,7 +475,7 @@ export default function CalendarPage() {
                   style={{
                     padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                     borderRadius: tokens.radii.button,
-                    background: tokens.colors.surfaceCard,
+                    background: tokens.colors.surfacePrimary,
                     border: `1px solid ${tokens.colors.borderSubtle}`,
                     color: tokens.colors.textPrimary,
                     ...tokens.typography.caption,
@@ -584,7 +584,7 @@ export default function CalendarPage() {
                         width: '100%',
                         padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                         borderRadius: tokens.radii.input,
-                        background: tokens.colors.surfaceCard,
+                        background: tokens.colors.surfacePrimary,
                         border: `1px solid ${tokens.colors.borderSubtle}`,
                         color: tokens.colors.textPrimary,
                         ...tokens.typography.body,
@@ -636,7 +636,7 @@ export default function CalendarPage() {
               exit={{ scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
               className="w-full"
-              style={{ maxWidth: '360px', background: tokens.colors.surfaceCard, borderRadius: tokens.radii.card, padding: tokens.spacing[32] }}
+              style={{ maxWidth: '360px', background: tokens.colors.surfacePrimary, borderRadius: tokens.radii.card, padding: tokens.spacing[24] }}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[24] }}>
@@ -651,7 +651,7 @@ export default function CalendarPage() {
                   style={{
                     padding: tokens.spacing[12],
                     borderRadius: tokens.radii.button,
-                    background: tokens.colors.surfaceCard,
+                    background: tokens.colors.surfacePrimary,
                     border: `1px solid ${tokens.colors.borderSubtle}`,
                     color: tokens.colors.textSecondary,
                     cursor: 'pointer',
@@ -672,7 +672,7 @@ export default function CalendarPage() {
                       width: '100%',
                       padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                       borderRadius: tokens.radii.input,
-                      background: tokens.colors.surfaceCard,
+                      background: tokens.colors.surfacePrimary,
                       border: `1px solid ${tokens.colors.borderSubtle}`,
                       color: tokens.colors.textPrimary,
                       ...tokens.typography.body,
@@ -689,7 +689,7 @@ export default function CalendarPage() {
                       width: '100%',
                       padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                       borderRadius: tokens.radii.input,
-                      background: tokens.colors.surfaceCard,
+                      background: tokens.colors.surfacePrimary,
                       border: `1px solid ${tokens.colors.borderSubtle}`,
                       color: tokens.colors.textPrimary,
                       ...tokens.typography.body,
@@ -716,8 +716,8 @@ export default function CalendarPage() {
                         style={{
                           padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                           borderRadius: tokens.radii.button,
-                          background: plannerFields.privacy === mode ? tokens.colors.textPrimary : tokens.colors.surfaceCard,
-                          color: plannerFields.privacy === mode ? tokens.colors.surfaceCard : tokens.colors.textPrimary,
+                          background: plannerFields.privacy === mode ? tokens.colors.textPrimary : tokens.colors.surfacePrimary,
+                          color: plannerFields.privacy === mode ? tokens.colors.surfacePrimary : tokens.colors.textPrimary,
                           border: `1px solid ${tokens.colors.borderSubtle}`,
                           ...tokens.typography.body,
                           textTransform: 'capitalize',
@@ -741,7 +741,7 @@ export default function CalendarPage() {
                       width: '100%',
                       padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                       borderRadius: tokens.radii.input,
-                      background: tokens.colors.surfaceCard,
+                      background: tokens.colors.surfacePrimary,
                       border: `1px solid ${tokens.colors.borderSubtle}`,
                       color: tokens.colors.textPrimary,
                       ...tokens.typography.body,
@@ -755,7 +755,7 @@ export default function CalendarPage() {
                     padding: tokens.spacing[16],
                     borderRadius: tokens.radii.input,
                     border: `1px solid ${tokens.colors.borderSubtle}`,
-                    background: tokens.colors.surfaceCard,
+                    background: tokens.colors.surfacePrimary,
                     ...tokens.typography.caption,
                     color: tokens.colors.textSecondary,
                   }}>

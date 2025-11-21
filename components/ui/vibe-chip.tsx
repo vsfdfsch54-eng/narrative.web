@@ -14,7 +14,6 @@ interface VibeChipProps {
   delay?: number
 }
 
-// Helper to brighten color by 12%
 function brightenColor(hex: string, percent: number = 12): string {
   const num = parseInt(hex.replace('#', ''), 16)
   const r = (num >> 16) & 0xFF
@@ -34,7 +33,7 @@ export function VibeChip({
   onClick,
   delay = 0,
 }: VibeChipProps) {
-  const accentColor = VibeColors[vibe.id] || '#6EC1FF'
+  const accentColor = VibeColors[vibe.id] || tokens.colors.accentBlue
   const icon = VibeIcons[vibe.id] || null
   const iconColor = selected ? brightenColor(accentColor, 12) : accentColor
   
@@ -51,7 +50,6 @@ export function VibeChip({
       onClick={onClick}
       className={cn(
         "shrink-0",
-        "font-medium text-[15px] tracking-tight",
         "transition-all duration-150 ease-in-out",
         "touch-manipulation",
         "overflow-hidden flex items-center",
@@ -60,13 +58,14 @@ export function VibeChip({
       )}
       style={{
         height: '44px',
-        borderRadius: tokens.radii.button,
+        borderRadius: tokens.radii.chip,
         padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
         gap: tokens.spacing[12],
-        background: selected ? tokens.colors.accentPrimary : tokens.colors.surfaceCard,
+        background: selected ? tokens.colors.accentBlue : tokens.colors.surfacePrimary,
         color: selected ? '#FFFFFF' : tokens.colors.textPrimary,
-        border: selected ? 'none' : `1px solid ${tokens.colors.borderSubtle}`,
+        border: selected ? 'none' : `1px solid ${tokens.colors.borderStrong}`,
         boxShadow: selected ? tokens.shadows.card : 'none',
+        ...tokens.typography.caption,
         willChange: "transform"
       }}
     >

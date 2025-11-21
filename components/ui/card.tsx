@@ -17,11 +17,11 @@ export function Card({ children, className, padding = true, variant = "default",
     <div
       className={cn(className)}
       style={{
-        background: tokens.colors.surfaceCard,
+        background: tokens.colors.surfacePrimary,
         borderRadius: tokens.radii.card,
         boxShadow: variant === "outlined" ? tokens.shadows.card : 'none',
         border: variant === "outlined" ? `1px solid ${tokens.colors.borderSubtle}` : 'none',
-        padding: padding ? tokens.spacing[24] : 0,
+        padding: padding ? tokens.spacing[20] : 0,
         ...style,
       }}
     >

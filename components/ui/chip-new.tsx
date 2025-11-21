@@ -13,11 +13,11 @@ interface ChipProps {
 export function Chip({ children, variant = "default", selected = false, onClick }: ChipProps) {
   const accentColors = {
     default: tokens.colors.textSecondary,
-    primary: tokens.colors.accentPrimary,
-    secondary: tokens.colors.accentSecondary,
-    success: tokens.colors.accentSuccess,
-    warning: tokens.colors.accentWarning,
-    danger: tokens.colors.accentDanger,
+    primary: tokens.colors.accentBlue,
+    secondary: tokens.colors.accentPurple,
+    success: tokens.colors.accentGreen,
+    warning: tokens.colors.accentOrange,
+    danger: tokens.colors.accentPink,
   }
 
   const accentColor = accentColors[variant]
@@ -27,10 +27,10 @@ export function Chip({ children, variant = "default", selected = false, onClick 
       onClick={onClick}
       style={{
         padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
-        borderRadius: tokens.radii.button,
-        background: selected ? accentColor : tokens.colors.surfaceCard,
+        borderRadius: tokens.radii.chip,
+        background: selected ? accentColor : tokens.colors.surfacePrimary,
         color: selected ? '#FFFFFF' : accentColor,
-        border: selected ? 'none' : `1px solid ${accentColor}40`,
+        border: selected ? 'none' : `1px solid ${tokens.colors.borderStrong}`,
         fontSize: tokens.typography.caption.fontSize,
         fontWeight: 500,
         cursor: 'pointer',
@@ -38,12 +38,12 @@ export function Chip({ children, variant = "default", selected = false, onClick 
       }}
       onMouseEnter={(e) => {
         if (!selected) {
-          e.currentTarget.style.background = `${accentColor}10`
+          e.currentTarget.style.background = tokens.colors.surfaceSecondary
         }
       }}
       onMouseLeave={(e) => {
         if (!selected) {
-          e.currentTarget.style.background = tokens.colors.surfaceCard
+          e.currentTarget.style.background = tokens.colors.surfacePrimary
         }
       }}
     >
@@ -51,4 +51,3 @@ export function Chip({ children, variant = "default", selected = false, onClick 
     </button>
   )
 }
-

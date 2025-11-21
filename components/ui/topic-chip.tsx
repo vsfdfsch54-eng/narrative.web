@@ -21,7 +21,7 @@ export function TopicChip({
   delay = 0,
 }: TopicChipProps) {
   const icon = TopicIcons[topic.id] || DefaultTopicIcon
-  const baseColor = TopicColors[topic.id] || '#A6A6A6'
+  const baseColor = TopicColors[topic.id] || tokens.colors.textSecondary
   const iconColor = selected ? brightenColor(baseColor, 12) : baseColor
   
   return (
@@ -37,7 +37,6 @@ export function TopicChip({
       onClick={onClick}
       className={cn(
         "shrink-0",
-        "font-medium text-[15px] tracking-tight",
         "transition-all duration-150 ease-in-out",
         "touch-manipulation",
         "overflow-hidden flex items-center",
@@ -46,13 +45,14 @@ export function TopicChip({
       )}
       style={{
         height: '44px',
-        borderRadius: tokens.radii.button,
+        borderRadius: tokens.radii.chip,
         padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
         gap: tokens.spacing[12],
-        background: selected ? tokens.colors.accentPrimary : tokens.colors.surfaceCard,
+        background: selected ? tokens.colors.accentBlue : tokens.colors.surfacePrimary,
         color: selected ? '#FFFFFF' : tokens.colors.textPrimary,
-        border: selected ? 'none' : `1px solid ${tokens.colors.borderSubtle}`,
+        border: selected ? 'none' : `1px solid ${tokens.colors.borderStrong}`,
         boxShadow: selected ? tokens.shadows.card : 'none',
+        ...tokens.typography.caption,
         willChange: "transform"
       }}
     >
@@ -60,8 +60,8 @@ export function TopicChip({
         className="flex-shrink-0"
         style={{ 
           color: iconColor,
-            width: '18px',
-            height: '18px',
+          width: '18px',
+          height: '18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'
