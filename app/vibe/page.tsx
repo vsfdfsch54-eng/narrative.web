@@ -142,35 +142,49 @@ export default function VibePage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#111111] overflow-hidden w-full h-full m-0 p-0">
+    <div 
+      className="fixed inset-0 bg-[#111111] overflow-hidden w-full h-full m-0 p-0"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)'
+      }}
+    >
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content px-5 pb-0 overflow-hidden flex flex-col h-full relative z-10" style={{ paddingTop: '32px' }}>
+            <div 
+              className="phone-content px-5 overflow-y-auto flex flex-col h-full relative z-10" 
+              style={{ 
+                paddingTop: '24px',
+                paddingBottom: 'calc(env(safe-area-inset-bottom) + 120px)'
+              }}
+            >
               {/* Logo - 13px, low contrast, centered */}
-              <div className="flex-shrink-0 mb-8 flex justify-center">
+              <div className="flex-shrink-0 mb-6 flex justify-center">
                 <span className="text-[13px] font-light tracking-tight text-[#F5F5F5]/40">
                   Narrative
                 </span>
               </div>
 
               {/* Main Title - 32px bold, centered */}
-              <div className="flex-shrink-0 mb-8 text-center">
+              <div className="flex-shrink-0 mb-5 text-center">
                 <h1 className="text-[32px] font-bold text-[#F5F5F5] leading-tight">
                   Select Your Vibe
                 </h1>
               </div>
 
-              {/* Vibe Section - 32px spacing from title */}
-              <div className="flex-shrink-0 mb-8">
-                <p className="text-[14px] text-[rgba(255,255,255,0.55)] max-w-[90%] mx-auto mb-4 text-center">
+              {/* Vibe Section - 20px spacing, chip rows 12px above + 12px below */}
+              <div className="flex-shrink-0 mb-5">
+                <p className="text-[14px] text-[rgba(255,255,255,0.55)] max-w-[90%] mx-auto mb-3 text-center">
                   Vibes describe your current mood or energy and help match you with someone who feels the same way.
                 </p>
                 <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
                   alignItems: 'center', 
                   overflowY: 'hidden',
                   scrollBehavior: 'smooth',
-                  WebkitOverflowScrolling: 'touch'
+                  WebkitOverflowScrolling: 'touch',
+                  marginTop: '12px',
+                  marginBottom: '12px'
                 }}>
                   <div className="flex gap-2">
                     {VIBES.map((vibe) => (
@@ -186,17 +200,19 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Topic Section - 32px spacing from vibe section */}
-              <div className="flex-shrink-0 mb-8">
-                <h2 className="text-[28px] font-bold text-[#F5F5F5] mb-4">Choose a Topic</h2>
-                <p className="text-[14px] text-[rgba(255,255,255,0.55)] mb-4">
+              {/* Topic Section - 20px spacing, chip rows 12px above + 12px below */}
+              <div className="flex-shrink-0 mb-5">
+                <h2 className="text-[28px] font-bold text-[#F5F5F5] mb-3">Choose a Topic</h2>
+                <p className="text-[14px] text-[rgba(255,255,255,0.55)] mb-3">
                   Topics are what you want to talk about. They guide the conversation so you connect with the right person.
                 </p>
                 <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
                   alignItems: 'center', 
                   overflowY: 'hidden',
                   scrollBehavior: 'smooth',
-                  WebkitOverflowScrolling: 'touch'
+                  WebkitOverflowScrolling: 'touch',
+                  marginTop: '12px',
+                  marginBottom: '12px'
                 }}>
                   <div className="flex gap-2">
                     {currentTopics.map((topic) => (
@@ -212,8 +228,8 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Duration Segmented Control - 32px spacing */}
-              <div className="flex-shrink-0 mb-8">
+              {/* Duration Segmented Control - 20px spacing */}
+              <div className="flex-shrink-0 mb-5">
                 <div 
                   className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(255,255,255,0.05)] relative overflow-hidden"
                 >
@@ -244,7 +260,7 @@ export default function VibePage() {
               className="fixed left-0 right-0 pointer-events-none"
               style={{
                 bottom: 0,
-                height: '80px',
+                height: '76px',
                 background: 'linear-gradient(to top, #111111FF, #11111100)',
                 zIndex: 40
               }}
@@ -254,14 +270,11 @@ export default function VibePage() {
             <div 
               className="fixed left-0 right-0 flex flex-row"
               style={{
-                bottom: `calc(60px + env(safe-area-inset-bottom))`,
+                bottom: `calc(env(safe-area-inset-bottom) + 76px)`,
                 padding: '0 24px',
-                paddingBottom: `max(0px, env(safe-area-inset-bottom))`,
-                gap: '12px',
+                gap: '14px',
                 zIndex: 50,
-                backdropFilter: 'blur(18px)',
-                WebkitBackdropFilter: 'blur(18px)',
-                boxShadow: '0 -2px 12px rgba(0,0,0,0.15)'
+                width: '100%'
               }}
             >
               {/* CONNECT Button - Pill Shape */}
@@ -309,7 +322,7 @@ export default function VibePage() {
                   "bg-transparent text-[#F5F5F5]"
                 )}
                 style={{
-                  border: '1px solid rgba(255,255,255,0.4)'
+                  border: '1px solid rgba(255,255,255,0.3)'
                 }}
               >
                 SKIP
