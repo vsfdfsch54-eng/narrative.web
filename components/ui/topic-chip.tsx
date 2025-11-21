@@ -70,7 +70,8 @@ export function TopicChip({
           height: '18px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          fontSize: '18px',
         }}
       >
         {icon}
