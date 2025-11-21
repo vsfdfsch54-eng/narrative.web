@@ -135,72 +135,85 @@ export default function VibePage() {
   // Show loading while checking auth
   if (loading || !user || (user && !user.email_confirmed_at)) {
     return (
-      <div className="fixed inset-0 bg-[#1A1A1A] flex items-center justify-center">
-        <p className="text-white/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#111111] flex items-center justify-center">
+        <p className="text-[#F5F5F5]/60">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-[#1A1A1A] overflow-hidden w-full h-full m-0 p-0">
+    <div className="fixed inset-0 bg-[#111111] overflow-hidden w-full h-full m-0 p-0">
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content px-6 py-6 pb-0 overflow-hidden flex flex-col h-full relative z-10">
-              {/* Logo */}
-              <div className="flex-shrink-0 mb-6 flex justify-center">
-                <span className="text-lg font-light tracking-tight text-white">
+            <div className="phone-content px-5 pb-0 overflow-hidden flex flex-col h-full relative z-10" style={{ paddingTop: '32px' }}>
+              {/* Logo - 13px, low contrast, centered */}
+              <div className="flex-shrink-0 mb-8 flex justify-center">
+                <span className="text-[13px] font-light tracking-tight text-[#F5F5F5]/40">
                   Narrative
                 </span>
               </div>
 
-              {/* Title */}
+              {/* Main Title - 32px bold, centered */}
               <div className="flex-shrink-0 mb-8 text-center">
-                <h1 className="text-[32px] font-bold text-white mb-2 leading-tight">
+                <h1 className="text-[32px] font-bold text-[#F5F5F5] leading-tight">
                   Select Your Vibe
                 </h1>
               </div>
 
-              {/* Vibe Section */}
+              {/* Vibe Section - 32px spacing from title */}
               <div className="flex-shrink-0 mb-8">
-                <h2 className="text-[28px] font-bold text-white mb-3 text-center">Select Your Vibe</h2>
-                <p className="text-[14px] text-white/55 max-w-[90%] mx-auto mb-4 text-center">
+                <p className="text-[14px] text-[rgba(255,255,255,0.55)] max-w-[90%] mx-auto mb-4 text-center">
                   Vibes describe your current mood or energy and help match you with someone who feels the same way.
                 </p>
-                <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6" style={{ alignItems: 'center', overflowY: 'hidden' }}>
-                  {VIBES.map((vibe) => (
-                    <VibeChip
-                      key={vibe.id}
-                      vibe={vibe}
-                      selected={selectedVibe?.id === vibe.id}
-                      onClick={() => setSelectedVibe(selectedVibe?.id === vibe.id ? null : vibe)}
-                      delay={0}
-                    />
-                  ))}
+                <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
+                  alignItems: 'center', 
+                  overflowY: 'hidden',
+                  scrollBehavior: 'smooth',
+                  WebkitOverflowScrolling: 'touch'
+                }}>
+                  <div className="flex gap-2">
+                    {VIBES.map((vibe) => (
+                      <VibeChip
+                        key={vibe.id}
+                        vibe={vibe}
+                        selected={selectedVibe?.id === vibe.id}
+                        onClick={() => setSelectedVibe(selectedVibe?.id === vibe.id ? null : vibe)}
+                        delay={0}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Topic Section */}
+              {/* Topic Section - 32px spacing from vibe section */}
               <div className="flex-shrink-0 mb-8">
-                <h2 className="text-[28px] font-bold text-white mb-3 text-center">Choose a Topic</h2>
-                <p className="text-[14px] text-white/55 max-w-[90%] mx-auto mb-4 text-center">
+                <h2 className="text-[28px] font-bold text-[#F5F5F5] mb-4">Choose a Topic</h2>
+                <p className="text-[14px] text-[rgba(255,255,255,0.55)] mb-4">
                   Topics are what you want to talk about. They guide the conversation so you connect with the right person.
                 </p>
-                <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6" style={{ alignItems: 'center', overflowY: 'hidden' }}>
-                  {currentTopics.map((topic) => (
-                    <TopicChip
-                      key={topic.id}
-                      topic={topic}
-                      selected={selectedTopic?.id === topic.id}
-                      onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
-                      delay={0}
-                    />
-                  ))}
+                <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
+                  alignItems: 'center', 
+                  overflowY: 'hidden',
+                  scrollBehavior: 'smooth',
+                  WebkitOverflowScrolling: 'touch'
+                }}>
+                  <div className="flex gap-2">
+                    {currentTopics.map((topic) => (
+                      <TopicChip
+                        key={topic.id}
+                        topic={topic}
+                        selected={selectedTopic?.id === topic.id}
+                        onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
+                        delay={0}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Duration Segmented Control */}
-              <div className="flex-shrink-0 mb-6">
+              {/* Duration Segmented Control - 32px spacing */}
+              <div className="flex-shrink-0 mb-8">
                 <div 
                   className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(255,255,255,0.05)] relative overflow-hidden"
                 >
@@ -213,7 +226,7 @@ export default function VibePage() {
                         "flex-1 px-4 py-2.5 rounded-[12px] text-base font-medium transition-all duration-300 relative z-10",
                         selectedTimeLimit === time 
                           ? "bg-white text-black font-semibold"
-                          : "bg-transparent text-white"
+                          : "bg-transparent text-[#F5F5F5]"
                       )}
                     >
                       {time}m
@@ -226,42 +239,54 @@ export default function VibePage() {
               <div className="flex-1" />
             </div>
             
+            {/* Gradient behind bottom nav */}
+            <div 
+              className="fixed left-0 right-0 pointer-events-none"
+              style={{
+                bottom: 0,
+                height: '80px',
+                background: 'linear-gradient(to top, #111111FF, #11111100)',
+                zIndex: 40
+              }}
+            />
+            
             {/* Bottom Fixed Footer - Pill Buttons Above Nav Bar */}
             <div 
-              className="fixed left-0 right-0 bg-[#1A1A1A] flex flex-row"
+              className="fixed left-0 right-0 flex flex-row"
               style={{
-                bottom: `calc(80px + env(safe-area-inset-bottom))`, // Above nav bar + safe area
-                padding: '12px 24px',
-                paddingBottom: `max(12px, calc(12px + env(safe-area-inset-bottom)))`,
+                bottom: `calc(60px + env(safe-area-inset-bottom))`,
+                padding: '0 24px',
+                paddingBottom: `max(0px, env(safe-area-inset-bottom))`,
                 gap: '12px',
-                zIndex: 50
+                zIndex: 50,
+                backdropFilter: 'blur(18px)',
+                WebkitBackdropFilter: 'blur(18px)',
+                boxShadow: '0 -2px 12px rgba(0,0,0,0.15)'
               }}
             >
               {/* CONNECT Button - Pill Shape */}
               <motion.button
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 whileTap={{ 
-                  scale: 0.96,
+                  scale: 0.98,
+                  backgroundColor: '#000000',
+                  color: '#FFFFFF',
                   transition: { duration: 0.15 }
                 }}
                 onClick={handleConnect}
                 disabled={saving || !canConnect}
                 className={cn(
-                  "flex-1 h-[44px] rounded-[28px] text-base font-medium transition-all duration-300",
+                  "flex-1 h-[48px] rounded-[24px] text-base font-bold transition-all duration-300",
                   canConnect
-                    ? "bg-[rgba(255,255,255,0.9)] text-black"
-                    : "bg-[rgba(255,255,255,0.08)] text-white/30",
-                  "disabled:cursor-not-allowed",
-                  "backdrop-blur-sm"
+                    ? "bg-white text-black"
+                    : "bg-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.3)]",
+                  "disabled:cursor-not-allowed"
                 )}
                 style={{
-                  border: canConnect 
-                    ? '1px solid rgba(255,255,255,0.2)' 
-                    : '1px solid rgba(255,255,255,0.1)',
                   boxShadow: canConnect 
-                    ? '0 2px 8px rgba(0,0,0,0.15)' 
+                    ? '0 4px 14px rgba(255,255,255,0.1)' 
                     : 'none'
                 }}
               >
@@ -270,21 +295,21 @@ export default function VibePage() {
               
               {/* SKIP Button - Pill Shape */}
               <motion.button
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
                 whileTap={{ 
-                  scale: 0.96,
+                  scale: 0.98,
+                  backgroundColor: 'rgba(255,255,255,0.10)',
                   transition: { duration: 0.15 }
                 }}
                 onClick={handleSkip}
                 className={cn(
-                  "flex-1 h-[44px] rounded-[28px] text-base font-medium transition-all duration-300",
-                  "bg-[rgba(255,255,255,0.05)] text-white/70 backdrop-blur-sm"
+                  "flex-1 h-[48px] rounded-[24px] text-base font-bold transition-all duration-300",
+                  "bg-transparent text-[#F5F5F5]"
                 )}
                 style={{
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
+                  border: '1px solid rgba(255,255,255,0.4)'
                 }}
               >
                 SKIP

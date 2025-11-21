@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Vibe } from "@/lib/types"
 import { VibeIcons, VibeColors } from "./vibe-icons"
+import { useDeviceScale } from "@/hooks/use-device-scale"
 
 interface VibeChipProps {
   vibe: Vibe
@@ -13,8 +14,8 @@ interface VibeChipProps {
   delay?: number
 }
 
-// Helper to brighten color by 12-15%
-function brightenColor(hex: string, percent: number = 13): string {
+// Helper to brighten color by 12%
+function brightenColor(hex: string, percent: number = 12): string {
   const num = parseInt(hex.replace('#', ''), 16)
   const r = (num >> 16) & 0xFF
   const g = (num >> 8) & 0xFF
@@ -35,14 +36,15 @@ export function VibeChip({
 }: VibeChipProps) {
   const accentColor = VibeColors[vibe.id] || '#6EC1FF'
   const icon = VibeIcons[vibe.id] || null
-  const iconColor = selected ? brightenColor(accentColor, 13) : accentColor
+  const iconColor = selected ? brightenColor(accentColor, 12) : accentColor
+  const deviceScale = useDeviceScale()
   
   return (
     <motion.button
       initial={{ opacity: 0 }}
       animate={{ 
         opacity: 1,
-        scale: selected ? 1.06 : 1
+        scale: selected ? deviceScale : 1
       }}
       exit={{ opacity: 0 }}
       transition={{ delay, duration: 0.2 }}
@@ -52,7 +54,7 @@ export function VibeChip({
       }}
       onClick={onClick}
       className={cn(
-        "shrink-0 px-[14px] py-[10px] rounded-[14px]",
+        "shrink-0 px-[14px] py-[8px] rounded-[16px]",
         "font-semibold text-base tracking-tight",
         "transition-all duration-300",
         "touch-manipulation",
@@ -61,12 +63,13 @@ export function VibeChip({
         "text-black"
       )}
       style={{
-        background: '#F5F5F5',
+        height: '44px',
+        background: selected ? '#F2F2F2' : '#FFFFFF',
         border: selected
-          ? '1.5px solid rgba(255,255,255,0.3)'
-          : '1px solid rgba(255,255,255,0.15)',
+          ? '2px solid #000000'
+          : '1px solid rgba(0,0,0,0.2)',
         boxShadow: selected 
-          ? '0 1px 4px rgba(0,0,0,0.2)' 
+          ? '0 2px 8px rgba(0,0,0,0.25)' 
           : 'none',
         willChange: "transform"
       }}
@@ -77,7 +80,14 @@ export function VibeChip({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2 }}
           className="flex-shrink-0"
-          style={{ color: iconColor }}
+          style={{ 
+            color: iconColor,
+            width: '18px',
+            height: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
         >
           {icon}
         </motion.div>

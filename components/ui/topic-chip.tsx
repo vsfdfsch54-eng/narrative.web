@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Topic } from "@/lib/types"
 import { TopicIcons, TopicColors, brightenColor, DefaultTopicIcon } from "./topic-icons"
+import { useDeviceScale } from "@/hooks/use-device-scale"
 
 interface TopicChipProps {
   topic: Topic
@@ -21,14 +22,15 @@ export function TopicChip({
 }: TopicChipProps) {
   const icon = TopicIcons[topic.id] || DefaultTopicIcon
   const baseColor = TopicColors[topic.id] || '#A6A6A6'
-  const iconColor = selected ? brightenColor(baseColor, 13) : baseColor
+  const iconColor = selected ? brightenColor(baseColor, 12) : baseColor
+  const deviceScale = useDeviceScale()
   
   return (
     <motion.button
       initial={{ opacity: 0 }}
       animate={{ 
         opacity: 1,
-        scale: selected ? 1.06 : 1
+        scale: selected ? deviceScale : 1
       }}
       exit={{ opacity: 0 }}
       transition={{ delay, duration: 0.2 }}
@@ -38,7 +40,7 @@ export function TopicChip({
       }}
       onClick={onClick}
       className={cn(
-        "shrink-0 px-[14px] py-[10px] rounded-[14px]",
+        "shrink-0 px-[14px] py-[8px] rounded-[16px]",
         "font-semibold text-base tracking-tight",
         "transition-all duration-300",
         "touch-manipulation",
@@ -47,12 +49,13 @@ export function TopicChip({
         "text-black"
       )}
       style={{
-        background: '#F5F5F5',
+        height: '44px',
+        background: selected ? '#F2F2F2' : '#FFFFFF',
         border: selected
-          ? '1.5px solid rgba(255,255,255,0.3)'
-          : '1px solid rgba(255,255,255,0.15)',
+          ? '2px solid #000000'
+          : '1px solid rgba(0,0,0,0.2)',
         boxShadow: selected 
-          ? '0 1px 4px rgba(0,0,0,0.2)' 
+          ? '0 2px 8px rgba(0,0,0,0.25)' 
           : 'none',
         willChange: "transform"
       }}
@@ -62,7 +65,14 @@ export function TopicChip({
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.2 }}
         className="flex-shrink-0"
-        style={{ color: iconColor }}
+        style={{ 
+          color: iconColor,
+          width: '18px',
+          height: '18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
       >
         {icon}
       </motion.div>
