@@ -126,6 +126,16 @@ export function useAuth() {
             // Other errors - don't fail signup, user can complete onboarding later
             console.error('Non-duplicate error creating user record:', dbError)
           }
+        } else {
+          // Auto-match with existing users after creating user record
+          // Do this in the background, don't wait for it
+          fetch('/api/users/auto-match', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: data.user.id })
+          }).catch(err => {
+            console.error('Error auto-matching on signup:', err)
+          })
         }
       }
 
