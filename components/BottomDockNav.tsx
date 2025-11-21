@@ -2,29 +2,19 @@
 
 import { useRouter, usePathname } from "next/navigation"
 import { motion } from "framer-motion"
-import { Home, Sparkles, Calendar, MessageSquare, User } from "lucide-react"
+import { Calendar, MessageSquare, User } from "lucide-react"
 import { tokens } from "@/lib/design-tokens"
 
 const navItems = [
   {
-    icon: Home,
-    label: "Home",
-    path: "/",
-  },
-  {
-    icon: Sparkles,
-    label: "Vibes",
+    icon: MessageSquare,
+    label: "Chat",
     path: "/vibe",
   },
   {
     icon: Calendar,
     label: "Calendar",
     path: "/calendar",
-  },
-  {
-    icon: MessageSquare,
-    label: "Chat",
-    path: "/chat",
   },
   {
     icon: User,
@@ -40,8 +30,8 @@ export function BottomDockNav() {
   const pathname = usePathname()
 
   const isActive = (path: string) => {
-    if (path === "/") {
-      return pathname === "/"
+    if (path === "/vibe") {
+      return pathname === "/vibe" || pathname.startsWith("/chat")
     }
     return pathname.startsWith(path)
   }
