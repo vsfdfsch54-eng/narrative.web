@@ -948,23 +948,58 @@ function OnboardingContent() {
               })}
             </div>
 
-            <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.layout.elementSpacing }}>
-              <Button
+            <div style={{ 
+              display: 'flex', 
+              gap: tokens.spacing[16], 
+              marginTop: tokens.layout.elementSpacing,
+              position: 'relative',
+              zIndex: 10,
+            }}>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 onClick={handleBack}
-                variant="secondary"
-                style={{ flex: 1 }}
                 disabled={loading}
+                style={{ 
+                  flex: 1,
+                  minHeight: '50px',
+                  padding: `12px ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button
+                <ChevronLeft style={{ width: '16px', height: '16px' }} />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 onClick={handleNext}
-                variant="primary"
                 disabled={loading || selectedInterests.length === 0}
-                style={{ flex: 1 }}
+                style={{ 
+                  flex: 1,
+                  minHeight: '50px',
+                  padding: `12px ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  cursor: (loading || selectedInterests.length === 0) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || selectedInterests.length === 0) ? 0.7 : 1,
+                }}
               >
                 {loading ? "Saving..." : selectedInterests.length === 0 ? "Select at least 1" : `Continue (${selectedInterests.length})`}
-              </Button>
+              </motion.button>
             </div>
           </div>
         )}
