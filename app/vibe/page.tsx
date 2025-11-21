@@ -118,39 +118,53 @@ export default function VibePage() {
     setSaving(true)
     
     try {
+      // Store selections locally for record-keeping
       if (selectedVibe) {
         localStorage.setItem("selectedVibe", selectedVibe.id)
       }
       if (selectedTopic) {
         localStorage.setItem("selectedTopic", selectedTopic.id)
       }
+      if (selectedTimeLimit) {
+        localStorage.setItem("selectedTimeLimit", selectedTimeLimit.toString())
+      }
       
+      // Save vibe to database for analytics (non-blocking)
       if (selectedVibe) {
-        await fetch('/api/vibes', {
+        fetch('/api/vibes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             userId, 
             vibe: selectedVibe.label 
           })
-        })
+        }).catch(err => console.error('Error saving vibe:', err))
       }
       
-      // Automatically match user with all existing users when they press Connect
-      try {
-        await fetch('/api/users/auto-match', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId })
+      // Create pending match and try to match immediately (INSTANT MATCHING)
+      const response = await fetch('/api/pending-matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId,
+          vibe: selectedVibe?.label || null,
+          topic: selectedTopic?.label || null,
+          timeframe: selectedTimeLimit || null,
         })
-      } catch (matchError) {
-        // Don't fail the connect flow if matching fails
-        console.error('Error auto-matching user:', matchError)
-      }
+      })
       
-      router.push("/chat")
+      const data = await response.json()
+      
+      if (data.success && data.matched && data.match) {
+        // Matched immediately! Navigate to chat
+        router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
+      } else {
+        // In queue, navigate to chat page which will poll for matches
+        router.push("/chat")
+      }
     } catch (error) {
       console.error('Error connecting:', error)
+      // Still navigate to chat page even if there's an error
       router.push("/chat")
     } finally {
       setSaving(false)
@@ -165,11 +179,16 @@ export default function VibePage() {
     }
     
     try {
-      // Add user to match queue for real-time matching
-      const response = await fetch('/api/match-queue', {
+      // Create pending match without vibe/topic/timeframe (instant matching)
+      const response = await fetch('/api/pending-matches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
+        body: JSON.stringify({ 
+          userId,
+          vibe: null,
+          topic: null,
+          timeframe: null,
+        })
       })
       
       const data = await response.json()

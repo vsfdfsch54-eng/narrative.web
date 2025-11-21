@@ -20,17 +20,17 @@ export default function ChatPage() {
     const loadMatches = async () => {
       setLoading(true)
       try {
-        // First, check if user is in match queue and got matched
-        const queueResponse = await fetch(`/api/match-queue?userId=${user.id}`)
-        const queueData = await queueResponse.json()
+        // First, check if user has a pending match that was just matched
+        const pendingResponse = await fetch(`/api/pending-matches?userId=${user.id}`)
+        const pendingData = await pendingResponse.json()
         
-        if (queueData.success && queueData.matched && queueData.match) {
-          // Matched! Navigate to chat
-          router.push(`/chat/${queueData.otherUserId}?matchId=${queueData.match.id}`)
+        if (pendingData.success && pendingData.matched && pendingData.match) {
+          // Matched! Navigate to chat immediately
+          router.push(`/chat/${pendingData.otherUserId}?matchId=${pendingData.match.id}`)
           return
         }
         
-        // Get all existing matches for this user
+        // Get all existing active matches for this user
         const response = await fetch(`/api/matches?userId=${user.id}`)
         const data = await response.json()
         
@@ -48,28 +48,14 @@ export default function ChatPage() {
           }
         }
         
-        // No matches found, check if in queue or add to queue
-        if (queueData.inQueue) {
+        // No matches found, check if in pending queue
+        if (pendingData.inQueue) {
           // Already in queue, poll for match
           pollForMatch()
         } else {
-          // Not in queue, add to queue for real-time matching
-          const addToQueueResponse = await fetch('/api/match-queue', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id })
-          })
-          
-          const addToQueueData = await addToQueueResponse.json()
-          
-          if (addToQueueData.success && addToQueueData.matched && addToQueueData.match) {
-            // Matched immediately! Navigate to chat
-            router.push(`/chat/${addToQueueData.otherUserId}?matchId=${addToQueueData.match.id}`)
-            return
-          } else {
-            // In queue, poll for match
-            pollForMatch()
-          }
+          // Not in queue, show empty state
+          setProfiles([])
+          setLoading(false)
         }
       } catch (error) {
         console.error('Error loading matches:', error)
@@ -79,18 +65,18 @@ export default function ChatPage() {
     }
 
     const pollForMatch = async () => {
-      // Poll every 2 seconds for a match
+      // Poll every 1 second for instant matching
       const interval = setInterval(async () => {
         try {
-          const response = await fetch(`/api/match-queue?userId=${user.id}`)
+          const response = await fetch(`/api/pending-matches?userId=${user.id}`)
           const data = await response.json()
           
           if (data.success && data.matched && data.match) {
-            // Match found!
+            // Match found! Navigate immediately
             clearInterval(interval)
             router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
           } else if (!data.inQueue) {
-            // No longer in queue (maybe matched via another method)
+            // No longer in queue
             clearInterval(interval)
             // Try to get existing matches
             const matchesResponse = await fetch(`/api/matches?userId=${user.id}`)
@@ -104,14 +90,18 @@ export default function ChatPage() {
                 router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
               }
             }
+            setLoading(false)
           }
         } catch (error) {
           console.error('Error polling for match:', error)
         }
-      }, 2000)
+      }, 1000) // Poll every 1 second for instant matching
 
-      // Cleanup after 60 seconds
-      setTimeout(() => clearInterval(interval), 60000)
+      // Cleanup after 2 minutes
+      setTimeout(() => {
+        clearInterval(interval)
+        setLoading(false)
+      }, 120000)
     }
 
     loadMatches()
