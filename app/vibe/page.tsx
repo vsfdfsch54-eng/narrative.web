@@ -211,10 +211,10 @@ export default function VibePage() {
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content px-5 py-12 pb-0 overflow-hidden flex flex-col h-full">
-              {/* Top Section: Time Frame Box */}
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4 mb-6 flex-shrink-0">
-                <h1 className="text-3xl font-light text-[#f1f1f3] text-center mb-4">
+            <div className="phone-content px-5 py-6 pb-0 overflow-hidden flex flex-col h-full">
+              {/* Top Section: Time Frame Box - Compact */}
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 mb-4 flex-shrink-0">
+                <h1 className="text-2xl font-light text-[#f1f1f3] text-center mb-3">
                   Select how you want to connect
                 </h1>
                 
@@ -225,7 +225,7 @@ export default function VibePage() {
                       key={time}
                       onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
                       className={cn(
-                        "flex-1 max-w-[80px] px-4 py-2.5 rounded-lg text-xs font-medium transition-all border",
+                        "flex-1 max-w-[70px] px-3 py-2 rounded-lg text-xs font-medium transition-all border",
                         selectedTimeLimit === time 
                           ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20" 
                           : "bg-[#0a0a0c] text-[#f1f1f3] border-white/10 hover:border-white/20"
@@ -237,35 +237,35 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Main Content - Two Boxes */}
-              <div className="flex flex-col flex-1 min-h-0 gap-6 mb-6">
+              {/* Main Content - Two Boxes - Compact */}
+              <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
                 {/* Vibe Box */}
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex-shrink-0">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3 flex-shrink-0">
                   {/* Header with Last Vibe Pill */}
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-base font-medium text-[#f1f1f3]">Vibe</h2>
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-sm font-medium text-[#f1f1f3]">Vibe</h2>
                     {lastVibe && !loadingLastVibe && (
                       <button
                         onClick={handleSelectLastVibe}
                         className={cn(
-                          "px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1.5",
+                          "px-2.5 py-1 rounded-full text-[10px] font-medium transition-all border flex items-center gap-1",
                           selectedVibe?.id === lastVibe.id
                             ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
                             : "bg-[#0a0a0c] text-[#f1f1f3] border-white/10 hover:border-white/20"
                         )}
                       >
                         <span>Last vibe</span>
-                        <span className="text-[10px] text-[#f1f1f3]/50">•</span>
-                        <span className="text-[10px] text-[#f1f1f3]/50">Last time</span>
+                        <span className="text-[9px] text-[#f1f1f3]/50">•</span>
+                        <span className="text-[9px] text-[#f1f1f3]/50">Last time</span>
                       </button>
                     )}
                   </div>
 
-                  {/* Most Popular Vibe Pill */}
+                  {/* Most Popular Vibe Pill - Compact */}
                   <button
                     onClick={handleSelectMostPopularVibe}
                     className={cn(
-                      "w-full px-4 py-2 rounded-full text-sm font-medium transition-all border mb-3",
+                      "w-full px-3 py-1.5 rounded-full text-xs font-medium transition-all border mb-2",
                       selectedVibe?.id === MOST_POPULAR_VIBE.id
                         ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
                         : "bg-[#0a0a0c] text-[#f1f1f3] border-white/10 hover:border-white/20"
@@ -275,7 +275,7 @@ export default function VibePage() {
                   </button>
 
                   {/* Locked Horizontal Scroll Row for Vibes */}
-                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-4 px-4" style={{ height: '56px', alignItems: 'center', overflowY: 'hidden' }}>
+                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-3 px-3" style={{ height: '48px', alignItems: 'center', overflowY: 'hidden' }}>
                     {VIBES.map((vibe) => (
                       <VibeChip
                         key={vibe.id}
@@ -289,15 +289,15 @@ export default function VibePage() {
                 </div>
 
                 {/* Topic Box */}
-                <div className="rounded-xl border border-white/10 bg-white/5 p-4 flex-shrink-0">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3 flex-shrink-0">
                   {/* Header with Most Popular Topic Pill */}
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-base font-medium text-[#f1f1f3]">Topic</h2>
+                  <div className="flex items-center justify-between mb-2">
+                    <h2 className="text-sm font-medium text-[#f1f1f3]">Topic</h2>
                     {mostPopularTopic && (
                       <button
                         onClick={handleSelectMostPopularTopic}
                         className={cn(
-                          "px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1.5",
+                          "px-2.5 py-1 rounded-full text-[10px] font-medium transition-all border flex items-center gap-1",
                           selectedTopic?.id === mostPopularTopic.id
                             ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
                             : "bg-[#0a0a0c] text-[#f1f1f3] border-white/10 hover:border-white/20"
@@ -308,15 +308,15 @@ export default function VibePage() {
                     )}
                   </div>
 
-                  {/* Dropdown Menu for Categories */}
-                  <div className="relative mb-4">
+                  {/* Dropdown Menu for Categories - Compact */}
+                  <div className="relative mb-3">
                     <select
                       value={selectedCategory}
                       onChange={(e) => {
                         setSelectedCategory(e.target.value)
                         setSelectedTopic(null)
                       }}
-                      className="w-full appearance-none px-4 py-2.5 rounded-lg bg-[#0a0a0c] border border-white/10 text-[#f1f1f3] text-sm font-medium focus:outline-none focus:border-white/20 transition-all cursor-pointer"
+                      className="w-full appearance-none px-3 py-2 rounded-lg bg-[#0a0a0c] border border-white/10 text-[#f1f1f3] text-xs font-medium focus:outline-none focus:border-white/20 transition-all cursor-pointer"
                     >
                       {TOPIC_CATEGORIES.map((cat) => (
                         <option key={cat.id} value={cat.id} className="bg-[#0a0a0c]">
@@ -324,11 +324,11 @@ export default function VibePage() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#f1f1f3]/60 pointer-events-none" />
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#f1f1f3]/60 pointer-events-none" />
                   </div>
 
                   {/* Locked Horizontal Scroll Row for Topics */}
-                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-4 px-4" style={{ height: '56px', alignItems: 'center', overflowY: 'hidden' }}>
+                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-3 px-3" style={{ height: '48px', alignItems: 'center', overflowY: 'hidden' }}>
                     {currentTopics.map((topic) => (
                       <TopicChip
                         key={topic.id}
@@ -342,28 +342,33 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Bottom Section: Connect/Skip & Chat Buttons */}
-              <div className="flex-shrink-0 pt-6 pb-2 flex flex-col items-center gap-3">
+              {/* Bottom Section: Connect Chip - Compact Pill Style */}
+              <div className="flex-shrink-0 pt-4 pb-2 flex justify-center">
                 <AnimatePresence mode="wait">
                   {canConnect ? (
-                    <Button
-                      variant="primary"
-                      size="lg"
+                    <button
                       onClick={handleConnect}
                       disabled={saving}
-                      className="w-full max-w-md rounded-xl h-14 text-base font-semibold"
+                      className={cn(
+                        "px-8 py-3 rounded-full text-sm font-semibold transition-all",
+                        "bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3]/20",
+                        "hover:bg-[#f1f1f3]/95 active:scale-95",
+                        "disabled:opacity-50 disabled:cursor-not-allowed"
+                      )}
                     >
                       {saving ? "Connecting..." : "Connect"}
-                    </Button>
+                    </button>
                   ) : (
-                    <Button
-                      variant="primary"
-                      size="lg"
+                    <button
                       onClick={handleSkipAndChat}
-                      className="w-full max-w-md rounded-xl h-14 text-base font-semibold"
+                      className={cn(
+                        "px-8 py-3 rounded-full text-sm font-semibold transition-all",
+                        "bg-[#0a0a0c] text-[#f1f1f3] border border-white/10",
+                        "hover:border-white/20 hover:bg-white/5 active:scale-95"
+                      )}
                     >
                       Skip & Chat
-                    </Button>
+                    </button>
                   )}
                 </AnimatePresence>
               </div>
