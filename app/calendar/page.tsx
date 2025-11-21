@@ -243,7 +243,7 @@ export default function CalendarPage() {
           <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>Create new moment</p>
         </div>
         {!compact && (
-          <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>
+          <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0 }}>
             Curate a hangout, save a ritual, or plan something spontaneous.
           </p>
         )}
@@ -269,7 +269,7 @@ export default function CalendarPage() {
         <Card>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[24] }}>
             <h1 style={{ 
-              ...tokens.typography.headingL,
+              ...tokens.typography.heading,
               color: tokens.colors.textPrimary,
               margin: 0,
             }}>
@@ -322,7 +322,7 @@ export default function CalendarPage() {
                 {Object.entries(tagColors).map(([tag, meta]) => (
                   <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[8] }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: meta.dot }} />
-                    <span style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary }}>{tag}</span>
+                    <span style={{ ...tokens.typography.label, color: tokens.colors.textSecondary }}>{tag}</span>
                   </div>
                 ))}
               </div>
@@ -341,7 +341,7 @@ export default function CalendarPage() {
                 key={day} 
                 style={{ 
                   textAlign: 'center',
-                  ...tokens.typography.caption,
+                  ...tokens.typography.label,
                   color: tokens.colors.textMuted,
                   fontWeight: 500,
                 }}
@@ -459,9 +459,9 @@ export default function CalendarPage() {
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[24] }}>
                 <div>
-                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Selected</p>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Selected</p>
                   <h2 style={{ 
-                    ...tokens.typography.headingL,
+                    ...tokens.typography.heading,
                     color: tokens.colors.textPrimary,
                     margin: 0,
                   }}>
@@ -478,7 +478,7 @@ export default function CalendarPage() {
                     background: tokens.colors.surfacePrimary,
                     border: `1px solid ${tokens.colors.borderSubtle}`,
                     color: tokens.colors.textPrimary,
-                    ...tokens.typography.caption,
+                    ...tokens.typography.label,
                     cursor: 'pointer',
                   }}
                 >
@@ -495,7 +495,7 @@ export default function CalendarPage() {
                         type="button"
                         onClick={() => console.log("Edit events for day", selectedDay)}
                         style={{
-                          ...tokens.typography.caption,
+                          ...tokens.typography.label,
                           color: tokens.colors.textSecondary,
                           background: 'transparent',
                           border: 'none',
@@ -520,11 +520,11 @@ export default function CalendarPage() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
                               <div>
                                 <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>{event.title}</p>
-                                <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>{event.time}</p>
+                                <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0 }}>{event.time}</p>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 <span style={{
-                                  ...tokens.typography.caption,
+                                  ...tokens.typography.label,
                                   padding: `${tokens.spacing[4]} ${tokens.spacing[12]}`,
                                   borderRadius: tokens.radii.button,
                                   background: `${eventColor}30`,
@@ -558,7 +558,7 @@ export default function CalendarPage() {
                       {suggestions.map((suggestion) => (
                         <Card key={suggestion.title} style={{ minWidth: '190px' }}>
                           <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>{suggestion.title}</p>
-                          <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>{suggestion.detail}</p>
+                          <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0 }}>{suggestion.detail}</p>
                         </Card>
                       ))}
                     </div>
@@ -575,7 +575,7 @@ export default function CalendarPage() {
                     <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>People</p>
                   </div>
                   <div style={{ marginBottom: tokens.spacing[16] }}>
-                    <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[8], display: 'block' }}>Viewing</label>
+                    <label style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[8], display: 'block' }}>Viewing</label>
                     <select
                       value={selectedFriendGroup}
                       onChange={(e) => setSelectedFriendGroup(e.target.value as keyof typeof friends)}
@@ -641,8 +641,8 @@ export default function CalendarPage() {
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[24] }}>
                 <div>
-                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>New plan</p>
-                  <h3 style={{ ...tokens.typography.headingL, color: tokens.colors.textPrimary, margin: 0 }}>Design your moment</h3>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>New plan</p>
+                  <h3 style={{ ...tokens.typography.heading, color: tokens.colors.textPrimary, margin: 0 }}>Design your moment</h3>
                 </div>
                 <motion.button
                   type="button"
@@ -663,7 +663,7 @@ export default function CalendarPage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
                 <div>
-                  <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Title</label>
+                  <label style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Title</label>
                   <input
                     value={plannerFields.title}
                     onChange={(e) => handlePlannerField("title", e.target.value)}
@@ -681,7 +681,7 @@ export default function CalendarPage() {
                 </div>
 
                 <div>
-                  <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Invite group</label>
+                  <label style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Invite group</label>
                   <select
                     value={plannerFields.inviteGroup}
                     onChange={(e) => handlePlannerField("inviteGroup", e.target.value)}
@@ -705,7 +705,7 @@ export default function CalendarPage() {
                 </div>
 
                 <div>
-                  <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Privacy</label>
+                  <label style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Privacy</label>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: tokens.spacing[16] }}>
                     {["public", "private"].map((mode) => (
                       <motion.button
@@ -731,7 +731,7 @@ export default function CalendarPage() {
                 </div>
 
                 <div>
-                  <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Notes</label>
+                  <label style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Notes</label>
                   <textarea
                     value={plannerFields.notes}
                     onChange={(e) => handlePlannerField("notes", e.target.value)}
@@ -756,7 +756,7 @@ export default function CalendarPage() {
                     borderRadius: tokens.radii.input,
                     border: `1px solid ${tokens.colors.borderSubtle}`,
                     background: tokens.colors.surfacePrimary,
-                    ...tokens.typography.caption,
+                    ...tokens.typography.label,
                     color: tokens.colors.textSecondary,
                   }}>
                     {saveError}

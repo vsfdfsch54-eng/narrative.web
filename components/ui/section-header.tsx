@@ -10,10 +10,10 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, subtitle }: SectionHeaderProps) {
   return (
-    <div style={{ marginBottom: tokens.spacing[16] }}>
+    <div style={{ marginBottom: tokens.spacing[20] }}>
       <h2
         style={{
-          ...tokens.typography.headingM,
+          ...tokens.typography.heading,
           color: tokens.colors.textPrimary,
           margin: 0,
           marginBottom: subtitle ? tokens.spacing[8] : 0,

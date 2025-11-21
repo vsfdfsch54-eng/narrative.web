@@ -40,19 +40,18 @@ export function TopicChip({
         "transition-all duration-150 ease-in-out",
         "touch-manipulation",
         "overflow-hidden flex items-center",
-        "relative",
-        selected ? "text-white" : "text-black"
+        "relative"
       )}
       style={{
         height: '44px',
-        borderRadius: tokens.radii.chip,
-        padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+        borderRadius: tokens.radii.pill,
+        padding: `0 ${tokens.spacing[20]}`,
         gap: tokens.spacing[12],
-        background: selected ? tokens.colors.accentBlue : tokens.colors.surfacePrimary,
-        color: selected ? '#FFFFFF' : tokens.colors.textPrimary,
-        border: selected ? 'none' : `1px solid ${tokens.colors.borderStrong}`,
-        boxShadow: selected ? tokens.shadows.card : 'none',
-        ...tokens.typography.caption,
+        background: selected ? '#000000' : '#F0F0F2',
+        color: selected ? '#FFFFFF' : '#3A3A3D',
+        border: 'none',
+        boxShadow: 'none',
+        ...tokens.typography.label,
         willChange: "transform"
       }}
     >

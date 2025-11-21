@@ -162,10 +162,10 @@ export default function VibePage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[28] }}>
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ 
-            ...tokens.typography.headingXL,
+            ...tokens.typography.title,
             color: tokens.colors.textPrimary,
             margin: 0,
             marginBottom: tokens.spacing[8],
@@ -187,8 +187,8 @@ export default function VibePage() {
             overflowY: 'hidden',
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
-            marginTop: tokens.spacing[16],
-            marginBottom: tokens.spacing[16],
+            marginTop: tokens.spacing[20],
+            marginBottom: tokens.spacing[20],
           }}>
             <div className="flex" style={{ gap: tokens.spacing[16] }}>
               {VIBES.map((vibe) => (
@@ -206,10 +206,10 @@ export default function VibePage() {
 
         <Card>
           <h2 style={{ 
-            ...tokens.typography.headingM,
+            ...tokens.typography.heading,
             color: tokens.colors.textPrimary,
             margin: 0,
-            marginBottom: tokens.spacing[16],
+            marginBottom: tokens.spacing[20],
             textAlign: 'center',
           }}>
             Choose a Topic
@@ -222,10 +222,10 @@ export default function VibePage() {
               style={{
                 width: '100%',
                 height: '44px',
-                padding: `0 ${tokens.spacing[16]}`,
+                padding: `0 ${tokens.spacing[20]}`,
                 borderRadius: tokens.radii.input,
                 background: tokens.colors.surfacePrimary,
-                border: `1px solid ${tokens.colors.borderStrong}`,
+                border: `1px solid ${tokens.colors.borderSubtle}`,
                 color: tokens.colors.textPrimary,
                 display: 'flex',
                 alignItems: 'center',
@@ -260,7 +260,7 @@ export default function VibePage() {
               >
                 <div style={{ 
                   background: tokens.colors.surfacePrimary, 
-                  border: `1px solid rgba(0,0,0,0.09)`, 
+                  border: `1px solid ${tokens.colors.borderSubtle}`, 
                   borderRadius: tokens.radii.popover, 
                   overflow: 'hidden',
                   boxShadow: tokens.shadows.elevated,
@@ -315,8 +315,8 @@ export default function VibePage() {
             overflowY: 'hidden',
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
-            marginTop: tokens.spacing[16],
-            marginBottom: tokens.spacing[16],
+            marginTop: tokens.spacing[20],
+            marginBottom: tokens.spacing[20],
           }}>
             <div className="flex" style={{ gap: tokens.spacing[16] }}>
               {currentTopics.map((topic) => (
@@ -340,7 +340,7 @@ export default function VibePage() {
           />
         </div>
 
-        <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.spacing[16] }}>
+        <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.spacing[20] }}>
           <Button
             variant="primary"
             onClick={handleConnect}

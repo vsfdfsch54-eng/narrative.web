@@ -17,8 +17,8 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
         display: 'flex',
         gap: tokens.spacing[4],
         padding: tokens.spacing[4],
-        background: tokens.colors.surfaceSecondary,
-        borderRadius: tokens.radii.button,
+        background: tokens.colors.surfacePrimary,
+        borderRadius: tokens.radii.pill,
         border: `1px solid ${tokens.colors.borderSubtle}`,
       }}
     >
@@ -32,11 +32,11 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
             style={{
               flex: 1,
               padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
-              borderRadius: tokens.radii.button,
-              background: isSelected ? tokens.colors.accentBlue : 'transparent',
+              borderRadius: tokens.radii.pill,
+              background: isSelected ? '#000000' : 'transparent',
               color: isSelected ? '#FFFFFF' : tokens.colors.textPrimary,
               border: 'none',
-              ...tokens.typography.caption,
+              ...tokens.typography.label,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}

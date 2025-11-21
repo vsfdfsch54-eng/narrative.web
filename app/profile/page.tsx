@@ -151,9 +151,9 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[28] }}>
         <Card style={{ textAlign: 'center', padding: tokens.spacing[24] }}>
-          <div style={{ fontSize: '64px', marginBottom: tokens.spacing[16] }}>👤</div>
+          <div style={{ fontSize: '64px', marginBottom: tokens.spacing[20] }}>👤</div>
           {isEditingName ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
               <input
@@ -161,12 +161,12 @@ export default function ProfilePage() {
                 value={tempName}
                 onChange={(e) => setTempName(e.target.value)}
                 style={{
-                  ...tokens.typography.headingM,
+                  ...tokens.typography.heading,
                   color: tokens.colors.textPrimary,
-                  background: tokens.colors.surfaceSecondary,
-                  border: `1px solid ${tokens.colors.borderStrong}`,
+                  background: tokens.colors.surfacePrimary,
+                  border: `1px solid ${tokens.colors.borderSubtle}`,
                   borderRadius: tokens.radii.input,
-                  padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
+                  padding: `${tokens.spacing[12]} ${tokens.spacing[20]}`,
                   textAlign: 'center',
                   width: '200px',
                 }}
@@ -184,7 +184,7 @@ export default function ProfilePage() {
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
               <h2 style={{ 
-                ...tokens.typography.headingM,
+                ...tokens.typography.heading,
                 color: tokens.colors.textPrimary,
                 margin: 0,
               }}>
@@ -206,7 +206,7 @@ export default function ProfilePage() {
               </motion.button>
             </div>
           )}
-          <div style={{ marginTop: tokens.spacing[20] }}>
+          <div style={{ marginTop: tokens.spacing[24] }}>
             <textarea
               value={quoteOfDay}
               onChange={(e) => setQuoteOfDay(e.target.value)}
@@ -215,9 +215,9 @@ export default function ProfilePage() {
               style={{
                 width: '100%',
                 minHeight: '80px',
-                padding: tokens.spacing[16],
-                background: tokens.colors.surfaceSecondary,
-                border: `1px solid ${tokens.colors.borderStrong}`,
+                padding: `${tokens.spacing[12]} ${tokens.spacing[20]}`,
+                background: tokens.colors.surfacePrimary,
+                border: `1px solid ${tokens.colors.borderSubtle}`,
                 borderRadius: tokens.radii.input,
                 color: tokens.colors.textPrimary,
                 ...tokens.typography.body,
@@ -225,17 +225,18 @@ export default function ProfilePage() {
               }}
               rows={3}
             />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: tokens.spacing[12] }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: tokens.spacing[16] }}>
               <motion.button
                 whileTap={{ scale: 0.98 }}
                 onClick={handleSaveQuote}
                 style={{
-                  padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
-                  borderRadius: tokens.radii.button,
-                  background: tokens.colors.accentBlue,
+                  padding: `${tokens.spacing[12]} ${tokens.spacing[20]}`,
+                  borderRadius: tokens.radii.pill,
+                  background: '#000000',
                   color: '#FFFFFF',
                   border: 'none',
                   cursor: 'pointer',
+                  ...tokens.typography.label,
                 }}
               >
                 <Save className="w-4 h-4" />
@@ -246,42 +247,42 @@ export default function ProfilePage() {
 
         <Card>
           <SectionHeader title="My Friends" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
             <div style={{ 
               padding: tokens.spacing[16],
-              borderBottom: `1px solid ${tokens.colors.borderSubtle}`,
+              borderBottom: `1px solid ${tokens.colors.surfaceDivider}`,
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentOrange }} />
-                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Inner Circle</p>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Inner Circle</p>
                 </div>
-                <span style={{ ...tokens.typography.caption, color: tokens.colors.textMuted }}>0</span>
+                <span style={{ ...tokens.typography.label, color: tokens.colors.textMuted }}>0</span>
               </div>
-              <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>No inner circle members yet</p>
+              <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: tokens.typography.label.fontSize }}>No inner circle members yet</p>
             </div>
 
             <div style={{ 
               padding: tokens.spacing[16],
-              borderBottom: `1px solid ${tokens.colors.borderSubtle}`,
+              borderBottom: `1px solid ${tokens.colors.surfaceDivider}`,
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentBlue }} />
-                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Close Friends</p>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Close Friends</p>
                 </div>
-                <span style={{ ...tokens.typography.caption, color: tokens.colors.textMuted }}>0</span>
+                <span style={{ ...tokens.typography.label, color: tokens.colors.textMuted }}>0</span>
               </div>
-              <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>No close friends yet</p>
+              <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: tokens.typography.label.fontSize }}>No close friends yet</p>
             </div>
 
             <div style={{ padding: tokens.spacing[16] }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentGreen }} />
-                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Community</p>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Community</p>
                 </div>
-                <span style={{ ...tokens.typography.caption, color: tokens.colors.textMuted }}>{communityMembers.length}</span>
+                <span style={{ ...tokens.typography.label, color: tokens.colors.textMuted }}>{communityMembers.length}</span>
               </div>
               {communityMembers.length > 0 ? (
                 <div style={{ display: 'flex', gap: tokens.spacing[12], overflowX: 'auto', paddingBottom: tokens.spacing[8] }}>
@@ -292,11 +293,11 @@ export default function ProfilePage() {
                       onClick={() => router.push(`/chat/${member.id}`)}
                       style={{
                         padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
-                        borderRadius: tokens.radii.chip,
-                        background: tokens.colors.surfacePrimary,
-                        color: tokens.colors.textPrimary,
-                        border: `1px solid ${tokens.colors.borderStrong}`,
-                        ...tokens.typography.caption,
+                        borderRadius: tokens.radii.pill,
+                        background: '#F0F0F2',
+                        color: '#3A3A3D',
+                        border: 'none',
+                        ...tokens.typography.label,
                         whiteSpace: 'nowrap',
                         cursor: 'pointer',
                       }}
@@ -306,7 +307,7 @@ export default function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>No community members yet</p>
+                <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: tokens.typography.label.fontSize }}>No community members yet</p>
               )}
             </div>
           </div>
@@ -315,11 +316,11 @@ export default function ProfilePage() {
         <Card>
           <SectionHeader title="Recent Chats" />
           {loadingChats ? (
-            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[20] }}>
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[24] }}>
               Loading...
             </p>
           ) : recentChats.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
               {recentChats.map((chat) => (
                 <motion.button
                   key={chat.id}
@@ -343,24 +344,24 @@ export default function ProfilePage() {
                     <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>
                       {chat.name}
                     </p>
-                    <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>
+                    <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0 }}>
                       {chat.lastMessage || "No messages yet"}
                     </p>
                   </div>
-                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, margin: 0 }}>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>
                     {chat.time}
                   </p>
                 </motion.button>
               ))}
             </div>
           ) : (
-            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[20] }}>
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[24] }}>
               No recent chats
             </p>
           )}
         </Card>
 
-        <div style={{ marginTop: tokens.spacing[16] }}>
+        <div style={{ marginTop: tokens.spacing[20] }}>
           <Button
             variant="secondary"
             onClick={async () => {

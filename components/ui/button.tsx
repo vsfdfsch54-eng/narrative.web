@@ -22,22 +22,22 @@ export function Button({
   ...props
 }: ButtonProps) {
   const height = (size === "large" || size === "lg") 
-    ? '46px'
+    ? '48px'
     : size === "icon" 
-    ? '40px'
+    ? '44px'
     : size === "sm"
-    ? '36px'
+    ? '40px'
     : '44px'
 
   const variantStyles = {
     primary: {
-      background: tokens.colors.accentBlue,
+      background: '#000000',
       color: '#FFFFFF',
       border: 'none',
     },
     secondary: {
       background: tokens.colors.surfacePrimary,
-      color: tokens.colors.accentBlue,
+      color: '#111111',
       border: `1px solid ${tokens.colors.borderMedium}`,
     },
     outline: {
@@ -47,7 +47,7 @@ export function Button({
     },
     ghost: {
       background: 'transparent',
-      color: tokens.colors.textPrimary,
+      color: '#2A2A2F',
       border: 'none',
     },
   }
@@ -55,7 +55,7 @@ export function Button({
   const buttonStyles = {
     height,
     padding: size === "icon" ? '0' : `0 ${tokens.spacing[20]}`,
-    borderRadius: tokens.radii.button,
+    borderRadius: tokens.radii.pill,
     ...variantStyles[variant],
     fontSize: tokens.typography.body.fontSize,
     fontWeight: 500,
@@ -88,12 +88,12 @@ export function Button({
       style={buttonStyles}
       onMouseEnter={(e) => {
         if (!disabled && variant === 'ghost') {
-          e.currentTarget.style.textDecoration = 'underline'
+          e.currentTarget.style.background = 'rgba(0,0,0,0.04)'
         }
       }}
       onMouseLeave={(e) => {
         if (!disabled && variant === 'ghost') {
-          e.currentTarget.style.textDecoration = 'none'
+          e.currentTarget.style.background = 'transparent'
         }
       }}
       {...(props as any)}

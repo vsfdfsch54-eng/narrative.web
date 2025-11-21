@@ -69,7 +69,7 @@ export function TopNav() {
         justifyContent: 'space-between',
         padding: `0 ${tokens.spacing[20]}`,
         background: tokens.colors.backgroundApp,
-        borderBottom: `1px solid rgba(0,0,0,0.05)`,
+        borderBottom: `1px solid rgba(0,0,0,0.04)`,
         position: 'sticky',
         top: 0,
         zIndex: 100,
@@ -77,8 +77,9 @@ export function TopNav() {
     >
       <h1
         style={{
-          ...tokens.typography.headingM,
-          color: tokens.colors.textPrimary,
+          fontSize: '20px',
+          fontWeight: 500,
+          color: '#111111',
           margin: 0,
         }}
       >
@@ -87,14 +88,14 @@ export function TopNav() {
 
       <div className="relative" ref={menuRef}>
         <motion.button
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => setIsOpen(!isOpen)}
           style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: tokens.radii.button,
+            width: '44px',
+            height: '44px',
+            borderRadius: tokens.radii.pill,
             background: tokens.colors.surfacePrimary,
-            border: `1px solid ${tokens.colors.borderStrong}`,
+            border: `1px solid ${tokens.colors.borderMedium}`,
             color: tokens.colors.textSecondary,
             display: 'flex',
             alignItems: 'center',
@@ -124,14 +125,14 @@ export function TopNav() {
                 transition={{ duration: 0.15 }}
                 style={{
                   position: 'absolute',
-                  top: '48px',
+                  top: '52px',
                   right: 0,
                   zIndex: 50,
                   minWidth: '180px',
                   background: tokens.colors.surfacePrimary,
-                  borderRadius: tokens.radii.popover,
+                  borderRadius: '12px',
                   boxShadow: tokens.shadows.elevated,
-                  border: `1px solid ${tokens.colors.borderMedium}`,
+                  border: `1px solid ${tokens.colors.borderSubtle}`,
                   overflow: 'hidden',
                   padding: `${tokens.spacing[8]} 0`,
                 }}

@@ -31,7 +31,7 @@ export function Chip({ children, variant = "default", selected = false, onClick 
         background: selected ? accentColor : tokens.colors.surfacePrimary,
         color: selected ? '#FFFFFF' : accentColor,
         border: selected ? 'none' : `1px solid ${tokens.colors.borderStrong}`,
-        fontSize: tokens.typography.caption.fontSize,
+        fontSize: tokens.typography.label.fontSize,
         fontWeight: 500,
         cursor: 'pointer',
         transition: 'all 0.15s ease',
