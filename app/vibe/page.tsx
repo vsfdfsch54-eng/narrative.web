@@ -150,16 +150,25 @@ export default function VibePage() {
           vibe: selectedVibe?.label || null,
           topic: selectedTopic?.label || null,
           timeframe: selectedTimeLimit || null,
-        })
+        }),
+        cache: 'no-store'
       })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
       
       const data = await response.json()
       
-      if (data.success && data.matched && data.match) {
+      if (data.success && data.matched && data.match && data.otherUserId) {
         // Matched immediately! Navigate to chat
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
-      } else {
+      } else if (data.success && data.inQueue) {
         // In queue, navigate to chat page which will poll for matches
+        router.push("/chat")
+      } else {
+        // Unexpected response, still navigate to chat
+        console.error('Unexpected response from pending-matches:', data)
         router.push("/chat")
       }
     } catch (error) {

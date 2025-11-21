@@ -103,11 +103,22 @@ export default function ChatPage() {
         )
         .subscribe()
 
-      // Poll every 1.5 seconds to check for matches
+      // Poll every 1 second to check for matches and trigger matchmaking
       const interval = setInterval(async () => {
         try {
+          // Trigger matchmaking processor to pair any waiting users
+          fetch('/api/matchmaking/process', { 
+            method: 'GET',
+            cache: 'no-store'
+          }).catch(() => {
+            // Non-blocking - ignore errors
+          })
+
           // Check if user was matched
-          const response = await fetch(`/api/pending-matches?userId=${user.id}`)
+          const response = await fetch(`/api/pending-matches?userId=${user.id}`, {
+            cache: 'no-store'
+          })
+          
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`)
           }
@@ -127,7 +138,9 @@ export default function ChatPage() {
             clearInterval(interval)
             channel.unsubscribe()
             
-            const matchesResponse = await fetch(`/api/matches?userId=${user.id}`)
+            const matchesResponse = await fetch(`/api/matches?userId=${user.id}`, {
+              cache: 'no-store'
+            })
             if (matchesResponse.ok) {
               const matchesData = await matchesResponse.json()
               if (matchesData.success && matchesData.data && matchesData.data.length > 0) {
@@ -146,7 +159,7 @@ export default function ChatPage() {
         } catch (error) {
           console.error('Error polling for match:', error)
         }
-      }, 1500) // Poll every 1.5 seconds
+      }, 1000) // Poll every 1 second
 
       // Cleanup after 2 minutes
       setTimeout(() => {

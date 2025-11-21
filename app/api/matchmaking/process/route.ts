@@ -116,6 +116,8 @@ export async function GET(request: NextRequest) {
         } else {
           matchedCount++
           pairs.push({ user1: user1.user_id, user2: user2.user_id })
+          processedUserIds.add(user1.user_id)
+          processedUserIds.add(user2.user_id)
           console.log(`[Matchmaking] Matched ${user1.user_id} with ${user2.user_id}`)
         }
       }

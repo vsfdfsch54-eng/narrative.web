@@ -46,6 +46,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Small delay to ensure database consistency (race condition prevention)
+    await new Promise(resolve => setTimeout(resolve, 100))
+
     // Immediately try to match with other waiting users
     const { data: otherPendingMatches, error: searchError } = await supabase
       .from('pending_matches')
@@ -263,19 +266,22 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false })
         .limit(1)
 
-      if (!matchesError && matches && matches.length > 0) {
-        const match = matches[0]
-        const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
+      if (!matchesError && matches) {
+        // Handle both array and single object responses
+        const match = Array.isArray(matches) ? matches[0] : matches
+        if (match) {
+          const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
 
-        // Clean up pending match
-        await supabase.from('pending_matches').delete().eq('user_id', userId)
+          // Clean up pending match
+          await supabase.from('pending_matches').delete().eq('user_id', userId)
 
-        return NextResponse.json({ 
-          success: true, 
-          matched: true,
-          match: match,
-          otherUserId: otherUserId 
-        })
+          return NextResponse.json({ 
+            success: true, 
+            matched: true,
+            match: match,
+            otherUserId: otherUserId 
+          })
+        }
       }
     }
 
