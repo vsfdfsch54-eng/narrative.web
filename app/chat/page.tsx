@@ -103,16 +103,15 @@ export default function ChatPage() {
         )
         .subscribe()
 
-      // Poll every 2 seconds and also trigger matchmaking processor
+      // Poll every 1.5 seconds to check for matches
       const interval = setInterval(async () => {
         try {
-          // Trigger matchmaking processor to pair waiting users
-          fetch('/api/matchmaking/process', { method: 'GET' }).catch(() => {
-            // Non-blocking - ignore errors
-          })
-
           // Check if user was matched
           const response = await fetch(`/api/pending-matches?userId=${user.id}`)
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          
           const data = await response.json()
           
           if (data.success && data.matched && data.match) {
@@ -120,20 +119,26 @@ export default function ChatPage() {
             clearInterval(interval)
             channel.unsubscribe()
             router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
-          } else if (!data.inQueue) {
-            // No longer in queue
+            return
+          }
+          
+          if (!data.inQueue) {
+            // No longer in queue - check for existing matches
             clearInterval(interval)
             channel.unsubscribe()
-            // Try to get existing matches
+            
             const matchesResponse = await fetch(`/api/matches?userId=${user.id}`)
-            const matchesData = await matchesResponse.json()
-            if (matchesData.success && matchesData.data && matchesData.data.length > 0) {
-              const matches = Array.isArray(matchesData.data) ? matchesData.data : [matchesData.data]
-              const activeMatches = matches.filter((m: any) => m.status === 'active')
-              if (activeMatches.length > 0) {
-                const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
-                const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
-                router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
+            if (matchesResponse.ok) {
+              const matchesData = await matchesResponse.json()
+              if (matchesData.success && matchesData.data && matchesData.data.length > 0) {
+                const matches = Array.isArray(matchesData.data) ? matchesData.data : [matchesData.data]
+                const activeMatches = matches.filter((m: any) => m.status === 'active')
+                if (activeMatches.length > 0) {
+                  const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
+                  const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
+                  router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
+                  return
+                }
               }
             }
             setLoading(false)
@@ -141,7 +146,7 @@ export default function ChatPage() {
         } catch (error) {
           console.error('Error polling for match:', error)
         }
-      }, 2000) // Poll every 2 seconds and trigger matchmaking
+      }, 1500) // Poll every 1.5 seconds
 
       // Cleanup after 2 minutes
       setTimeout(() => {

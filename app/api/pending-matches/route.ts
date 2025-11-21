@@ -127,23 +127,60 @@ export async function POST(request: NextRequest) {
     }
 
     // No match found, user is in queue
-    // Trigger matchmaking processor immediately (await to ensure it runs)
+    // Run matchmaking processor directly (no external fetch needed)
     try {
-      const processorUrl = process.env.NEXT_PUBLIC_APP_URL 
-        ? `${process.env.NEXT_PUBLIC_APP_URL}/api/matchmaking/process`
-        : `${request.headers.get('origin') || 'http://localhost:3000'}/api/matchmaking/process`
-      
-      await fetch(processorUrl, {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
-      }).catch(err => {
-        // Log but don't fail - client-side polling will handle it
-        console.log('Matchmaking processor trigger failed (non-critical):', err)
-      })
+      const { data: allWaitingUsers } = await supabase
+        .from('pending_matches')
+        .select('*')
+        .eq('status', 'searching')
+        .order('created_at', { ascending: true })
+
+      // If we have 2+ users now, match them
+      if (allWaitingUsers && allWaitingUsers.length >= 2) {
+        // Match first two users
+        const user1 = allWaitingUsers[0]
+        const user2 = allWaitingUsers[1]
+
+        const user1Id = user1.user_id < user2.user_id ? user1.user_id : user2.user_id
+        const user2Id = user1.user_id < user2.user_id ? user2.user_id : user1.user_id
+        const isUser1 = userId === user1Id
+
+        const { data: chatMatch, error: matchError } = await supabase
+          .from('chat_matches')
+          .insert({
+            user1_id: user1Id,
+            user2_id: user2Id,
+            user1_vibe: isUser1 ? (vibe || null) : (user2.vibe || null),
+            user1_topic: isUser1 ? (topic || null) : (user2.topic || null),
+            user1_timeframe: isUser1 ? (timeframe || null) : (user2.timeframe || null),
+            user2_vibe: isUser1 ? (user2.vibe || null) : (vibe || null),
+            user2_topic: isUser1 ? (user2.topic || null) : (topic || null),
+            user2_timeframe: isUser1 ? (user2.timeframe || null) : (timeframe || null),
+            status: 'active',
+          })
+          .select()
+          .single()
+
+        if (!matchError && chatMatch) {
+          await supabase
+            .from('pending_matches')
+            .update({ status: 'matched', matched_at: new Date().toISOString() })
+            .in('user_id', [user1.user_id, user2.user_id])
+
+          // If current user was matched, return match info
+          if (user1.user_id === userId || user2.user_id === userId) {
+            const otherUserId = user1.user_id === userId ? user2.user_id : user1.user_id
+            return NextResponse.json({ 
+              success: true, 
+              matched: true,
+              match: chatMatch,
+              otherUserId: otherUserId 
+            })
+          }
+        }
+      }
     } catch (err) {
-      console.log('Error triggering matchmaking processor:', err)
+      console.log('Error in inline matchmaking:', err)
     }
 
     return NextResponse.json({ 
