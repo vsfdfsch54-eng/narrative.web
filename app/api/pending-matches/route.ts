@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     }
 
     // No match found, user is in queue
-    // Run matchmaking processor directly (no external fetch needed)
+    // Double-check for any other users that might have joined while we were processing
     try {
       const { data: allWaitingUsers } = await supabase
         .from('pending_matches')
@@ -135,52 +135,80 @@ export async function POST(request: NextRequest) {
         .eq('status', 'searching')
         .order('created_at', { ascending: true })
 
-      // If we have 2+ users now, match them
+      // If we have 2+ users now (including current user), match the first two
       if (allWaitingUsers && allWaitingUsers.length >= 2) {
-        // Match first two users
+        // Find the two oldest users (FIFO)
         const user1 = allWaitingUsers[0]
-        const user2 = allWaitingUsers[1]
+        const user2 = allWaitingUsers.find(u => u.user_id !== user1.user_id) || allWaitingUsers[1]
 
-        const user1Id = user1.user_id < user2.user_id ? user1.user_id : user2.user_id
-        const user2Id = user1.user_id < user2.user_id ? user2.user_id : user1.user_id
-        const isUser1 = userId === user1Id
+        // Only proceed if we found two distinct users
+        if (user1 && user2 && user1.user_id !== user2.user_id) {
+          const user1Id = user1.user_id < user2.user_id ? user1.user_id : user2.user_id
+          const user2Id = user1.user_id < user2.user_id ? user2.user_id : user1.user_id
+          const isUser1 = userId === user1Id
 
-        const { data: chatMatch, error: matchError } = await supabase
-          .from('chat_matches')
-          .insert({
-            user1_id: user1Id,
-            user2_id: user2Id,
-            user1_vibe: isUser1 ? (vibe || null) : (user2.vibe || null),
-            user1_topic: isUser1 ? (topic || null) : (user2.topic || null),
-            user1_timeframe: isUser1 ? (timeframe || null) : (user2.timeframe || null),
-            user2_vibe: isUser1 ? (user2.vibe || null) : (vibe || null),
-            user2_topic: isUser1 ? (user2.topic || null) : (topic || null),
-            user2_timeframe: isUser1 ? (user2.timeframe || null) : (timeframe || null),
-            status: 'active',
-          })
-          .select()
-          .single()
-
-        if (!matchError && chatMatch) {
-          await supabase
-            .from('pending_matches')
-            .update({ status: 'matched', matched_at: new Date().toISOString() })
-            .in('user_id', [user1.user_id, user2.user_id])
-
-          // If current user was matched, return match info
-          if (user1.user_id === userId || user2.user_id === userId) {
-            const otherUserId = user1.user_id === userId ? user2.user_id : user1.user_id
-            return NextResponse.json({ 
-              success: true, 
-              matched: true,
-              match: chatMatch,
-              otherUserId: otherUserId 
+          const { data: chatMatch, error: matchError } = await supabase
+            .from('chat_matches')
+            .insert({
+              user1_id: user1Id,
+              user2_id: user2Id,
+              user1_vibe: isUser1 ? (vibe || null) : (user2.vibe || null),
+              user1_topic: isUser1 ? (topic || null) : (user2.topic || null),
+              user1_timeframe: isUser1 ? (timeframe || null) : (user2.timeframe || null),
+              user2_vibe: isUser1 ? (user2.vibe || null) : (vibe || null),
+              user2_topic: isUser1 ? (user2.topic || null) : (topic || null),
+              user2_timeframe: isUser1 ? (user2.timeframe || null) : (timeframe || null),
+              status: 'active',
             })
+            .select()
+            .single()
+
+          if (!matchError && chatMatch) {
+            // Update both users' pending matches to matched
+            const updateResult = await supabase
+              .from('pending_matches')
+              .update({ status: 'matched', matched_at: new Date().toISOString() })
+              .in('user_id', [user1.user_id, user2.user_id])
+
+            // If current user was matched, return match info
+            if (user1.user_id === userId || user2.user_id === userId) {
+              const otherUserId = user1.user_id === userId ? user2.user_id : user1.user_id
+              return NextResponse.json({ 
+                success: true, 
+                matched: true,
+                match: chatMatch,
+                otherUserId: otherUserId 
+              })
+            }
+          } else if (matchError) {
+            // If duplicate match error, try to get existing match
+            if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
+              const { data: existingMatch } = await supabase
+                .from('chat_matches')
+                .select('*')
+                .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
+                .single()
+
+              if (existingMatch && (user1.user_id === userId || user2.user_id === userId)) {
+                const otherUserId = user1.user_id === userId ? user2.user_id : user1.user_id
+                await supabase
+                  .from('pending_matches')
+                  .update({ status: 'matched', matched_at: new Date().toISOString() })
+                  .in('user_id', [user1.user_id, user2.user_id])
+                
+                return NextResponse.json({ 
+                  success: true, 
+                  matched: true,
+                  match: existingMatch,
+                  otherUserId: otherUserId 
+                })
+              }
+            }
           }
         }
       }
     } catch (err) {
-      console.log('Error in inline matchmaking:', err)
+      console.error('Error in inline matchmaking:', err)
     }
 
     return NextResponse.json({ 
