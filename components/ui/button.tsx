@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { components, motion as motionConfig } from "@/lib/design-system"
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost"
+  variant?: "primary" | "secondary" | "ghost" | "outline"
   size?: "default" | "large" | "lg"
   children: React.ReactNode
 }
@@ -19,7 +19,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const height = (size === "large" || size === "lg") ? components.button.heightLarge : components.button.height
-  const config = components.button[variant]
+  const config = variant === "outline" ? components.button.secondary : components.button[variant]
 
   return (
     <motion.button
