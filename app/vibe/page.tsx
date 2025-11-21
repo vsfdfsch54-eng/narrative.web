@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { VibeChip } from "@/components/ui/vibe-chip"
 import { TopicChip } from "@/components/ui/topic-chip"
-import { TopMenu } from "@/components/ui/top-menu"
 import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS, SPORTS_TOPICS } from "@/lib/constants"
 import { Vibe, Topic } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import { ChevronDown, Compass, Mic, Newspaper, CircleDot } from "lucide-react"
-import { colors, typography, spacing, components, shadows, motion as motionConfig } from "@/lib/design-system"
+import { AppShell } from "@/components/AppShell"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { SegmentedControl } from "@/components/ui/segmented-control"
+import { tokens } from "@/lib/design-tokens"
 
 const TOPIC_CATEGORIES = [
   { id: "general", label: "General", topics: GENERAL_TOPICS, icon: Compass },
@@ -149,300 +152,216 @@ export default function VibePage() {
 
   if (loading || !user || (user && !user.email_confirmed_at)) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center" style={{ background: colors.background }}>
-        <p style={{ color: colors.textSecondary }}>Loading...</p>
-      </div>
+      <AppShell>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+        </div>
+      </AppShell>
     )
   }
 
   return (
-    <div 
-      className="fixed inset-0 overflow-hidden w-full h-full"
-      style={{
-        background: colors.background,
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)'
-      }}
-    >
-      <div className="h-full flex flex-col">
-        {/* Top Menu */}
-        <div className="flex-shrink-0" style={{ padding: spacing.screen, paddingBottom: spacing.lg }}>
-          <TopMenu />
+    <AppShell>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[32] }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ 
+            ...tokens.typography.headingL,
+            color: tokens.colors.textPrimary,
+            margin: 0,
+            marginBottom: tokens.spacing[8],
+          }}>
+            Select Your Vibe
+          </h1>
+          <p style={{ 
+            ...tokens.typography.body,
+            color: tokens.colors.textSecondary,
+            margin: 0,
+          }}>
+            Choose your energy and topic to connect
+          </p>
         </div>
 
-        {/* Main Content */}
-        <div 
-          className="flex-1 overflow-y-auto"
-          style={{ 
-            padding: `0 ${spacing.screen}`,
-            paddingBottom: 'calc(env(safe-area-inset-bottom) + 120px)',
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.section, maxWidth: '600px', margin: '0 auto' }}>
-            {/* Title */}
-            <div style={{ textAlign: 'center' }}>
-              <h1 style={{ 
-                fontSize: typography.h1.fontSize,
-                fontWeight: typography.h1.fontWeight,
-                letterSpacing: typography.h1.letterSpacing,
-                lineHeight: typography.h1.lineHeight,
-                color: colors.textPrimary,
-                marginBottom: spacing.md
-              }}>
-                Select Your Vibe
-              </h1>
-            </div>
-
-            {/* Vibe Section */}
-            <div>
-              <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
-                alignItems: 'center', 
-                overflowY: 'hidden',
-                scrollBehavior: 'smooth',
-                WebkitOverflowScrolling: 'touch',
-                marginTop: spacing.md,
-                marginBottom: spacing.md
-              }}>
-                <div className="flex" style={{ gap: spacing.md }}>
-                  {VIBES.map((vibe) => (
-                    <VibeChip
-                      key={vibe.id}
-                      vibe={vibe}
-                      selected={selectedVibe?.id === vibe.id}
-                      onClick={() => setSelectedVibe(selectedVibe?.id === vibe.id ? null : vibe)}
-                      delay={0}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Topic Section */}
-            <div>
-              <h2 style={{ 
-                fontSize: typography.h2.fontSize,
-                fontWeight: typography.h2.fontWeight,
-                letterSpacing: typography.h2.letterSpacing,
-                color: colors.textPrimary,
-                marginBottom: spacing.lg,
-                textAlign: 'center'
-              }}>
-                Choose a Topic
-              </h2>
-              
-              {/* Topic Category Dropdown */}
-              <div className="relative mb-4" ref={dropdownRef}>
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                  transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-                  className={cn(
-                    "w-full rounded-[14px]",
-                    "bg-white text-black",
-                    "flex items-center justify-between",
-                    "font-medium text-[16px]",
-                    "transition-all duration-150 ease-in-out",
-                    "border"
-                  )}
-                  style={{
-                    height: components.dropdown.height,
-                    padding: `0 ${spacing.md}`,
-                    border: `1px solid ${colors.borderStrong}`,
-                    boxShadow: shadows.card,
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    {(() => {
-                      const CategoryIcon = TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.icon || Compass
-                      return <CategoryIcon className="w-4 h-4" />
-                    })()}
-                    <span>{TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.label || "General"}</span>
-                  </div>
-                  <ChevronDown 
-                    className={cn(
-                      "w-4 h-4 transition-transform duration-150 ease-in-out",
-                      isCategoryDropdownOpen && "rotate-180"
-                    )}
-                  />
-                </motion.button>
-                
-                {isCategoryDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-                    className="absolute top-full left-0 right-0 mt-2 z-50"
-                  >
-                    <div style={{ 
-                      background: colors.background, 
-                      border: `1px solid ${colors.borderStrong}`, 
-                      borderRadius: components.dropdown.radius, 
-                      overflow: 'hidden',
-                      boxShadow: shadows.card,
-                    }}>
-                      {TOPIC_CATEGORIES.map((category) => {
-                        const CategoryIcon = category.icon
-                        return (
-                          <button
-                            key={category.id}
-                            onClick={() => {
-                              setSelectedCategory(category.id)
-                              setIsCategoryDropdownOpen(false)
-                            }}
-                            className={cn(
-                              "w-full text-left flex items-center",
-                              "transition-all duration-150 ease-in-out",
-                              "hover:bg-gray-50",
-                              selectedCategory === category.id && "bg-gray-100"
-                            )}
-                            style={{
-                              padding: `0 ${spacing.md}`,
-                              height: components.dropdown.itemHeight,
-                              color: colors.textPrimary,
-                              fontSize: typography.body.fontSize,
-                              fontWeight: selectedCategory === category.id ? 500 : 400,
-                              gap: spacing.sm,
-                            }}
-                          >
-                            <CategoryIcon className="w-4 h-4" />
-                            {category.label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-              
-              {/* Topic Chips */}
-              <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
-                alignItems: 'center', 
-                overflowY: 'hidden',
-                scrollBehavior: 'smooth',
-                WebkitOverflowScrolling: 'touch',
-                marginTop: spacing.md,
-                marginBottom: spacing.md
-              }}>
-                <div className="flex" style={{ gap: spacing.md }}>
-                  {currentTopics.map((topic) => (
-                    <TopicChip
-                      key={topic.id}
-                      topic={topic}
-                      selected={selectedTopic?.id === topic.id}
-                      onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
-                      delay={0}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Duration Segmented Control */}
-            <div className="flex justify-center">
-              <div 
-                className="flex items-center gap-1 p-1 relative overflow-hidden"
-                style={{ 
-                  height: components.segmentedControl.height, 
-                  width: 'fit-content',
-                  borderRadius: components.segmentedControl.radius,
-                  background: components.segmentedControl.background,
-                }}
-              >
-                {TIME_LIMITS.map((time) => (
-                  <motion.button
-                    key={time}
-                    onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-                    className={cn(
-                      "h-full rounded-[10px] text-[15px] font-medium transition-all duration-150 ease-in-out relative z-10",
-                      "px-4",
-                      selectedTimeLimit === time 
-                        ? "bg-black text-white"
-                        : "bg-transparent"
-                    )}
-                    style={{
-                      color: selectedTimeLimit === time 
-                        ? components.segmentedControl.selected.text 
-                        : components.segmentedControl.unselected.text,
-                    }}
-                  >
-                    {time}m
-                  </motion.button>
-                ))}
-              </div>
+        {/* Vibes */}
+        <div>
+          <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
+            alignItems: 'center', 
+            overflowY: 'hidden',
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch',
+            marginTop: tokens.spacing[16],
+            marginBottom: tokens.spacing[16],
+          }}>
+            <div className="flex" style={{ gap: tokens.spacing[16] }}>
+              {VIBES.map((vibe) => (
+                <VibeChip
+                  key={vibe.id}
+                  vibe={vibe}
+                  selected={selectedVibe?.id === vibe.id}
+                  onClick={() => setSelectedVibe(selectedVibe?.id === vibe.id ? null : vibe)}
+                  delay={0}
+                />
+              ))}
             </div>
           </div>
         </div>
-        
-        {/* Bottom Fixed Footer */}
-        <div 
-          className="fixed left-0 right-0 flex flex-row"
-          style={{
-            bottom: `calc(env(safe-area-inset-bottom) + 76px)`,
-            padding: `0 ${spacing.screen}`,
-            gap: spacing.md,
-            zIndex: 50,
-            width: '100%',
-            maxWidth: '600px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-          }}
-        >
-          {/* CONNECT Button */}
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
-            whileTap={{ 
-              scale: 0.98,
-              transition: { duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }
-            }}
+
+        {/* Topic Section */}
+        <Card>
+          <h2 style={{ 
+            ...tokens.typography.headingM,
+            color: tokens.colors.textPrimary,
+            margin: 0,
+            marginBottom: tokens.spacing[20],
+            textAlign: 'center',
+          }}>
+            Choose a Topic
+          </h2>
+          
+          <div className="relative mb-4" ref={dropdownRef}>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+              style={{
+                width: '100%',
+                height: '44px',
+                padding: `0 ${tokens.spacing[16]}`,
+                borderRadius: tokens.radii.input,
+                background: tokens.colors.surfaceCard,
+                border: `1px solid ${tokens.colors.borderSubtle}`,
+                color: tokens.colors.textPrimary,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                ...tokens.typography.body,
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const CategoryIcon = TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.icon || Compass
+                  return <CategoryIcon className="w-4 h-4" />
+                })()}
+                <span>{TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.label || "General"}</span>
+              </div>
+              <ChevronDown 
+                className={cn(
+                  "w-4 h-4 transition-transform duration-150 ease-in-out",
+                  isCategoryDropdownOpen && "rotate-180"
+                )}
+              />
+            </motion.button>
+            
+            {isCategoryDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="absolute top-full left-0 right-0 mt-2 z-50"
+              >
+                <div style={{ 
+                  background: tokens.colors.surfaceCard, 
+                  border: `1px solid ${tokens.colors.borderSubtle}`, 
+                  borderRadius: tokens.radii.popover, 
+                  overflow: 'hidden',
+                  boxShadow: tokens.shadows.elevated,
+                }}>
+                  {TOPIC_CATEGORIES.map((category) => {
+                    const CategoryIcon = category.icon
+                    return (
+                      <button
+                        key={category.id}
+                        onClick={() => {
+                          setSelectedCategory(category.id)
+                          setIsCategoryDropdownOpen(false)
+                        }}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: tokens.spacing[12],
+                          padding: `0 ${tokens.spacing[16]}`,
+                          height: '44px',
+                          background: selectedCategory === category.id ? 'rgba(15,23,42,0.03)' : 'transparent',
+                          border: 'none',
+                          color: tokens.colors.textPrimary,
+                          ...tokens.typography.body,
+                          fontWeight: selectedCategory === category.id ? 500 : 400,
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selectedCategory !== category.id) {
+                            e.currentTarget.style.background = 'rgba(15,23,42,0.03)'
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedCategory !== category.id) {
+                            e.currentTarget.style.background = 'transparent'
+                          }
+                        }}
+                      >
+                        <CategoryIcon className="w-4 h-4" />
+                        {category.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </div>
+          
+          <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
+            alignItems: 'center', 
+            overflowY: 'hidden',
+            scrollBehavior: 'smooth',
+            WebkitOverflowScrolling: 'touch',
+            marginTop: tokens.spacing[16],
+            marginBottom: tokens.spacing[16],
+          }}>
+            <div className="flex" style={{ gap: tokens.spacing[16] }}>
+              {currentTopics.map((topic) => (
+                <TopicChip
+                  key={topic.id}
+                  topic={topic}
+                  selected={selectedTopic?.id === topic.id}
+                  onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
+                  delay={0}
+                />
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        {/* Duration */}
+        <div>
+          <SegmentedControl
+            options={TIME_LIMITS.map(t => ({ value: String(t), label: `${t}m` }))}
+            value={selectedTimeLimit ? String(selectedTimeLimit) : null}
+            onChange={(value) => setSelectedTimeLimit(Number(value) === selectedTimeLimit ? null : Number(value))}
+          />
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.spacing[24] }}>
+          <Button
+            variant="primary"
             onClick={handleConnect}
             disabled={saving || !canConnect}
-            className={cn(
-              "flex-1 rounded-[12px] font-semibold transition-all duration-150 ease-in-out",
-              "px-4",
-              "disabled:cursor-not-allowed"
-            )}
-            style={{
-              height: components.button.height,
-              fontSize: typography.body.fontSize,
-              background: canConnect ? components.button.primary.background : colors.border,
-              color: canConnect ? components.button.primary.text : colors.textMuted,
-              boxShadow: canConnect ? components.button.primary.shadow : 'none',
-            }}
+            style={{ flex: 1 }}
           >
-            {saving ? "Connecting..." : "CONNECT"}
-          </motion.button>
-          
-          {/* SKIP Button */}
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
-            whileTap={{ 
-              scale: 0.98,
-              transition: { duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }
-            }}
+            {saving ? "Connecting..." : "Connect"}
+          </Button>
+          <Button
+            variant="secondary"
             onClick={handleSkip}
-            className={cn(
-              "flex-1 rounded-[12px] font-semibold transition-all duration-150 ease-in-out",
-              "px-4"
-            )}
-            style={{
-              height: components.button.height,
-              fontSize: typography.body.fontSize,
-              background: 'transparent',
-              color: colors.textPrimary,
-              border: `1px solid ${colors.borderStrong}`,
-            }}
+            style={{ flex: 1 }}
           >
-            SKIP
-          </motion.button>
+            Skip
+          </Button>
         </div>
       </div>
-    </div>
+    </AppShell>
   )
 }

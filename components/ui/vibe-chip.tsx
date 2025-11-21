@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Vibe } from "@/lib/types"
 import { VibeIcons, VibeColors } from "./vibe-icons"
-import { components, motion as motionConfig } from "@/lib/design-system"
+import { tokens } from "@/lib/design-tokens"
 
 interface VibeChipProps {
   vibe: Vibe
@@ -43,10 +43,10 @@ export function VibeChip({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ delay, duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
+      transition={{ delay, duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
       whileTap={{ 
         scale: 0.98,
-        transition: { duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }
+        transition: { duration: 0.15, ease: [0.4, 0, 0.2, 1] }
       }}
       onClick={onClick}
       className={cn(
@@ -59,14 +59,14 @@ export function VibeChip({
         selected ? "text-white" : "text-black"
       )}
       style={{
-        height: components.chip.height,
-        borderRadius: components.chip.radius,
-        padding: components.chip.padding,
-        gap: components.chip.gap,
-        background: selected ? components.chip.selected.background : components.chip.background,
-        color: selected ? components.chip.selected.text : components.chip.text,
-        border: selected ? 'none' : components.chip.unselected.border,
-        boxShadow: selected ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
+        height: '44px',
+        borderRadius: tokens.radii.button,
+        padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+        gap: tokens.spacing[12],
+        background: selected ? tokens.colors.accentPrimary : tokens.colors.surfaceCard,
+        color: selected ? '#FFFFFF' : tokens.colors.textPrimary,
+        border: selected ? 'none' : `1px solid ${tokens.colors.borderSubtle}`,
+        boxShadow: selected ? tokens.shadows.card : 'none',
         willChange: "transform"
       }}
     >
@@ -75,8 +75,8 @@ export function VibeChip({
           className="flex-shrink-0"
           style={{ 
             color: iconColor,
-            width: components.chip.iconSize,
-            height: components.chip.iconSize,
+            width: '18px',
+            height: '18px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'

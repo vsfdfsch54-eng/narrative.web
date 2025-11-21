@@ -1,48 +1,37 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
-import { LucideIcon } from "lucide-react"
+"use client"
 
-interface SectionHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  icon?: LucideIcon
+import { ReactNode } from "react"
+import { tokens } from "@/lib/design-tokens"
+
+interface SectionHeaderProps {
   title: string
-  description?: string
-  indicator?: React.ReactNode
+  subtitle?: string
 }
 
-export function SectionHeader({
-  icon: Icon,
-  title,
-  description,
-  indicator,
-  className,
-  ...props
-}: SectionHeaderProps) {
+export function SectionHeader({ title, subtitle }: SectionHeaderProps) {
   return (
-    <div
-      className={cn(
-        "flex items-center justify-between pb-4 border-b border-white/8",
-        className
+    <div style={{ marginBottom: tokens.spacing[20] }}>
+      <h2
+        style={{
+          ...tokens.typography.headingM,
+          color: tokens.colors.textPrimary,
+          margin: 0,
+          marginBottom: subtitle ? tokens.spacing[8] : 0,
+        }}
+      >
+        {title}
+      </h2>
+      {subtitle && (
+        <p
+          style={{
+            ...tokens.typography.body,
+            color: tokens.colors.textSecondary,
+            margin: 0,
+          }}
+        >
+          {subtitle}
+        </p>
       )}
-      {...props}
-    >
-      <div className="flex items-center gap-3">
-        {Icon && (
-          <div className="p-2 rounded-xl bg-white/5 border border-white/6">
-            <Icon className="h-4 w-4 text-white/70" />
-          </div>
-        )}
-        <div>
-          <h2 className="text-lg font-medium text-white tracking-tight leading-tight">
-            {title}
-          </h2>
-          {description && (
-            <p className="text-xs text-white/55 font-normal tracking-wide mt-0.5">
-              {description}
-            </p>
-          )}
-        </div>
-      </div>
-      {indicator}
     </div>
   )
 }

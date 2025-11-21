@@ -3,7 +3,7 @@
 import * as React from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { components, motion as motionConfig } from "@/lib/design-system"
+import { tokens } from "@/lib/design-tokens"
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "outline"
@@ -22,24 +22,46 @@ export function Button({
   ...props
 }: ButtonProps) {
   const height = (size === "large" || size === "lg") 
-    ? components.button.heightLarge 
+    ? '48px'
     : size === "icon" 
     ? '40px'
     : size === "sm"
     ? '36px'
-    : components.button.height
-  const config = variant === "outline" ? components.button.secondary : components.button[variant]
+    : '44px'
+
+  const variantStyles = {
+    primary: {
+      background: tokens.colors.accentPrimary,
+      color: '#FFFFFF',
+      border: 'none',
+    },
+    secondary: {
+      background: tokens.colors.surfaceCard,
+      color: tokens.colors.accentPrimary,
+      border: `1px solid rgba(59,130,246,0.4)`,
+    },
+    outline: {
+      background: 'transparent',
+      color: tokens.colors.textPrimary,
+      border: `1px solid ${tokens.colors.borderSubtle}`,
+    },
+    ghost: {
+      background: 'transparent',
+      color: tokens.colors.textSecondary,
+      border: 'none',
+    },
+  }
 
   const buttonStyles = {
     height,
-    padding: '0 24px',
-    borderRadius: components.button.radius,
-    background: config.background,
-    color: config.text,
-    border: 'border' in config ? config.border : 'none',
-    boxShadow: 'shadow' in config && variant === "primary" ? config.shadow : 'none',
+    padding: size === "icon" ? '0' : `0 ${tokens.spacing[20]}`,
+    borderRadius: tokens.radii.button,
+    ...variantStyles[variant],
+    fontSize: tokens.typography.body.fontSize,
     fontWeight: 500,
-    fontSize: '15px',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    opacity: disabled ? 0.5 : 1,
+    transition: 'all 0.15s ease',
   }
 
   const buttonClasses = cn(
@@ -61,10 +83,19 @@ export function Button({
   return (
     <motion.button
       whileTap={{ scale: disabled ? 1 : 0.98 }}
-      transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
       disabled={disabled}
       className={buttonClasses}
       style={buttonStyles}
+      onMouseEnter={(e) => {
+        if (!disabled && variant === 'ghost') {
+          e.currentTarget.style.background = 'rgba(15,23,42,0.03)'
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!disabled && variant === 'ghost') {
+          e.currentTarget.style.background = 'transparent'
+        }
+      }}
       {...(props as any)}
     >
       {children}

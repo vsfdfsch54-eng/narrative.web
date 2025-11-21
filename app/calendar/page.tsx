@@ -3,11 +3,12 @@
 import { useMemo, useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, Info, Plus, Sparkles, Users, X } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
-import { colors, typography, spacing, components, shadows, motion as motionConfig } from "@/lib/design-system"
+import { AppShell } from "@/components/AppShell"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { SectionHeader } from "@/components/ui/section-header"
+import { tokens } from "@/lib/design-tokens"
 
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -24,18 +25,18 @@ const suggestions: any[] = []
 
 const tagColors: Record<string, { dot: string; label: string; color: string }> = {
   "Inner Circle": {
-    dot: colors.accent.orange,
-    color: colors.accent.orange,
+    dot: tokens.colors.accentWarning,
+    color: tokens.colors.accentWarning,
     label: "Core people",
   },
   "Close Friends": {
-    dot: colors.accent.blue,
-    color: colors.accent.blue,
+    dot: tokens.colors.accentPrimary,
+    color: tokens.colors.accentPrimary,
     label: "Trusted circle",
   },
   Community: {
-    dot: colors.accent.green,
-    color: colors.accent.green,
+    dot: tokens.colors.accentSuccess,
+    color: tokens.colors.accentSuccess,
     label: "Extended network",
   },
 }
@@ -78,7 +79,6 @@ export default function CalendarPage() {
   
   useEffect(() => {
     if (!authLoading && !user) {
-      // Don't redirect on calendar page, just show empty state
     }
   }, [user, authLoading])
 
@@ -227,21 +227,23 @@ export default function CalendarPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: colors.background }}>
-        <p style={{ color: colors.textSecondary }}>Loading...</p>
-      </div>
+      <AppShell>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+        </div>
+      </AppShell>
     )
   }
 
   const CreateMomentCard = ({ compact = false }: { compact?: boolean }) => (
-    <Card variant="outlined" padding={true}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-          <Plus className="w-4 h-4" style={{ color: colors.textSecondary }} />
-          <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>Create new moment</p>
+    <Card>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+          <Plus className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
+          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>Create new moment</p>
         </div>
         {!compact && (
-          <p style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary }}>
+          <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>
             Curate a hangout, save a ritual, or plan something spontaneous.
           </p>
         )}
@@ -252,7 +254,7 @@ export default function CalendarPage() {
             setSaveError(null)
             setShowPlanner(true)
           }}
-          className="w-full"
+          style={{ width: '100%' }}
         >
           Start a plan
         </Button>
@@ -261,199 +263,170 @@ export default function CalendarPage() {
   )
 
   return (
-    <div 
-      className="fixed inset-0 overflow-hidden w-full h-full"
-      style={{
-        background: colors.background,
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)'
-      }}
-    >
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <div 
-          className="flex items-center justify-between flex-shrink-0"
-          style={{
-            padding: spacing.screen,
-            paddingBottom: spacing.lg,
-            borderBottom: `1px solid ${colors.border}`,
-          }}
-        >
-          <div>
+    <AppShell>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[24] }}>
+        {/* Calendar Card */}
+        <Card>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[24] }}>
             <h1 style={{ 
-              fontSize: typography.h2.fontSize,
-              fontWeight: typography.h2.fontWeight,
-              letterSpacing: typography.h2.letterSpacing,
-              color: colors.textPrimary 
+              ...tokens.typography.headingL,
+              color: tokens.colors.textPrimary,
+              margin: 0,
             }}>
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+              <motion.button
+                type="button"
+                onClick={() => changeMonth("prev")}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  padding: tokens.spacing[12],
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.surfaceCard,
+                  border: `1px solid ${tokens.colors.borderSubtle}`,
+                  color: tokens.colors.textSecondary,
+                  cursor: 'pointer',
+                }}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </motion.button>
+              <motion.button
+                type="button"
+                onClick={() => changeMonth("next")}
+                whileTap={{ scale: 0.98 }}
+                style={{
+                  padding: tokens.spacing[12],
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.surfaceCard,
+                  border: `1px solid ${tokens.colors.borderSubtle}`,
+                  color: tokens.colors.textSecondary,
+                  cursor: 'pointer',
+                }}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </motion.button>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-            <motion.button
-              type="button"
-              onClick={() => changeMonth("prev")}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-              style={{
-                padding: spacing.sm,
-                borderRadius: components.button.radius,
-                background: colors.background,
-                border: `1px solid ${colors.border}`,
-                color: colors.textSecondary,
-              }}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </motion.button>
-            <motion.button
-              type="button"
-              onClick={() => changeMonth("next")}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-              style={{
-                padding: spacing.sm,
-                borderRadius: components.button.radius,
-                background: colors.background,
-                border: `1px solid ${colors.border}`,
-                color: colors.textSecondary,
-              }}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </motion.button>
-          </div>
-        </div>
 
-        {/* Category Legend */}
-        <div 
-          style={{
-            padding: `0 ${spacing.screen}`,
-            paddingBottom: spacing.lg,
-            borderBottom: `1px solid ${colors.border}`,
-          }}
-        >
-          <Card variant="outlined" padding={true}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm }}>
-              <Info className="w-4 h-4" style={{ color: colors.textSecondary }} />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing.lg }}>
+          {/* Category Legend */}
+          <div style={{ 
+            padding: tokens.spacing[16],
+            background: tokens.colors.backgroundApp,
+            borderRadius: tokens.radii.input,
+            marginBottom: tokens.spacing[24],
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], marginBottom: tokens.spacing[8] }}>
+              <Info className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[20] }}>
                 {Object.entries(tagColors).map(([tag, meta]) => (
-                  <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                  <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[8] }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: meta.dot }} />
-                    <span style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary }}>{tag}</span>
+                    <span style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary }}>{tag}</span>
                   </div>
                 ))}
               </div>
             </div>
-          </Card>
-        </div>
+          </div>
 
-        {/* Calendar Grid */}
-        <div 
-          className="flex-1 overflow-y-auto"
-          style={{ padding: spacing.screen }}
-        >
-          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-            {/* Day Headers */}
-            <div 
-              style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(7, 1fr)', 
-                gap: spacing.sm,
-                marginBottom: spacing.md,
-              }}
-            >
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                <span 
-                  key={day} 
-                  style={{ 
-                    textAlign: 'center',
-                    fontSize: typography.caption.fontSize,
-                    color: colors.textMuted,
-                    fontWeight: 500,
+          {/* Day Headers */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(7, 1fr)', 
+            gap: tokens.spacing[12],
+            marginBottom: tokens.spacing[16],
+          }}>
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+              <span 
+                key={day} 
+                style={{ 
+                  textAlign: 'center',
+                  ...tokens.typography.caption,
+                  color: tokens.colors.textMuted,
+                  fontWeight: 500,
+                }}
+              >
+                {day}
+              </span>
+            ))}
+          </div>
+
+          {/* Calendar Days */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(7, 1fr)', 
+            gap: tokens.spacing[12],
+          }}>
+            {Array.from({ length: firstDay }).map((_, index) => (
+              <div key={`empty-${index}`} />
+            ))}
+            {Array.from({ length: totalDays }).map((_, index) => {
+              const day = index + 1
+              const today = new Date()
+              const isToday =
+                today.getDate() === day &&
+                today.getMonth() === currentDate.getMonth() &&
+                today.getFullYear() === currentDate.getFullYear()
+              const dayEvents = events.filter((event) => event.day === day)
+              const eventTag = dayEvents.length > 0 ? dayEvents[0].tag : null
+              const eventColor = eventTag ? tagColors[eventTag]?.color : null
+
+              return (
+                <motion.button
+                  key={day}
+                  type="button"
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => handleDaySelect(day)}
+                  style={{
+                    aspectRatio: '1',
+                    borderRadius: tokens.radii.card,
+                    border: `1px solid ${selectedDay === day ? tokens.colors.textPrimary : isToday ? tokens.colors.borderSubtle : tokens.colors.borderSubtle}`,
+                    background: selectedDay === day 
+                      ? tokens.colors.textPrimary 
+                      : eventColor 
+                      ? `${eventColor}15`
+                      : tokens.colors.surfaceCard,
+                    color: selectedDay === day ? tokens.colors.surfaceCard : tokens.colors.textPrimary,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
                   }}
                 >
-                  {day}
-                </span>
-              ))}
-            </div>
-
-            {/* Calendar Days */}
-            <div 
-              style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(7, 1fr)', 
-                gap: spacing.sm,
-              }}
-            >
-              {Array.from({ length: firstDay }).map((_, index) => (
-                <div key={`empty-${index}`} />
-              ))}
-              {Array.from({ length: totalDays }).map((_, index) => {
-                const day = index + 1
-                const today = new Date()
-                const isToday =
-                  today.getDate() === day &&
-                  today.getMonth() === currentDate.getMonth() &&
-                  today.getFullYear() === currentDate.getFullYear()
-                const dayEvents = events.filter((event) => event.day === day)
-                const eventTag = dayEvents.length > 0 ? dayEvents[0].tag : null
-                const eventColor = eventTag ? tagColors[eventTag]?.color : null
-
-                return (
-                  <motion.button
-                    key={day}
-                    type="button"
-                    whileTap={{ scale: 0.96 }}
-                    onClick={() => handleDaySelect(day)}
-                    style={{
-                      aspectRatio: '1',
-                      borderRadius: components.card.radius,
-                      border: `1px solid ${selectedDay === day ? colors.textPrimary : isToday ? colors.borderStrong : colors.border}`,
-                      background: selectedDay === day 
-                        ? colors.textPrimary 
-                        : eventColor 
-                        ? `${eventColor}15`
-                        : colors.background,
-                      color: selectedDay === day ? colors.background : colors.textPrimary,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <span style={{ 
-                      fontSize: typography.body.fontSize, 
-                      fontWeight: isToday ? 600 : 400,
+                  <span style={{ 
+                    ...tokens.typography.body, 
+                    fontWeight: isToday ? 600 : 400,
+                  }}>
+                    {day}
+                  </span>
+                  {dayEvents.length > 0 && (
+                    <div style={{ 
+                      position: 'absolute', 
+                      bottom: tokens.spacing[8], 
+                      display: 'flex', 
+                      gap: '2px',
                     }}>
-                      {day}
-                    </span>
-                    {dayEvents.length > 0 && (
-                      <div style={{ 
-                        position: 'absolute', 
-                        bottom: spacing.xs, 
-                        display: 'flex', 
-                        gap: '2px',
-                      }}>
-                        {dayEvents.slice(0, 3).map((event, idx) => (
-                          <span 
-                            key={idx} 
-                            style={{ 
-                              width: '4px', 
-                              height: '4px', 
-                              borderRadius: '50%', 
-                              background: tagColors[event.tag]?.dot || colors.textMuted 
-                            }} 
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </motion.button>
-                )
-              })}
-            </div>
+                      {dayEvents.slice(0, 3).map((event, idx) => (
+                        <span 
+                          key={idx} 
+                          style={{ 
+                            width: '4px', 
+                            height: '4px', 
+                            borderRadius: '50%', 
+                            background: tagColors[event.tag]?.dot || tokens.colors.textMuted 
+                          }} 
+                        />
+                      ))}
+                    </div>
+                  )}
+                </motion.button>
+              )
+            })}
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Day Panel */}
@@ -463,7 +436,7 @@ export default function CalendarPage() {
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
-            transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
+            transition={{ duration: 0.2 }}
             className="fixed inset-0 z-40 flex items-end"
             style={{ background: 'rgba(0, 0, 0, 0.4)' }}
             onClick={() => setPanelOpen(false)}
@@ -472,176 +445,173 @@ export default function CalendarPage() {
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
+              transition={{ duration: 0.2 }}
               className="w-full"
               style={{
-                background: colors.background,
-                borderTopLeftRadius: components.card.radius,
-                borderTopRightRadius: components.card.radius,
+                background: tokens.colors.surfaceCard,
+                borderTopLeftRadius: tokens.radii.card,
+                borderTopRightRadius: tokens.radii.card,
                 maxHeight: '80vh',
                 overflow: 'hidden',
+                padding: tokens.spacing[24],
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ padding: spacing.screen }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xl }}>
-                  <div>
-                    <p style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Selected</p>
-                    <h2 style={{ 
-                      fontSize: typography.h2.fontSize,
-                      fontWeight: typography.h2.fontWeight,
-                      color: colors.textPrimary,
-                    }}>
-                      {monthNames[currentDate.getMonth()]} {selectedDay}
-                    </h2>
-                  </div>
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-                    onClick={() => setPanelOpen(false)}
-                    style={{
-                      padding: `${spacing.sm} ${spacing.md}`,
-                      borderRadius: components.button.radius,
-                      background: colors.background,
-                      border: `1px solid ${colors.border}`,
-                      color: colors.textPrimary,
-                      fontSize: typography.caption.fontSize,
-                    }}
-                  >
-                    Back
-                  </motion.button>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[24] }}>
+                <div>
+                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Selected</p>
+                  <h2 style={{ 
+                    ...tokens.typography.headingL,
+                    color: tokens.colors.textPrimary,
+                    margin: 0,
+                  }}>
+                    {monthNames[currentDate.getMonth()]} {selectedDay}
+                  </h2>
                 </div>
+                <motion.button
+                  type="button"
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setPanelOpen(false)}
+                  style={{
+                    padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                    borderRadius: tokens.radii.button,
+                    background: tokens.colors.surfaceCard,
+                    border: `1px solid ${tokens.colors.borderSubtle}`,
+                    color: tokens.colors.textPrimary,
+                    ...tokens.typography.caption,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Back
+                </motion.button>
+              </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg, overflowY: 'auto', maxHeight: '60vh' }}>
-                  {/* Events Section */}
-                  {eventsForDay.length > 0 && (
-                    <Card variant="outlined">
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
-                        <span style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>Events</span>
-                        <button
-                          type="button"
-                          onClick={() => console.log("Edit events for day", selectedDay)}
-                          style={{
-                            fontSize: typography.caption.fontSize,
-                            color: colors.textSecondary,
-                          }}
-                        >
-                          Edit
-                        </button>
-                      </div>
-                      <div style={{ display: 'flex', gap: spacing.md, overflowX: 'auto' }}>
-                        {eventsForDay.map((event) => {
-                          const eventColor = tagColors[event.tag]?.color || colors.textPrimary
-                          return (
-                            <Card 
-                              key={event.title} 
-                              variant="outlined" 
-                              padding={true}
-                              style={{ 
-                                minWidth: '200px',
-                                background: `${eventColor}15`,
-                                borderColor: `${eventColor}40`,
-                              }}
-                            >
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                                <div>
-                                  <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>{event.title}</p>
-                                  <p style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary }}>{event.time}</p>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                  <span style={{
-                                    fontSize: typography.caption.fontSize,
-                                    padding: `${spacing.xs} ${spacing.sm}`,
-                                    borderRadius: components.chip.radius,
-                                    background: `${eventColor}30`,
-                                    color: colors.textPrimary,
-                                    border: `1px solid ${eventColor}50`,
-                                  }}>
-                                    {event.tag}
-                                  </span>
-                                </div>
-                              </div>
-                            </Card>
-                          )
-                        })}
-                      </div>
-                    </Card>
-                  )}
-
-                  {/* Create Moment */}
-                  {eventsForDay.length === 0 ? (
-                    <CreateMomentCard />
-                  ) : (
-                    <CreateMomentCard compact />
-                  )}
-                  
-                  {/* Suggested Hangouts */}
-                  <Card variant="outlined">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
-                      <Sparkles className="w-4 h-4" style={{ color: colors.textSecondary }} />
-                      <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>Suggested hangouts</p>
-                    </div>
-                    {suggestions.length > 0 ? (
-                      <div style={{ display: 'flex', gap: spacing.md, overflowX: 'auto' }}>
-                        {suggestions.map((suggestion) => (
-                          <Card key={suggestion.title} variant="outlined" padding={true} style={{ minWidth: '190px' }}>
-                            <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>{suggestion.title}</p>
-                            <p style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary }}>{suggestion.detail}</p>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.xl }}>
-                        No suggestions available
-                      </p>
-                    )}
-                  </Card>
-
-                  {/* People Section */}
-                  <Card variant="outlined">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
-                      <Users className="w-4 h-4" style={{ color: colors.textSecondary }} />
-                      <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>People</p>
-                    </div>
-                    <div style={{ marginBottom: spacing.md }}>
-                      <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Viewing</label>
-                      <select
-                        value={selectedFriendGroup}
-                        onChange={(e) => setSelectedFriendGroup(e.target.value as keyof typeof friends)}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20], overflowY: 'auto', maxHeight: '60vh' }}>
+                {eventsForDay.length > 0 && (
+                  <Card>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[16] }}>
+                      <span style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary }}>Events</span>
+                      <button
+                        type="button"
+                        onClick={() => console.log("Edit events for day", selectedDay)}
                         style={{
-                          marginTop: spacing.xs,
-                          width: '100%',
-                          padding: `${spacing.sm} ${spacing.md}`,
-                          borderRadius: components.input.radius,
-                          background: colors.background,
-                          border: `1px solid ${colors.border}`,
-                          color: colors.textPrimary,
-                          fontSize: typography.body.fontSize,
+                          ...tokens.typography.caption,
+                          color: tokens.colors.textSecondary,
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
                         }}
                       >
-                        {Object.keys(friends).map((group) => (
-                          <option key={group} value={group}>
-                            {group}
-                          </option>
-                        ))}
-                      </select>
+                        Edit
+                      </button>
                     </div>
-                    {friends[selectedFriendGroup].length > 0 ? (
-                      <div style={{ display: 'flex', gap: spacing.md, overflowX: 'auto' }}>
-                        {friends[selectedFriendGroup].map((person) => (
-                          <Card key={person} variant="outlined" padding={true} style={{ minWidth: '120px' }}>
-                            <p style={{ fontSize: typography.body.fontSize, color: colors.textPrimary }}>{person}</p>
+                    <div style={{ display: 'flex', gap: tokens.spacing[16], overflowX: 'auto' }}>
+                      {eventsForDay.map((event) => {
+                        const eventColor = tagColors[event.tag]?.color || tokens.colors.textPrimary
+                        return (
+                          <Card 
+                            key={event.title} 
+                            style={{ 
+                              minWidth: '200px',
+                              background: `${eventColor}15`,
+                              borderColor: `${eventColor}40`,
+                            }}
+                          >
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+                              <div>
+                                <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>{event.title}</p>
+                                <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>{event.time}</p>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{
+                                  ...tokens.typography.caption,
+                                  padding: `${tokens.spacing[4]} ${tokens.spacing[12]}`,
+                                  borderRadius: tokens.radii.button,
+                                  background: `${eventColor}30`,
+                                  color: tokens.colors.textPrimary,
+                                  border: `1px solid ${eventColor}50`,
+                                }}>
+                                  {event.tag}
+                                </span>
+                              </div>
+                            </div>
                           </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.xl }}>
-                        No {selectedFriendGroup.toLowerCase()} yet
-                      </p>
-                    )}
+                        )
+                      })}
+                    </div>
                   </Card>
-                </div>
+                )}
+
+                {eventsForDay.length === 0 ? (
+                  <CreateMomentCard />
+                ) : (
+                  <CreateMomentCard compact />
+                )}
+                
+                <Card>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], marginBottom: tokens.spacing[16] }}>
+                    <Sparkles className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
+                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>Suggested hangouts</p>
+                  </div>
+                  {suggestions.length > 0 ? (
+                    <div style={{ display: 'flex', gap: tokens.spacing[16], overflowX: 'auto' }}>
+                      {suggestions.map((suggestion) => (
+                        <Card key={suggestion.title} style={{ minWidth: '190px' }}>
+                          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>{suggestion.title}</p>
+                          <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>{suggestion.detail}</p>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[24], margin: 0 }}>
+                      No suggestions available
+                    </p>
+                  )}
+                </Card>
+
+                <Card>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], marginBottom: tokens.spacing[16] }}>
+                    <Users className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
+                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>People</p>
+                  </div>
+                  <div style={{ marginBottom: tokens.spacing[16] }}>
+                    <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[8], display: 'block' }}>Viewing</label>
+                    <select
+                      value={selectedFriendGroup}
+                      onChange={(e) => setSelectedFriendGroup(e.target.value as keyof typeof friends)}
+                      style={{
+                        marginTop: tokens.spacing[8],
+                        width: '100%',
+                        padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                        borderRadius: tokens.radii.input,
+                        background: tokens.colors.surfaceCard,
+                        border: `1px solid ${tokens.colors.borderSubtle}`,
+                        color: tokens.colors.textPrimary,
+                        ...tokens.typography.body,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {Object.keys(friends).map((group) => (
+                        <option key={group} value={group}>
+                          {group}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {friends[selectedFriendGroup].length > 0 ? (
+                    <div style={{ display: 'flex', gap: tokens.spacing[16], overflowX: 'auto' }}>
+                      {friends[selectedFriendGroup].map((person) => (
+                        <Card key={person} style={{ minWidth: '120px' }}>
+                          <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimary, margin: 0 }}>{person}</p>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[24], margin: 0 }}>
+                      No {selectedFriendGroup.toLowerCase()} yet
+                    </p>
+                  )}
+                </Card>
               </div>
             </motion.div>
           </motion.div>
@@ -655,7 +625,7 @@ export default function CalendarPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: motionConfig.duration.normal / 1000 }}
+            transition={{ duration: 0.2 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             style={{ background: 'rgba(0, 0, 0, 0.4)' }}
             onClick={() => setShowPlanner(false)}
@@ -664,65 +634,66 @@ export default function CalendarPage() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
+              transition={{ duration: 0.2 }}
               className="w-full"
-              style={{ maxWidth: '360px', background: colors.background, borderRadius: components.card.radius, padding: spacing.xxl }}
+              style={{ maxWidth: '360px', background: tokens.colors.surfaceCard, borderRadius: tokens.radii.card, padding: tokens.spacing[32] }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xl }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[24] }}>
                 <div>
-                  <p style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>New plan</p>
-                  <h3 style={{ fontSize: typography.h2.fontSize, fontWeight: typography.h2.fontWeight, color: colors.textPrimary }}>Design your moment</h3>
+                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>New plan</p>
+                  <h3 style={{ ...tokens.typography.headingL, color: tokens.colors.textPrimary, margin: 0 }}>Design your moment</h3>
                 </div>
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.98 }}
-                  transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
                   onClick={() => setShowPlanner(false)}
                   style={{
-                    padding: spacing.sm,
-                    borderRadius: components.button.radius,
-                    background: colors.background,
-                    border: `1px solid ${colors.border}`,
-                    color: colors.textSecondary,
+                    padding: tokens.spacing[12],
+                    borderRadius: tokens.radii.button,
+                    background: tokens.colors.surfaceCard,
+                    border: `1px solid ${tokens.colors.borderSubtle}`,
+                    color: tokens.colors.textSecondary,
+                    cursor: 'pointer',
                   }}
                 >
                   <X className="w-4 h-4" />
                 </motion.button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
                 <div>
-                  <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: spacing.sm, display: 'block' }}>Title</label>
+                  <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Title</label>
                   <input
                     value={plannerFields.title}
                     onChange={(e) => handlePlannerField("title", e.target.value)}
                     placeholder="Name this moment"
                     style={{
                       width: '100%',
-                      padding: `${spacing.sm} ${spacing.md}`,
-                      borderRadius: components.input.radius,
-                      background: colors.background,
-                      border: `1px solid ${colors.border}`,
-                      color: colors.textPrimary,
-                      fontSize: typography.body.fontSize,
+                      padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                      borderRadius: tokens.radii.input,
+                      background: tokens.colors.surfaceCard,
+                      border: `1px solid ${tokens.colors.borderSubtle}`,
+                      color: tokens.colors.textPrimary,
+                      ...tokens.typography.body,
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: spacing.sm, display: 'block' }}>Invite group</label>
+                  <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Invite group</label>
                   <select
                     value={plannerFields.inviteGroup}
                     onChange={(e) => handlePlannerField("inviteGroup", e.target.value)}
                     style={{
                       width: '100%',
-                      padding: `${spacing.sm} ${spacing.md}`,
-                      borderRadius: components.input.radius,
-                      background: colors.background,
-                      border: `1px solid ${colors.border}`,
-                      color: colors.textPrimary,
-                      fontSize: typography.body.fontSize,
+                      padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                      borderRadius: tokens.radii.input,
+                      background: tokens.colors.surfaceCard,
+                      border: `1px solid ${tokens.colors.borderSubtle}`,
+                      color: tokens.colors.textPrimary,
+                      ...tokens.typography.body,
+                      cursor: 'pointer',
                     }}
                   >
                     {Object.keys(friends).map((group) => (
@@ -734,23 +705,23 @@ export default function CalendarPage() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: spacing.sm, display: 'block' }}>Privacy</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing.md }}>
+                  <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Privacy</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: tokens.spacing[16] }}>
                     {["public", "private"].map((mode) => (
                       <motion.button
                         key={mode}
                         type="button"
                         whileTap={{ scale: 0.98 }}
-                        transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
                         onClick={() => handlePlannerField("privacy", mode)}
                         style={{
-                          padding: `${spacing.sm} ${spacing.md}`,
-                          borderRadius: components.chip.radius,
-                          background: plannerFields.privacy === mode ? colors.textPrimary : colors.background,
-                          color: plannerFields.privacy === mode ? colors.background : colors.textPrimary,
-                          border: `1px solid ${colors.border}`,
-                          fontSize: typography.body.fontSize,
+                          padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                          borderRadius: tokens.radii.button,
+                          background: plannerFields.privacy === mode ? tokens.colors.textPrimary : tokens.colors.surfaceCard,
+                          color: plannerFields.privacy === mode ? tokens.colors.surfaceCard : tokens.colors.textPrimary,
+                          border: `1px solid ${tokens.colors.borderSubtle}`,
+                          ...tokens.typography.body,
                           textTransform: 'capitalize',
+                          cursor: 'pointer',
                         }}
                       >
                         {mode}
@@ -760,7 +731,7 @@ export default function CalendarPage() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: spacing.sm, display: 'block' }}>Notes</label>
+                  <label style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Notes</label>
                   <textarea
                     value={plannerFields.notes}
                     onChange={(e) => handlePlannerField("notes", e.target.value)}
@@ -768,12 +739,12 @@ export default function CalendarPage() {
                     rows={3}
                     style={{
                       width: '100%',
-                      padding: `${spacing.sm} ${spacing.md}`,
-                      borderRadius: components.input.radius,
-                      background: colors.background,
-                      border: `1px solid ${colors.border}`,
-                      color: colors.textPrimary,
-                      fontSize: typography.body.fontSize,
+                      padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                      borderRadius: tokens.radii.input,
+                      background: tokens.colors.surfaceCard,
+                      border: `1px solid ${tokens.colors.borderSubtle}`,
+                      color: tokens.colors.textPrimary,
+                      ...tokens.typography.body,
                       resize: 'none',
                     }}
                   />
@@ -781,12 +752,12 @@ export default function CalendarPage() {
 
                 {saveError && (
                   <div style={{
-                    padding: spacing.md,
-                    borderRadius: components.input.radius,
-                    border: `1px solid ${colors.border}`,
-                    background: colors.background,
-                    fontSize: typography.caption.fontSize,
-                    color: colors.textSecondary,
+                    padding: tokens.spacing[16],
+                    borderRadius: tokens.radii.input,
+                    border: `1px solid ${tokens.colors.borderSubtle}`,
+                    background: tokens.colors.surfaceCard,
+                    ...tokens.typography.caption,
+                    color: tokens.colors.textSecondary,
                   }}>
                     {saveError}
                   </div>
@@ -795,7 +766,7 @@ export default function CalendarPage() {
                 <Button
                   onClick={handlePlannerSubmit}
                   disabled={savingEvent || !plannerFields.title.trim()}
-                  className="w-full"
+                  style={{ width: '100%' }}
                 >
                   {savingEvent ? "Saving..." : "Save & Invite"}
                 </Button>
@@ -804,6 +775,6 @@ export default function CalendarPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </AppShell>
   )
 }

@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
-import { ArrowLeft, Save, Users, Edit2, MessageSquare } from "lucide-react"
+import { Save, Users, Edit2 } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { AppShell } from "@/components/AppShell"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { colors, typography, spacing, components, motion as motionConfig } from "@/lib/design-system"
+import { SectionHeader } from "@/components/ui/section-header"
+import { tokens } from "@/lib/design-tokens"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -137,9 +137,11 @@ export default function ProfilePage() {
 
   if (authLoading || loadingProfile) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center" style={{ background: colors.background }}>
-        <p style={{ color: colors.textSecondary }}>Loading...</p>
-      </div>
+      <AppShell>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+        </div>
+      </AppShell>
     )
   }
 
@@ -148,350 +150,233 @@ export default function ProfilePage() {
   }
 
   return (
-    <div 
-      className="fixed inset-0 overflow-y-auto w-full h-full"
-      style={{ 
-        background: colors.background,
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)'
-      }}
-    >
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <div 
-          className="flex items-center justify-between flex-shrink-0"
-          style={{
-            padding: spacing.screen,
-            paddingBottom: spacing.lg,
-            borderBottom: `1px solid ${colors.border}`,
-          }}
-        >
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-            onClick={() => router.push("/vibe")}
-            style={{
-              padding: '8px',
-              borderRadius: components.button.radius,
-              color: colors.textSecondary,
-            }}
-            className="hover:opacity-80 transition-opacity"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </motion.button>
-
-          <h1 style={{ 
-            fontSize: typography.h2.fontSize, 
-            fontWeight: typography.h2.fontWeight,
-            letterSpacing: typography.h2.letterSpacing,
-            color: colors.textPrimary 
-          }}>
-            Profile
-          </h1>
-
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-            onClick={() => router.push("/conversations")}
-            style={{
-              padding: '8px',
-              borderRadius: components.button.radius,
-              color: colors.textSecondary,
-            }}
-            className="hover:opacity-80 transition-opacity"
-          >
-            <MessageSquare className="w-5 h-5" />
-          </motion.button>
-        </div>
-
-        {/* Content */}
-        <div 
-          className="flex-1 overflow-y-auto"
-          style={{ padding: spacing.screen }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.section, maxWidth: '600px', margin: '0 auto' }}>
-            {/* Profile Header */}
-            <Card variant="outlined" padding={false} style={{ padding: spacing.xxl, textAlign: 'center' }}>
-              <div style={{ fontSize: '64px', marginBottom: spacing.md }}>👤</div>
-              {isEditingName ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}>
-                  <input
-                    type="text"
-                    value={tempName}
-                    onChange={(e) => setTempName(e.target.value)}
-                    style={{
-                      fontSize: typography.h3.fontSize,
-                      fontWeight: typography.h3.fontWeight,
-                      color: colors.textPrimary,
-                      background: colors.background,
-                      border: `1px solid ${colors.border}`,
-                      borderRadius: components.input.radius,
-                      padding: `${spacing.sm} ${spacing.md}`,
-                      textAlign: 'center',
-                      width: '200px',
-                    }}
-                    autoFocus
-                    onBlur={handleSaveName}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveName()
-                      if (e.key === 'Escape') {
-                        setTempName(userName)
-                        setIsEditingName(false)
-                      }
-                    }}
-                  />
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}>
-                  <h2 style={{ 
-                    fontSize: typography.h3.fontSize,
-                    fontWeight: typography.h3.fontWeight,
-                    letterSpacing: typography.h3.letterSpacing,
-                    color: colors.textPrimary 
-                  }}>
-                    {userName || "User"}
-                  </h2>
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-                    onClick={() => setIsEditingName(true)}
-                    style={{
-                      padding: '4px',
-                      borderRadius: '6px',
-                      color: colors.textMuted,
-                    }}
-                    className="hover:opacity-80 transition-opacity"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </motion.button>
-                </div>
-              )}
-            </Card>
-
-            {/* What's on my mind */}
-            <Card variant="outlined">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
-                <textarea
-                  value={quoteOfDay}
-                  onChange={(e) => setQuoteOfDay(e.target.value)}
-                  onBlur={handleSaveQuote}
-                  placeholder="What's on your mind today?"
-                  style={{
-                    width: '100%',
-                    minHeight: '80px',
-                    padding: spacing.md,
-                    background: colors.background,
-                    border: `1px solid ${colors.border}`,
-                    borderRadius: components.input.radius,
-                    color: colors.textPrimary,
-                    fontSize: typography.body.fontSize,
-                    resize: 'none',
-                  }}
-                  rows={3}
-                />
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-                    onClick={handleSaveQuote}
-                    style={{
-                      padding: `${spacing.sm} ${spacing.md}`,
-                      borderRadius: components.button.radius,
-                      background: colors.textPrimary,
-                      color: colors.background,
-                    }}
-                  >
-                    <Save className="w-4 h-4" />
-                  </motion.button>
-                </div>
-              </div>
-            </Card>
-
-            {/* What People Say */}
-            <Card variant="outlined">
-              <h3 style={{ 
-                fontSize: typography.h3.fontSize,
-                fontWeight: typography.h3.fontWeight,
-                color: colors.textPrimary,
-                marginBottom: spacing.md 
+    <AppShell>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[24] }}>
+        {/* User Identity Card */}
+        <Card style={{ textAlign: 'center', padding: tokens.spacing[32] }}>
+          <div style={{ fontSize: '64px', marginBottom: tokens.spacing[16] }}>👤</div>
+          {isEditingName ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
+              <input
+                type="text"
+                value={tempName}
+                onChange={(e) => setTempName(e.target.value)}
+                style={{
+                  ...tokens.typography.headingM,
+                  color: tokens.colors.textPrimary,
+                  background: tokens.colors.surfaceCard,
+                  border: `1px solid ${tokens.colors.borderSubtle}`,
+                  borderRadius: tokens.radii.input,
+                  padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
+                  textAlign: 'center',
+                  width: '200px',
+                }}
+                autoFocus
+                onBlur={handleSaveName}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveName()
+                  if (e.key === 'Escape') {
+                    setTempName(userName)
+                    setIsEditingName(false)
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
+              <h2 style={{ 
+                ...tokens.typography.headingM,
+                color: tokens.colors.textPrimary,
+                margin: 0,
               }}>
-                What People Say About Me
-              </h3>
-              <p style={{ 
-                fontSize: typography.body.fontSize,
-                color: colors.textSecondary,
-                textAlign: 'center',
-                padding: spacing.xl 
-              }}>
-                No reviews yet. Start conversations to get feedback!
-              </p>
-            </Card>
+                {userName || "User"}
+              </h2>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsEditingName(true)}
+                style={{
+                  padding: tokens.spacing[4],
+                  borderRadius: '6px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: tokens.colors.textMuted,
+                  cursor: 'pointer',
+                }}
+              >
+                <Edit2 className="w-4 h-4" />
+              </motion.button>
+            </div>
+          )}
+          <div style={{ marginTop: tokens.spacing[24] }}>
+            <textarea
+              value={quoteOfDay}
+              onChange={(e) => setQuoteOfDay(e.target.value)}
+              onBlur={handleSaveQuote}
+              placeholder="What's on your mind today?"
+              style={{
+                width: '100%',
+                minHeight: '80px',
+                padding: tokens.spacing[16],
+                background: tokens.colors.backgroundApp,
+                border: `1px solid ${tokens.colors.borderSubtle}`,
+                borderRadius: tokens.radii.input,
+                color: tokens.colors.textPrimary,
+                ...tokens.typography.body,
+                resize: 'none',
+              }}
+              rows={3}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: tokens.spacing[12] }}>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={handleSaveQuote}
+                style={{
+                  padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.accentPrimary,
+                  color: '#FFFFFF',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <Save className="w-4 h-4" />
+              </motion.button>
+            </div>
+          </div>
+        </Card>
 
-            {/* My Friends */}
-            <Card variant="outlined">
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xl }}>
-                <Users className="w-5 h-5" style={{ color: colors.textSecondary }} />
-                <h3 style={{ 
-                  fontSize: typography.h3.fontSize,
-                  fontWeight: typography.h3.fontWeight,
-                  color: colors.textPrimary 
-                }}>
-                  My Friends
-                </h3>
+        {/* My Friends Card */}
+        <Card>
+          <SectionHeader title="My Friends" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
+            <div style={{ 
+              padding: tokens.spacing[16],
+              borderBottom: `1px solid ${tokens.colors.borderSubtle}`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentWarning }} />
+                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Inner Circle</p>
+                </div>
+                <span style={{ ...tokens.typography.caption, color: tokens.colors.textMuted }}>0</span>
               </div>
+              <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: tokens.typography.caption.fontSize }}>No inner circle members yet</p>
+            </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
-                {/* Inner Circle */}
-                <div style={{ 
-                  padding: spacing.md,
-                  borderBottom: `1px solid ${colors.border}`,
-                  paddingBottom: spacing.xl
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.orange }} />
-                      <p style={{ fontSize: typography.label.fontSize, color: colors.textPrimary, fontWeight: 500 }}>Inner Circle</p>
-                    </div>
-                    <span style={{ fontSize: typography.label.fontSize, color: colors.textMuted }}>0</span>
-                  </div>
-                  <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary }}>No inner circle members yet</p>
+            <div style={{ 
+              padding: tokens.spacing[16],
+              borderBottom: `1px solid ${tokens.colors.borderSubtle}`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentPrimary }} />
+                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Close Friends</p>
                 </div>
-
-                {/* Close Friends */}
-                <div style={{ 
-                  padding: spacing.md,
-                  borderBottom: `1px solid ${colors.border}`,
-                  paddingBottom: spacing.xl
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue }} />
-                      <p style={{ fontSize: typography.label.fontSize, color: colors.textPrimary, fontWeight: 500 }}>Close Friends</p>
-                    </div>
-                    <span style={{ fontSize: typography.label.fontSize, color: colors.textMuted }}>0</span>
-                  </div>
-                  <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary }}>No close friends yet</p>
-                </div>
-
-                {/* Community */}
-                <div style={{ padding: spacing.md }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green }} />
-                      <p style={{ fontSize: typography.label.fontSize, color: colors.textPrimary, fontWeight: 500 }}>Community</p>
-                    </div>
-                    <span style={{ fontSize: typography.label.fontSize, color: colors.textMuted }}>{communityMembers.length}</span>
-                  </div>
-                  {communityMembers.length > 0 ? (
-                    <div style={{ display: 'flex', gap: spacing.sm, overflowX: 'auto', paddingBottom: spacing.sm }}>
-                      {communityMembers.map((member) => (
-                        <motion.button
-                          key={member.id}
-                          whileTap={{ scale: 0.98 }}
-                          transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-                          onClick={() => router.push(`/chat/${member.id}`)}
-                          style={{
-                            padding: `${spacing.sm} ${spacing.md}`,
-                            borderRadius: components.chip.radius,
-                            background: colors.background,
-                            color: colors.textPrimary,
-                            border: `1px solid ${colors.border}`,
-                            fontSize: typography.label.fontSize,
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {member.name}
-                        </motion.button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary }}>No community members yet</p>
-                  )}
-                </div>
+                <span style={{ ...tokens.typography.caption, color: tokens.colors.textMuted }}>0</span>
               </div>
-            </Card>
+              <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: tokens.typography.caption.fontSize }}>No close friends yet</p>
+            </div>
 
-            {/* Recent Chats */}
-            <Card variant="outlined">
-              <h3 style={{ 
-                fontSize: typography.h3.fontSize,
-                fontWeight: typography.h3.fontWeight,
-                color: colors.textPrimary,
-                marginBottom: spacing.md 
-              }}>
-                Recent Chats
-              </h3>
-              {loadingChats ? (
-                <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.xl }}>
-                  Loading...
-                </p>
-              ) : recentChats.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                  {recentChats.map((chat) => (
+            <div style={{ padding: tokens.spacing[16] }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentSuccess }} />
+                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Community</p>
+                </div>
+                <span style={{ ...tokens.typography.caption, color: tokens.colors.textMuted }}>{communityMembers.length}</span>
+              </div>
+              {communityMembers.length > 0 ? (
+                <div style={{ display: 'flex', gap: tokens.spacing[12], overflowX: 'auto', paddingBottom: tokens.spacing[8] }}>
+                  {communityMembers.map((member) => (
                     <motion.button
-                      key={chat.id}
+                      key={member.id}
                       whileTap={{ scale: 0.98 }}
-                      transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
-                      onClick={() => router.push(`/chat/${chat.id}`)}
+                      onClick={() => router.push(`/chat/${member.id}`)}
                       style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: spacing.md,
-                        padding: spacing.md,
-                        background: colors.background,
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: components.input.radius,
-                        textAlign: 'left',
+                        padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
+                        borderRadius: tokens.radii.button,
+                        background: tokens.colors.surfaceCard,
+                        color: tokens.colors.textPrimary,
+                        border: `1px solid ${tokens.colors.borderSubtle}`,
+                        ...tokens.typography.caption,
+                        whiteSpace: 'nowrap',
+                        cursor: 'pointer',
                       }}
                     >
-                      <span style={{ fontSize: '24px' }}>{chat.emoji || "👤"}</span>
-                      <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>
-                          {chat.name}
-                        </p>
-                        <p style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary }}>
-                          {chat.lastMessage || "No messages yet"}
-                        </p>
-                      </div>
-                      <p style={{ fontSize: typography.caption.fontSize, color: colors.textMuted }}>
-                        {chat.time}
-                      </p>
+                      {member.name}
                     </motion.button>
                   ))}
                 </div>
               ) : (
-                <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.xl }}>
-                  No recent chats
-                </p>
+                <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: tokens.typography.caption.fontSize }}>No community members yet</p>
               )}
-            </Card>
+            </div>
           </div>
-        </div>
+        </Card>
 
-        {/* Footer - Sign Out */}
-        <div 
-          style={{
-            padding: spacing.screen,
-            paddingTop: spacing.xl,
-            borderTop: `1px solid ${colors.border}`,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: spacing.md,
-          }}
-        >
+        {/* Recent Chats Card */}
+        <Card>
+          <SectionHeader title="Recent Chats" />
+          {loadingChats ? (
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[24] }}>
+              Loading...
+            </p>
+          ) : recentChats.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+              {recentChats.map((chat) => (
+                <motion.button
+                  key={chat.id}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => router.push(`/chat/${chat.id}`)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: tokens.spacing[16],
+                    padding: tokens.spacing[16],
+                    background: tokens.colors.backgroundApp,
+                    border: `1px solid ${tokens.colors.borderSubtle}`,
+                    borderRadius: tokens.radii.input,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ fontSize: '24px' }}>{chat.emoji || "👤"}</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>
+                      {chat.name}
+                    </p>
+                    <p style={{ ...tokens.typography.caption, color: tokens.colors.textSecondary, margin: 0 }}>
+                      {chat.lastMessage || "No messages yet"}
+                    </p>
+                  </div>
+                  <p style={{ ...tokens.typography.caption, color: tokens.colors.textMuted, margin: 0 }}>
+                    {chat.time}
+                  </p>
+                </motion.button>
+              ))}
+            </div>
+          ) : (
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[24] }}>
+              No recent chats
+            </p>
+          )}
+        </Card>
+
+        {/* Sign Out Button */}
+        <div style={{ marginTop: tokens.spacing[24] }}>
           <Button
-            variant="outline"
+            variant="secondary"
             onClick={async () => {
               await signOut()
               router.push("/")
             }}
-            className="w-full"
+            style={{ width: '100%' }}
           >
             Sign Out
           </Button>
         </div>
       </div>
-    </div>
+    </AppShell>
   )
 }

@@ -1,11 +1,11 @@
 "use client"
 
+import { ReactNode } from "react"
+import { tokens } from "@/lib/design-tokens"
 import { cn } from "@/lib/utils"
-import { components } from "@/lib/design-system"
-import React from "react"
 
 interface CardProps {
-  children: React.ReactNode
+  children: ReactNode
   className?: string
   padding?: boolean
   variant?: "default" | "outlined"
@@ -15,15 +15,13 @@ interface CardProps {
 export function Card({ children, className, padding = true, variant = "default", style }: CardProps) {
   return (
     <div
-      className={cn(
-        className
-      )}
+      className={cn(className)}
       style={{
-        borderRadius: components.card.radius,
-        background: components.card.background,
-        border: variant === "outlined" ? `1px solid ${components.card.border}` : 'none',
-        boxShadow: variant === "outlined" ? components.card.shadow : 'none',
-        padding: padding ? components.card.padding : 0,
+        background: tokens.colors.surfaceCard,
+        borderRadius: tokens.radii.card,
+        boxShadow: variant === "outlined" ? tokens.shadows.card : 'none',
+        border: variant === "outlined" ? `1px solid ${tokens.colors.borderSubtle}` : 'none',
+        padding: padding ? tokens.spacing[24] : 0,
         ...style,
       }}
     >
@@ -32,7 +30,7 @@ export function Card({ children, className, padding = true, variant = "default",
   )
 }
 
-export function CardContent({ children, className }: { children: React.ReactNode; className?: string }) {
+export function CardContent({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={className}>
       {children}
@@ -40,7 +38,7 @@ export function CardContent({ children, className }: { children: React.ReactNode
   )
 }
 
-export function CardHeader({ children, className }: { children: React.ReactNode; className?: string }) {
+export function CardHeader({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={className}>
       {children}
@@ -48,7 +46,7 @@ export function CardHeader({ children, className }: { children: React.ReactNode;
   )
 }
 
-export function CardDescription({ children, className }: { children: React.ReactNode; className?: string }) {
+export function CardDescription({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={className}>
       {children}
@@ -56,7 +54,7 @@ export function CardDescription({ children, className }: { children: React.React
   )
 }
 
-export function CardTitle({ children, className }: { children: React.ReactNode; className?: string }) {
+export function CardTitle({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <div className={className}>
       {children}
