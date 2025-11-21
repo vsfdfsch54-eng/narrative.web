@@ -20,17 +20,59 @@ export default function ChatPage() {
     const loadMatches = async () => {
       setLoading(true)
       try {
-        // Try to find or create a match
-        const response = await fetch(`/api/matches?userId=${user.id}&action=find`)
+        // Get all matches for this user
+        const response = await fetch(`/api/matches?userId=${user.id}`)
         const data = await response.json()
         
-        if (data.success && data.data) {
+        if (data.success && data.data && data.data.length > 0) {
+          // User has matches - get the other user IDs and load their profiles
+          const matches = Array.isArray(data.data) ? data.data : [data.data]
+          const otherUserIds = matches.map((match: any) => 
+            match.user1_id === user.id ? match.user2_id : match.user1_id
+          )
+          
+          // Load user profiles for all matches
+          const profilePromises = otherUserIds.map(async (otherUserId: string) => {
+            try {
+              const userResponse = await fetch(`/api/users?userId=${otherUserId}`)
+              const userData = await userResponse.json()
+              if (userData.success && userData.data) {
+                return {
+                  id: otherUserId,
+                  name: userData.data.name || 'User',
+                  bio: userData.data.bio || '',
+                  avatar: userData.data.avatar_url || null,
+                } as Profile
+              }
+            } catch (error) {
+              console.error('Error loading user profile:', error)
+            }
+            return null
+          })
+          
+          const profiles = (await Promise.all(profilePromises)).filter((p): p is Profile => p !== null)
+          
+          if (profiles.length > 0) {
+            setProfiles(profiles)
+            // Navigate to the first match
+            const firstMatch = matches[0]
+            const firstOtherUserId = firstMatch.user1_id === user.id ? firstMatch.user2_id : firstMatch.user1_id
+            router.push(`/chat/${firstOtherUserId}?matchId=${firstMatch.id}`)
+            return
+          }
+        }
+        
+        // No matches found, try to find or create one
+        const findResponse = await fetch(`/api/matches?userId=${user.id}&action=find`)
+        const findData = await findResponse.json()
+        
+        if (findData.success && findData.data) {
           // Match found! Navigate to chat
-          const match = data.data
+          const match = findData.data
           const otherUserId = match.user1_id === user.id ? match.user2_id : match.user1_id
           router.push(`/chat/${otherUserId}?matchId=${match.id}`)
           return
-        } else if (data.inQueue) {
+        } else if (findData.inQueue) {
           // User is in queue, poll for match
           pollForMatch()
         } else {
