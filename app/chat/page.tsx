@@ -25,39 +25,15 @@ export default function ChatPage() {
         const data = await response.json()
         
         if (data.success && data.data && data.data.length > 0) {
-          // User has matches - get the other user IDs and load their profiles
+          // User has matches - randomly select one
           const matches = Array.isArray(data.data) ? data.data : [data.data]
-          const otherUserIds = matches.map((match: any) => 
-            match.user1_id === user.id ? match.user2_id : match.user1_id
-          )
+          const activeMatches = matches.filter((m: any) => m.status === 'active')
           
-          // Load user profiles for all matches
-          const profilePromises = otherUserIds.map(async (otherUserId: string) => {
-            try {
-              const userResponse = await fetch(`/api/users?userId=${otherUserId}`)
-              const userData = await userResponse.json()
-              if (userData.success && userData.data) {
-                return {
-                  id: otherUserId,
-                  name: userData.data.name || 'User',
-                  bio: userData.data.bio || '',
-                  avatar: userData.data.avatar_url || null,
-                } as Profile
-              }
-            } catch (error) {
-              console.error('Error loading user profile:', error)
-            }
-            return null
-          })
-          
-          const profiles = (await Promise.all(profilePromises)).filter((p): p is Profile => p !== null)
-          
-          if (profiles.length > 0) {
-            setProfiles(profiles)
-            // Navigate to the first match
-            const firstMatch = matches[0]
-            const firstOtherUserId = firstMatch.user1_id === user.id ? firstMatch.user2_id : firstMatch.user1_id
-            router.push(`/chat/${firstOtherUserId}?matchId=${firstMatch.id}`)
+          if (activeMatches.length > 0) {
+            // Randomly select a match
+            const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
+            const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
+            router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
             return
           }
         }

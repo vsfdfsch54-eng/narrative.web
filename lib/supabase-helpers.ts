@@ -144,11 +144,11 @@ export async function findOrCreateMatch(userId: string): Promise<ChatMatch | nul
     .select('*')
     .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
     .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(1)
 
   if (!existingError && existingMatches && existingMatches.length > 0) {
-    return existingMatches[0]
+    // Return a random match instead of always the first one
+    const randomIndex = Math.floor(Math.random() * existingMatches.length)
+    return existingMatches[randomIndex]
   }
 
   // Check for pending matches
@@ -221,8 +221,6 @@ export async function getNextMatch(userId: string): Promise<ChatMatch | null> {
     .select('*')
     .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
     .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(1)
 
   if (error) {
     console.error('Error getting next match:', error)
@@ -233,7 +231,9 @@ export async function getNextMatch(userId: string): Promise<ChatMatch | null> {
     return null
   }
 
-  return data[0]
+  // Return a random match instead of always the first one
+  const randomIndex = Math.floor(Math.random() * data.length)
+  return data[randomIndex]
 }
 
 /**
