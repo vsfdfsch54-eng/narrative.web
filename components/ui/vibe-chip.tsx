@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Vibe } from "@/lib/types"
 import { VibeIcons, VibeColors } from "./vibe-icons"
+import { components, motion as motionConfig } from "@/lib/design-system"
 
 interface VibeChipProps {
   vibe: Vibe
@@ -42,31 +43,29 @@ export function VibeChip({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ delay, duration: 0.15, ease: "easeInOut" }}
+      transition={{ delay, duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
       whileTap={{ 
         scale: 0.98,
-        transition: { duration: 0.12, ease: "easeInOut" }
+        transition: { duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }
       }}
       onClick={onClick}
       className={cn(
-        "shrink-0 rounded-[12px]",
+        "shrink-0",
         "font-medium text-[15px] tracking-tight",
         "transition-all duration-150 ease-in-out",
         "touch-manipulation",
-        "overflow-hidden flex items-center gap-2",
+        "overflow-hidden flex items-center",
         "relative",
         "text-black"
       )}
       style={{
-        height: '42px',
-        padding: '10px 12px',
-        background: selected ? '#F2F2F2' : '#FFFFFF',
-        border: selected
-          ? '1.75px solid #000000'
-          : '1.25px solid rgba(255,255,255,0.12)',
-        boxShadow: selected 
-          ? '0 1px 3px rgba(0,0,0,0.15)' 
-          : 'none',
+        height: components.chip.height,
+        borderRadius: components.chip.radius,
+        padding: components.chip.padding,
+        gap: components.chip.gap,
+        background: selected ? components.chip.selected.background : components.chip.background,
+        border: selected ? components.chip.selected.border : components.chip.unselected.border,
+        boxShadow: selected ? '0 1px 3px rgba(0,0,0,0.15)' : 'none',
         willChange: "transform"
       }}
     >
@@ -75,8 +74,8 @@ export function VibeChip({
           className="flex-shrink-0"
           style={{ 
             color: iconColor,
-            width: '16px',
-            height: '16px',
+            width: components.chip.iconSize,
+            height: components.chip.iconSize,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'

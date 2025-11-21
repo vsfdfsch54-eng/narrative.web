@@ -4,41 +4,41 @@
 
 @layer base {
   :root {
-    /* Graphite/Midnight Color System - Apple-style */
-    --bg-core: #0a0a0c;
-    --bg-elevated: #121214;
-    --bg-card: #1a1a1c;
-    --text-primary: #f1f1f3;
-    --text-secondary: rgba(241, 241, 243, 0.8);
-    --text-muted: rgba(241, 241, 243, 0.6);
-    --text-label: rgba(241, 241, 243, 0.65);
-    --border-subtle: rgba(255, 255, 255, 0.08);
-    --border-light: rgba(255, 255, 255, 0.12);
-    /* SaaS Premium Accent Colors */
-    --accent-blue: #6EC1FF;
-    --accent-cyan: #00E1B0;
+    /* Narrative Design System - Linear/Vercel/Supabase inspired */
+    --bg-core: #0F0F0F;
+    --bg-surface-1: #151515;
+    --bg-surface-2: #1A1A1A;
+    --bg-surface-3: #0C0C0C;
+    --text-primary: #FFFFFF;
+    --text-secondary: rgba(255, 255, 255, 0.55);
+    --text-muted: rgba(255, 255, 255, 0.38);
+    --border: rgba(255, 255, 255, 0.12);
+    --border-strong: rgba(255, 255, 255, 0.20);
+    --chip-bg: #FFFFFF;
+    --chip-text: #000000;
+    --chip-selected-bg: #F2F2F2;
     
-    /* Legacy shadcn variables - Graphite theme */
-    --background: 0 0% 4%;
-    --foreground: 0 0% 90%;
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 90%;
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 90%;
-    --primary: 0 0% 90%;
-    --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 7%;
-    --secondary-foreground: 0 0% 90%;
+    /* Legacy shadcn variables - Design system theme */
+    --background: 0 0% 6%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 8%;
+    --secondary-foreground: 0 0% 100%;
     --muted: 0 0% 8%;
-    --muted-foreground: 0 0% 55%;
-    --accent-color: 0 0% 90%;
-    --accent-foreground: 0 0% 4%;
+    --muted-foreground: 0 0% 38%;
+    --accent-color: 0 0% 100%;
+    --accent-foreground: 0 0% 0%;
     --destructive: 0 70% 35%;
     --destructive-foreground: 0 0% 98%;
-    --border: 241 241 243 / 0.08;
-    --input: 241 241 243 / 0.08;
-    --ring: 241 241 243 / 0.2;
-    --radius: 1rem;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 0 0% 20%;
+    --radius: 0.75rem; /* 12px */
   }
 }
 

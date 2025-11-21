@@ -4,6 +4,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { Calendar, MessageSquare, User } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { colors, radii, motion as motionConfig } from "@/lib/design-system"
 
 export function BottomNav() {
   const router = useRouter()
@@ -41,22 +42,22 @@ export function BottomNav() {
         "fixed bottom-0 left-0 right-0 z-[100]",
         "pointer-events-none",
         "w-full",
-        // Desktop: center and limit width
         "sm:max-w-[375px] sm:left-1/2 sm:-translate-x-1/2"
       )}
-      style={{ 
-        width: '100%'
-      }}
     >
       <motion.div
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className={cn(
-              "pointer-events-auto h-20",
-              "bg-black/95 backdrop-blur-xl border-t border-white/10",
-            )}
-        style={{ willChange: "transform, opacity" }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
+        className={cn(
+          "pointer-events-auto",
+          "bg-[#0F0F0F] border-t",
+        )}
+        style={{
+          borderColor: colors.border,
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingTop: '12px',
+        }}
       >
         <div className="flex items-center justify-around gap-2 h-full px-4">
           {navItems.map((item) => {
@@ -64,43 +65,39 @@ export function BottomNav() {
             return (
               <motion.button
                 key={item.path}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
-                  // Prefetch for instant navigation
                   router.prefetch(item.path)
                   router.push(item.path)
                 }}
                 type="button"
                 className={cn(
                   "flex flex-col items-center justify-center gap-1",
-                  "h-14 w-14 rounded-full",
-                  "transition-all duration-200",
+                  "transition-all duration-150 ease-in-out",
                   "touch-manipulation cursor-pointer relative z-10 select-none",
-                  item.isActive
-                    ? "bg-white text-black"
-                    : "bg-white/5 text-white/80 border border-white/10 hover:bg-white/8"
                 )}
-                style={{ willChange: "transform" }}
-                transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
+                style={{
+                  height: '56px',
+                  width: '56px',
+                  borderRadius: item.isActive ? radii.md : '50%',
+                  background: item.isActive ? colors.chipBg : 'transparent',
+                  color: item.isActive ? colors.chipText : colors.textSecondary,
+                }}
               >
                 <Icon
-                  className={cn(
-                    "h-5 w-5 transition-all duration-300",
-                    item.isActive 
-                      ? "text-black" 
-                      : "text-white/80"
-                  )}
+                  className="h-4 w-4"
+                  style={{
+                    color: item.isActive ? colors.chipText : colors.textSecondary,
+                  }}
                 />
                 <span
-                  className={cn(
-                    "text-[9px] font-semibold transition-all duration-300 tracking-wide",
-                    item.isActive 
-                      ? "text-black" 
-                      : "text-white/80"
-                  )}
+                  className="text-[11px] font-medium"
+                  style={{
+                    color: item.isActive ? colors.chipText : colors.textSecondary,
+                  }}
                 >
                   {item.label}
                 </span>
