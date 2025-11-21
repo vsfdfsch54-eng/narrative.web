@@ -186,7 +186,7 @@ export default function VibePage() {
               }}
             >
               {/* Top Menu - Three dots in top left */}
-              <div className="flex-shrink-0 mb-7 flex items-start justify-between px-5">
+              <div className="flex-shrink-0 mb-6 flex items-start justify-between px-5">
                 <TopMenu />
                 {/* Logo - small, centered */}
                 <div className="flex-1 flex justify-center">
@@ -198,24 +198,24 @@ export default function VibePage() {
                 <div className="w-10" />
               </div>
 
-              {/* Main Title - 28-30px semibold, centered, 28px spacing */}
-              <div className="flex-shrink-0 mb-7 text-center px-5">
-                <h1 className="text-[30px] font-semibold text-[#FFFFFF] leading-tight">
+              {/* Main Title - 26-28px semibold, centered, tighter spacing */}
+              <div className="flex-shrink-0 mb-6 text-center px-5">
+                <h1 className="text-[28px] font-semibold text-[#FFFFFF] leading-tight">
                   Select Your Vibe
                 </h1>
               </div>
 
-              {/* Vibe Section - 28px spacing, 16px above/below chip rows */}
-              <div className="flex-shrink-0 mb-7 px-5">
+              {/* Vibe Section - tighter spacing, 12px gap between chips */}
+              <div className="flex-shrink-0 mb-6 px-5">
                 <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
                   alignItems: 'center', 
                   overflowY: 'hidden',
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch',
-                  marginTop: '16px',
-                  marginBottom: '16px'
+                  marginTop: '12px',
+                  marginBottom: '12px'
                 }}>
-                  <div className="flex gap-3">
+                  <div className="flex" style={{ gap: '12px' }}>
                     {VIBES.map((vibe) => (
                       <VibeChip
                         key={vibe.id}
@@ -229,22 +229,23 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Topic Section - 28px spacing */}
-              <div className="flex-shrink-0 mb-7 px-5">
-                <h2 className="text-[30px] font-semibold text-[#FFFFFF] mb-4 text-center">Choose a Topic</h2>
+              {/* Topic Section - 20px semibold header, tighter spacing */}
+              <div className="flex-shrink-0 mb-6 px-5">
+                <h2 className="text-[20px] font-semibold text-[#FFFFFF] mb-3 text-center">Choose a Topic</h2>
                 
-                {/* Topic Category Dropdown - 16px spacing from title */}
-                <div className="relative mb-4" ref={dropdownRef}>
+                {/* Topic Category Dropdown - 44px height, 12px radius, sharp */}
+                <div className="relative mb-3" ref={dropdownRef}>
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                    transition={{ duration: 0.12, ease: "easeInOut" }}
                     className={cn(
-                      "w-full h-[48px] rounded-[12px]",
+                      "w-full h-[44px] rounded-[12px]",
                       "bg-white text-black",
-                      "border-[1.25px] border-[rgba(0,0,0,0.25)]",
+                      "border-[1.25px] border-[rgba(255,255,255,0.16)]",
                       "flex items-center justify-between px-3",
-                      "font-medium text-base",
-                      "transition-all duration-200"
+                      "font-medium text-[16px]",
+                      "transition-all duration-150 ease-in-out"
                     )}
                   >
                     <div className="flex items-center gap-2">
@@ -256,18 +257,19 @@ export default function VibePage() {
                     </div>
                     <ChevronDown 
                       className={cn(
-                        "w-4 h-4 transition-transform duration-200",
+                        "w-4 h-4 transition-transform duration-130 ease-in-out",
                         isCategoryDropdownOpen && "rotate-180"
                       )}
                     />
                   </motion.button>
                   
-                  {/* Dropdown Menu */}
+                  {/* Dropdown Menu - sharp, no shadows */}
                   {isCategoryDropdownOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10 }}
+                      initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.13, ease: "easeInOut" }}
                       className="absolute top-full left-0 right-0 mt-2 z-50"
                     >
                       <div className="bg-[#1A1A1A] border border-[rgba(255,255,255,0.1)] rounded-[12px] overflow-hidden">
@@ -281,9 +283,9 @@ export default function VibePage() {
                                 setIsCategoryDropdownOpen(false)
                               }}
                               className={cn(
-                                "w-full px-3 py-3 text-left flex items-center gap-2",
-                                "text-[#FFFFFF] text-base font-medium",
-                                "transition-all duration-200",
+                                "w-full px-3 py-2.5 text-left flex items-center gap-2",
+                                "text-[#FFFFFF] text-[16px] font-medium",
+                                "transition-all duration-120 ease-in-out",
                                 "hover:bg-[rgba(255,255,255,0.05)]",
                                 selectedCategory === category.id && "bg-[rgba(255,255,255,0.1)]"
                               )}
@@ -298,16 +300,16 @@ export default function VibePage() {
                   )}
                 </div>
                 
-                {/* Topic Chips - 16px spacing from dropdown */}
+                {/* Topic Chips - 12px gap, tighter spacing */}
                 <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
                   alignItems: 'center', 
                   overflowY: 'hidden',
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch',
-                  marginTop: '16px',
-                  marginBottom: '16px'
+                  marginTop: '12px',
+                  marginBottom: '12px'
                 }}>
-                  <div className="flex gap-3">
+                  <div className="flex" style={{ gap: '12px' }}>
                     {currentTopics.map((topic) => (
                       <TopicChip
                         key={topic.id}
@@ -321,23 +323,24 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Duration Segmented Control - 28px spacing, 38-40px height, centered */}
-              <div className="flex-shrink-0 mb-7 px-5 flex justify-center">
+              {/* Duration Segmented Control - 10px radius, 40px height, sharp */}
+              <div className="flex-shrink-0 mb-6 px-5 flex justify-center">
                 <div 
-                  className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(255,255,255,0.08)] relative overflow-hidden"
+                  className="flex items-center gap-1 p-1 rounded-[10px] bg-[rgba(255,255,255,0.08)] relative overflow-hidden"
                   style={{ height: '40px', width: 'fit-content' }}
                 >
                   {TIME_LIMITS.map((time) => (
                     <motion.button
                       key={time}
                       onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
-                      whileTap={{ scale: 0.97 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ duration: 0.12, ease: "easeInOut" }}
                       className={cn(
-                        "h-full rounded-[10px] text-base font-medium transition-all duration-200 relative z-10",
+                        "h-full rounded-[10px] text-[15px] font-medium transition-all duration-150 ease-in-out relative z-10",
                         "px-4",
                         selectedTimeLimit === time 
                           ? "bg-white text-black"
-                          : "bg-transparent text-[#FFFFFF]"
+                          : "bg-transparent text-[#FFFFFF]/80"
                       )}
                     >
                       {time}m
@@ -361,57 +364,62 @@ export default function VibePage() {
               }}
             />
             
-            {/* Bottom Fixed Footer - Pill Buttons */}
+            {/* Bottom Fixed Footer - Sharp Buttons */}
             <div 
               className="fixed left-0 right-0 flex flex-row"
               style={{
                 bottom: `calc(env(safe-area-inset-bottom) + 76px)`,
-                padding: '0 20px',
+                padding: '0 24px',
                 gap: '12px',
                 zIndex: 50,
                 width: '100%'
               }}
             >
-              {/* CONNECT Button - Pill Shape */}
+              {/* CONNECT Button - Sharp, 14-16px radius */}
               <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15, ease: "easeInOut" }}
                 whileTap={{ 
                   scale: 0.98,
-                  transition: { duration: 0.1 }
+                  transition: { duration: 0.12, ease: "easeInOut" }
                 }}
                 onClick={handleConnect}
                 disabled={saving || !canConnect}
                 className={cn(
-                  "flex-1 h-[48px] rounded-[24px] text-base font-semibold transition-all duration-200",
+                  "flex-1 h-[44px] rounded-[14px] text-[16px] font-semibold transition-all duration-150 ease-in-out",
                   "px-3",
                   canConnect
                     ? "bg-white text-black"
                     : "bg-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.3)]",
                   "disabled:cursor-not-allowed"
                 )}
+                style={{
+                  boxShadow: canConnect 
+                    ? '0 2px 6px rgba(0,0,0,0.18)' 
+                    : 'none'
+                }}
               >
                 {saving ? "Connecting..." : "CONNECT"}
               </motion.button>
               
-              {/* SKIP Button - Pill Shape */}
+              {/* SKIP Button - Sharp, no shadow */}
               <motion.button
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.15, ease: "easeInOut" }}
                 whileTap={{ 
                   scale: 0.98,
-                  transition: { duration: 0.1 }
+                  transition: { duration: 0.12, ease: "easeInOut" }
                 }}
                 onClick={handleSkip}
                 className={cn(
-                  "flex-1 h-[48px] rounded-[24px] text-base font-semibold transition-all duration-200",
+                  "flex-1 h-[44px] rounded-[14px] text-[16px] font-semibold transition-all duration-150 ease-in-out",
                   "px-3",
                   "bg-transparent text-[#FFFFFF]"
                 )}
                 style={{
-                  border: '1.5px solid rgba(255,255,255,0.4)'
+                  border: '1.25px solid rgba(255,255,255,0.35)'
                 }}
               >
                 SKIP

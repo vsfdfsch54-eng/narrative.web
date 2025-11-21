@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Vibe } from "@/lib/types"
 import { VibeIcons, VibeColors } from "./vibe-icons"
-import { useDeviceScale } from "@/hooks/use-device-scale"
 
 interface VibeChipProps {
   vibe: Vibe
@@ -37,38 +36,34 @@ export function VibeChip({
   const accentColor = VibeColors[vibe.id] || '#6EC1FF'
   const icon = VibeIcons[vibe.id] || null
   const iconColor = selected ? brightenColor(accentColor, 12) : accentColor
-  const deviceScale = useDeviceScale()
   
   return (
     <motion.button
       initial={{ opacity: 0 }}
-      animate={{ 
-        opacity: 1,
-        scale: selected ? deviceScale : 1
-      }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ delay, duration: 0.2 }}
+      transition={{ delay, duration: 0.15, ease: "easeInOut" }}
       whileTap={{ 
-        scale: 0.97,
-        transition: { duration: 0.1 }
+        scale: 0.98,
+        transition: { duration: 0.12, ease: "easeInOut" }
       }}
       onClick={onClick}
       className={cn(
-        "shrink-0 px-2 rounded-[12px]",
-        "font-medium text-base tracking-tight",
-        "transition-all duration-200",
+        "shrink-0 rounded-[12px]",
+        "font-medium text-[15px] tracking-tight",
+        "transition-all duration-150 ease-in-out",
         "touch-manipulation",
         "overflow-hidden flex items-center gap-2",
         "relative",
         "text-black"
       )}
       style={{
-        height: '44px',
-        padding: '8px 12px',
-        background: '#FFFFFF',
+        height: '42px',
+        padding: '10px 12px',
+        background: selected ? '#F2F2F2' : '#FFFFFF',
         border: selected
-          ? '1.25px solid rgba(0,0,0,0.4)'
-          : '1.25px solid rgba(0,0,0,0.25)',
+          ? '1.75px solid #000000'
+          : '1.25px solid rgba(255,255,255,0.12)',
         boxShadow: selected 
           ? '0 1px 3px rgba(0,0,0,0.15)' 
           : 'none',
@@ -76,10 +71,7 @@ export function VibeChip({
       }}
     >
       {icon && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2 }}
+        <div
           className="flex-shrink-0"
           style={{ 
             color: iconColor,
@@ -91,7 +83,7 @@ export function VibeChip({
           }}
         >
           {icon}
-        </motion.div>
+        </div>
       )}
       <span className="relative z-10 text-center leading-tight whitespace-nowrap">
         {vibe.label}
