@@ -167,7 +167,7 @@ export default function VibePage() {
         gap: tokens.spacing[20], 
         paddingTop: tokens.spacing[20], 
         paddingBottom: '140px',
-        minHeight: 'calc(100vh - 200px)',
+        height: 'calc(100vh - 140px)',
       }}>
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ 
@@ -342,14 +342,14 @@ export default function VibePage() {
         </div>
 
         {/* Spacer to push buttons to bottom */}
-        <div style={{ flex: 1 }} />
+        <div style={{ flex: 1, minHeight: '20px' }} />
 
-        {/* Buttons at bottom */}
+        {/* Buttons at bottom - always visible */}
         <div style={{ 
           display: 'flex', 
           gap: tokens.spacing[16], 
-          marginTop: 'auto',
           paddingTop: tokens.spacing[20],
+          width: '100%',
         }}>
           {canConnect ? (
             <Button
