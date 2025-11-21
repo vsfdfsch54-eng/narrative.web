@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { AnimatePresence } from "framer-motion"
+import { AnimatePresence, motion } from "framer-motion"
 import { ProfileCard, Profile } from "@/components/ui/profile-card"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
+import { AppShell } from "@/components/AppShell"
+import { tokens } from "@/lib/design-tokens"
+import { Loader2 } from "lucide-react"
 
 export default function ChatPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -120,105 +123,231 @@ export default function ChatPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0c]">
-        <p className="text-[#f1f1f3]/60">Loading...</p>
-      </div>
+      <AppShell>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          gap: tokens.spacing[20],
+        }}>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            style={{
+              width: '32px',
+              height: '32px',
+              color: tokens.colors.textSecondary,
+            }}
+          >
+            <Loader2 size={32} />
+          </motion.div>
+          <p style={{
+            ...tokens.typography.body,
+            color: tokens.colors.textSecondary,
+          }}>
+            Loading...
+          </p>
+        </div>
+      </AppShell>
     )
   }
 
   if (profiles.length === 0 && !loading) {
     return (
-      <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0">
-        <div className="phone-frame-container">
-          <div className="phone-frame">
-            <div className="phone-screen">
-              <div className="phone-content flex flex-col items-center justify-center text-center px-6 py-6 gap-4 overflow-hidden">
-                <h1 className="text-xl font-bold text-[#f1f1f3]">
-                  Waiting for Match
-                </h1>
-                <p className="text-sm text-[#f1f1f3]/60 max-w-xs">
-                  We&apos;re finding someone for you to chat with. This should only take a moment...
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="w-2 h-2 bg-[#f1f1f3]/60 rounded-full animate-pulse" />
-                  <div className="w-2 h-2 bg-[#f1f1f3]/60 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-                  <div className="w-2 h-2 bg-[#f1f1f3]/60 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
-                </div>
-                <button
-                  onClick={() => router.push("/vibe")}
-                  className="px-5 py-2.5 rounded-full bg-[#f1f1f3]/10 text-[#f1f1f3] border border-[#f1f1f3]/20 font-semibold text-sm hover:bg-[#f1f1f3]/20 mt-4"
-                >
-                  Go Back
-                </button>
-              </div>
-            </div>
+      <AppShell>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          gap: tokens.spacing[28],
+          paddingTop: tokens.layout.topTitleSpacing,
+          textAlign: 'center',
+        }}>
+          {/* Animated dots */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: tokens.spacing[10],
+          }}>
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.5, 1, 0.5],
+                }}
+                transition={{
+                  duration: 1.2,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                  ease: "easeInOut",
+                }}
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  background: tokens.colors.pillUnselected,
+                  boxShadow: tokens.shadows.pillUnselected,
+                }}
+              />
+            ))}
           </div>
+
+          {/* Title */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: tokens.spacing[12],
+            maxWidth: tokens.layout.maxWidth,
+          }}>
+            <h1 style={{
+              ...tokens.typography.title,
+              color: tokens.colors.textPrimaryOnDark,
+              margin: 0,
+            }}>
+              Finding Your Match
+            </h1>
+            <p style={{
+              ...tokens.typography.body,
+              color: tokens.colors.textSecondary,
+              margin: 0,
+              maxWidth: '90%',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}>
+              We&apos;re connecting you with someone right now. This should only take a moment...
+            </p>
+          </div>
+
+          {/* Go Back Button */}
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={() => router.push("/vibe")}
+            style={{
+              padding: `12px ${tokens.spacing[20]}`,
+              borderRadius: tokens.radii.button,
+              background: tokens.colors.pillUnselected,
+              border: 'none',
+              color: tokens.colors.textOnPill,
+              boxShadow: tokens.shadows.pillUnselected,
+              fontSize: '15px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              marginTop: tokens.spacing[8],
+            }}
+          >
+            Go Back
+          </motion.button>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   if (!currentProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0c]">
-        <div className="text-center">
-          <p className="text-[#f1f1f3]/60 text-lg">No more profiles to show</p>
+      <AppShell>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          gap: tokens.spacing[20],
+        }}>
+          <p style={{
+            ...tokens.typography.body,
+            color: tokens.colors.textSecondary,
+          }}>
+            No more profiles to show
+          </p>
         </div>
-      </div>
+      </AppShell>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
-      {/* Phone Frame Container */}
-      <div className="phone-frame-container">
-        {/* Phone Frame - Black & White */}
-        <div className="phone-frame">
-          {/* Phone Screen */}
-          <div className="phone-screen">
-            <div className="phone-content px-4 py-3 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
-              {/* Header */}
-              <div className="text-center mb-3 flex-shrink-0">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.02em] text-white leading-tight">
-                  Find Your Match
-                </h1>
-              </div>
+    <AppShell>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: tokens.layout.sectionSpacing,
+        paddingTop: tokens.layout.topTitleSpacing,
+        paddingBottom: '120px',
+      }}>
+        {/* Header */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: tokens.spacing[8],
+        }}>
+          <h1 style={{
+            ...tokens.typography.title,
+            color: tokens.colors.textPrimaryOnDark,
+            margin: 0,
+          }}>
+            Find Your Match
+          </h1>
+        </div>
 
-              {/* Profile Card Container - Single Card, Full Screen */}
-              <div className="flex-1 flex items-center justify-center relative min-h-0 overflow-hidden">
-                <AnimatePresence mode="wait" initial={false}>
-                  <div
-                    key={currentProfile.id}
-                    className="w-full h-full flex items-center justify-center pointer-events-auto"
-                  >
-                    <ProfileCard
-                      profile={currentProfile}
-                      onChat={() => {
-                        router.push(`/chat/${currentProfile.id}`)
-                      }}
-                      onSkip={handleSkip}
-                    />
-                  </div>
-                </AnimatePresence>
-              </div>
+        {/* Profile Card Container */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: tokens.spacing[20],
+        }}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={currentProfile.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                width: '100%',
+                maxWidth: tokens.layout.maxWidth,
+              }}
+            >
+              <ProfileCard
+                profile={currentProfile}
+                onChat={() => {
+                  router.push(`/chat/${currentProfile.id}`)
+                }}
+                onSkip={handleSkip}
+              />
+            </motion.div>
+          </AnimatePresence>
 
-              {/* Progress Indicator */}
-              <div className="flex justify-center gap-2 flex-shrink-0 mt-4">
-                {profiles.map((_, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "h-1 rounded-full transition-all duration-200",
-                      index === currentIndex ? "w-6 bg-white" : "w-1 bg-white/20"
-                    )}
-                  />
-                ))}
-              </div>
+          {/* Progress Indicator */}
+          {profiles.length > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: tokens.spacing[8],
+              marginTop: tokens.spacing[12],
+            }}>
+              {profiles.map((_, index) => (
+                <motion.div
+                  key={index}
+                  animate={{
+                    width: index === currentIndex ? '24px' : '4px',
+                    opacity: index === currentIndex ? 1 : 0.3,
+                  }}
+                  transition={{ duration: 0.2 }}
+                  style={{
+                    height: '4px',
+                    borderRadius: '2px',
+                    background: tokens.colors.pillUnselected,
+                  }}
+                />
+              ))}
             </div>
-
-          </div>
+          )}
         </div>
       </div>
-    </div>
+    </AppShell>
   )
 }
