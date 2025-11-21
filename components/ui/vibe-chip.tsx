@@ -40,7 +40,10 @@ export function VibeChip({
   return (
     <motion.button
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      animate={{ 
+        opacity: 1,
+        scale: selected ? 1.06 : 1
+      }}
       exit={{ opacity: 0 }}
       transition={{ delay, duration: 0.2 }}
       whileTap={{ 
@@ -58,7 +61,7 @@ export function VibeChip({
         "text-black"
       )}
       style={{
-        background: '#FFFFFF',
+        background: '#F5F5F5',
         border: selected
           ? '1.5px solid rgba(255,255,255,0.3)'
           : '1px solid rgba(255,255,255,0.15)',

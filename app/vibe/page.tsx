@@ -231,9 +231,9 @@ export default function VibePage() {
               className="fixed left-0 right-0 bg-[#1A1A1A] flex flex-row"
               style={{
                 bottom: `calc(80px + env(safe-area-inset-bottom))`, // Above nav bar + safe area
-                padding: '16px 24px',
-                paddingBottom: `max(16px, calc(16px + env(safe-area-inset-bottom)))`,
-                gap: '14px',
+                padding: '12px 24px',
+                paddingBottom: `max(12px, calc(12px + env(safe-area-inset-bottom)))`,
+                gap: '12px',
                 zIndex: 50
               }}
             >
@@ -241,21 +241,29 @@ export default function VibePage() {
               <motion.button
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
                 whileTap={{ 
-                  scale: 0.97,
-                  backgroundColor: '#FFFFFF',
-                  color: '#000000',
-                  border: '1px solid #FFFFFF'
+                  scale: 0.96,
+                  transition: { duration: 0.15 }
                 }}
                 onClick={handleConnect}
                 disabled={saving || !canConnect}
                 className={cn(
-                  "flex-1 h-[56px] rounded-[24px] text-lg font-semibold transition-all duration-300",
+                  "flex-1 h-[44px] rounded-[28px] text-base font-medium transition-all duration-300",
                   canConnect
-                    ? "bg-white text-black"
-                    : "bg-[rgba(255,255,255,0.1)] text-white/40",
-                  "disabled:cursor-not-allowed"
+                    ? "bg-[rgba(255,255,255,0.9)] text-black"
+                    : "bg-[rgba(255,255,255,0.08)] text-white/30",
+                  "disabled:cursor-not-allowed",
+                  "backdrop-blur-sm"
                 )}
+                style={{
+                  border: canConnect 
+                    ? '1px solid rgba(255,255,255,0.2)' 
+                    : '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: canConnect 
+                    ? '0 2px 8px rgba(0,0,0,0.15)' 
+                    : 'none'
+                }}
               >
                 {saving ? "Connecting..." : "CONNECT"}
               </motion.button>
@@ -264,15 +272,20 @@ export default function VibePage() {
               <motion.button
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
                 whileTap={{ 
-                  scale: 0.97,
-                  backgroundColor: 'rgba(255,255,255,0.1)'
+                  scale: 0.96,
+                  transition: { duration: 0.15 }
                 }}
                 onClick={handleSkip}
                 className={cn(
-                  "flex-1 h-[56px] rounded-[24px] text-lg font-semibold transition-all duration-300",
-                  "bg-transparent text-white border border-[rgba(255,255,255,0.25)]"
+                  "flex-1 h-[44px] rounded-[28px] text-base font-medium transition-all duration-300",
+                  "bg-[rgba(255,255,255,0.05)] text-white/70 backdrop-blur-sm"
                 )}
+                style={{
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
+                }}
               >
                 SKIP
               </motion.button>
