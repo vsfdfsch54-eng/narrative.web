@@ -150,7 +150,7 @@ export default function ProfilePage() {
   return (
     <AppShell>
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, paddingTop: tokens.layout.topTitleSpacing, paddingBottom: '120px' }}>
-        <div style={{ textAlign: 'center', padding: tokens.layout.sectionSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillPrimary, boxShadow: tokens.shadows.pill }}>
+        <div style={{ textAlign: 'center', padding: tokens.layout.sectionSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
           <div style={{ fontSize: '64px', marginBottom: tokens.layout.elementSpacing }}>👤</div>
           {isEditingName ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
@@ -161,7 +161,7 @@ export default function ProfilePage() {
                 style={{
                   ...tokens.typography.heading,
                   color: tokens.colors.textOnPill,
-                  background: tokens.colors.pillPrimary,
+                  background: tokens.colors.pillUnselected,
                   border: 'none',
                   borderRadius: tokens.radii.input,
                   padding: `12px ${tokens.spacing[18]}`,
@@ -214,11 +214,11 @@ export default function ProfilePage() {
                 width: '100%',
                 minHeight: '80px',
                 padding: `12px ${tokens.spacing[18]}`,
-                background: tokens.colors.pillPrimary,
+                background: tokens.colors.pillUnselected,
                 border: 'none',
                 borderRadius: tokens.radii.input,
                 color: tokens.colors.textOnPill,
-                boxShadow: tokens.shadows.pill,
+                boxShadow: tokens.shadows.pillUnselected
                 ...tokens.typography.body,
                 resize: 'none',
               }}
@@ -235,7 +235,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillPrimary, boxShadow: tokens.shadows.pill }}>
+        <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
           <h2 style={{ 
             ...tokens.typography.heading,
             color: tokens.colors.textOnPill,
@@ -286,10 +286,10 @@ export default function ProfilePage() {
                       style={{
                         padding: `12px ${tokens.spacing[18]}`,
                         borderRadius: tokens.radii.pill,
-                        background: tokens.colors.pillPrimary,
+                        background: tokens.colors.pillUnselected,
                         color: tokens.colors.textOnPill,
                         border: 'none',
-                        boxShadow: tokens.shadows.pill,
+                        boxShadow: tokens.shadows.pillUnselected
                         ...tokens.typography.label,
                         whiteSpace: 'nowrap',
                         cursor: 'pointer',
@@ -306,7 +306,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillPrimary, boxShadow: tokens.shadows.pill }}>
+        <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
           <h2 style={{ 
             ...tokens.typography.heading,
             color: tokens.colors.textOnPill,
@@ -333,7 +333,7 @@ export default function ProfilePage() {
                     alignItems: 'center',
                     gap: tokens.spacing[16],
                     padding: tokens.spacing[16],
-                    background: tokens.colors.pillPrimary,
+                    background: tokens.colors.pillUnselected,
                     border: 'none',
                     borderRadius: tokens.radii.input,
                     textAlign: 'left',

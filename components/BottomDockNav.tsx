@@ -58,7 +58,7 @@ export function BottomDockNav() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.18 }}
         style={{
-          background: tokens.colors.pillPrimary,
+          background: tokens.colors.pillUnselected,
           borderRadius: '28px',
           padding: '10px 20px',
           boxShadow: tokens.shadows.dock,
@@ -74,7 +74,15 @@ export function BottomDockNav() {
           return (
             <motion.button
               key={item.path}
-              whileTap={{ scale: 0.95 }}
+              animate={{
+                scale: active ? 1.08 : 1,
+                backgroundColor: active ? tokens.colors.pillSelected : 'transparent',
+              }}
+              transition={{
+                scale: { duration: 0.14, ease: 'easeOut' },
+                backgroundColor: { duration: 0.18, ease: 'easeOut' },
+              }}
+              whileTap={{ scale: active ? 1.08 : 0.95 }}
               onClick={() => router.push(item.path)}
               style={{
                 width: '46px',
@@ -82,7 +90,6 @@ export function BottomDockNav() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: active ? tokens.colors.pillSecondary : 'transparent',
                 borderRadius: '50%',
                 padding: active ? tokens.spacing[8] : 0,
                 border: 'none',

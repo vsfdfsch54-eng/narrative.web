@@ -28,7 +28,7 @@ export function Chip({ children, variant = "default", selected = false, onClick 
       style={{
         padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
         borderRadius: tokens.radii.pill,
-        background: selected ? accentColor : tokens.colors.pillPrimary,
+        background: selected ? accentColor : tokens.colors.pillUnselected,
         color: selected ? '#FFFFFF' : accentColor,
         border: 'none',
         fontSize: tokens.typography.label.fontSize,

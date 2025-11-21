@@ -31,12 +31,12 @@ export function Button({
 
   const variantStyles = {
     primary: {
-      background: tokens.colors.pillPrimary,
+      background: tokens.colors.pillUnselected,
       color: tokens.colors.textOnPill,
       border: 'none',
     },
     secondary: {
-      background: tokens.colors.pillPrimary,
+      background: tokens.colors.pillUnselected,
       color: tokens.colors.textOnPill,
       border: 'none',
     },
@@ -54,16 +54,16 @@ export function Button({
 
   const buttonStyles = {
     height,
-    padding: size === "icon" ? '0' : `10px ${tokens.spacing[14]}`,
+    padding: size === "icon" ? '0' : `8px 14px`,
     borderRadius: tokens.radii.button,
     ...variantStyles[variant],
-    fontSize: '13px',
-    fontWeight: 500,
-    letterSpacing: '-0.01em',
+    fontSize: '15px',
+    fontWeight: 400,
+    letterSpacing: '0',
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
-    transition: 'all 0.15s ease',
-    boxShadow: tokens.shadows.pill,
+    transition: 'transform 140ms ease, background 180ms ease',
+    boxShadow: tokens.shadows.pillUnselected,
   }
 
   const buttonClasses = cn(

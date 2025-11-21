@@ -6,9 +6,9 @@
 export const tokens = {
   colors: {
     backgroundApp: '#0B0B0D',
-    pillPrimary: '#EDEDED',
-    pillSecondary: '#F0F0F2',
-    textOnPill: '#0C0C0E',
+    pillUnselected: '#E5E5E7',
+    pillSelected: '#D8D8DB',
+    textOnPill: '#000000',
     textPrimaryOnDark: '#FFFFFF',
     textSecondary: 'rgba(255,255,255,0.60)',
     textMuted: 'rgba(0,0,0,0.45)',
@@ -19,13 +19,14 @@ export const tokens = {
     accentPink: '#C970A8',
   },
   radii: {
-    pill: '24px',
+    pill: '18px',
     circle: '50%',
-    button: '24px',
-    input: '24px',
+    button: '18px',
+    input: '18px',
   },
   shadows: {
-    pill: '0 6px 24px rgba(0,0,0,0.28)',
+    pillUnselected: '0 2px 10px rgba(0,0,0,0.25)',
+    pillSelected: '0 4px 16px rgba(0,0,0,0.28)',
     dock: '0 8px 28px rgba(0,0,0,0.45)',
   },
   typography: {

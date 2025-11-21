@@ -34,7 +34,7 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
               height: '40px',
               padding: `10px ${tokens.spacing[14]}`,
               borderRadius: tokens.radii.pill,
-              background: tokens.colors.pillPrimary,
+              background: tokens.colors.pillUnselected,
               color: tokens.colors.textOnPill,
               border: 'none',
               boxShadow: tokens.shadows.pill,

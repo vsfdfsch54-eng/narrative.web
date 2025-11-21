@@ -189,25 +189,16 @@ export default function VibePage() {
           </p>
         </div>
 
-        <div>
-          <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
-            alignItems: 'center', 
-            overflowY: 'hidden',
-            scrollBehavior: 'smooth',
-            WebkitOverflowScrolling: 'touch',
-          }}>
-            <div className="flex" style={{ gap: tokens.spacing[16] }}>
-              {VIBES.map((vibe) => (
-                <VibeChip
-                  key={vibe.id}
-                  vibe={vibe}
-                  selected={selectedVibe?.id === vibe.id}
-                  onClick={() => setSelectedVibe(selectedVibe?.id === vibe.id ? null : vibe)}
-                  delay={0}
-                />
-              ))}
-            </div>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {VIBES.map((vibe) => (
+            <VibeChip
+              key={vibe.id}
+              vibe={vibe}
+              selected={selectedVibe?.id === vibe.id}
+              onClick={() => setSelectedVibe(selectedVibe?.id === vibe.id ? null : vibe)}
+              delay={0}
+            />
+          ))}
         </div>
 
         <div>
@@ -228,18 +219,17 @@ export default function VibePage() {
               onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
               style={{
                 width: '100%',
-                height: '40px',
-                padding: `10px ${tokens.spacing[14]}`,
+                padding: '8px 14px',
                 borderRadius: tokens.radii.input,
-                background: tokens.colors.pillPrimary,
+                background: tokens.colors.pillUnselected,
                 border: 'none',
                 color: tokens.colors.textOnPill,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                boxShadow: tokens.shadows.pill,
-                fontSize: '13px',
-                fontWeight: 500,
+                boxShadow: tokens.shadows.pillUnselected,
+                fontSize: '15px',
+                fontWeight: 400,
                 letterSpacing: '0',
                 cursor: 'pointer',
               }}
@@ -269,11 +259,11 @@ export default function VibePage() {
                 className="absolute top-full left-0 right-0 mt-2 z-50"
               >
                 <div style={{ 
-                  background: tokens.colors.pillPrimary, 
+                  background: tokens.colors.pillUnselected, 
                   border: 'none', 
                   borderRadius: tokens.radii.pill, 
                   overflow: 'hidden',
-                  boxShadow: tokens.shadows.pill,
+                  boxShadow: tokens.shadows.pillUnselected,
                 }}>
                   {TOPIC_CATEGORIES.map((category) => {
                     const CategoryIcon = category.icon
@@ -288,21 +278,20 @@ export default function VibePage() {
                           width: '100%',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: tokens.spacing[10],
-                          padding: `0 ${tokens.spacing[14]}`,
-                          height: '40px',
-                          background: selectedCategory === category.id ? tokens.colors.pillSecondary : 'transparent',
+                          gap: '10px',
+                          padding: '8px 14px',
+                          background: selectedCategory === category.id ? tokens.colors.pillSelected : 'transparent',
                           border: 'none',
                           color: tokens.colors.textOnPill,
-                          fontSize: '13px',
-                          fontWeight: selectedCategory === category.id ? 500 : 400,
+                          fontSize: '15px',
+                          fontWeight: 400,
                           letterSpacing: '0',
                           cursor: 'pointer',
                           textAlign: 'left',
                         }}
                         onMouseEnter={(e) => {
                           if (selectedCategory !== category.id) {
-                            e.currentTarget.style.background = tokens.colors.pillSecondary
+                            e.currentTarget.style.background = tokens.colors.pillSelected
                           }
                         }}
                         onMouseLeave={(e) => {
@@ -321,52 +310,118 @@ export default function VibePage() {
             )}
           </div>
           
-          <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
-            alignItems: 'center', 
-            overflowY: 'hidden',
-            scrollBehavior: 'smooth',
-            WebkitOverflowScrolling: 'touch',
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            gap: '12px', 
+            flexWrap: 'wrap',
             marginTop: tokens.spacing[12],
           }}>
-            <div className="flex" style={{ gap: tokens.spacing[16] }}>
-              {currentTopics.map((topic) => (
-                <TopicChip
-                  key={topic.id}
-                  topic={topic}
-                  selected={selectedTopic?.id === topic.id}
-                  onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
-                  delay={0}
-                />
-              ))}
-            </div>
+            {currentTopics.map((topic) => (
+              <TopicChip
+                key={topic.id}
+                topic={topic}
+                selected={selectedTopic?.id === topic.id}
+                onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
+                delay={0}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Spacer */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {TIME_LIMITS.map((limit) => {
+            const isSelected = selectedTimeLimit === limit
+            return (
+              <motion.button
+                key={limit}
+                animate={{
+                  scale: isSelected ? 1.06 : 1,
+                  backgroundColor: isSelected ? tokens.colors.pillSelected : tokens.colors.pillUnselected,
+                }}
+                transition={{
+                  transform: { duration: 0.14, ease: 'easeOut' },
+                  backgroundColor: { duration: 0.18, ease: 'easeOut' },
+                }}
+                whileTap={{ scale: isSelected ? 1.06 : 0.98 }}
+                onClick={() => setSelectedTimeLimit(isSelected ? null : limit)}
+                style={{
+                  borderRadius: tokens.radii.pill,
+                  padding: '8px 14px',
+                  border: 'none',
+                  boxShadow: isSelected ? tokens.shadows.pillSelected : tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 400,
+                  letterSpacing: '0',
+                  color: tokens.colors.textOnPill,
+                  cursor: 'pointer',
+                  willChange: "transform, background-color"
+                }}
+              >
+                {limit}m
+              </motion.button>
+            )
+          })}
+        </div>
+
         <div style={{ flex: 1 }} />
 
-        {/* Buttons at bottom */}
         <div style={{ 
+          display: 'flex',
+          gap: '4%',
           marginTop: tokens.spacing[28],
           width: '100%',
         }}>
           {canConnect ? (
-            <Button
-              variant="primary"
+            <motion.button
+              animate={{
+                scale: 1,
+                backgroundColor: tokens.colors.pillUnselected,
+              }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleConnect}
               disabled={saving}
-              style={{ width: '100%' }}
+              style={{
+                width: '100%',
+                height: '50px',
+                borderRadius: tokens.radii.button,
+                border: 'none',
+                boxShadow: tokens.shadows.pillUnselected,
+                fontSize: '15px',
+                fontWeight: 400,
+                letterSpacing: '0',
+                color: tokens.colors.textOnPill,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.5 : 1,
+                transition: 'transform 140ms ease, background 180ms ease',
+              }}
             >
               {saving ? "Connecting..." : "Connect"}
-            </Button>
+            </motion.button>
           ) : (
-            <Button
-              variant="secondary"
+            <motion.button
+              animate={{
+                scale: 1,
+                backgroundColor: tokens.colors.pillUnselected,
+              }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleSkip}
-              style={{ width: '100%' }}
+              style={{
+                width: '100%',
+                height: '50px',
+                borderRadius: tokens.radii.button,
+                border: 'none',
+                boxShadow: tokens.shadows.pillUnselected,
+                fontSize: '15px',
+                fontWeight: 400,
+                letterSpacing: '0',
+                color: tokens.colors.textOnPill,
+                cursor: 'pointer',
+                transition: 'transform 140ms ease, background 180ms ease',
+              }}
             >
               Skip and Chat
-            </Button>
+            </motion.button>
           )}
         </div>
       </div>

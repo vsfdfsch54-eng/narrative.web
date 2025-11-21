@@ -40,34 +40,39 @@ export function VibeChip({
   return (
     <motion.button
       initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      animate={{ 
+        opacity: 1,
+        scale: selected ? 1.06 : 1,
+        backgroundColor: selected ? tokens.colors.pillSelected : tokens.colors.pillUnselected,
+      }}
       exit={{ opacity: 0 }}
-      transition={{ delay, duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ 
+        delay,
+        transform: { duration: 0.14, ease: 'easeOut' },
+        backgroundColor: { duration: 0.18, ease: 'easeOut' },
+      }}
       whileTap={{ 
-        scale: 0.98,
+        scale: selected ? 1.06 : 0.98,
         transition: { duration: 0.15, ease: [0.4, 0, 0.2, 1] }
       }}
       onClick={onClick}
       className={cn(
         "shrink-0",
-        "transition-all duration-150 ease-in-out",
         "touch-manipulation",
-        "overflow-hidden flex items-center",
+        "inline-flex items-center",
         "relative"
       )}
       style={{
-        height: '40px',
         borderRadius: tokens.radii.pill,
-        padding: `10px ${tokens.spacing[14]}`,
-        gap: tokens.spacing[10],
-        background: tokens.colors.pillPrimary,
-        color: tokens.colors.textOnPill,
+        padding: '8px 14px',
+        gap: '10px',
         border: 'none',
-        boxShadow: tokens.shadows.pill,
-        fontSize: '13px',
-        fontWeight: 500,
+        boxShadow: selected ? tokens.shadows.pillSelected : tokens.shadows.pillUnselected,
+        fontSize: '15px',
+        fontWeight: 400,
         letterSpacing: '0',
-        willChange: "transform"
+        color: tokens.colors.textOnPill,
+        willChange: "transform, background-color"
       }}
     >
       {icon && (
