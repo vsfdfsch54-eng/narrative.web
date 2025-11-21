@@ -32,15 +32,17 @@ export function Button({
 
   const buttonStyles = {
     height,
-    padding: '0 16px',
+    padding: '0 24px',
+    borderRadius: components.button.radius,
     background: config.background,
     color: config.text,
     border: 'border' in config ? config.border : 'none',
     boxShadow: 'shadow' in config && variant === "primary" ? config.shadow : 'none',
+    fontWeight: 500,
+    fontSize: '15px',
   }
 
   const buttonClasses = cn(
-    "rounded-[12px] font-semibold text-[16px]",
     "transition-all duration-150 ease-in-out",
     "touch-manipulation",
     disabled && "opacity-50 cursor-not-allowed",

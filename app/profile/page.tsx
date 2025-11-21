@@ -23,14 +23,12 @@ export default function ProfilePage() {
   const [isEditingName, setIsEditingName] = useState(false)
   const [tempName, setTempName] = useState("")
 
-  // Redirect to landing if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/")
     }
   }, [user, authLoading, router])
 
-  // Load user profile
   useEffect(() => {
     if (!user?.id) return
 
@@ -151,7 +149,7 @@ export default function ProfilePage() {
 
   return (
     <div 
-      className="fixed inset-0 overflow-hidden w-full h-full"
+      className="fixed inset-0 overflow-y-auto w-full h-full"
       style={{ 
         background: colors.background,
         paddingTop: 'env(safe-area-inset-top)',
@@ -163,7 +161,8 @@ export default function ProfilePage() {
         <div 
           className="flex items-center justify-between flex-shrink-0"
           style={{
-            padding: spacing.md,
+            padding: spacing.screen,
+            paddingBottom: spacing.lg,
             borderBottom: `1px solid ${colors.border}`,
           }}
         >
@@ -178,13 +177,13 @@ export default function ProfilePage() {
             }}
             className="hover:opacity-80 transition-opacity"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5" />
           </motion.button>
 
           <h1 style={{ 
-            fontSize: typography.titleMD.fontSize, 
-            fontWeight: typography.titleMD.fontWeight,
-            letterSpacing: typography.titleMD.letterSpacing,
+            fontSize: typography.h2.fontSize, 
+            fontWeight: typography.h2.fontWeight,
+            letterSpacing: typography.h2.letterSpacing,
             color: colors.textPrimary 
           }}>
             Profile
@@ -201,7 +200,7 @@ export default function ProfilePage() {
             }}
             className="hover:opacity-80 transition-opacity"
           >
-            <MessageSquare className="w-4 h-4" />
+            <MessageSquare className="w-5 h-5" />
           </motion.button>
         </div>
 
@@ -210,10 +209,10 @@ export default function ProfilePage() {
           className="flex-1 overflow-y-auto"
           style={{ padding: spacing.screen }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.section, maxWidth: '600px', margin: '0 auto' }}>
             {/* Profile Header */}
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '48px', marginBottom: spacing.sm }}>👤</div>
+            <Card variant="outlined" padding={false} style={{ padding: spacing.xxl, textAlign: 'center' }}>
+              <div style={{ fontSize: '64px', marginBottom: spacing.md }}>👤</div>
               {isEditingName ? (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}>
                   <input
@@ -221,14 +220,15 @@ export default function ProfilePage() {
                     value={tempName}
                     onChange={(e) => setTempName(e.target.value)}
                     style={{
-                      fontSize: typography.titleMD.fontSize,
-                      fontWeight: typography.titleMD.fontWeight,
+                      fontSize: typography.h3.fontSize,
+                      fontWeight: typography.h3.fontWeight,
                       color: colors.textPrimary,
-                      background: components.input.background,
-                      border: `1px solid ${components.input.border}`,
+                      background: colors.background,
+                      border: `1px solid ${colors.border}`,
                       borderRadius: components.input.radius,
-                      padding: '8px 12px',
+                      padding: `${spacing.sm} ${spacing.md}`,
                       textAlign: 'center',
+                      width: '200px',
                     }}
                     autoFocus
                     onBlur={handleSaveName}
@@ -244,9 +244,9 @@ export default function ProfilePage() {
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}>
                   <h2 style={{ 
-                    fontSize: typography.titleMD.fontSize,
-                    fontWeight: typography.titleMD.fontWeight,
-                    letterSpacing: typography.titleMD.letterSpacing,
+                    fontSize: typography.h3.fontSize,
+                    fontWeight: typography.h3.fontWeight,
+                    letterSpacing: typography.h3.letterSpacing,
                     color: colors.textPrimary 
                   }}>
                     {userName || "User"}
@@ -266,11 +266,11 @@ export default function ProfilePage() {
                   </motion.button>
                 </div>
               )}
-            </div>
+            </Card>
 
             {/* What's on my mind */}
-            <Card>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+            <Card variant="outlined">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
                 <textarea
                   value={quoteOfDay}
                   onChange={(e) => setQuoteOfDay(e.target.value)}
@@ -278,16 +278,16 @@ export default function ProfilePage() {
                   placeholder="What's on your mind today?"
                   style={{
                     width: '100%',
-                    minHeight: '60px',
+                    minHeight: '80px',
                     padding: spacing.md,
-                    background: components.input.background,
-                    border: `1px solid ${components.input.border}`,
+                    background: colors.background,
+                    border: `1px solid ${colors.border}`,
                     borderRadius: components.input.radius,
                     color: colors.textPrimary,
                     fontSize: typography.body.fontSize,
                     resize: 'none',
                   }}
-                  rows={2}
+                  rows={3}
                 />
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <motion.button
@@ -295,10 +295,10 @@ export default function ProfilePage() {
                     transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
                     onClick={handleSaveQuote}
                     style={{
-                      padding: '8px',
+                      padding: `${spacing.sm} ${spacing.md}`,
                       borderRadius: components.button.radius,
-                      background: colors.chipBg,
-                      color: colors.chipText,
+                      background: colors.textPrimary,
+                      color: colors.background,
                     }}
                   >
                     <Save className="w-4 h-4" />
@@ -308,10 +308,10 @@ export default function ProfilePage() {
             </Card>
 
             {/* What People Say */}
-            <Card>
+            <Card variant="outlined">
               <h3 style={{ 
-                fontSize: typography.titleMD.fontSize,
-                fontWeight: typography.titleMD.fontWeight,
+                fontSize: typography.h3.fontSize,
+                fontWeight: typography.h3.fontWeight,
                 color: colors.textPrimary,
                 marginBottom: spacing.md 
               }}>
@@ -321,48 +321,65 @@ export default function ProfilePage() {
                 fontSize: typography.body.fontSize,
                 color: colors.textSecondary,
                 textAlign: 'center',
-                padding: spacing.md 
+                padding: spacing.xl 
               }}>
                 No reviews yet. Start conversations to get feedback!
               </p>
             </Card>
 
             {/* My Friends */}
-            <Card>
-              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.lg }}>
-                <Users className="w-4 h-4" style={{ color: colors.textSecondary }} />
+            <Card variant="outlined">
+              <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xl }}>
+                <Users className="w-5 h-5" style={{ color: colors.textSecondary }} />
                 <h3 style={{ 
-                  fontSize: typography.titleMD.fontSize,
-                  fontWeight: typography.titleMD.fontWeight,
+                  fontSize: typography.h3.fontSize,
+                  fontWeight: typography.h3.fontWeight,
                   color: colors.textPrimary 
                 }}>
                   My Friends
                 </h3>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.xl }}>
                 {/* Inner Circle */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-                    <p style={{ fontSize: typography.label.fontSize, color: colors.textSecondary }}>Inner Circle</p>
+                <div style={{ 
+                  padding: spacing.md,
+                  borderBottom: `1px solid ${colors.border}`,
+                  paddingBottom: spacing.xl
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.orange }} />
+                      <p style={{ fontSize: typography.label.fontSize, color: colors.textPrimary, fontWeight: 500 }}>Inner Circle</p>
+                    </div>
                     <span style={{ fontSize: typography.label.fontSize, color: colors.textMuted }}>0</span>
                   </div>
                   <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary }}>No inner circle members yet</p>
                 </div>
 
                 {/* Close Friends */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-                    <p style={{ fontSize: typography.label.fontSize, color: colors.textSecondary }}>Close Friends</p>
+                <div style={{ 
+                  padding: spacing.md,
+                  borderBottom: `1px solid ${colors.border}`,
+                  paddingBottom: spacing.xl
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.blue }} />
+                      <p style={{ fontSize: typography.label.fontSize, color: colors.textPrimary, fontWeight: 500 }}>Close Friends</p>
+                    </div>
                     <span style={{ fontSize: typography.label.fontSize, color: colors.textMuted }}>0</span>
                   </div>
                   <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary }}>No close friends yet</p>
                 </div>
 
                 {/* Community */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-                    <p style={{ fontSize: typography.label.fontSize, color: colors.textSecondary }}>Community</p>
+                <div style={{ padding: spacing.md }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: colors.accent.green }} />
+                      <p style={{ fontSize: typography.label.fontSize, color: colors.textPrimary, fontWeight: 500 }}>Community</p>
+                    </div>
                     <span style={{ fontSize: typography.label.fontSize, color: colors.textMuted }}>{communityMembers.length}</span>
                   </div>
                   {communityMembers.length > 0 ? (
@@ -376,8 +393,8 @@ export default function ProfilePage() {
                           style={{
                             padding: `${spacing.sm} ${spacing.md}`,
                             borderRadius: components.chip.radius,
-                            background: colors.chipBg,
-                            color: colors.chipText,
+                            background: colors.background,
+                            color: colors.textPrimary,
                             border: `1px solid ${colors.border}`,
                             fontSize: typography.label.fontSize,
                             whiteSpace: 'nowrap',
@@ -395,17 +412,17 @@ export default function ProfilePage() {
             </Card>
 
             {/* Recent Chats */}
-            <Card>
+            <Card variant="outlined">
               <h3 style={{ 
-                fontSize: typography.titleMD.fontSize,
-                fontWeight: typography.titleMD.fontWeight,
+                fontSize: typography.h3.fontSize,
+                fontWeight: typography.h3.fontWeight,
                 color: colors.textPrimary,
                 marginBottom: spacing.md 
               }}>
                 Recent Chats
               </h3>
               {loadingChats ? (
-                <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.md }}>
+                <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.xl }}>
                   Loading...
                 </p>
               ) : recentChats.length > 0 ? (
@@ -420,15 +437,15 @@ export default function ProfilePage() {
                         width: '100%',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: spacing.sm,
+                        gap: spacing.md,
                         padding: spacing.md,
-                        background: components.input.background,
-                        border: `1px solid ${components.input.border}`,
+                        background: colors.background,
+                        border: `1px solid ${colors.border}`,
                         borderRadius: components.input.radius,
                         textAlign: 'left',
                       }}
                     >
-                      <span style={{ fontSize: '20px' }}>{chat.emoji || "👤"}</span>
+                      <span style={{ fontSize: '24px' }}>{chat.emoji || "👤"}</span>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>
                           {chat.name}
@@ -444,7 +461,7 @@ export default function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.md }}>
+                <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.xl }}>
                   No recent chats
                 </p>
               )}
@@ -452,19 +469,19 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Footer - Sign Out and Forgot Password */}
+        {/* Footer - Sign Out */}
         <div 
           style={{
             padding: spacing.screen,
-            paddingTop: spacing.lg,
+            paddingTop: spacing.xl,
             borderTop: `1px solid ${colors.border}`,
             display: 'flex',
             flexDirection: 'column',
-            gap: spacing.sm,
+            gap: spacing.md,
           }}
         >
           <Button
-            variant="secondary"
+            variant="outline"
             onClick={async () => {
               await signOut()
               router.push("/")
@@ -473,11 +490,6 @@ export default function ProfilePage() {
           >
             Sign Out
           </Button>
-          <Link href="/login" className="w-full">
-            <Button variant="ghost" className="w-full">
-              Forgot Password
-            </Button>
-          </Link>
         </div>
       </div>
     </div>

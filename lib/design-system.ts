@@ -1,6 +1,6 @@
 /**
  * Narrative Design System
- * Unified, premium, modern design system inspired by Linear, Vercel, Raycast, Notion, and Apple iOS 17
+ * White, Clean, Colorful, Premium design inspired by Apple, Linear, Notion, Airbnb, Duolingo, Arc Browser
  */
 
 // ============================================================
@@ -8,52 +8,48 @@
 // ============================================================
 export const colors = {
   // Backgrounds
-  background: '#0F0F0F',
-  surface1: '#151515',
-  surface2: '#1A1A1A',
-  surface3: '#0C0C0C',
-  
-  // Borders
-  border: 'rgba(255,255,255,0.12)',
-  borderStrong: 'rgba(255,255,255,0.20)',
+  background: '#FFFFFF',
   
   // Text
-  textPrimary: '#FFFFFF',
-  textSecondary: 'rgba(255,255,255,0.55)',
-  textMuted: 'rgba(255,255,255,0.38)',
+  textPrimary: '#0B0B0B',
+  textSecondary: '#6A6A6A',
+  textMuted: '#9E9E9E',
   
-  // Chips
-  chipBg: '#FFFFFF',
-  chipText: '#000000',
-  chipSelectedBg: '#F2F2F2',
+  // Borders
+  border: 'rgba(0, 0, 0, 0.08)',
+  borderStrong: 'rgba(0, 0, 0, 0.12)',
   
-  // Accents (muted, Linear-style)
+  // Accent Colors (for categories, vibes, chips, buttons)
   accent: {
-    blue: '#3A7CFF',
-    green: '#39D98A',
-    orange: '#FFB65C',
-    purple: '#9B6BFF',
-    red: '#FF6B6B',
+    green: '#4ADE80',
+    blue: '#3B82F6',
+    purple: '#A855F7',
+    orange: '#F59E0B',
+    pink: '#EC4899',
   },
+  
+  // Surfaces
+  surface: '#FFFFFF',
+  surfaceHover: '#F9F9F9',
 } as const
 
 // ============================================================
 // TYPOGRAPHY
 // ============================================================
 export const typography = {
-  titleXL: {
+  h1: {
     fontSize: '32px',
     fontWeight: 600,
     letterSpacing: '-0.01em',
     lineHeight: 1.2,
   },
-  titleLG: {
-    fontSize: '28px',
+  h2: {
+    fontSize: '24px',
     fontWeight: 600,
     letterSpacing: '-0.01em',
-    lineHeight: 1.2,
+    lineHeight: 1.3,
   },
-  titleMD: {
+  h3: {
     fontSize: '20px',
     fontWeight: 500,
     letterSpacing: '-0.01em',
@@ -61,7 +57,7 @@ export const typography = {
   },
   body: {
     fontSize: '16px',
-    fontWeight: 500,
+    fontWeight: 400,
     letterSpacing: '0',
     lineHeight: 1.5,
   },
@@ -80,28 +76,35 @@ export const typography = {
 } as const
 
 // ============================================================
-// RADII SYSTEM (STRICT)
+// RADII SYSTEM
 // ============================================================
 export const radii = {
-  xs: '6px',
-  sm: '8px',
-  md: '12px', // Primary
-  lg: '16px', // Maximum
+  card: '16px',
+  input: '14px',
+  button: '12px',
+  chip: '16px', // rounded pill
 } as const
 
 // ============================================================
-// SPACING SYSTEM (8px grid)
+// SPACING SYSTEM
 // ============================================================
 export const spacing = {
   xs: '8px',
   sm: '12px',
   md: '16px',
   lg: '20px',
-  xl: '28px',
-  screen: '20px', // Screen padding
-  section: '28px', // Vertical sections
-  component: '20px', // Component spacing
-  chip: '12px', // Chip spacing
+  xl: '24px',
+  xxl: '32px',
+  screen: '24px', // Screen padding (24-32px)
+  section: '32px', // Vertical sections (24-32px)
+} as const
+
+// ============================================================
+// SHADOWS
+// ============================================================
+export const shadows = {
+  card: '0 4px 12px rgba(0, 0, 0, 0.06)',
+  button: '0 2px 8px rgba(0, 0, 0, 0.08)',
 } as const
 
 // ============================================================
@@ -111,67 +114,68 @@ export const components = {
   button: {
     height: '44px',
     heightLarge: '48px',
-    radius: radii.md,
+    radius: radii.button,
     primary: {
-      background: colors.chipBg,
-      text: colors.chipText,
-      shadow: '0 1px 3px rgba(0,0,0,0.18)',
+      background: colors.textPrimary,
+      text: colors.background,
+      shadow: shadows.button,
     },
     secondary: {
       background: 'transparent',
-      border: `1.25px solid ${colors.borderStrong}`,
+      border: `1px solid ${colors.borderStrong}`,
       text: colors.textPrimary,
     },
     ghost: {
       background: 'transparent',
-      text: colors.textMuted,
+      text: colors.textSecondary,
     },
   },
   input: {
     height: '44px',
     heightLarge: '48px',
-    radius: radii.md,
-    background: colors.surface1,
+    radius: radii.input,
+    background: colors.background,
     border: colors.border,
   },
   chip: {
-    height: '42px',
-    radius: radii.md,
-    background: colors.chipBg,
-    text: colors.chipText,
+    height: '44px',
+    radius: radii.chip,
+    background: colors.background,
+    text: colors.textPrimary,
     selected: {
-      background: colors.chipSelectedBg,
-      border: '1.75px solid #000000',
+      background: colors.accent.blue,
+      text: colors.background,
     },
     unselected: {
-      border: `1.25px solid ${colors.border}`,
+      border: `1px solid ${colors.border}`,
     },
-    padding: '10px 12px',
-    iconSize: '16px',
-    gap: spacing.chip,
+    padding: '12px 16px',
+    iconSize: '18px',
+    gap: spacing.sm,
   },
   dropdown: {
     height: '44px',
-    radius: radii.md,
+    radius: radii.input,
     border: colors.borderStrong,
     itemHeight: '44px',
   },
   card: {
-    radius: radii.md,
-    background: colors.surface1,
+    radius: radii.card,
+    background: colors.background,
     border: colors.border,
-    padding: spacing.lg,
+    padding: spacing.xl,
+    shadow: shadows.card,
   },
   segmentedControl: {
-    height: '40px',
-    radius: '10px',
-    background: 'rgba(255,255,255,0.08)',
+    height: '44px',
+    radius: radii.input,
+    background: 'rgba(0, 0, 0, 0.04)',
     selected: {
-      background: colors.chipBg,
-      text: colors.chipText,
+      background: colors.textPrimary,
+      text: colors.background,
     },
     unselected: {
-      text: `${colors.textPrimary}CC`, // 80% opacity
+      text: colors.textPrimary,
     },
   },
 } as const
@@ -181,26 +185,9 @@ export const components = {
 // ============================================================
 export const motion = {
   duration: {
-    fast: 120,
-    normal: 150,
-    slow: 160,
+    fast: 150,
+    normal: 200,
+    slow: 300,
   },
-  easing: [0.42, 0, 0.58, 1], // cubic-bezier for ease-in-out
-  dropdown: {
-    slide: '6px',
-    maxSlide: '10px',
-  },
+  easing: [0.4, 0, 0.2, 1], // cubic-bezier for ease-in-out
 } as const
-
-// ============================================================
-// ICONS
-// ============================================================
-export const icons = {
-  size: '16px',
-  stroke: 2,
-  color: {
-    default: colors.textSecondary,
-    selected: colors.textPrimary,
-  },
-} as const
-

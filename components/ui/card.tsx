@@ -14,13 +14,14 @@ export function Card({ children, className, padding = true, variant = "default" 
   return (
     <div
       className={cn(
-        "rounded-[12px]",
-        padding && "p-5",
         className
       )}
       style={{
+        borderRadius: components.card.radius,
         background: components.card.background,
-        border: `1px solid ${components.card.border}`,
+        border: variant === "outlined" ? `1px solid ${components.card.border}` : 'none',
+        boxShadow: variant === "outlined" ? components.card.shadow : 'none',
+        padding: padding ? components.card.padding : 0,
       }}
     >
       {children}

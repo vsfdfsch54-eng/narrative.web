@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { Calendar, MessageSquare, User, MoreVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { colors, components, shadows, motion as motionConfig } from "@/lib/design-system"
 
 export function TopMenu() {
   const [isOpen, setIsOpen] = useState(false)
@@ -68,16 +69,20 @@ export function TopMenu() {
       <motion.button
         whileTap={{ scale: 0.95 }}
         onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "flex items-center justify-center",
-          "w-10 h-10 rounded-full",
-          "bg-[rgba(255,255,255,0.05)]",
-          "border border-[rgba(255,255,255,0.1)]",
-          "text-[#F5F5F5]",
-          "transition-all duration-200",
-          "hover:bg-[rgba(255,255,255,0.08)]",
-          "touch-manipulation"
-        )}
+        transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '40px',
+          height: '40px',
+          borderRadius: components.button.radius,
+          background: colors.background,
+          border: `1px solid ${colors.border}`,
+          color: colors.textSecondary,
+          boxShadow: shadows.button,
+        }}
+        className="transition-all duration-200 hover:opacity-80 touch-manipulation"
       >
         <MoreVertical className="w-5 h-5" />
       </motion.button>
@@ -101,17 +106,19 @@ export function TopMenu() {
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-              className={cn(
-                "absolute top-12 left-0 z-50",
-                "min-w-[180px]",
-                "bg-[#1A1A1A]",
-                "border border-[rgba(255,255,255,0.1)]",
-                "rounded-[16px]",
-                "backdrop-blur-xl",
-                "shadow-[0_8px_32px_rgba(0,0,0,0.4)]",
-                "overflow-hidden"
-              )}
+              transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
+              style={{
+                position: 'absolute',
+                top: '48px',
+                left: 0,
+                zIndex: 50,
+                minWidth: '180px',
+                background: colors.background,
+                border: `1px solid ${colors.borderStrong}`,
+                borderRadius: components.card.radius,
+                boxShadow: shadows.card,
+                overflow: 'hidden',
+              }}
             >
               <div className="py-2">
                 {menuItems.map((item, index) => {
@@ -124,15 +131,17 @@ export function TopMenu() {
                       transition={{ delay: index * 0.05 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => handleItemClick(item.path)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3",
-                        "text-left",
-                        "transition-all duration-200",
-                        "touch-manipulation",
-                        item.isActive
-                          ? "bg-[rgba(255,255,255,0.1)] text-[#F5F5F5]"
-                          : "text-[rgba(255,255,255,0.7)] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F5F5F5]"
-                      )}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '12px 16px',
+                        textAlign: 'left',
+                        background: item.isActive ? colors.surfaceHover : 'transparent',
+                        color: item.isActive ? colors.textPrimary : colors.textSecondary,
+                      }}
+                      className="transition-all duration-200 touch-manipulation hover:bg-gray-50"
                     >
                       <Icon className="w-5 h-5 flex-shrink-0" />
                       <span className="text-[14px] font-medium">{item.label}</span>

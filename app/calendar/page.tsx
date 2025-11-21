@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, Info, Plus, Sparkles, Users, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
+import { colors, typography, spacing, components, shadows, motion as motionConfig } from "@/lib/design-system"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -17,27 +20,22 @@ const friends = {
   Community: [],
 } as const
 
-// No mock events - all events come from database
-
 const suggestions: any[] = []
 
-const tagColors: Record<string, { gradient: string; dot: string; label: string; color: string }> = {
+const tagColors: Record<string, { dot: string; label: string; color: string }> = {
   "Inner Circle": {
-    gradient: "from-orange-400/90 via-orange-300/70 to-orange-400/50",
-    dot: "bg-orange-400",
-    color: "orange-400",
+    dot: colors.accent.orange,
+    color: colors.accent.orange,
     label: "Core people",
   },
   "Close Friends": {
-    gradient: "from-blue-400/90 via-blue-300/70 to-blue-400/50",
-    dot: "bg-blue-400",
-    color: "blue-400",
+    dot: colors.accent.blue,
+    color: colors.accent.blue,
     label: "Trusted circle",
   },
   Community: {
-    gradient: "from-green-400/90 via-green-300/70 to-green-400/50",
-    dot: "bg-green-400",
-    color: "green-400",
+    dot: colors.accent.green,
+    color: colors.accent.green,
     label: "Extended network",
   },
 }
@@ -73,13 +71,11 @@ export default function CalendarPage() {
     notes: "",
   })
 
-  // Get user ID from Supabase Auth
   const getUserId = () => {
     if (user?.id) return user.id
     return null
   }
   
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
       // Don't redirect on calendar page, just show empty state
@@ -91,10 +87,9 @@ export default function CalendarPage() {
     [currentDate],
   )
 
-  // Load events from database
   useEffect(() => {
     if (!user || authLoading) {
-      setEvents([]) // Empty events while loading
+      setEvents([])
       setLoadingEvents(false)
       return
     }
@@ -114,7 +109,6 @@ export default function CalendarPage() {
         const response = await fetch(`/api/calendar?userId=${userId}&year=${year}&month=${month}`)
         const data = await response.json()
         if (data.success && data.data) {
-          // Convert database events to calendar format
           const calendarEvents = data.data.map((event: any) => ({
             day: event.day,
             title: event.title,
@@ -125,12 +119,10 @@ export default function CalendarPage() {
           }))
           setEvents(calendarEvents)
         } else {
-          // No events in database
           setEvents([])
         }
       } catch (error) {
         console.error('Error loading events:', error)
-        // Empty events on error
         setEvents([])
       } finally {
         setLoadingEvents(false)
@@ -177,7 +169,6 @@ export default function CalendarPage() {
     setSaveError(null)
 
     try {
-      // Map inviteGroup to group_type
       const groupTypeMap: { [key: string]: 'inner' | 'close' | 'community' } = {
         'Inner Circle': 'inner',
         'Close Friends': 'close',
@@ -199,7 +190,6 @@ export default function CalendarPage() {
       
       const data = await response.json()
       if (data.success && data.data) {
-        // Reload events for current month
         const year = currentDate.getFullYear()
         const month = currentDate.getMonth()
         const reloadResponse = await fetch(`/api/calendar?userId=${userId}&year=${year}&month=${month}`)
@@ -215,7 +205,6 @@ export default function CalendarPage() {
           }))
           setEvents(calendarEvents)
         }
-        // Close planner and reset
         setShowPlanner(false)
         setPlannerFields({
           title: "",
@@ -236,493 +225,581 @@ export default function CalendarPage() {
     }
   }
 
-  // Show loading state while auth is loading
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0c]">
-        <p className="text-[#f1f1f3]/60">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: colors.background }}>
+        <p style={{ color: colors.textSecondary }}>Loading...</p>
       </div>
     )
   }
 
   const CreateMomentCard = ({ compact = false }: { compact?: boolean }) => (
-    <section
-      className={cn(
-        "rounded-[20px] border border-white/10 p-4 text-white space-y-3 sleek-module",
-      )}
-    >
-      <div className="flex items-center gap-2">
-        <Plus className="h-4 w-4 text-[#f1f1f3]/80" />
-        <p className="font-semibold text-[#f1f1f3]/90">Create new moment</p>
+    <Card variant="outlined" padding={true}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.md }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+          <Plus className="w-4 h-4" style={{ color: colors.textSecondary }} />
+          <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>Create new moment</p>
+        </div>
+        {!compact && (
+          <p style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary }}>
+            Curate a hangout, save a ritual, or plan something spontaneous.
+          </p>
+        )}
+        <Button
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setSaveError(null)
+            setShowPlanner(true)
+          }}
+          className="w-full"
+        >
+          Start a plan
+        </Button>
       </div>
-      <p className="text-[11px] text-[#f1f1f3]/70">
-        Curate a hangout, save a ritual, or plan something spontaneous.
-      </p>
-      <motion.button
-        type="button"
-        whileHover={{ scale: 1.02, y: -1 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          setSaveError(null)
-          setShowPlanner(true)
-        }}
-        className="w-full py-2 rounded-full bg-[#f1f1f3] text-[#0a0a0c] font-semibold text-sm hover:bg-white/95 transition cursor-pointer pointer-events-auto relative z-10"
-      >
-        Start a plan
-      </motion.button>
-    </section>
+    </Card>
   )
 
   return (
-    <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
-      <div className="phone-frame-container">
-        <div className="phone-frame">
-          <div className="phone-screen">
-            <div className="phone-content px-4 py-3 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
-              <AnimatePresence>
-              {panelOpen && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.6 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute inset-0 z-20 bg-[#0a0a0c]/80 rounded-[22px] pointer-events-none"
-                />
-              )}
-            </AnimatePresence>
+    <div 
+      className="fixed inset-0 overflow-hidden w-full h-full"
+      style={{
+        background: colors.background,
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)'
+      }}
+    >
+      <div className="h-full flex flex-col">
+        {/* Header */}
+        <div 
+          className="flex items-center justify-between flex-shrink-0"
+          style={{
+            padding: spacing.screen,
+            paddingBottom: spacing.lg,
+            borderBottom: `1px solid ${colors.border}`,
+          }}
+        >
+          <div>
+            <h1 style={{ 
+              fontSize: typography.h2.fontSize,
+              fontWeight: typography.h2.fontWeight,
+              letterSpacing: typography.h2.letterSpacing,
+              color: colors.textPrimary 
+            }}>
+              {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </h1>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm }}>
+            <motion.button
+              type="button"
+              onClick={() => changeMonth("prev")}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
+              style={{
+                padding: spacing.sm,
+                borderRadius: components.button.radius,
+                background: colors.background,
+                border: `1px solid ${colors.border}`,
+                color: colors.textSecondary,
+              }}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </motion.button>
+            <motion.button
+              type="button"
+              onClick={() => changeMonth("next")}
+              whileTap={{ scale: 0.98 }}
+              transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
+              style={{
+                padding: spacing.sm,
+                borderRadius: components.button.radius,
+                background: colors.background,
+                border: `1px solid ${colors.border}`,
+                color: colors.textSecondary,
+              }}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </motion.button>
+          </div>
+        </div>
 
-            <div className={cn(
-              "flex flex-col flex-1 p-3 transition-all duration-500 relative z-10",
-              panelOpen ? "scale-[0.97] blur-[1.5px] brightness-75 pointer-events-none" : "scale-100 blur-0 pointer-events-auto",
-            )}>
-              <div className="flex items-center justify-between text-white mb-3 flex-shrink-0">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.4em] text-[#f1f1f3]/60">Narrative</p>
-                  <h1 className="text-xl font-bold tracking-tight mt-0.5 text-white">
-                    {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-                  </h1>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => changeMonth("prev")}
-                    className="p-1.5 rounded-full bg-white/5 border border-white/10 text-[#f1f1f3]/80 hover:bg-white/10 transition"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => changeMonth("next")}
-                    className="p-1.5 rounded-full bg-white/5 border border-white/10 text-[#f1f1f3]/80 hover:bg-white/10 transition"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="bg-white/5 border border-white/10 rounded-lg p-2 flex items-center gap-2 text-[10px] text-[#f1f1f3]/80 mb-3 flex-shrink-0">
-                <Info className="h-4 w-4 text-[#f1f1f3]/80" />
-                <div className="flex flex-wrap gap-3 text-xs">
-                  {Object.entries(tagColors).map(([tag, meta]) => (
-                    <div key={tag} className="flex items-center gap-1.5">
-                      <span className={cn("w-3 h-3 rounded-full", meta.dot)} />
-                      <span className="text-[#f1f1f3]/90">{tag}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-7 gap-1.5 text-[9px] uppercase tracking-[0.2em] text-[#f1f1f3]/60 mb-2 flex-shrink-0">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                  <span key={day} className="text-center">{day}</span>
+        {/* Category Legend */}
+        <div 
+          style={{
+            padding: `0 ${spacing.screen}`,
+            paddingBottom: spacing.lg,
+            borderBottom: `1px solid ${colors.border}`,
+          }}
+        >
+          <Card variant="outlined" padding={true}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm }}>
+              <Info className="w-4 h-4" style={{ color: colors.textSecondary }} />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: spacing.lg }}>
+                {Object.entries(tagColors).map(([tag, meta]) => (
+                  <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: spacing.xs }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: meta.dot }} />
+                    <span style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary }}>{tag}</span>
+                  </div>
                 ))}
-              </div>
-
-              <div className="grid grid-cols-7 gap-1.5 flex-1 min-h-0 overflow-hidden">
-                {Array.from({ length: firstDay }).map((_, index) => (
-                  <div key={`empty-${index}`} />
-                ))}
-                {Array.from({ length: totalDays }).map((_, index) => {
-                  const day = index + 1
-                  const today = new Date()
-                  const isToday =
-                    today.getDate() === day &&
-                    today.getMonth() === currentDate.getMonth() &&
-                    today.getFullYear() === currentDate.getFullYear()
-                  const dayEvents = events.filter((event) => event.day === day)
-                  const tintGradient = dayEvents.length ? tagColors[dayEvents[0].tag]?.gradient : null
-
-                  return (
-                    <motion.button
-                      key={day}
-                      type="button"
-                      whileTap={{ scale: 0.96 }}
-                      onClick={() => handleDaySelect(day)}
-                      className={cn(
-                        "aspect-square rounded-[16px] border transition-all flex flex-col items-center justify-center relative overflow-hidden",
-                        "bg-white/3",
-                        selectedDay === day
-                          ? "border-white/40 text-white"
-                          : isToday
-                          ? "border-white/30 text-white"
-                          : "border-white/10 text-[#f1f1f3]/80 hover:border-white/20",
-                      )}
-                    >
-                      {tintGradient && (
-                        <div className={cn("absolute inset-0 bg-gradient-to-br opacity-90", tintGradient)} />
-                      )}
-                      <span className={cn("text-sm font-semibold relative z-10", tintGradient ? "text-black font-bold" : "text-white")}>
-                        {day}
-                      </span>
-                      {dayEvents.length > 0 && (
-                        <div className="absolute bottom-1 flex gap-1 z-10">
-                          {dayEvents.slice(0, 3).map((event) => (
-                            <span key={event.title} className={cn("w-1.5 h-1.5 rounded-full", tagColors[event.tag]?.dot || "bg-white")} />
-                          ))}
-                        </div>
-                      )}
-                    </motion.button>
-                  )
-                })}
               </div>
             </div>
+          </Card>
+        </div>
 
-            <AnimatePresence>
-              {panelOpen && selectedDay && (
-                <motion.div
-                  initial={{ y: "100%", opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: "100%", opacity: 0 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 32 }}
-                  className="absolute inset-0 z-40 flex"
+        {/* Calendar Grid */}
+        <div 
+          className="flex-1 overflow-y-auto"
+          style={{ padding: spacing.screen }}
+        >
+          <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+            {/* Day Headers */}
+            <div 
+              style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(7, 1fr)', 
+                gap: spacing.sm,
+                marginBottom: spacing.md,
+              }}
+            >
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                <span 
+                  key={day} 
+                  style={{ 
+                    textAlign: 'center',
+                    fontSize: typography.caption.fontSize,
+                    color: colors.textMuted,
+                    fontWeight: 500,
+                  }}
                 >
-                  <div className="w-full px-4 pt-6 pb-4 flex">
-                    <div className="bg-[#0a0a0c] border border-white/10 rounded-[24px] max-h-full overflow-hidden flex flex-col flex-1">
-                      <div className="p-4 flex items-center justify-between">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.4em] text-[#f1f1f3]/60">Selected</p>
-                          <h2 className="text-2xl font-bold text-white">
-                            {monthNames[currentDate.getMonth()]} {selectedDay}
-                          </h2>
-                        </div>
-                        <motion.button
-                          type="button"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setPanelOpen(false)}
-                          className="px-3 py-2 rounded-full bg-white/5 text-white text-xs uppercase tracking-[0.2em] border border-white/10 hover:bg-white/10 transition"
-                        >
-                          Back
-                        </motion.button>
+                  {day}
+                </span>
+              ))}
+            </div>
+
+            {/* Calendar Days */}
+            <div 
+              style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(7, 1fr)', 
+                gap: spacing.sm,
+              }}
+            >
+              {Array.from({ length: firstDay }).map((_, index) => (
+                <div key={`empty-${index}`} />
+              ))}
+              {Array.from({ length: totalDays }).map((_, index) => {
+                const day = index + 1
+                const today = new Date()
+                const isToday =
+                  today.getDate() === day &&
+                  today.getMonth() === currentDate.getMonth() &&
+                  today.getFullYear() === currentDate.getFullYear()
+                const dayEvents = events.filter((event) => event.day === day)
+                const eventTag = dayEvents.length > 0 ? dayEvents[0].tag : null
+                const eventColor = eventTag ? tagColors[eventTag]?.color : null
+
+                return (
+                  <motion.button
+                    key={day}
+                    type="button"
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => handleDaySelect(day)}
+                    style={{
+                      aspectRatio: '1',
+                      borderRadius: components.card.radius,
+                      border: `1px solid ${selectedDay === day ? colors.textPrimary : isToday ? colors.borderStrong : colors.border}`,
+                      background: selectedDay === day 
+                        ? colors.textPrimary 
+                        : eventColor 
+                        ? `${eventColor}15`
+                        : colors.background,
+                      color: selectedDay === day ? colors.background : colors.textPrimary,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <span style={{ 
+                      fontSize: typography.body.fontSize, 
+                      fontWeight: isToday ? 600 : 400,
+                    }}>
+                      {day}
+                    </span>
+                    {dayEvents.length > 0 && (
+                      <div style={{ 
+                        position: 'absolute', 
+                        bottom: spacing.xs, 
+                        display: 'flex', 
+                        gap: '2px',
+                      }}>
+                        {dayEvents.slice(0, 3).map((event, idx) => (
+                          <span 
+                            key={idx} 
+                            style={{ 
+                              width: '4px', 
+                              height: '4px', 
+                              borderRadius: '50%', 
+                              background: tagColors[event.tag]?.dot || colors.textMuted 
+                            }} 
+                          />
+                        ))}
                       </div>
-
-                      <div className="flex flex-col gap-3 p-4 overflow-y-auto scrollbar-hide">
-                        {/* Events Section - Always show if events exist */}
-                        {eventsForDay.length > 0 && (
-                          <section className="bg-white/5 rounded-[18px] border border-white/10 p-3 sleek-module">
-                            <div className="flex items-center justify-between text-white mb-2.5">
-                              <span className="text-xs font-semibold text-[#f1f1f3]/90">Events</span>
-                              <motion.button
-                                type="button"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  console.log("Edit events for day", selectedDay)
-                                }}
-                                className="text-[10px] uppercase tracking-[0.2em] text-[#f1f1f3]/60 hover:text-[#f1f1f3]/80 transition cursor-pointer pointer-events-auto relative z-10"
-                              >
-                                Edit
-                              </motion.button>
-                            </div>
-                            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
-                              {eventsForDay.map((event) => {
-                                const eventColor = tagColors[event.tag]?.color || "white"
-                                return (
-                                  <motion.button
-                                    key={event.title}
-                                    type="button"
-                                    whileHover={{ scale: 1.02, y: -2 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={(e) => {
-                                      e.preventDefault()
-                                      e.stopPropagation()
-                                      console.log("Selected event:", event.title)
-                                    }}
-                                    className={cn(
-                                      "min-w-[200px] rounded-[16px] border px-3 py-3 text-left text-white flex flex-col gap-1.5 hover:opacity-90 transition cursor-pointer pointer-events-auto relative z-10",
-                                      eventColor === "orange-400" && "bg-orange-400/20 border-orange-400/40",
-                                      eventColor === "blue-400" && "bg-blue-400/20 border-blue-400/40",
-                                      eventColor === "green-400" && "bg-green-400/20 border-green-400/40"
-                                    )}
-                                  >
-                                    <div>
-                                      <p className="text-xs font-semibold">{event.title}</p>
-                                      <p className="text-[10px] text-[#f1f1f3]/70">{event.time}</p>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <span className={cn(
-                                        "text-[9px] px-1.5 py-0.5 rounded-md text-white border font-semibold",
-                                        eventColor === "orange-400" && "bg-orange-400/30 border-orange-400/50",
-                                        eventColor === "blue-400" && "bg-blue-400/30 border-blue-400/50",
-                                        eventColor === "green-400" && "bg-green-400/30 border-green-400/50"
-                                      )}>
-                                        {event.tag}
-                                      </span>
-                                      <motion.button
-                                        type="button"
-                                        whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={(e) => {
-                                          e.preventDefault()
-                                          e.stopPropagation()
-                                          console.log("Request to join:", event.title)
-                                        }}
-                                        className="text-[10px] font-semibold text-[#f1f1f3]/80 hover:text-white transition cursor-pointer pointer-events-auto relative z-20"
-                                      >
-                                        Request to join
-                                      </motion.button>
-                                    </div>
-                                  </motion.button>
-                                )
-                              })}
-                            </div>
-                          </section>
-                        )}
-
-                        {/* Create Moment - Always at top when no events, or after events */}
-                        {eventsForDay.length === 0 ? (
-                          <CreateMomentCard />
-                        ) : (
-                          <CreateMomentCard compact />
-                        )}
-                        
-                        {/* Suggested Hangouts */}
-                        <section className="bg-white/5 rounded-[18px] border border-white/10 p-3 sleek-module">
-                          <div className="flex items-center gap-2 text-white mb-2.5">
-                            <Sparkles className="h-3.5 w-3.5 text-[#f1f1f3]/80" />
-                            <p className="text-xs font-semibold text-[#f1f1f3]/90">Suggested hangouts</p>
-                          </div>
-                          {suggestions.length > 0 ? (
-                            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
-                              {suggestions.map((suggestion) => (
-                                <motion.button
-                                  key={suggestion.title}
-                                  type="button"
-                                  whileHover={{ scale: 1.02, y: -2 }}
-                                  whileTap={{ scale: 0.98 }}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    console.log("Selected suggestion:", suggestion.title)
-                                  }}
-                                  className="min-w-[190px] bg-white/5 rounded-[14px] border border-white/10 p-2.5 text-left text-[#f1f1f3]/90 hover:bg-white/8 transition cursor-pointer pointer-events-auto relative z-10"
-                                >
-                                  <p className="text-xs font-semibold">{suggestion.title}</p>
-                                  <p className="text-[10px] text-[#f1f1f3]/70">{suggestion.detail}</p>
-                                  <div className="flex items-center justify-between text-[9px] mt-1.5">
-                                    <span className="uppercase tracking-[0.25em] text-[#f1f1f3]/70">{suggestion.vibe}</span>
-                                    <span className="text-[#f1f1f3]/60">{suggestion.source}</span>
-                                  </div>
-                                </motion.button>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-[#f1f1f3]/60 text-center py-4">No suggestions available</p>
-                          )}
-                        </section>
-
-                        {/* People Section */}
-                        <section className="bg-white/5 rounded-[18px] border border-white/10 p-3 space-y-2.5 sleek-module">
-                          <div className="flex items-center gap-2 text-white">
-                            <Users className="h-3.5 w-3.5 text-[#f1f1f3]/80" />
-                            <p className="text-xs font-semibold text-[#f1f1f3]/90">People</p>
-                          </div>
-                          <div className="bg-white/5 rounded-[14px] p-2.5 border border-white/10">
-                            <label className="text-[9px] uppercase tracking-[0.25em] text-[#f1f1f3]/60">Viewing</label>
-                            <select
-                              value={selectedFriendGroup}
-                              onChange={(e) => setSelectedFriendGroup(e.target.value as keyof typeof friends)}
-                              className="mt-1 w-full bg-white/5 border border-white/10 rounded-[14px] px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-white/40"
-                            >
-                              {Object.keys(friends).map((group) => (
-                                <option key={group} value={group} className="bg-[#0a0a0c]">
-                                  {group}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          {friends[selectedFriendGroup].length > 0 ? (
-                            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
-                              {friends[selectedFriendGroup].map((person) => (
-                                <motion.button
-                                  key={person}
-                                  type="button"
-                                  whileHover={{ scale: 1.05, y: -2 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    console.log("Selected person:", person, "from", selectedFriendGroup)
-                                  }}
-                                  className="min-w-[120px] bg-white/5 rounded-[14px] border border-white/10 px-2.5 py-1.5 text-left text-xs text-white hover:bg-white/8 transition cursor-pointer pointer-events-auto relative z-10"
-                                >
-                                  {person}
-                                </motion.button>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-[#f1f1f3]/60 text-center py-4">No {selectedFriendGroup.toLowerCase()} yet</p>
-                          )}
-                        </section>
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                    )}
+                  </motion.button>
+                )
+              })}
             </div>
           </div>
         </div>
       </div>
 
+      {/* Day Panel */}
+      <AnimatePresence>
+        {panelOpen && selectedDay && (
+          <motion.div
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
+            className="fixed inset-0 z-40 flex items-end"
+            style={{ background: 'rgba(0, 0, 0, 0.4)' }}
+            onClick={() => setPanelOpen(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
+              className="w-full"
+              style={{
+                background: colors.background,
+                borderTopLeftRadius: components.card.radius,
+                borderTopRightRadius: components.card.radius,
+                maxHeight: '80vh',
+                overflow: 'hidden',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ padding: spacing.screen }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xl }}>
+                  <div>
+                    <p style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Selected</p>
+                    <h2 style={{ 
+                      fontSize: typography.h2.fontSize,
+                      fontWeight: typography.h2.fontWeight,
+                      color: colors.textPrimary,
+                    }}>
+                      {monthNames[currentDate.getMonth()]} {selectedDay}
+                    </h2>
+                  </div>
+                  <motion.button
+                    type="button"
+                    whileTap={{ scale: 0.98 }}
+                    transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
+                    onClick={() => setPanelOpen(false)}
+                    style={{
+                      padding: `${spacing.sm} ${spacing.md}`,
+                      borderRadius: components.button.radius,
+                      background: colors.background,
+                      border: `1px solid ${colors.border}`,
+                      color: colors.textPrimary,
+                      fontSize: typography.caption.fontSize,
+                    }}
+                  >
+                    Back
+                  </motion.button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg, overflowY: 'auto', maxHeight: '60vh' }}>
+                  {/* Events Section */}
+                  {eventsForDay.length > 0 && (
+                    <Card variant="outlined">
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.md }}>
+                        <span style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>Events</span>
+                        <button
+                          type="button"
+                          onClick={() => console.log("Edit events for day", selectedDay)}
+                          style={{
+                            fontSize: typography.caption.fontSize,
+                            color: colors.textSecondary,
+                          }}
+                        >
+                          Edit
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', gap: spacing.md, overflowX: 'auto' }}>
+                        {eventsForDay.map((event) => {
+                          const eventColor = tagColors[event.tag]?.color || colors.textPrimary
+                          return (
+                            <Card 
+                              key={event.title} 
+                              variant="outlined" 
+                              padding={true}
+                              style={{ 
+                                minWidth: '200px',
+                                background: `${eventColor}15`,
+                                borderColor: `${eventColor}40`,
+                              }}
+                            >
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
+                                <div>
+                                  <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>{event.title}</p>
+                                  <p style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary }}>{event.time}</p>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                  <span style={{
+                                    fontSize: typography.caption.fontSize,
+                                    padding: `${spacing.xs} ${spacing.sm}`,
+                                    borderRadius: components.chip.radius,
+                                    background: `${eventColor}30`,
+                                    color: colors.textPrimary,
+                                    border: `1px solid ${eventColor}50`,
+                                  }}>
+                                    {event.tag}
+                                  </span>
+                                </div>
+                              </div>
+                            </Card>
+                          )
+                        })}
+                      </div>
+                    </Card>
+                  )}
+
+                  {/* Create Moment */}
+                  {eventsForDay.length === 0 ? (
+                    <CreateMomentCard />
+                  ) : (
+                    <CreateMomentCard compact />
+                  )}
+                  
+                  {/* Suggested Hangouts */}
+                  <Card variant="outlined">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
+                      <Sparkles className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                      <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>Suggested hangouts</p>
+                    </div>
+                    {suggestions.length > 0 ? (
+                      <div style={{ display: 'flex', gap: spacing.md, overflowX: 'auto' }}>
+                        {suggestions.map((suggestion) => (
+                          <Card key={suggestion.title} variant="outlined" padding={true} style={{ minWidth: '190px' }}>
+                            <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>{suggestion.title}</p>
+                            <p style={{ fontSize: typography.caption.fontSize, color: colors.textSecondary }}>{suggestion.detail}</p>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.xl }}>
+                        No suggestions available
+                      </p>
+                    )}
+                  </Card>
+
+                  {/* People Section */}
+                  <Card variant="outlined">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
+                      <Users className="w-4 h-4" style={{ color: colors.textSecondary }} />
+                      <p style={{ fontSize: typography.body.fontSize, fontWeight: 500, color: colors.textPrimary }}>People</p>
+                    </div>
+                    <div style={{ marginBottom: spacing.md }}>
+                      <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Viewing</label>
+                      <select
+                        value={selectedFriendGroup}
+                        onChange={(e) => setSelectedFriendGroup(e.target.value as keyof typeof friends)}
+                        style={{
+                          marginTop: spacing.xs,
+                          width: '100%',
+                          padding: `${spacing.sm} ${spacing.md}`,
+                          borderRadius: components.input.radius,
+                          background: colors.background,
+                          border: `1px solid ${colors.border}`,
+                          color: colors.textPrimary,
+                          fontSize: typography.body.fontSize,
+                        }}
+                      >
+                        {Object.keys(friends).map((group) => (
+                          <option key={group} value={group}>
+                            {group}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {friends[selectedFriendGroup].length > 0 ? (
+                      <div style={{ display: 'flex', gap: spacing.md, overflowX: 'auto' }}>
+                        {friends[selectedFriendGroup].map((person) => (
+                          <Card key={person} variant="outlined" padding={true} style={{ minWidth: '120px' }}>
+                            <p style={{ fontSize: typography.body.fontSize, color: colors.textPrimary }}>{person}</p>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: typography.body.fontSize, color: colors.textSecondary, textAlign: 'center', padding: spacing.xl }}>
+                        No {selectedFriendGroup.toLowerCase()} yet
+                      </p>
+                    )}
+                  </Card>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Planner Modal */}
       <AnimatePresence>
         {showPlanner && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0a0a0c]/80 backdrop-blur-xl"
+            transition={{ duration: motionConfig.duration.normal / 1000 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0, 0, 0, 0.4)' }}
+            onClick={() => setShowPlanner(false)}
           >
             <motion.div
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              transition={{ type: "spring", stiffness: 260, damping: 26 }}
-              className="w-full sm:max-w-[360px] bg-[#0a0a0c] border border-white/10 rounded-[24px] p-5 text-white space-y-4"
+              transition={{ duration: motionConfig.duration.normal / 1000, ease: motionConfig.easing }}
+              className="w-full"
+              style={{ maxWidth: '360px', background: colors.background, borderRadius: components.card.radius, padding: spacing.xxl }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.xl }}>
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.35em] text-[#f1f1f3]/60">New plan</p>
-                  <h3 className="text-xl font-bold text-white">Design your moment</h3>
+                  <p style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>New plan</p>
+                  <h3 style={{ fontSize: typography.h2.fontSize, fontWeight: typography.h2.fontWeight, color: colors.textPrimary }}>Design your moment</h3>
                 </div>
                 <motion.button
                   type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
                   onClick={() => setShowPlanner(false)}
-                  className="rounded-full border border-white/10 p-2 text-[#f1f1f3]/70 hover:text-white hover:bg-white/5 transition"
+                  style={{
+                    padding: spacing.sm,
+                    borderRadius: components.button.radius,
+                    background: colors.background,
+                    border: `1px solid ${colors.border}`,
+                    color: colors.textSecondary,
+                  }}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="w-4 h-4" />
                 </motion.button>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#f1f1f3]/60">Title</label>
-                <input
-                  value={plannerFields.title}
-                  onChange={(e) => handlePlannerField("title", e.target.value)}
-                  placeholder="Name this moment"
-                  className="w-full bg-white/5 border border-white/10 rounded-[16px] px-3 py-2 text-sm text-white placeholder:text-[#f1f1f3]/50 focus:outline-none focus:ring-1 focus:ring-white/40"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#f1f1f3]/60">Invite group</label>
-                <select
-                  value={plannerFields.inviteGroup}
-                  onChange={(e) => handlePlannerField("inviteGroup", e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-[16px] px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-white/40"
-                >
-                  {Object.keys(friends).map((group) => (
-                    <option key={group} value={group} className="bg-[#0a0a0c]">
-                      {group}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#f1f1f3]/60">Privacy</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {["public", "private"].map((mode) => (
-                    <motion.button
-                      key={mode}
-                      type="button"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => handlePlannerField("privacy", mode)}
-                      className={cn(
-                        "rounded-full px-3 py-2 border text-sm capitalize transition",
-                        plannerFields.privacy === mode
-                          ? "bg-[#f1f1f3] text-[#0a0a0c] border-white"
-                          : "bg-white/5 border-white/10 text-[#f1f1f3]/70",
-                      )}
-                    >
-                      {mode}
-                    </motion.button>
-                  ))}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.lg }}>
+                <div>
+                  <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: spacing.sm, display: 'block' }}>Title</label>
+                  <input
+                    value={plannerFields.title}
+                    onChange={(e) => handlePlannerField("title", e.target.value)}
+                    placeholder="Name this moment"
+                    style={{
+                      width: '100%',
+                      padding: `${spacing.sm} ${spacing.md}`,
+                      borderRadius: components.input.radius,
+                      background: colors.background,
+                      border: `1px solid ${colors.border}`,
+                      color: colors.textPrimary,
+                      fontSize: typography.body.fontSize,
+                    }}
+                  />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#f1f1f3]/60">Templates</label>
-                <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-                  {planTemplates.map((template) => (
-                    <motion.button
-                      key={template.title}
-                      type="button"
-                      whileHover={{ scale: 1.02, y: -2 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        handlePlannerField("title", template.title)
-                      }}
-                      className="min-w-[190px] bg-white/5 border border-white/10 rounded-[16px] px-3 py-3 text-left hover:bg-white/8 transition cursor-pointer pointer-events-auto relative z-10"
-                    >
-                      <p className="text-sm font-semibold text-[#f1f1f3]/90">{template.title}</p>
-                      <p className="text-[11px] text-[#f1f1f3]/70">{template.detail}</p>
-                      <span className="text-[10px] uppercase tracking-[0.3em] text-[#f1f1f3]/70">{template.vibe}</span>
-                    </motion.button>
-                  ))}
+                <div>
+                  <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: spacing.sm, display: 'block' }}>Invite group</label>
+                  <select
+                    value={plannerFields.inviteGroup}
+                    onChange={(e) => handlePlannerField("inviteGroup", e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: `${spacing.sm} ${spacing.md}`,
+                      borderRadius: components.input.radius,
+                      background: colors.background,
+                      border: `1px solid ${colors.border}`,
+                      color: colors.textPrimary,
+                      fontSize: typography.body.fontSize,
+                    }}
+                  >
+                    {Object.keys(friends).map((group) => (
+                      <option key={group} value={group}>
+                        {group}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[11px] uppercase tracking-[0.3em] text-[#f1f1f3]/60">Notes</label>
-                <textarea
-                  value={plannerFields.notes}
-                  onChange={(e) => handlePlannerField("notes", e.target.value)}
-                  placeholder="What makes this special?"
-                  rows={3}
-                  className="w-full bg-white/5 border border-white/10 rounded-[16px] px-3 py-2 text-sm text-white placeholder:text-[#f1f1f3]/50 focus:outline-none focus:ring-1 focus:ring-white/40 resize-none"
-                />
-              </div>
-
-              {saveError && (
-                <div className="p-3 rounded-[16px] border border-white/15 bg-white/5 text-xs text-[#f1f1f3]/80">
-                  {saveError}
+                <div>
+                  <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: spacing.sm, display: 'block' }}>Privacy</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: spacing.md }}>
+                    {["public", "private"].map((mode) => (
+                      <motion.button
+                        key={mode}
+                        type="button"
+                        whileTap={{ scale: 0.98 }}
+                        transition={{ duration: motionConfig.duration.fast / 1000, ease: motionConfig.easing }}
+                        onClick={() => handlePlannerField("privacy", mode)}
+                        style={{
+                          padding: `${spacing.sm} ${spacing.md}`,
+                          borderRadius: components.chip.radius,
+                          background: plannerFields.privacy === mode ? colors.textPrimary : colors.background,
+                          color: plannerFields.privacy === mode ? colors.background : colors.textPrimary,
+                          border: `1px solid ${colors.border}`,
+                          fontSize: typography.body.fontSize,
+                          textTransform: 'capitalize',
+                        }}
+                      >
+                        {mode}
+                      </motion.button>
+                    ))}
+                  </div>
                 </div>
-              )}
 
-              <motion.button
-                type="button"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handlePlannerSubmit}
-                disabled={savingEvent || !plannerFields.title.trim()}
-                className={cn(
-                  "w-full py-3 rounded-full bg-[#f1f1f3] text-[#0a0a0c] font-semibold text-sm hover:bg-white/95 transition",
-                  "disabled:opacity-50 disabled:cursor-not-allowed"
+                <div>
+                  <label style={{ fontSize: typography.caption.fontSize, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: spacing.sm, display: 'block' }}>Notes</label>
+                  <textarea
+                    value={plannerFields.notes}
+                    onChange={(e) => handlePlannerField("notes", e.target.value)}
+                    placeholder="What makes this special?"
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: `${spacing.sm} ${spacing.md}`,
+                      borderRadius: components.input.radius,
+                      background: colors.background,
+                      border: `1px solid ${colors.border}`,
+                      color: colors.textPrimary,
+                      fontSize: typography.body.fontSize,
+                      resize: 'none',
+                    }}
+                  />
+                </div>
+
+                {saveError && (
+                  <div style={{
+                    padding: spacing.md,
+                    borderRadius: components.input.radius,
+                    border: `1px solid ${colors.border}`,
+                    background: colors.background,
+                    fontSize: typography.caption.fontSize,
+                    color: colors.textSecondary,
+                  }}>
+                    {saveError}
+                  </div>
                 )}
-              >
-                {savingEvent ? "Saving..." : "Save & Invite"}
-              </motion.button>
+
+                <Button
+                  onClick={handlePlannerSubmit}
+                  disabled={savingEvent || !plannerFields.title.trim()}
+                  className="w-full"
+                >
+                  {savingEvent ? "Saving..." : "Save & Invite"}
+                </Button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -730,5 +807,3 @@ export default function CalendarPage() {
     </div>
   )
 }
-
-

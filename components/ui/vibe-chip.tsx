@@ -56,7 +56,7 @@ export function VibeChip({
         "touch-manipulation",
         "overflow-hidden flex items-center",
         "relative",
-        "text-black"
+        selected ? "text-white" : "text-black"
       )}
       style={{
         height: components.chip.height,
@@ -64,8 +64,9 @@ export function VibeChip({
         padding: components.chip.padding,
         gap: components.chip.gap,
         background: selected ? components.chip.selected.background : components.chip.background,
-        border: selected ? components.chip.selected.border : components.chip.unselected.border,
-        boxShadow: selected ? '0 1px 3px rgba(0,0,0,0.15)' : 'none',
+        color: selected ? components.chip.selected.text : components.chip.text,
+        border: selected ? 'none' : components.chip.unselected.border,
+        boxShadow: selected ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
         willChange: "transform"
       }}
     >
