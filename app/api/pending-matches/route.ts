@@ -127,13 +127,24 @@ export async function POST(request: NextRequest) {
     }
 
     // No match found, user is in queue
-    // Trigger matchmaking processor in background (non-blocking)
-    fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/matchmaking/process`, {
-      method: 'GET',
-    }).catch(err => {
-      // Non-blocking - if this fails, client-side polling will handle it
-      console.log('Matchmaking processor trigger failed (non-critical):', err)
-    })
+    // Trigger matchmaking processor immediately (await to ensure it runs)
+    try {
+      const processorUrl = process.env.NEXT_PUBLIC_APP_URL 
+        ? `${process.env.NEXT_PUBLIC_APP_URL}/api/matchmaking/process`
+        : `${request.headers.get('origin') || 'http://localhost:3000'}/api/matchmaking/process`
+      
+      await fetch(processorUrl, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      }).catch(err => {
+        // Log but don't fail - client-side polling will handle it
+        console.log('Matchmaking processor trigger failed (non-critical):', err)
+      })
+    } catch (err) {
+      console.log('Error triggering matchmaking processor:', err)
+    }
 
     return NextResponse.json({ 
       success: true, 

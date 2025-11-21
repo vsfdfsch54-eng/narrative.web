@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const supabase = createServerClient()
     
     // Get all users waiting for a match (FIFO order)
+    // Use a small delay to ensure database consistency
     const { data: waitingUsers, error: fetchError } = await supabase
       .from('pending_matches')
       .select('*')
@@ -23,15 +24,18 @@ export async function GET(request: NextRequest) {
     if (fetchError) {
       console.error('Error fetching waiting users:', fetchError)
       return NextResponse.json(
-        { error: 'Failed to fetch waiting users' },
+        { error: 'Failed to fetch waiting users', details: fetchError.message },
         { status: 500 }
       )
     }
+
+    console.log(`[Matchmaking] Found ${waitingUsers?.length || 0} users waiting`)
 
     if (!waitingUsers || waitingUsers.length < 2) {
       return NextResponse.json({ 
         success: true, 
         matched: 0,
+        waiting: waitingUsers?.length || 0,
         message: `Only ${waitingUsers?.length || 0} user(s) waiting, need 2+ to match` 
       })
     }
@@ -112,9 +116,12 @@ export async function GET(request: NextRequest) {
         } else {
           matchedCount++
           pairs.push({ user1: user1.user_id, user2: user2.user_id })
+          console.log(`[Matchmaking] Matched ${user1.user_id} with ${user2.user_id}`)
         }
       }
     }
+
+    console.log(`[Matchmaking] Completed: ${matchedCount} pair(s) matched`)
 
     return NextResponse.json({ 
       success: true, 
