@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { AnimatePresence, motion } from "framer-motion"
+import { motion } from "framer-motion"
 import { VibeChip } from "@/components/ui/vibe-chip"
 import { TopicChip } from "@/components/ui/topic-chip"
 import { BottomNav } from "@/components/ui/bottom-nav"
@@ -127,7 +127,7 @@ export default function VibePage() {
     }
   }
 
-  const handleSkipAndChat = () => {
+  const handleSkip = () => {
     // Route to /chat which handles matching
     router.push("/chat")
   }
@@ -163,7 +163,7 @@ export default function VibePage() {
 
               {/* Vibe Section */}
               <div className="flex-shrink-0 mb-8">
-                <h2 className="text-[28px] font-bold text-black mb-3">Select Your Vibe</h2>
+                <h2 className="text-[28px] font-bold text-black mb-3 text-center">Select Your Vibe</h2>
                 <p className="text-[14px] text-black/55 max-w-[90%] mx-auto mb-4 text-center">
                   Vibes describe your current mood or energy and help match you with someone who feels the same way.
                 </p>
@@ -182,7 +182,7 @@ export default function VibePage() {
 
               {/* Topic Section */}
               <div className="flex-shrink-0 mb-8">
-                <h2 className="text-[28px] font-bold text-black mb-3">Choose a Topic</h2>
+                <h2 className="text-[28px] font-bold text-black mb-3 text-center">Choose a Topic</h2>
                 <p className="text-[14px] text-black/55 max-w-[90%] mx-auto mb-4 text-center">
                   Topics are what you want to talk about. They guide the conversation so you connect with the right person.
                 </p>
@@ -210,7 +210,7 @@ export default function VibePage() {
                       onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
                       whileTap={{ scale: 0.97 }}
                       className={cn(
-                        "flex-1 px-4 py-2.5 rounded-[10px] text-base font-medium transition-all duration-300 relative z-10",
+                        "flex-1 px-4 py-2.5 rounded-[12px] text-base font-medium transition-all duration-300 relative z-10",
                         selectedTimeLimit === time 
                           ? "bg-black text-white font-semibold"
                           : "bg-transparent text-black"
@@ -226,29 +226,31 @@ export default function VibePage() {
               <div className="flex-1" />
             </div>
             
-            {/* Bottom Fixed Footer - Side-by-Side Buttons Above Nav Bar */}
+            {/* Bottom Fixed Footer - Pill Buttons Above Nav Bar */}
             <div 
-              className="fixed left-0 right-0 bg-white flex flex-row gap-3"
+              className="fixed left-0 right-0 bg-white flex flex-row"
               style={{
                 bottom: `calc(80px + env(safe-area-inset-bottom))`, // Above nav bar + safe area
                 padding: '16px 24px',
                 paddingBottom: `max(16px, calc(16px + env(safe-area-inset-bottom)))`,
+                gap: '14px',
                 zIndex: 50
               }}
             >
-              {/* CONNECT Button - Always visible, disabled when canConnect is false */}
+              {/* CONNECT Button - Pill Shape */}
               <motion.button
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 whileTap={{ 
-                  scale: canConnect ? 0.97 : 1,
-                  backgroundColor: canConnect ? '#FFFFFF' : undefined,
-                  color: canConnect ? '#000000' : undefined
+                  scale: 0.97,
+                  backgroundColor: '#FFFFFF',
+                  color: '#000000',
+                  border: '1px solid #000000'
                 }}
                 onClick={handleConnect}
                 disabled={saving || !canConnect}
                 className={cn(
-                  "flex-1 h-[52px] rounded-[14px] text-lg font-bold transition-all duration-300",
+                  "flex-1 h-[56px] rounded-[24px] text-lg font-semibold transition-all duration-300",
                   canConnect
                     ? "bg-black text-white"
                     : "bg-[rgba(0,0,0,0.05)] text-black/40",
@@ -258,7 +260,7 @@ export default function VibePage() {
                 {saving ? "Connecting..." : "CONNECT"}
               </motion.button>
               
-              {/* SKIP Button - Always visible */}
+              {/* SKIP Button - Pill Shape */}
               <motion.button
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -266,9 +268,9 @@ export default function VibePage() {
                   scale: 0.97,
                   backgroundColor: 'rgba(0,0,0,0.06)'
                 }}
-                onClick={handleSkipAndChat}
+                onClick={handleSkip}
                 className={cn(
-                  "flex-1 h-[52px] rounded-[14px] text-lg font-bold transition-all duration-300",
+                  "flex-1 h-[56px] rounded-[24px] text-lg font-semibold transition-all duration-300",
                   "bg-transparent text-black border border-[rgba(0,0,0,0.25)]"
                 )}
               >
