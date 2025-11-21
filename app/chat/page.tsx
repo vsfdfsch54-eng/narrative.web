@@ -81,9 +81,9 @@ export default function ChatPage() {
             table: 'pending_matches',
             filter: `user_id=eq.${user.id}`,
           },
-          async (payload: { new: any }) => {
-            const pendingMatch = payload.new
-            if (pendingMatch.status === 'matched') {
+          async (payload: any) => {
+            const pendingMatch = payload?.new
+            if (pendingMatch?.status === 'matched') {
               // User was matched! Find the chat match
               const { data: matches, error } = await supabase
                 .from('chat_matches')
