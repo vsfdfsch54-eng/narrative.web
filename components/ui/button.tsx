@@ -8,6 +8,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost" | "outline"
   size?: "default" | "large" | "lg"
   children: React.ReactNode
+  asChild?: boolean
 }
 
 export function Button({
