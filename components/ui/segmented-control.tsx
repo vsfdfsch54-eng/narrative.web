@@ -20,6 +20,7 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
         background: tokens.colors.surfacePrimary,
         borderRadius: tokens.radii.pill,
         border: `1px solid ${tokens.colors.borderSubtle}`,
+        boxShadow: tokens.shadows.card,
       }}
     >
       {options.map((option) => {
@@ -34,7 +35,7 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
               padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
               borderRadius: tokens.radii.pill,
               background: isSelected ? tokens.colors.backgroundApp : 'transparent',
-              color: isSelected ? tokens.colors.textPrimary : tokens.colors.textDark,
+              color: isSelected ? tokens.colors.textPrimaryOnDark : tokens.colors.textPrimary,
               border: 'none',
               ...tokens.typography.label,
               cursor: 'pointer',

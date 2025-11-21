@@ -240,7 +240,7 @@ export default function CalendarPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
           <Plus className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
-          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textDark, margin: 0 }}>Create new moment</p>
+          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>Create new moment</p>
         </div>
         {!compact && (
           <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0 }}>
@@ -267,10 +267,10 @@ export default function CalendarPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
         {/* Calendar Card */}
         <Card>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[28] }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.verticalSpacingLarge }}>
             <h1 style={{ 
               ...tokens.typography.heading,
-              color: tokens.colors.textDark,
+              color: tokens.colors.textPrimary,
               margin: 0,
             }}>
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
@@ -285,8 +285,9 @@ export default function CalendarPage() {
                   borderRadius: tokens.radii.button,
                   background: tokens.colors.surfacePrimary,
                   border: `1px solid ${tokens.colors.borderSubtle}`,
-                  color: tokens.colors.textDark,
+                  color: tokens.colors.textPrimary,
                   cursor: 'pointer',
+                  boxShadow: tokens.shadows.card,
                 }}
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -300,8 +301,9 @@ export default function CalendarPage() {
                   borderRadius: tokens.radii.button,
                   background: tokens.colors.surfacePrimary,
                   border: `1px solid ${tokens.colors.borderSubtle}`,
-                  color: tokens.colors.textDark,
+                  color: tokens.colors.textPrimary,
                   cursor: 'pointer',
+                  boxShadow: tokens.shadows.card,
                 }}
               >
                 <ChevronRight className="w-4 h-4" />
@@ -312,14 +314,14 @@ export default function CalendarPage() {
           {/* Category Legend */}
           <div style={{ 
             padding: tokens.spacing[16],
-            background: tokens.colors.backgroundSoft,
+            background: tokens.colors.surfaceSecondary,
             borderRadius: tokens.radii.input,
             border: `1px solid ${tokens.colors.borderSubtle}`,
-            marginBottom: tokens.spacing[20],
+            marginBottom: tokens.layout.verticalSpacingMedium,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], marginBottom: tokens.spacing[8] }}>
               <Info className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[20] }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.layout.verticalSpacingMedium }}>
                 {Object.entries(tagColors).map(([tag, meta]) => (
                   <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[8] }}>
                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: meta.dot }} />
@@ -343,7 +345,7 @@ export default function CalendarPage() {
                 style={{ 
                   textAlign: 'center',
                   ...tokens.typography.label,
-                  color: tokens.colors.textMuted,
+                  color: tokens.colors.textSecondary,
                   fontWeight: 500,
                 }}
               >
@@ -384,8 +386,8 @@ export default function CalendarPage() {
                     border: `1px solid ${tokens.colors.borderSubtle}`,
                     background: selectedDay === day 
                       ? tokens.colors.surfacePrimary 
-                      : tokens.colors.backgroundSoft,
-                    color: selectedDay === day ? tokens.colors.textDark : tokens.colors.textSecondary,
+                      : '#F7F7F8',
+                    color: selectedDay === day ? tokens.colors.textPrimary : tokens.colors.textSecondary,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -461,7 +463,7 @@ export default function CalendarPage() {
                   <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Selected</p>
                   <h2 style={{ 
                     ...tokens.typography.heading,
-                    color: tokens.colors.textDark,
+                    color: tokens.colors.textPrimary,
                     margin: 0,
                   }}>
                     {monthNames[currentDate.getMonth()]} {selectedDay}
@@ -476,7 +478,7 @@ export default function CalendarPage() {
                     borderRadius: tokens.radii.button,
                     background: tokens.colors.surfacePrimary,
                     border: `1px solid ${tokens.colors.borderSubtle}`,
-                    color: tokens.colors.textDark,
+                    color: tokens.colors.textPrimary,
                     ...tokens.typography.label,
                     cursor: 'pointer',
                   }}
@@ -485,11 +487,11 @@ export default function CalendarPage() {
                 </motion.button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20], overflowY: 'auto', maxHeight: '60vh' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingMedium, overflowY: 'auto', maxHeight: '60vh' }}>
                 {eventsForDay.length > 0 && (
                   <Card>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[16] }}>
-                      <span style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textDark }}>Events</span>
+                      <span style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary }}>Events</span>
                       <button
                         type="button"
                         onClick={() => console.log("Edit events for day", selectedDay)}
@@ -527,7 +529,7 @@ export default function CalendarPage() {
                                   padding: `${tokens.spacing[4]} ${tokens.spacing[12]}`,
                                   borderRadius: tokens.radii.button,
                                   background: `${eventColor}30`,
-                                  color: tokens.colors.textDark,
+                                  color: tokens.colors.textPrimary,
                                   border: `1px solid ${eventColor}50`,
                                 }}>
                                   {event.tag}
@@ -562,7 +564,7 @@ export default function CalendarPage() {
                       ))}
                     </div>
                   ) : (
-                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[28], margin: 0 }}>
+                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.layout.verticalSpacingLarge, margin: 0 }}>
                       No suggestions available
                     </p>
                   )}
@@ -571,7 +573,7 @@ export default function CalendarPage() {
                 <Card>
                   <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], marginBottom: tokens.spacing[16] }}>
                     <Users className="w-4 h-4" style={{ color: tokens.colors.textSecondary }} />
-                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textDark, margin: 0 }}>People</p>
+                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>People</p>
                   </div>
                   <div style={{ marginBottom: tokens.spacing[16] }}>
                     <label style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[8], display: 'block' }}>Viewing</label>
@@ -585,7 +587,7 @@ export default function CalendarPage() {
                         borderRadius: tokens.radii.input,
                         background: tokens.colors.surfacePrimary,
                         border: `1px solid ${tokens.colors.borderSubtle}`,
-                        color: tokens.colors.textDark,
+                        color: tokens.colors.textPrimary,
                         ...tokens.typography.body,
                         cursor: 'pointer',
                       }}
@@ -601,12 +603,12 @@ export default function CalendarPage() {
                     <div style={{ display: 'flex', gap: tokens.spacing[16], overflowX: 'auto' }}>
                       {friends[selectedFriendGroup].map((person) => (
                         <Card key={person} style={{ minWidth: '120px' }}>
-                          <p style={{ ...tokens.typography.body, color: tokens.colors.textDark, margin: 0 }}>{person}</p>
+                          <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimary, margin: 0 }}>{person}</p>
                         </Card>
                       ))}
                     </div>
                   ) : (
-                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.spacing[28], margin: 0 }}>
+                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.layout.verticalSpacingLarge, margin: 0 }}>
                       No {selectedFriendGroup.toLowerCase()} yet
                     </p>
                   )}
@@ -635,13 +637,13 @@ export default function CalendarPage() {
               exit={{ scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
               className="w-full"
-              style={{ maxWidth: '360px', background: tokens.colors.surfacePrimary, borderRadius: tokens.radii.card, padding: tokens.spacing[28] }}
+              style={{ maxWidth: '360px', background: tokens.colors.surfacePrimary, borderRadius: tokens.radii.card, padding: tokens.layout.verticalSpacingLarge, boxShadow: tokens.shadows.elevated }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[28] }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.verticalSpacingLarge }}>
                 <div>
                   <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>New plan</p>
-                  <h3 style={{ ...tokens.typography.heading, color: tokens.colors.textDark, margin: 0 }}>Design your moment</h3>
+                  <h3 style={{ ...tokens.typography.heading, color: tokens.colors.textPrimary, margin: 0 }}>Design your moment</h3>
                 </div>
                 <motion.button
                   type="button"
@@ -660,7 +662,7 @@ export default function CalendarPage() {
                 </motion.button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingMedium }}>
                 <div>
                   <label style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Title</label>
                   <input
@@ -673,7 +675,7 @@ export default function CalendarPage() {
                       borderRadius: tokens.radii.input,
                       background: tokens.colors.surfacePrimary,
                       border: `1px solid ${tokens.colors.borderSubtle}`,
-                      color: tokens.colors.textDark,
+                      color: tokens.colors.textPrimary,
                       ...tokens.typography.body,
                     }}
                   />
@@ -690,7 +692,7 @@ export default function CalendarPage() {
                       borderRadius: tokens.radii.input,
                       background: tokens.colors.surfacePrimary,
                       border: `1px solid ${tokens.colors.borderSubtle}`,
-                      color: tokens.colors.textDark,
+                      color: tokens.colors.textPrimary,
                       ...tokens.typography.body,
                       cursor: 'pointer',
                     }}
@@ -716,7 +718,7 @@ export default function CalendarPage() {
                           padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
                           borderRadius: tokens.radii.button,
                           background: plannerFields.privacy === mode ? tokens.colors.backgroundApp : tokens.colors.surfacePrimary,
-                          color: plannerFields.privacy === mode ? tokens.colors.textPrimary : tokens.colors.textDark,
+                          color: plannerFields.privacy === mode ? tokens.colors.textPrimaryOnDark : tokens.colors.textPrimary,
                           border: `1px solid ${tokens.colors.borderSubtle}`,
                           ...tokens.typography.body,
                           textTransform: 'capitalize',
@@ -742,7 +744,7 @@ export default function CalendarPage() {
                       borderRadius: tokens.radii.input,
                       background: tokens.colors.surfacePrimary,
                       border: `1px solid ${tokens.colors.borderSubtle}`,
-                      color: tokens.colors.textDark,
+                      color: tokens.colors.textPrimary,
                       ...tokens.typography.body,
                       resize: 'none',
                     }}

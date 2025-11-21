@@ -20,8 +20,8 @@ export function Card({ children, className, padding = true, variant = "default",
         background: tokens.colors.surfacePrimary,
         borderRadius: tokens.radii.card,
         boxShadow: tokens.shadows.card,
-        border: variant === "outlined" ? `1px solid ${tokens.colors.borderSubtle}` : 'none',
-        padding: padding ? tokens.spacing[20] : 0,
+        border: `1px solid ${tokens.colors.borderSubtle}`,
+        padding: padding ? tokens.layout.verticalSpacingMedium : 0,
         ...style,
       }}
     >

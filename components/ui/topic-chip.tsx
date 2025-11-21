@@ -48,7 +48,7 @@ export function TopicChip({
         padding: `0 ${tokens.spacing[20]}`,
         gap: tokens.spacing[12],
         background: tokens.colors.surfacePrimary,
-        color: tokens.colors.textDark,
+        color: tokens.colors.textPrimary,
         border: `1px solid ${tokens.colors.borderSubtle}`,
         boxShadow: tokens.shadows.card,
         ...tokens.typography.label,

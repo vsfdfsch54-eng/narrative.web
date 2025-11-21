@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react"
 import { TopNav } from "./TopNav"
+import { BottomDockNav } from "./BottomDockNav"
 import { tokens } from "@/lib/design-tokens"
 
 interface AppShellProps {
@@ -15,19 +16,20 @@ export function AppShell({ children }: AppShellProps) {
         minHeight: '100vh',
         background: tokens.colors.backgroundApp,
         paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingBottom: '120px',
       }}
     >
       <TopNav />
       <div
         style={{
-          maxWidth: '520px',
+          maxWidth: tokens.layout.maxWidth,
           margin: '0 auto',
-          padding: `${tokens.spacing[12]} ${tokens.spacing[20]}`,
+          padding: `${tokens.spacing[12]} ${tokens.layout.paddingHorizontal}`,
         }}
       >
         {children}
       </div>
+      <BottomDockNav />
     </div>
   )
 }

@@ -32,22 +32,22 @@ export function Button({
   const variantStyles = {
     primary: {
       background: tokens.colors.surfacePrimary,
-      color: '#000000',
-      border: 'none',
+      color: tokens.colors.textPrimary,
+      border: `1px solid ${tokens.colors.borderSubtle}`,
     },
     secondary: {
       background: 'transparent',
-      color: tokens.colors.textPrimary,
+      color: tokens.colors.textPrimaryOnDark,
       border: `1px solid ${tokens.colors.borderMedium}`,
     },
     outline: {
       background: 'transparent',
-      color: tokens.colors.textPrimary,
+      color: tokens.colors.textPrimaryOnDark,
       border: `1px solid ${tokens.colors.borderMedium}`,
     },
     ghost: {
       background: 'transparent',
-      color: tokens.colors.textPrimary,
+      color: tokens.colors.textPrimaryOnDark,
       border: 'none',
     },
   }
@@ -62,6 +62,7 @@ export function Button({
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
     transition: 'all 0.15s ease',
+    boxShadow: variant === 'primary' ? tokens.shadows.card : 'none',
   }
 
   const buttonClasses = cn(
