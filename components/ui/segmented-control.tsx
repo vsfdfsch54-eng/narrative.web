@@ -31,11 +31,12 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
             onClick={() => onChange(option.value)}
             style={{
               flex: 1,
-              padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+              padding: `12px ${tokens.spacing[16]}`,
               borderRadius: tokens.radii.pill,
-              background: tokens.colors.surfacePrimary,
-              color: tokens.colors.textPrimary,
+              background: tokens.colors.pillPrimary,
+              color: tokens.colors.textOnPill,
               border: 'none',
+              boxShadow: tokens.shadows.pill,
               ...tokens.typography.label,
               cursor: 'pointer',
               transition: 'all 0.15s ease',

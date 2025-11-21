@@ -149,9 +149,9 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingLarge, paddingBottom: '120px' }}>
-        <div style={{ textAlign: 'center', padding: tokens.layout.verticalSpacingLarge, borderRadius: tokens.radii.pill, background: tokens.colors.surfacePrimary }}>
-          <div style={{ fontSize: '64px', marginBottom: tokens.layout.verticalSpacingMedium }}>👤</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, paddingTop: tokens.layout.topTitleSpacing, paddingBottom: '120px' }}>
+        <div style={{ textAlign: 'center', padding: tokens.layout.sectionSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillPrimary, boxShadow: tokens.shadows.pill }}>
+          <div style={{ fontSize: '64px', marginBottom: tokens.layout.elementSpacing }}>👤</div>
           {isEditingName ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
               <input
@@ -160,11 +160,11 @@ export default function ProfilePage() {
                 onChange={(e) => setTempName(e.target.value)}
                 style={{
                   ...tokens.typography.heading,
-                  color: tokens.colors.textPrimary,
-                  background: tokens.colors.surfacePrimary,
+                  color: tokens.colors.textOnPill,
+                  background: tokens.colors.pillPrimary,
                   border: 'none',
                   borderRadius: tokens.radii.input,
-                  padding: `${tokens.spacing[12]} ${tokens.spacing[20]}`,
+                  padding: `12px ${tokens.spacing[18]}`,
                   textAlign: 'center',
                   width: '200px',
                 }}
@@ -183,7 +183,7 @@ export default function ProfilePage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
               <h2 style={{ 
                 ...tokens.typography.heading,
-                color: tokens.colors.textPrimary,
+                color: tokens.colors.textOnPill,
                 margin: 0,
               }}>
                 {userName || "User"}
@@ -204,7 +204,7 @@ export default function ProfilePage() {
               </motion.button>
             </div>
           )}
-          <div style={{ marginTop: tokens.layout.verticalSpacingLarge }}>
+          <div style={{ marginTop: tokens.layout.sectionSpacing }}>
             <textarea
               value={quoteOfDay}
               onChange={(e) => setQuoteOfDay(e.target.value)}
@@ -213,11 +213,12 @@ export default function ProfilePage() {
               style={{
                 width: '100%',
                 minHeight: '80px',
-                padding: `${tokens.spacing[12]} ${tokens.spacing[20]}`,
-                background: tokens.colors.surfacePrimary,
+                padding: `12px ${tokens.spacing[18]}`,
+                background: tokens.colors.pillPrimary,
                 border: 'none',
                 borderRadius: tokens.radii.input,
-                color: tokens.colors.textPrimary,
+                color: tokens.colors.textOnPill,
+                boxShadow: tokens.shadows.pill,
                 ...tokens.typography.body,
                 resize: 'none',
               }}
@@ -234,21 +235,22 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={{ padding: tokens.layout.verticalSpacingMedium, borderRadius: tokens.radii.pill, background: tokens.colors.surfacePrimary }}>
+        <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillPrimary, boxShadow: tokens.shadows.pill }}>
           <h2 style={{ 
             ...tokens.typography.heading,
-            color: tokens.colors.textPrimary,
+            color: tokens.colors.textOnPill,
             margin: 0,
-            marginBottom: tokens.layout.verticalSpacingMedium,
+            marginBottom: tokens.layout.elementSpacing,
+            textAlign: 'center',
           }}>
             My Friends
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingMedium }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.elementSpacing }}>
             <div style={{ padding: tokens.spacing[16] }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentOrange }} />
-                  <p style={{ ...tokens.typography.label, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Inner Circle</p>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textOnPill, fontWeight: 500, margin: 0 }}>Inner Circle</p>
                 </div>
                 <span style={{ ...tokens.typography.label, color: tokens.colors.textMuted }}>0</span>
               </div>
@@ -259,7 +261,7 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentBlue }} />
-                  <p style={{ ...tokens.typography.label, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Close Friends</p>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textOnPill, fontWeight: 500, margin: 0 }}>Close Friends</p>
                 </div>
                 <span style={{ ...tokens.typography.label, color: tokens.colors.textMuted }}>0</span>
               </div>
@@ -270,7 +272,7 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentGreen }} />
-                  <p style={{ ...tokens.typography.label, color: tokens.colors.textPrimary, fontWeight: 500, margin: 0 }}>Community</p>
+                  <p style={{ ...tokens.typography.label, color: tokens.colors.textOnPill, fontWeight: 500, margin: 0 }}>Community</p>
                 </div>
                 <span style={{ ...tokens.typography.label, color: tokens.colors.textMuted }}>{communityMembers.length}</span>
               </div>
@@ -282,11 +284,12 @@ export default function ProfilePage() {
                       whileTap={{ scale: 0.98 }}
                       onClick={() => router.push(`/chat/${member.id}`)}
                       style={{
-                        padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
+                        padding: `12px ${tokens.spacing[18]}`,
                         borderRadius: tokens.radii.pill,
-                        background: tokens.colors.surfacePrimary,
-                        color: tokens.colors.textPrimary,
+                        background: tokens.colors.pillPrimary,
+                        color: tokens.colors.textOnPill,
                         border: 'none',
+                        boxShadow: tokens.shadows.pill,
                         ...tokens.typography.label,
                         whiteSpace: 'nowrap',
                         cursor: 'pointer',
@@ -303,17 +306,18 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={{ padding: tokens.layout.verticalSpacingMedium, borderRadius: tokens.radii.pill, background: tokens.colors.surfacePrimary }}>
+        <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillPrimary, boxShadow: tokens.shadows.pill }}>
           <h2 style={{ 
             ...tokens.typography.heading,
-            color: tokens.colors.textPrimary,
+            color: tokens.colors.textOnPill,
             margin: 0,
-            marginBottom: tokens.layout.verticalSpacingMedium,
+            marginBottom: tokens.layout.elementSpacing,
+            textAlign: 'center',
           }}>
             Recent Chats
           </h2>
           {loadingChats ? (
-            <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, textAlign: 'center', padding: tokens.layout.verticalSpacingLarge }}>
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, textAlign: 'center', padding: tokens.layout.sectionSpacing }}>
               Loading...
             </p>
           ) : recentChats.length > 0 ? (
@@ -329,7 +333,7 @@ export default function ProfilePage() {
                     alignItems: 'center',
                     gap: tokens.spacing[16],
                     padding: tokens.spacing[16],
-                    background: tokens.colors.surfacePrimary,
+                    background: tokens.colors.pillPrimary,
                     border: 'none',
                     borderRadius: tokens.radii.input,
                     textAlign: 'left',
@@ -338,7 +342,7 @@ export default function ProfilePage() {
                 >
                   <span style={{ fontSize: '24px' }}>{chat.emoji || "👤"}</span>
                   <div style={{ flex: 1 }}>
-                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>
+                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textOnPill, margin: 0 }}>
                       {chat.name}
                     </p>
                     <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>
@@ -352,13 +356,13 @@ export default function ProfilePage() {
               ))}
             </div>
           ) : (
-            <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, textAlign: 'center', padding: tokens.layout.verticalSpacingLarge }}>
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, textAlign: 'center', padding: tokens.layout.sectionSpacing }}>
               No recent chats
             </p>
           )}
         </div>
 
-        <div style={{ marginTop: tokens.layout.verticalSpacingMedium }}>
+        <div style={{ marginTop: tokens.layout.elementSpacing }}>
           <Button
             variant="secondary"
             onClick={async () => {

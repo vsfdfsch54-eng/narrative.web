@@ -24,7 +24,7 @@ export function AppShell({ children }: AppShellProps) {
         style={{
           maxWidth: tokens.layout.maxWidth,
           margin: '0 auto',
-          padding: `${tokens.spacing[12]} ${tokens.layout.paddingHorizontal}`,
+          padding: `0 ${tokens.layout.paddingHorizontal}`,
         }}
       >
         {children}

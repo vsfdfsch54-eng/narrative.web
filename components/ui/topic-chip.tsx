@@ -45,11 +45,12 @@ export function TopicChip({
       style={{
         height: '46px',
         borderRadius: tokens.radii.pill,
-        padding: `0 ${tokens.spacing[20]}`,
+        padding: `12px ${tokens.spacing[18]}`,
         gap: tokens.spacing[12],
-        background: tokens.colors.surfacePrimary,
-        color: tokens.colors.textPrimary,
+        background: tokens.colors.pillPrimary,
+        color: tokens.colors.textOnPill,
         border: 'none',
+        boxShadow: tokens.shadows.pill,
         ...tokens.typography.label,
         willChange: "transform"
       }}

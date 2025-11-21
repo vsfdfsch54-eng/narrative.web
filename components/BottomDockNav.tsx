@@ -60,9 +60,9 @@ export function BottomDockNav() {
         bottom: `calc(env(safe-area-inset-bottom) + 16px)`,
         left: '50%',
         transform: 'translateX(-50%)',
-        background: tokens.colors.surfacePrimary,
+        background: tokens.colors.pillPrimary,
         borderRadius: '28px',
-        padding: '10px 18px',
+        padding: '10px 20px',
         boxShadow: tokens.shadows.dock,
         zIndex: 9999,
         display: 'flex',
@@ -85,7 +85,7 @@ export function BottomDockNav() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: active ? tokens.colors.surfacePrimary : 'transparent',
+              background: active ? tokens.colors.pillSecondary : 'transparent',
               borderRadius: '50%',
               padding: active ? tokens.spacing[8] : 0,
               border: 'none',
@@ -95,7 +95,7 @@ export function BottomDockNav() {
             <Icon 
               className="w-5 h-5" 
               style={{ 
-                color: active ? tokens.colors.textPrimary : tokens.colors.textMuted,
+                color: active ? tokens.colors.textOnPill : tokens.colors.textMuted,
               }} 
             />
           </motion.button>

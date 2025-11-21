@@ -1,16 +1,17 @@
 /**
  * Narrative Design Tokens
- * Pure Black Background + Floating White Pills/Circles
+ * Pure Black Background + Darker Eggshell White Pills
  */
 
 export const tokens = {
   colors: {
     backgroundApp: '#0B0B0D',
-    surfacePrimary: '#FFFFFF',
-    textPrimary: '#000000',
+    pillPrimary: '#EDEDED',
+    pillSecondary: '#F0F0F2',
+    textOnPill: '#0C0C0E',
     textPrimaryOnDark: '#FFFFFF',
     textSecondary: 'rgba(255,255,255,0.60)',
-    textMuted: 'rgba(0,0,0,0.40)',
+    textMuted: 'rgba(0,0,0,0.45)',
     accentBlue: '#4A6CF6',
     accentGreen: '#38B57A',
     accentOrange: '#E69A3B',
@@ -18,12 +19,13 @@ export const tokens = {
     accentPink: '#C970A8',
   },
   radii: {
-    pill: '28px',
+    pill: '24px',
     circle: '50%',
-    button: '28px',
-    input: '28px',
+    button: '24px',
+    input: '24px',
   },
   shadows: {
+    pill: '0 6px 24px rgba(0,0,0,0.28)',
     dock: '0 8px 28px rgba(0,0,0,0.45)',
   },
   typography: {
@@ -64,12 +66,13 @@ export const tokens = {
     20: '20px',
     22: '22px',
     28: '28px',
+    32: '32px',
   },
   layout: {
     maxWidth: '430px',
     paddingHorizontal: '20px',
-    verticalSpacingLarge: '28px',
-    verticalSpacingMedium: '20px',
-    verticalSpacingSmall: '12px',
+    topTitleSpacing: '32px',
+    sectionSpacing: '28px',
+    elementSpacing: '20px',
   },
 } as const

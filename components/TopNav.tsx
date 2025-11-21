@@ -25,6 +25,7 @@ export function TopNav() {
           fontWeight: 600,
           color: tokens.colors.textPrimaryOnDark,
           margin: 0,
+          textAlign: 'center',
         }}
       >
         Narrative

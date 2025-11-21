@@ -221,14 +221,14 @@ export default function CalendarPage() {
   }
 
   const CreateMomentCard = ({ compact = false }: { compact?: boolean }) => (
-    <div>
+    <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillPrimary, boxShadow: tokens.shadows.pill }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-          <Plus className="w-4 h-4" style={{ color: tokens.colors.textPrimaryOnDark }} />
-          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimaryOnDark, margin: 0 }}>Create new moment</p>
+          <Plus className="w-4 h-4" style={{ color: tokens.colors.textOnPill }} />
+          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textOnPill, margin: 0 }}>Create new moment</p>
         </div>
         {!compact && (
-          <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0 }}>
+          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>
             Curate a hangout, save a ritual, or plan something spontaneous.
           </p>
         )}
@@ -249,12 +249,14 @@ export default function CalendarPage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingLarge, paddingBottom: '120px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.verticalSpacingLarge }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, paddingTop: tokens.layout.topTitleSpacing, paddingBottom: '120px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.sectionSpacing }}>
           <h1 style={{ 
             ...tokens.typography.heading,
             color: tokens.colors.textPrimaryOnDark,
             margin: 0,
+            textAlign: 'center',
+            flex: 1,
           }}>
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h1>
@@ -267,13 +269,14 @@ export default function CalendarPage() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
-                background: tokens.colors.surfacePrimary,
+                background: tokens.colors.pillPrimary,
                 border: 'none',
-                color: tokens.colors.textPrimary,
+                color: tokens.colors.textOnPill,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: tokens.shadows.pill,
               }}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -286,13 +289,14 @@ export default function CalendarPage() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
-                background: tokens.colors.surfacePrimary,
+                background: tokens.colors.pillPrimary,
                 border: 'none',
-                color: tokens.colors.textPrimary,
+                color: tokens.colors.textOnPill,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: tokens.shadows.pill,
               }}
             >
               <ChevronRight className="w-4 h-4" />
@@ -304,7 +308,7 @@ export default function CalendarPage() {
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: tokens.spacing[12],
+          gap: tokens.spacing[16],
           marginBottom: tokens.spacing[16],
         }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
@@ -326,7 +330,7 @@ export default function CalendarPage() {
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: tokens.spacing[12],
+          gap: tokens.spacing[16],
         }}>
           {Array.from({ length: firstDay }).map((_, index) => (
             <div key={`empty-${index}`} />
@@ -351,9 +355,9 @@ export default function CalendarPage() {
                   width: '43px',
                   height: '43px',
                   borderRadius: '50%',
-                  background: tokens.colors.surfacePrimary,
+                  background: tokens.colors.pillPrimary,
                   border: 'none',
-                  color: tokens.colors.textPrimary,
+                  color: tokens.colors.textOnPill,
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
@@ -385,7 +389,7 @@ export default function CalendarPage() {
                           width: '6px', 
                           height: '6px', 
                           borderRadius: '50%', 
-                          background: tokens.colors.surfacePrimary,
+                          background: tokens.colors.pillPrimary,
                         }} 
                       />
                     ))}
@@ -425,7 +429,7 @@ export default function CalendarPage() {
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.verticalSpacingLarge }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.sectionSpacing }}>
                 <div>
                   <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Selected</p>
                   <h2 style={{ 
@@ -441,11 +445,12 @@ export default function CalendarPage() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => setPanelOpen(false)}
                   style={{
-                    padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                    padding: `12px ${tokens.spacing[18]}`,
                     borderRadius: tokens.radii.button,
-                    background: tokens.colors.surfacePrimary,
+                    background: tokens.colors.pillPrimary,
                     border: 'none',
-                    color: tokens.colors.textPrimary,
+                    color: tokens.colors.textOnPill,
+                    boxShadow: tokens.shadows.pill,
                     ...tokens.typography.label,
                     cursor: 'pointer',
                   }}
@@ -454,7 +459,7 @@ export default function CalendarPage() {
                 </motion.button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingMedium, overflowY: 'auto', maxHeight: '60vh' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.elementSpacing, overflowY: 'auto', maxHeight: '60vh' }}>
                 {eventsForDay.length > 0 && (
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[16] }}>
@@ -483,12 +488,13 @@ export default function CalendarPage() {
                               minWidth: '200px',
                               padding: tokens.spacing[16],
                               borderRadius: tokens.radii.pill,
-                              background: tokens.colors.surfacePrimary,
+                              background: tokens.colors.pillPrimary,
+                              boxShadow: tokens.shadows.pill,
                             }}
                           >
                             <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
                               <div>
-                                <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>{event.title}</p>
+                                <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textOnPill, margin: 0 }}>{event.title}</p>
                                 <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>{event.time}</p>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -497,7 +503,7 @@ export default function CalendarPage() {
                                   padding: `${tokens.spacing[4]} ${tokens.spacing[12]}`,
                                   borderRadius: tokens.radii.button,
                                   background: `${eventColor}30`,
-                                  color: tokens.colors.textPrimary,
+                                  color: tokens.colors.textOnPill,
                                   border: 'none',
                                 }}>
                                   {event.tag}
@@ -525,14 +531,14 @@ export default function CalendarPage() {
                   {suggestions.length > 0 ? (
                     <div style={{ display: 'flex', gap: tokens.spacing[16], overflowX: 'auto' }}>
                       {suggestions.map((suggestion) => (
-                        <div key={suggestion.title} style={{ minWidth: '190px', padding: tokens.spacing[16], borderRadius: tokens.radii.pill, background: tokens.colors.surfacePrimary }}>
-                          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimary, margin: 0 }}>{suggestion.title}</p>
+                        <div key={suggestion.title} style={{ minWidth: '190px', padding: tokens.spacing[16], borderRadius: tokens.radii.pill, background: tokens.colors.pillPrimary, boxShadow: tokens.shadows.pill }}>
+                          <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textOnPill, margin: 0 }}>{suggestion.title}</p>
                           <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>{suggestion.detail}</p>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.layout.verticalSpacingLarge, margin: 0 }}>
+                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.layout.sectionSpacing, margin: 0 }}>
                       No suggestions available
                     </p>
                   )}
@@ -551,11 +557,12 @@ export default function CalendarPage() {
                       style={{
                         marginTop: tokens.spacing[8],
                         width: '100%',
-                        padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                        padding: `12px ${tokens.spacing[18]}`,
                         borderRadius: tokens.radii.input,
-                        background: tokens.colors.surfacePrimary,
+                        background: tokens.colors.pillPrimary,
                         border: 'none',
-                        color: tokens.colors.textPrimary,
+                        color: tokens.colors.textOnPill,
+                        boxShadow: tokens.shadows.pill,
                         ...tokens.typography.body,
                         cursor: 'pointer',
                       }}
@@ -570,13 +577,13 @@ export default function CalendarPage() {
                   {friends[selectedFriendGroup].length > 0 ? (
                     <div style={{ display: 'flex', gap: tokens.spacing[16], overflowX: 'auto' }}>
                       {friends[selectedFriendGroup].map((person) => (
-                        <div key={person} style={{ minWidth: '120px', padding: tokens.spacing[16], borderRadius: tokens.radii.pill, background: tokens.colors.surfacePrimary }}>
-                          <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimary, margin: 0 }}>{person}</p>
+                        <div key={person} style={{ minWidth: '120px', padding: tokens.spacing[16], borderRadius: tokens.radii.pill, background: tokens.colors.pillPrimary, boxShadow: tokens.shadows.pill }}>
+                          <p style={{ ...tokens.typography.body, color: tokens.colors.textOnPill, margin: 0 }}>{person}</p>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.layout.verticalSpacingLarge, margin: 0 }}>
+                    <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center', padding: tokens.layout.sectionSpacing, margin: 0 }}>
                       No {selectedFriendGroup.toLowerCase()} yet
                     </p>
                   )}
@@ -605,13 +612,13 @@ export default function CalendarPage() {
               exit={{ scale: 0.95, y: 20 }}
               transition={{ duration: 0.2 }}
               className="w-full"
-              style={{ maxWidth: '360px', background: tokens.colors.surfacePrimary, borderRadius: '28px', padding: tokens.layout.verticalSpacingLarge }}
+              style={{ maxWidth: '360px', background: tokens.colors.pillPrimary, borderRadius: '28px', padding: tokens.layout.sectionSpacing, boxShadow: tokens.shadows.pill }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.verticalSpacingLarge }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.sectionSpacing }}>
                 <div>
                   <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>New plan</p>
-                  <h3 style={{ ...tokens.typography.heading, color: tokens.colors.textPrimary, margin: 0 }}>Design your moment</h3>
+                  <h3 style={{ ...tokens.typography.heading, color: tokens.colors.textOnPill, margin: 0 }}>Design your moment</h3>
                 </div>
                 <motion.button
                   type="button"
@@ -620,7 +627,7 @@ export default function CalendarPage() {
                   style={{
                     padding: tokens.spacing[12],
                     borderRadius: tokens.radii.button,
-                    background: tokens.colors.surfacePrimary,
+                    background: tokens.colors.pillPrimary,
                     border: 'none',
                     color: tokens.colors.textMuted,
                     cursor: 'pointer',
@@ -630,7 +637,7 @@ export default function CalendarPage() {
                 </motion.button>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.verticalSpacingMedium }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.elementSpacing }}>
                 <div>
                   <label style={{ ...tokens.typography.label, color: tokens.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: tokens.spacing[12], display: 'block' }}>Title</label>
                   <input
@@ -639,11 +646,12 @@ export default function CalendarPage() {
                     placeholder="Name this moment"
                     style={{
                       width: '100%',
-                      padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                      padding: `12px ${tokens.spacing[18]}`,
                       borderRadius: tokens.radii.input,
-                      background: tokens.colors.surfacePrimary,
+                      background: tokens.colors.pillPrimary,
                       border: 'none',
-                      color: tokens.colors.textPrimary,
+                      color: tokens.colors.textOnPill,
+                      boxShadow: tokens.shadows.pill,
                       ...tokens.typography.body,
                     }}
                   />
@@ -656,11 +664,12 @@ export default function CalendarPage() {
                     onChange={(e) => handlePlannerField("inviteGroup", e.target.value)}
                     style={{
                       width: '100%',
-                      padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                      padding: `12px ${tokens.spacing[18]}`,
                       borderRadius: tokens.radii.input,
-                      background: tokens.colors.surfacePrimary,
+                      background: tokens.colors.pillPrimary,
                       border: 'none',
-                      color: tokens.colors.textPrimary,
+                      color: tokens.colors.textOnPill,
+                      boxShadow: tokens.shadows.pill,
                       ...tokens.typography.body,
                       cursor: 'pointer',
                     }}
@@ -683,11 +692,12 @@ export default function CalendarPage() {
                         whileTap={{ scale: 0.98 }}
                         onClick={() => handlePlannerField("privacy", mode)}
                         style={{
-                          padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                          padding: `12px ${tokens.spacing[18]}`,
                           borderRadius: tokens.radii.button,
-                          background: plannerFields.privacy === mode ? tokens.colors.backgroundApp : tokens.colors.surfacePrimary,
-                          color: plannerFields.privacy === mode ? tokens.colors.textPrimaryOnDark : tokens.colors.textPrimary,
+                          background: plannerFields.privacy === mode ? tokens.colors.backgroundApp : tokens.colors.pillPrimary,
+                          color: plannerFields.privacy === mode ? tokens.colors.textPrimaryOnDark : tokens.colors.textOnPill,
                           border: 'none',
+                          boxShadow: plannerFields.privacy !== mode ? tokens.shadows.pill : 'none',
                           ...tokens.typography.body,
                           textTransform: 'capitalize',
                           cursor: 'pointer',
@@ -708,11 +718,12 @@ export default function CalendarPage() {
                     rows={3}
                     style={{
                       width: '100%',
-                      padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
+                      padding: `12px ${tokens.spacing[18]}`,
                       borderRadius: tokens.radii.input,
-                      background: tokens.colors.surfacePrimary,
+                      background: tokens.colors.pillPrimary,
                       border: 'none',
-                      color: tokens.colors.textPrimary,
+                      color: tokens.colors.textOnPill,
+                      boxShadow: tokens.shadows.pill,
                       ...tokens.typography.body,
                       resize: 'none',
                     }}
@@ -724,7 +735,8 @@ export default function CalendarPage() {
                     padding: tokens.spacing[16],
                     borderRadius: tokens.radii.input,
                     border: 'none',
-                    background: tokens.colors.surfacePrimary,
+                    background: tokens.colors.pillPrimary,
+                    boxShadow: tokens.shadows.pill,
                     ...tokens.typography.label,
                     color: tokens.colors.textMuted,
                   }}>
