@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     // No match found, user is in queue
     // Double-check for any other users that might have joined while we were processing
     // Add a small delay to catch users who joined at nearly the same time
-    await new Promise(resolve => setTimeout(resolve, 200))
+    await new Promise(resolve => setTimeout(resolve, 300))
     
     try {
       const { data: allWaitingUsers, error: allWaitingError } = await supabase
@@ -145,11 +145,14 @@ export async function POST(request: NextRequest) {
         .order('created_at', { ascending: true })
 
       if (allWaitingError) {
-        console.error('Error fetching all waiting users:', allWaitingError)
+        console.error('[PendingMatches] Error fetching all waiting users:', allWaitingError)
       }
+
+      console.log(`[PendingMatches] After delay, found ${allWaitingUsers?.length || 0} users waiting`)
 
       // If we have 2+ users now (including current user), match the first two
       if (allWaitingUsers && allWaitingUsers.length >= 2) {
+        console.log(`[PendingMatches] Attempting to match ${allWaitingUsers.length} waiting users`)
         // Find the two oldest users (FIFO)
         const user1 = allWaitingUsers[0]
         const user2 = allWaitingUsers.find(u => u.user_id !== user1.user_id) || allWaitingUsers[1]
@@ -183,6 +186,12 @@ export async function POST(request: NextRequest) {
               .update({ status: 'matched', matched_at: new Date().toISOString() })
               .in('user_id', [user1.user_id, user2.user_id])
 
+            if (updateResult.error) {
+              console.error('[PendingMatches] Error updating pending matches in fallback:', updateResult.error)
+            } else {
+              console.log(`[PendingMatches] ✅ Fallback match successful: ${user1.user_id} <-> ${user2.user_id}`)
+            }
+
             // If current user was matched, return match info
             if (user1.user_id === userId || user2.user_id === userId) {
               const otherUserId = user1.user_id === userId ? user2.user_id : user1.user_id
@@ -194,6 +203,7 @@ export async function POST(request: NextRequest) {
               })
             }
           } else if (matchError) {
+            console.error('[PendingMatches] Error creating match in fallback:', matchError)
             // If duplicate match error, try to get existing match
             if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
               const { data: existingMatch } = await supabase
