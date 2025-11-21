@@ -29,6 +29,7 @@ export default function VibePage() {
   const [selectedTimeLimit, setSelectedTimeLimit] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const [topics, setTopics] = useState<{ [key: string]: Topic[] }>({
     news: NEWS_TOPICS,
     'pop-culture': POP_CULTURE_TOPICS,
@@ -90,6 +91,25 @@ export default function VibePage() {
     
     loadTopics()
   }, [selectedCategory])
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCategoryDropdownOpen(false)
+      }
+    }
+
+    if (isCategoryDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside as EventListener)
+      document.addEventListener("touchstart", handleClickOutside as EventListener)
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside as EventListener)
+      document.removeEventListener("touchstart", handleClickOutside as EventListener)
+    }
+  }, [isCategoryDropdownOpen])
 
   const handleConnect = async () => {
     const userId = getUserId()
