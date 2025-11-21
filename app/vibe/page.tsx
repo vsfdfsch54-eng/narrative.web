@@ -135,36 +135,36 @@ export default function VibePage() {
   // Show loading while checking auth
   if (loading || !user || (user && !user.email_confirmed_at)) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center">
-        <p className="text-black/60">Loading...</p>
+      <div className="fixed inset-0 bg-[#1A1A1A] flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-white overflow-hidden w-full h-full m-0 p-0">
+    <div className="fixed inset-0 bg-[#1A1A1A] overflow-hidden w-full h-full m-0 p-0">
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
             <div className="phone-content px-6 py-6 pb-0 overflow-hidden flex flex-col h-full relative z-10">
               {/* Logo */}
               <div className="flex-shrink-0 mb-6 flex justify-center">
-                <span className="text-lg font-light tracking-tight text-black">
+                <span className="text-lg font-light tracking-tight text-white">
                   Narrative
                 </span>
               </div>
 
               {/* Title */}
               <div className="flex-shrink-0 mb-8 text-center">
-                <h1 className="text-[32px] font-bold text-black mb-2 leading-tight">
+                <h1 className="text-[32px] font-bold text-white mb-2 leading-tight">
                   Select Your Vibe
                 </h1>
               </div>
 
               {/* Vibe Section */}
               <div className="flex-shrink-0 mb-8">
-                <h2 className="text-[28px] font-bold text-black mb-3 text-center">Select Your Vibe</h2>
-                <p className="text-[14px] text-black/55 max-w-[90%] mx-auto mb-4 text-center">
+                <h2 className="text-[28px] font-bold text-white mb-3 text-center">Select Your Vibe</h2>
+                <p className="text-[14px] text-white/55 max-w-[90%] mx-auto mb-4 text-center">
                   Vibes describe your current mood or energy and help match you with someone who feels the same way.
                 </p>
                 <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6" style={{ alignItems: 'center', overflowY: 'hidden' }}>
@@ -182,8 +182,8 @@ export default function VibePage() {
 
               {/* Topic Section */}
               <div className="flex-shrink-0 mb-8">
-                <h2 className="text-[28px] font-bold text-black mb-3 text-center">Choose a Topic</h2>
-                <p className="text-[14px] text-black/55 max-w-[90%] mx-auto mb-4 text-center">
+                <h2 className="text-[28px] font-bold text-white mb-3 text-center">Choose a Topic</h2>
+                <p className="text-[14px] text-white/55 max-w-[90%] mx-auto mb-4 text-center">
                   Topics are what you want to talk about. They guide the conversation so you connect with the right person.
                 </p>
                 <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6" style={{ alignItems: 'center', overflowY: 'hidden' }}>
@@ -202,7 +202,7 @@ export default function VibePage() {
               {/* Duration Segmented Control */}
               <div className="flex-shrink-0 mb-6">
                 <div 
-                  className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(0,0,0,0.05)] relative overflow-hidden"
+                  className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(255,255,255,0.05)] relative overflow-hidden"
                 >
                   {TIME_LIMITS.map((time) => (
                     <motion.button
@@ -212,8 +212,8 @@ export default function VibePage() {
                       className={cn(
                         "flex-1 px-4 py-2.5 rounded-[12px] text-base font-medium transition-all duration-300 relative z-10",
                         selectedTimeLimit === time 
-                          ? "bg-black text-white font-semibold"
-                          : "bg-transparent text-black"
+                          ? "bg-white text-black font-semibold"
+                          : "bg-transparent text-white"
                       )}
                     >
                       {time}m
@@ -228,7 +228,7 @@ export default function VibePage() {
             
             {/* Bottom Fixed Footer - Pill Buttons Above Nav Bar */}
             <div 
-              className="fixed left-0 right-0 bg-white flex flex-row"
+              className="fixed left-0 right-0 bg-[#1A1A1A] flex flex-row"
               style={{
                 bottom: `calc(80px + env(safe-area-inset-bottom))`, // Above nav bar + safe area
                 padding: '16px 24px',
@@ -245,15 +245,15 @@ export default function VibePage() {
                   scale: 0.97,
                   backgroundColor: '#FFFFFF',
                   color: '#000000',
-                  border: '1px solid #000000'
+                  border: '1px solid #FFFFFF'
                 }}
                 onClick={handleConnect}
                 disabled={saving || !canConnect}
                 className={cn(
                   "flex-1 h-[56px] rounded-[24px] text-lg font-semibold transition-all duration-300",
                   canConnect
-                    ? "bg-black text-white"
-                    : "bg-[rgba(0,0,0,0.05)] text-black/40",
+                    ? "bg-white text-black"
+                    : "bg-[rgba(255,255,255,0.1)] text-white/40",
                   "disabled:cursor-not-allowed"
                 )}
               >
@@ -266,12 +266,12 @@ export default function VibePage() {
                 animate={{ opacity: 1, x: 0 }}
                 whileTap={{ 
                   scale: 0.97,
-                  backgroundColor: 'rgba(0,0,0,0.06)'
+                  backgroundColor: 'rgba(255,255,255,0.1)'
                 }}
                 onClick={handleSkip}
                 className={cn(
                   "flex-1 h-[56px] rounded-[24px] text-lg font-semibold transition-all duration-300",
-                  "bg-transparent text-black border border-[rgba(0,0,0,0.25)]"
+                  "bg-transparent text-white border border-[rgba(255,255,255,0.25)]"
                 )}
               >
                 SKIP
