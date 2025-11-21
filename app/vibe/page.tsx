@@ -161,7 +161,14 @@ export default function VibePage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, paddingTop: tokens.layout.topTitleSpacing, paddingBottom: '140px' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: tokens.spacing[20], 
+        paddingTop: tokens.spacing[20], 
+        paddingBottom: '140px',
+        minHeight: 'calc(100vh - 200px)',
+      }}>
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ 
             ...tokens.typography.title,
@@ -175,6 +182,7 @@ export default function VibePage() {
             ...tokens.typography.body,
             color: tokens.colors.textSecondary,
             margin: 0,
+            fontSize: '14px',
           }}>
             Choose your energy and topic to connect
           </p>
@@ -186,8 +194,6 @@ export default function VibePage() {
             overflowY: 'hidden',
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
-            marginTop: tokens.layout.elementSpacing,
-            marginBottom: tokens.layout.elementSpacing,
           }}>
             <div className="flex" style={{ gap: tokens.spacing[16] }}>
               {VIBES.map((vibe) => (
@@ -208,8 +214,9 @@ export default function VibePage() {
             ...tokens.typography.heading,
             color: tokens.colors.textPrimaryOnDark,
             margin: 0,
-            marginBottom: tokens.layout.elementSpacing,
+            marginBottom: tokens.spacing[12],
             textAlign: 'center',
+            fontSize: '16px',
           }}>
             Choose a Topic
           </h2>
@@ -318,8 +325,7 @@ export default function VibePage() {
             overflowY: 'hidden',
             scrollBehavior: 'smooth',
             WebkitOverflowScrolling: 'touch',
-            marginTop: tokens.layout.elementSpacing,
-            marginBottom: tokens.layout.elementSpacing,
+            marginTop: tokens.spacing[12],
           }}>
             <div className="flex" style={{ gap: tokens.spacing[16] }}>
               {currentTopics.map((topic) => (
@@ -335,37 +341,43 @@ export default function VibePage() {
           </div>
         </div>
 
-        <div>
-          <SegmentedControl
-            options={TIME_LIMITS.map(t => ({ value: String(t), label: `${t}m` }))}
-            value={selectedTimeLimit ? String(selectedTimeLimit) : null}
-            onChange={(value) => setSelectedTimeLimit(Number(value) === selectedTimeLimit ? null : Number(value))}
-          />
-        </div>
+        {/* Spacer to push buttons to bottom */}
+        <div style={{ flex: 1 }} />
 
-        <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.layout.elementSpacing }}>
-          <Button
-            variant="primary"
-            onClick={handleConnect}
-            disabled={saving || !canConnect}
-            style={{ flex: 1 }}
-          >
-            {saving ? "Connecting..." : "Connect"}
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={handleSkip}
-            style={{ flex: 1 }}
-          >
-            Skip
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => router.push("/chat")}
-            style={{ flex: 1 }}
-          >
-            Chat
-          </Button>
+        {/* Buttons at bottom */}
+        <div style={{ 
+          display: 'flex', 
+          gap: tokens.spacing[16], 
+          marginTop: 'auto',
+          paddingTop: tokens.spacing[20],
+        }}>
+          {canConnect ? (
+            <Button
+              variant="primary"
+              onClick={handleConnect}
+              disabled={saving}
+              style={{ width: '100%' }}
+            >
+              {saving ? "Connecting..." : "Connect"}
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="secondary"
+                onClick={handleSkip}
+                style={{ flex: 1 }}
+              >
+                Skip
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => router.push("/chat")}
+                style={{ flex: 1 }}
+              >
+                Chat
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </AppShell>
