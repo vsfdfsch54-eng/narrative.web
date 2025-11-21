@@ -105,8 +105,8 @@ export async function PUT(request: NextRequest) {
         
         if (updateError) {
           return NextResponse.json({ success: false, error: updateError.message }, { status: 500 })
-        }
-        
+    }
+
         // Handle array response
         const finalData = Array.isArray(updateData) ? updateData[0] : updateData
         return NextResponse.json({ success: true, data: finalData })

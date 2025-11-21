@@ -16,8 +16,8 @@ export function useAuth() {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
         if (mounted) {
-          setUser(session?.user ?? null)
-          setLoading(false)
+      setUser(session?.user ?? null)
+      setLoading(false)
         }
       } catch (error) {
         console.error('Error getting session:', error)
@@ -41,8 +41,8 @@ export function useAuth() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted) {
-        setUser(session?.user ?? null)
-        setLoading(false)
+      setUser(session?.user ?? null)
+      setLoading(false)
         clearTimeout(timeout)
       }
     })
