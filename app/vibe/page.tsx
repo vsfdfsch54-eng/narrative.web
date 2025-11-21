@@ -135,31 +135,42 @@ export default function VibePage() {
   // Show loading while checking auth
   if (loading || !user || (user && !user.email_confirmed_at)) {
     return (
-      <div className="fixed inset-0 bg-gradient-to-b from-[#0A0A0A] to-[#101112] flex items-center justify-center">
-        <p className="text-[#f1f1f3]/60">Loading...</p>
+      <div className="fixed inset-0 bg-gradient-to-b from-[#0B0C10] to-[#101215] flex items-center justify-center">
+        <p className="text-white/60">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-[#0A0A0A] to-[#101112] overflow-hidden w-full h-full m-0 p-0 grain-texture">
+    <div className="fixed inset-0 bg-gradient-to-b from-[#0B0C10] to-[#101215] overflow-hidden w-full h-full m-0 p-0 grain-texture">
       <div className="phone-frame-container">
         <div className="phone-frame">
           <div className="phone-screen">
-            <div className="phone-content px-6 py-8 pb-0 overflow-hidden flex flex-col h-full relative z-10">
-              {/* Header */}
-              <div className="flex-shrink-0 mb-8">
-                <h1 className="text-[32px] font-bold text-[#f1f1f3] mb-2 leading-tight">
+            <div className="phone-content px-6 py-6 pb-0 overflow-hidden flex flex-col h-full relative z-10">
+              {/* Logo */}
+              <div className="flex-shrink-0 mb-6 flex justify-center">
+                <span className="text-lg font-light tracking-tight text-white">
+                  Narrative
+                </span>
+              </div>
+
+              {/* Title + Subtitle */}
+              <div className="flex-shrink-0 mb-8 text-center">
+                <h1 className="text-[32px] font-bold text-white mb-2 leading-tight">
                   Select Your Vibe
                 </h1>
-                <p className="text-base font-thin text-[#f1f1f3]/60">
+                <p className="text-base font-light text-white/55">
                   Choose your mood and topic to connect
                 </p>
               </div>
 
               {/* Vibe Section */}
-              <div className="flex-shrink-0 mb-8">
-                <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6 pb-2" style={{ height: '56px', alignItems: 'center', overflowY: 'hidden' }}>
+              <div className="flex-shrink-0 mb-6">
+                <h2 className="text-lg font-medium text-white mb-3">Select Your Vibe</h2>
+                <p className="text-sm text-white/55 max-w-[90%] mx-auto mb-3 text-center">
+                  Vibes describe your current mood or energy. They help match you with someone who feels the same way right now.
+                </p>
+                <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6" style={{ alignItems: 'center', overflowY: 'hidden' }}>
                   {VIBES.map((vibe) => (
                     <VibeChip
                       key={vibe.id}
@@ -173,8 +184,12 @@ export default function VibePage() {
               </div>
 
               {/* Topic Section */}
-              <div className="flex-shrink-0 mb-8">
-                <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6 pb-2" style={{ height: '56px', alignItems: 'center', overflowY: 'hidden' }}>
+              <div className="flex-shrink-0 mb-6">
+                <h2 className="text-lg font-medium text-white mb-3">Choose a Topic</h2>
+                <p className="text-sm text-white/55 max-w-[90%] mx-auto mb-3 text-center">
+                  Topics are what you want to talk about. They guide the conversation so you connect with someone who wants the same thing.
+                </p>
+                <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6" style={{ alignItems: 'center', overflowY: 'hidden' }}>
                   {currentTopics.map((topic) => (
                     <TopicChip
                       key={topic.id}
@@ -187,28 +202,34 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Segmented Control - Time Selection */}
-              <div className="flex-shrink-0 mb-8">
-                <div className="flex items-center gap-2 p-1 rounded-[16px] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] backdrop-blur-[12px]" style={{ boxShadow: '0 8px 20px rgba(0,0,0,0.25)' }}>
+              {/* Duration Segmented Control - iOS Style */}
+              <div className="flex-shrink-0 mb-6">
+                <div className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(255,255,255,0.06)] backdrop-blur-[12px]">
                   {TIME_LIMITS.map((time) => (
-                    <button
+                    <motion.button
                       key={time}
                       onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
+                      whileTap={{ scale: 0.97 }}
                       className={cn(
-                        "flex-1 px-4 py-2.5 rounded-[12px] text-base font-medium transition-all duration-300",
+                        "flex-1 px-4 py-2.5 rounded-[10px] text-base font-medium transition-all duration-300",
                         selectedTimeLimit === time 
-                          ? "bg-white text-[#0A0A0A]"
-                          : "bg-transparent text-[#f1f1f3]/60 hover:text-[#f1f1f3]"
+                          ? "bg-[rgba(255,255,255,0.16)] text-white font-semibold"
+                          : "bg-transparent text-white/60 hover:text-white"
                       )}
+                      style={{
+                        boxShadow: selectedTimeLimit === time 
+                          ? '0 0 10px rgba(110,193,255,0.35)' 
+                          : 'none'
+                      }}
                     >
                       {time}m
-                    </button>
+                    </motion.button>
                   ))}
                 </div>
               </div>
 
-              {/* Bottom Buttons - Pinned to bottom */}
-              <div className="flex-shrink-0 mt-auto pt-4 pb-2 flex flex-col gap-2">
+              {/* Bottom Fixed Footer - CONNECT & SKIP */}
+              <div className="flex-shrink-0 mt-auto pt-4 pb-4 flex flex-col gap-2">
                 <AnimatePresence mode="wait">
                   {canConnect ? (
                     <motion.button
@@ -217,7 +238,7 @@ export default function VibePage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       whileTap={{ 
-                        scale: 0.98,
+                        scale: 0.97,
                         backgroundColor: '#FFFFFF',
                         color: '#0A0A0A'
                       }}
@@ -225,13 +246,12 @@ export default function VibePage() {
                       disabled={saving}
                       className={cn(
                         "w-full py-4 rounded-[16px] text-lg font-bold transition-all duration-300",
-                        "bg-[#0A0A0A] text-white border border-[rgba(255,255,255,0.08)]",
-                        "hover:bg-white hover:text-[#0A0A0A]",
+                        "bg-[#0A0A0A] text-white border border-[rgba(110,193,255,0.4)]",
                         "disabled:opacity-50 disabled:cursor-not-allowed",
                         "relative overflow-hidden"
                       )}
                       style={{
-                        boxShadow: '0 0 0 1px rgba(110,193,255,0.4), 0 8px 20px rgba(0,0,0,0.25)'
+                        boxShadow: '0 0 12px rgba(110,193,255,0.35)'
                       }}
                     >
                       {saving ? "Connecting..." : "CONNECT"}
@@ -243,19 +263,15 @@ export default function VibePage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       whileTap={{ 
-                        scale: 0.98,
-                        backgroundColor: 'rgba(255,255,255,0.04)'
+                        scale: 0.97,
+                        backgroundColor: 'rgba(255,255,255,0.08)'
                       }}
                       onClick={handleSkipAndChat}
                       className={cn(
                         "w-full py-4 rounded-[16px] text-lg font-bold transition-all duration-300",
-                        "bg-transparent text-[#f1f1f3] border border-[rgba(255,255,255,0.08)]",
-                        "hover:bg-[rgba(255,255,255,0.04)] hover:border-[rgba(255,255,255,0.12)]"
+                        "bg-transparent text-white border border-[rgba(255,255,255,0.25)]",
+                        "hover:bg-[rgba(255,255,255,0.04)]"
                       )}
-                      style={{
-                        backdropFilter: 'blur(12px)',
-                        boxShadow: '0 8px 20px rgba(0,0,0,0.25)'
-                      }}
                     >
                       SKIP
                     </motion.button>
