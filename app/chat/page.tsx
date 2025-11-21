@@ -20,7 +20,17 @@ export default function ChatPage() {
     const loadMatches = async () => {
       setLoading(true)
       try {
-        // Get all matches for this user
+        // First, check if user is in match queue and got matched
+        const queueResponse = await fetch(`/api/match-queue?userId=${user.id}`)
+        const queueData = await queueResponse.json()
+        
+        if (queueData.success && queueData.matched && queueData.match) {
+          // Matched! Navigate to chat
+          router.push(`/chat/${queueData.otherUserId}?matchId=${queueData.match.id}`)
+          return
+        }
+        
+        // Get all existing matches for this user
         const response = await fetch(`/api/matches?userId=${user.id}`)
         const data = await response.json()
         
@@ -38,27 +48,32 @@ export default function ChatPage() {
           }
         }
         
-        // No matches found, try to find or create one
-        const findResponse = await fetch(`/api/matches?userId=${user.id}&action=find`)
-        const findData = await findResponse.json()
-        
-        if (findData.success && findData.data) {
-          // Match found! Navigate to chat
-          const match = findData.data
-          const otherUserId = match.user1_id === user.id ? match.user2_id : match.user1_id
-          router.push(`/chat/${otherUserId}?matchId=${match.id}`)
-          return
-        } else if (findData.inQueue) {
-          // User is in queue, poll for match
+        // No matches found, check if in queue or add to queue
+        if (queueData.inQueue) {
+          // Already in queue, poll for match
           pollForMatch()
         } else {
-          // No matches, show empty state
-          setProfiles([])
+          // Not in queue, add to queue for real-time matching
+          const addToQueueResponse = await fetch('/api/match-queue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id })
+          })
+          
+          const addToQueueData = await addToQueueResponse.json()
+          
+          if (addToQueueData.success && addToQueueData.matched && addToQueueData.match) {
+            // Matched immediately! Navigate to chat
+            router.push(`/chat/${addToQueueData.otherUserId}?matchId=${addToQueueData.match.id}`)
+            return
+          } else {
+            // In queue, poll for match
+            pollForMatch()
+          }
         }
       } catch (error) {
         console.error('Error loading matches:', error)
         setProfiles([])
-      } finally {
         setLoading(false)
       }
     }
@@ -67,23 +82,36 @@ export default function ChatPage() {
       // Poll every 2 seconds for a match
       const interval = setInterval(async () => {
         try {
-          const response = await fetch(`/api/matches?userId=${user.id}&action=find`)
+          const response = await fetch(`/api/match-queue?userId=${user.id}`)
           const data = await response.json()
           
-          if (data.success && data.data) {
+          if (data.success && data.matched && data.match) {
             // Match found!
             clearInterval(interval)
-            const match = data.data
-            const otherUserId = match.user1_id === user.id ? match.user2_id : match.user1_id
-            router.push(`/chat/${otherUserId}?matchId=${match.id}`)
+            router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
+          } else if (!data.inQueue) {
+            // No longer in queue (maybe matched via another method)
+            clearInterval(interval)
+            // Try to get existing matches
+            const matchesResponse = await fetch(`/api/matches?userId=${user.id}`)
+            const matchesData = await matchesResponse.json()
+            if (matchesData.success && matchesData.data && matchesData.data.length > 0) {
+              const matches = Array.isArray(matchesData.data) ? matchesData.data : [matchesData.data]
+              const activeMatches = matches.filter((m: any) => m.status === 'active')
+              if (activeMatches.length > 0) {
+                const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
+                const otherUserId = randomMatch.user1_id === user.id ? match.user2_id : match.user1_id
+                router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
+              }
+            }
           }
         } catch (error) {
           console.error('Error polling for match:', error)
         }
       }, 2000)
 
-      // Cleanup after 30 seconds
-      setTimeout(() => clearInterval(interval), 30000)
+      // Cleanup after 60 seconds
+      setTimeout(() => clearInterval(interval), 60000)
     }
 
     loadMatches()

@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/hooks/use-auth"
@@ -425,6 +426,7 @@ function OnboardingContent() {
         maxWidth: tokens.layout.maxWidth,
         margin: '0 auto',
         padding: `${tokens.layout.topTitleSpacing} ${tokens.layout.paddingHorizontal}`,
+        paddingBottom: 'calc(env(safe-area-inset-bottom) + 100px)',
         minHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
       }}>
         {currentStep === 'email' && (
@@ -501,19 +503,38 @@ function OnboardingContent() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12], marginTop: tokens.spacing[20] }}>
-              <Button
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: tokens.spacing[12], 
+              marginTop: tokens.spacing[20],
+              position: 'relative',
+              zIndex: 10,
+            }}>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 onClick={handleNext}
-                variant="primary"
-                  disabled={loading || !email.trim() || !email.includes('@') || !email.includes('.') || email.length < 5}
+                disabled={loading || !email.trim() || !email.includes('@') || !email.includes('.') || email.length < 5}
                 style={{ 
                   width: '100%',
                   minHeight: '50px',
-                  opacity: (loading || !email.trim() || !email.includes('@')) ? 0.6 : 1,
+                  padding: `12px ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  letterSpacing: '0',
+                  cursor: (loading || !email.trim() || !email.includes('@') || !email.includes('.') || email.length < 5) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || !email.trim() || !email.includes('@') || !email.includes('.') || email.length < 5) ? 0.7 : 1,
+                  pointerEvents: (loading || !email.trim() || !email.includes('@') || !email.includes('.') || email.length < 5) ? 'auto' : 'auto',
+                  transition: 'all 0.14s ease',
                 }}
               >
                 {loading ? 'Loading...' : 'Continue'}
-              </Button>
+              </motion.button>
               
               {!user && (
                 <p style={{ 
@@ -606,23 +627,58 @@ function OnboardingContent() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.spacing[20] }}>
-              <Button
+            <div style={{ 
+              display: 'flex', 
+              gap: tokens.spacing[16], 
+              marginTop: tokens.spacing[20],
+              position: 'relative',
+              zIndex: 10,
+            }}>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 onClick={handleBack}
-                variant="secondary"
                 disabled={loading}
-                style={{ flex: 1, minHeight: '50px' }}
+                style={{ 
+                  flex: 1, 
+                  minHeight: '50px',
+                  padding: `12px ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button
+                <ChevronLeft style={{ width: '16px', height: '16px' }} />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 onClick={handleNext}
-                variant="primary"
                 disabled={loading || !name.trim()}
-                style={{ flex: 1, minHeight: '50px' }}
+                style={{ 
+                  flex: 1, 
+                  minHeight: '50px',
+                  padding: `12px ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  cursor: (loading || !name.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || !name.trim()) ? 0.7 : 1,
+                }}
               >
                 {loading ? 'Loading...' : 'Continue'}
-              </Button>
+              </motion.button>
             </div>
           </div>
         )}
@@ -744,23 +800,58 @@ function OnboardingContent() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.spacing[20] }}>
-              <Button
+            <div style={{ 
+              display: 'flex', 
+              gap: tokens.spacing[16], 
+              marginTop: tokens.spacing[20],
+              position: 'relative',
+              zIndex: 10,
+            }}>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 onClick={handleBack}
-                variant="secondary"
                 disabled={loading}
-                style={{ flex: 1, minHeight: '50px' }}
+                style={{ 
+                  flex: 1, 
+                  minHeight: '50px',
+                  padding: `12px ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
               >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <Button
+                <ChevronLeft style={{ width: '16px', height: '16px' }} />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
                 onClick={handleNext}
-                variant="primary"
                 disabled={loading || password.length < 6 || !!passwordMatchError}
-                style={{ flex: 1, minHeight: '50px' }}
+                style={{ 
+                  flex: 1, 
+                  minHeight: '50px',
+                  padding: `12px ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  cursor: (loading || password.length < 6 || !!passwordMatchError) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || password.length < 6 || !!passwordMatchError) ? 0.7 : 1,
+                }}
               >
                 {loading ? 'Loading...' : 'Continue'}
-              </Button>
+              </motion.button>
             </div>
           </div>
         )}

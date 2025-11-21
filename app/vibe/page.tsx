@@ -157,8 +157,35 @@ export default function VibePage() {
     }
   }
 
-  const handleSkip = () => {
-    router.push("/chat")
+  const handleSkip = async () => {
+    const userId = getUserId()
+    if (!userId) {
+      router.push("/")
+      return
+    }
+    
+    try {
+      // Add user to match queue for real-time matching
+      const response = await fetch('/api/match-queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success && data.matched && data.match) {
+        // Matched immediately! Navigate to chat
+        router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
+      } else {
+        // In queue, navigate to chat page which will poll for matches
+        router.push("/chat")
+      }
+    } catch (error) {
+      console.error('Error joining match queue:', error)
+      // Still navigate to chat page
+      router.push("/chat")
+    }
   }
 
   if (loading || !user || (user && !user.email_confirmed_at)) {
