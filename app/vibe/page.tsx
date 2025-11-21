@@ -207,7 +207,7 @@ export default function VibePage() {
         <Card>
           <h2 style={{ 
             ...tokens.typography.heading,
-            color: tokens.colors.textPrimary,
+            color: tokens.colors.textDark,
             margin: 0,
             marginBottom: tokens.spacing[20],
             textAlign: 'center',
@@ -221,12 +221,12 @@ export default function VibePage() {
               onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
               style={{
                 width: '100%',
-                height: '44px',
+                height: '46px',
                 padding: `0 ${tokens.spacing[20]}`,
                 borderRadius: tokens.radii.input,
                 background: tokens.colors.surfacePrimary,
                 border: `1px solid ${tokens.colors.borderSubtle}`,
-                color: tokens.colors.textPrimary,
+                color: tokens.colors.textDark,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
@@ -280,10 +280,10 @@ export default function VibePage() {
                           alignItems: 'center',
                           gap: tokens.spacing[12],
                           padding: `0 ${tokens.spacing[16]}`,
-                          height: '44px',
+                          height: '46px',
                           background: selectedCategory === category.id ? tokens.colors.surfaceSecondary : 'transparent',
                           border: 'none',
-                          color: tokens.colors.textPrimary,
+                          color: tokens.colors.textDark,
                           ...tokens.typography.body,
                           fontWeight: selectedCategory === category.id ? 500 : 400,
                           cursor: 'pointer',

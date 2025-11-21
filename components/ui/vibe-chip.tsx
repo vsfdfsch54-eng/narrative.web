@@ -56,14 +56,14 @@ export function VibeChip({
         "relative"
       )}
       style={{
-        height: '44px',
+        height: '46px',
         borderRadius: tokens.radii.pill,
         padding: `0 ${tokens.spacing[20]}`,
         gap: tokens.spacing[12],
-        background: selected ? '#000000' : '#F0F0F2',
-        color: selected ? '#FFFFFF' : '#3A3A3D',
-        border: 'none',
-        boxShadow: 'none',
+        background: tokens.colors.surfacePrimary,
+        color: tokens.colors.textDark,
+        border: `1px solid ${tokens.colors.borderSubtle}`,
+        boxShadow: tokens.shadows.card,
         ...tokens.typography.label,
         willChange: "transform"
       }}

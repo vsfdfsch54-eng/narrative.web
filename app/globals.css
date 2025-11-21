@@ -4,11 +4,11 @@
 
 @layer base {
   :root {
-    /* Narrative Design System - OpenAI-inspired soft white, minimal, pill-based */
-    --bg-core: #F7F7F8;
+    /* Narrative Design System - Midnight-black + soft-white pill theme */
+    --bg-core: #0B0B0D;
     --bg-surface-1: #FFFFFF;
-    --bg-surface-2: #FAFAFB;
-    --bg-surface-3: #E6E6E7;
+    --bg-surface-2: #F9F9FA;
+    --bg-surface-3: #0F0F11;
     --text-primary: #0B0B0B;
     --text-secondary: #6A6A6A;
     --text-muted: #9E9E9E;
@@ -83,7 +83,7 @@
     text-rendering: optimizeLegibility;
     min-height: 100%;
     width: 100%;
-    background: #F7F7F8;
+    background: #0B0B0D;
     position: fixed;
     overflow: hidden;
     touch-action: pan-x pan-y;
@@ -101,7 +101,7 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     font-variant-ligatures: common-ligatures;
     letter-spacing: -0.011em;
-    background: #F7F7F8;
+    background: #0B0B0D;
     min-height: 100vh;
     min-height: 100dvh;
     margin: 0;
@@ -192,7 +192,7 @@
   }
   
   .sleek-chip.selected {
-    background: #F7F7F8;
+    background: #0B0B0D;
     border-color: #FFFFFF;
     color: #000000;
   }
@@ -283,7 +283,7 @@
   }
   
   .phone-screen {
-    background: #F7F7F8;
+    background: #0B0B0D;
     border-radius: 28px;
     display: flex;
     flex-direction: column;

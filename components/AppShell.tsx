@@ -21,9 +21,9 @@ export function AppShell({ children }: AppShellProps) {
       <TopNav />
       <div
         style={{
-          maxWidth: '480px',
+          maxWidth: '520px',
           margin: '0 auto',
-          padding: tokens.spacing[20],
+          padding: `${tokens.spacing[12]} ${tokens.spacing[20]}`,
         }}
       >
         {children}

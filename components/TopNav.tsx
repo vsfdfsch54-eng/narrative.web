@@ -63,13 +63,14 @@ export function TopNav() {
   return (
     <div
       style={{
-        height: '64px',
+        height: '70px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        maxWidth: '520px',
+        margin: '0 auto',
         padding: `0 ${tokens.spacing[20]}`,
-        background: tokens.colors.backgroundApp,
-        borderBottom: `1px solid rgba(0,0,0,0.04)`,
+        background: 'transparent',
         position: 'sticky',
         top: 0,
         zIndex: 100,
@@ -78,8 +79,8 @@ export function TopNav() {
       <h1
         style={{
           fontSize: '20px',
-          fontWeight: 500,
-          color: '#111111',
+          fontWeight: 600,
+          color: tokens.colors.textPrimary,
           margin: 0,
         }}
       >
@@ -95,8 +96,8 @@ export function TopNav() {
             height: '44px',
             borderRadius: tokens.radii.pill,
             background: tokens.colors.surfacePrimary,
-            border: `1px solid ${tokens.colors.borderMedium}`,
-            color: tokens.colors.textSecondary,
+            border: `1px solid ${tokens.colors.borderSubtle}`,
+            color: tokens.colors.textDark,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -130,7 +131,7 @@ export function TopNav() {
                   zIndex: 50,
                   minWidth: '180px',
                   background: tokens.colors.surfacePrimary,
-                  borderRadius: '12px',
+                  borderRadius: tokens.radii.popover,
                   boxShadow: tokens.shadows.elevated,
                   border: `1px solid ${tokens.colors.borderSubtle}`,
                   overflow: 'hidden',
@@ -156,7 +157,7 @@ export function TopNav() {
                         textAlign: 'left',
                         background: 'transparent',
                         border: 'none',
-                        color: item.isActive ? tokens.colors.textPrimary : tokens.colors.textSecondary,
+                        color: tokens.colors.textDark,
                         cursor: 'pointer',
                         ...tokens.typography.body,
                         fontWeight: item.isActive ? 500 : 400,

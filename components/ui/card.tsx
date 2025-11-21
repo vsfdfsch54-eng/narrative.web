@@ -19,7 +19,7 @@ export function Card({ children, className, padding = true, variant = "default",
       style={{
         background: tokens.colors.surfacePrimary,
         borderRadius: tokens.radii.card,
-        boxShadow: variant === "outlined" ? tokens.shadows.card : 'none',
+        boxShadow: tokens.shadows.card,
         border: variant === "outlined" ? `1px solid ${tokens.colors.borderSubtle}` : 'none',
         padding: padding ? tokens.spacing[20] : 0,
         ...style,

@@ -21,7 +21,7 @@ export function TopicChip({
   delay = 0,
 }: TopicChipProps) {
   const icon = TopicIcons[topic.id] || DefaultTopicIcon
-  const baseColor = TopicColors[topic.id] || tokens.colors.textSecondary
+  const baseColor = TopicColors[topic.id] || tokens.colors.accentBlue
   const iconColor = selected ? brightenColor(baseColor, 12) : baseColor
   
   return (
@@ -43,14 +43,14 @@ export function TopicChip({
         "relative"
       )}
       style={{
-        height: '44px',
+        height: '46px',
         borderRadius: tokens.radii.pill,
         padding: `0 ${tokens.spacing[20]}`,
         gap: tokens.spacing[12],
-        background: selected ? '#000000' : '#F0F0F2',
-        color: selected ? '#FFFFFF' : '#3A3A3D',
-        border: 'none',
-        boxShadow: 'none',
+        background: tokens.colors.surfacePrimary,
+        color: tokens.colors.textDark,
+        border: `1px solid ${tokens.colors.borderSubtle}`,
+        boxShadow: tokens.shadows.card,
         ...tokens.typography.label,
         willChange: "transform"
       }}

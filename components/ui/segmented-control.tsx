@@ -15,8 +15,8 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
     <div
       style={{
         display: 'flex',
-        gap: tokens.spacing[4],
-        padding: tokens.spacing[4],
+        gap: tokens.spacing[8],
+        padding: tokens.spacing[8],
         background: tokens.colors.surfacePrimary,
         borderRadius: tokens.radii.pill,
         border: `1px solid ${tokens.colors.borderSubtle}`,
@@ -31,10 +31,10 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
             onClick={() => onChange(option.value)}
             style={{
               flex: 1,
-              padding: `${tokens.spacing[8]} ${tokens.spacing[16]}`,
+              padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
               borderRadius: tokens.radii.pill,
-              background: isSelected ? '#000000' : 'transparent',
-              color: isSelected ? '#FFFFFF' : tokens.colors.textPrimary,
+              background: isSelected ? tokens.colors.backgroundApp : 'transparent',
+              color: isSelected ? tokens.colors.textPrimary : tokens.colors.textDark,
               border: 'none',
               ...tokens.typography.label,
               cursor: 'pointer',

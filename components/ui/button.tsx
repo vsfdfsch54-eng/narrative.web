@@ -22,22 +22,22 @@ export function Button({
   ...props
 }: ButtonProps) {
   const height = (size === "large" || size === "lg") 
-    ? '48px'
+    ? '50px'
     : size === "icon" 
-    ? '44px'
+    ? '46px'
     : size === "sm"
-    ? '40px'
-    : '44px'
+    ? '42px'
+    : '46px'
 
   const variantStyles = {
     primary: {
-      background: '#000000',
-      color: '#FFFFFF',
+      background: tokens.colors.surfacePrimary,
+      color: '#000000',
       border: 'none',
     },
     secondary: {
-      background: tokens.colors.surfacePrimary,
-      color: '#111111',
+      background: 'transparent',
+      color: tokens.colors.textPrimary,
       border: `1px solid ${tokens.colors.borderMedium}`,
     },
     outline: {
@@ -47,7 +47,7 @@ export function Button({
     },
     ghost: {
       background: 'transparent',
-      color: '#2A2A2F',
+      color: tokens.colors.textPrimary,
       border: 'none',
     },
   }
@@ -55,7 +55,7 @@ export function Button({
   const buttonStyles = {
     height,
     padding: size === "icon" ? '0' : `0 ${tokens.spacing[20]}`,
-    borderRadius: tokens.radii.pill,
+    borderRadius: tokens.radii.button,
     ...variantStyles[variant],
     fontSize: tokens.typography.body.fontSize,
     fontWeight: 500,
@@ -88,7 +88,7 @@ export function Button({
       style={buttonStyles}
       onMouseEnter={(e) => {
         if (!disabled && variant === 'ghost') {
-          e.currentTarget.style.background = 'rgba(0,0,0,0.04)'
+          e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
         }
       }}
       onMouseLeave={(e) => {
