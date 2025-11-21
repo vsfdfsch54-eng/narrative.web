@@ -22,7 +22,7 @@ const TOPIC_CATEGORIES = [
 const TIME_LIMITS = [5, 15, 30]
 
 // Fallback vibe if none found in database
-const FALLBACK_VIBE: Vibe = { id: 'curious', label: 'Curious', icon: '🔍', color: 'green', description: 'Eager to learn and explore' }
+const FALLBACK_VIBE: Vibe = { id: 'curious', label: 'Curious', icon: '🔍', color: 'gray', description: 'Eager to learn and explore' }
 
 export default function VibePage() {
   const [selectedVibe, setSelectedVibe] = useState<Vibe | null>(null)
@@ -82,7 +82,7 @@ export default function VibePage() {
               id: data.data.id,
               label: data.data.vibe,
               icon: '🔍',
-              color: 'green',
+              color: 'gray',
               description: 'Your last vibe'
             })
           }
@@ -212,8 +212,8 @@ export default function VibePage() {
           <div className="phone-screen">
             <div className="phone-content px-5 py-6 pb-0 overflow-hidden flex flex-col h-full">
               {/* Top Section: Header + Time */}
-              <div className="flex-shrink-0 mb-6">
-                <div className="text-center mb-5">
+              <div className="flex-shrink-0 mb-5">
+                <div className="text-center mb-4">
                   <h1 className="text-xl font-bold text-[#f1f1f3] mb-1">
                     Select how you want to connect
                   </h1>
@@ -241,10 +241,10 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Middle Section: 3 Boxes */}
+              {/* Middle Section: 3 Boxes - Uneven Distribution */}
               <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
-                {/* Box 1: Vibe Section */}
-                <div className="flex-1 rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col min-h-0">
+                {/* Box 1: Vibe Section - Smaller (one row) */}
+                <div className="flex-[0.8] rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col min-h-0">
                   <h2 className="text-sm font-medium text-[#f1f1f3] mb-3 flex-shrink-0">Your Vibe</h2>
                   
                   {/* Last Vibe Button - Compact */}
@@ -264,7 +264,7 @@ export default function VibePage() {
                   )}
 
                   {/* Horizontal Scroll Row for Vibes */}
-                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-4 px-4 flex-1 min-h-0">
+                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-4 px-4 flex-1 min-h-0 items-center">
                     {VIBES.map((vibe) => (
                       <VibeChip
                         key={vibe.id}
@@ -277,8 +277,8 @@ export default function VibePage() {
                   </div>
                 </div>
 
-                {/* Box 2: Topic Section */}
-                <div className="flex-1 rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col min-h-0">
+                {/* Box 2: Topic Section - Larger (two rows: categories + topics) */}
+                <div className="flex-[1.4] rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col min-h-0">
                   <h2 className="text-sm font-medium text-[#f1f1f3] mb-3 flex-shrink-0">Your Topic</h2>
 
                   {/* Category Buttons - Horizontal Row: General, Pop Culture, News */}
@@ -303,7 +303,7 @@ export default function VibePage() {
                   </div>
 
                   {/* Horizontal Scroll Row for Topics */}
-                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-4 px-4 flex-1 min-h-0">
+                  <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-4 px-4 flex-1 min-h-0 items-center">
                     {currentTopics.map((topic) => (
                       <TopicChip
                         key={topic.id}
@@ -316,8 +316,8 @@ export default function VibePage() {
                   </div>
                 </div>
 
-                {/* Box 3: Make Your Own */}
-                <div className="flex-1 rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col min-h-0">
+                {/* Box 3: Make Your Own - Smaller */}
+                <div className="flex-[0.8] rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col min-h-0 justify-center">
                   <h2 className="text-sm font-medium text-[#f1f1f3] mb-2 flex-shrink-0">Make your own topic</h2>
                   <p className="text-xs text-[#f1f1f3]/60 mb-3 flex-shrink-0">Create a custom topic to discuss</p>
                   <input 
