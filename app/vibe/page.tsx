@@ -168,6 +168,7 @@ export default function VibePage() {
         paddingTop: tokens.spacing[20], 
         paddingBottom: '180px',
         minHeight: '100vh',
+        position: 'relative',
       }}>
         <div style={{ textAlign: 'center' }}>
           <h1 style={{ 
@@ -340,24 +341,14 @@ export default function VibePage() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Fixed button at bottom - above dock */}
-      <div style={{
-        position: 'fixed',
-        bottom: 'calc(env(safe-area-inset-bottom) + 80px)',
-        left: 0,
-        right: 0,
-        display: 'flex',
-        justifyContent: 'center',
-        padding: `0 ${tokens.layout.paddingHorizontal}`,
-        zIndex: 10000,
-        pointerEvents: 'none',
-      }}>
-        <div style={{
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Buttons at bottom */}
+        <div style={{ 
+          marginTop: tokens.spacing[28],
           width: '100%',
-          maxWidth: tokens.layout.maxWidth,
-          pointerEvents: 'auto',
         }}>
           {canConnect ? (
             <Button
