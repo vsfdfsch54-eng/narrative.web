@@ -342,35 +342,42 @@ export default function VibePage() {
         </div>
       </div>
 
-      {/* Fixed button at bottom */}
+      {/* Fixed button at bottom - above dock */}
       <div style={{
         position: 'fixed',
-        bottom: 'calc(env(safe-area-inset-bottom) + 100px)',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '100%',
-        maxWidth: tokens.layout.maxWidth,
+        bottom: 'calc(env(safe-area-inset-bottom) + 80px)',
+        left: 0,
+        right: 0,
+        display: 'flex',
+        justifyContent: 'center',
         padding: `0 ${tokens.layout.paddingHorizontal}`,
-        zIndex: 1000,
+        zIndex: 10000,
+        pointerEvents: 'none',
       }}>
-        {canConnect ? (
-          <Button
-            variant="primary"
-            onClick={handleConnect}
-            disabled={saving}
-            style={{ width: '100%' }}
-          >
-            {saving ? "Connecting..." : "Connect"}
-          </Button>
-        ) : (
-          <Button
-            variant="secondary"
-            onClick={handleSkip}
-            style={{ width: '100%' }}
-          >
-            Skip and Chat
-          </Button>
-        )}
+        <div style={{
+          width: '100%',
+          maxWidth: tokens.layout.maxWidth,
+          pointerEvents: 'auto',
+        }}>
+          {canConnect ? (
+            <Button
+              variant="primary"
+              onClick={handleConnect}
+              disabled={saving}
+              style={{ width: '100%' }}
+            >
+              {saving ? "Connecting..." : "Connect"}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              onClick={handleSkip}
+              style={{ width: '100%' }}
+            >
+              Skip and Chat
+            </Button>
+          )}
+        </div>
       </div>
     </AppShell>
   )
