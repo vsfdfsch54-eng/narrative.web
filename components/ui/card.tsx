@@ -50,3 +50,11 @@ export function CardDescription({ children, className }: { children: React.React
     </div>
   )
 }
+
+export function CardTitle({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={className}>
+      {children}
+    </div>
+  )
+}
