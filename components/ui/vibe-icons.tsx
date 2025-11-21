@@ -54,15 +54,15 @@ export const VibeIcons: Record<string, React.ReactNode> = {
   ),
 }
 
-// Vibe accent colors
+// Vibe accent colors - matching spec exactly
 export const VibeColors: Record<string, string> = {
-  'chill': '#6EC1FF', // blue
-  'social': '#FFB84D', // soft orange
-  'energetic': '#FF5E5E', // soft red
-  'reflective': '#A88BFF', // violet
-  'creative': '#7BE495', // green
-  'focused': '#F2CF5B', // yellow
-  'adventure': '#A88BFF', // violet
-  'curious': '#6EC1FF', // blue
+  'chill': '#6EC1FF', // Relaxed - blue
+  'social': '#FFB84D', // Social - soft orange
+  'energetic': '#FF6B6B', // Energetic - soft red
+  'reflective': '#A88BFF', // Deep Talk - violet
+  'creative': '#7BE495', // Motivated - green
+  'focused': '#F2CF5B', // Random - yellow
+  'adventure': '#F2CF5B', // Random - yellow
+  'curious': '#6EC1FF', // Relaxed - blue
 }
 

@@ -136,7 +136,7 @@ export default function VibePage() {
   if (loading || !user || (user && !user.email_confirmed_at)) {
     return (
       <div className="fixed inset-0 bg-white flex items-center justify-center">
-        <p className="text-[#0A0A0A]/60">Loading...</p>
+        <p className="text-black/60">Loading...</p>
       </div>
     )
   }
@@ -149,26 +149,23 @@ export default function VibePage() {
             <div className="phone-content px-6 py-6 pb-0 overflow-hidden flex flex-col h-full relative z-10">
               {/* Logo */}
               <div className="flex-shrink-0 mb-6 flex justify-center">
-                <span className="text-lg font-light tracking-tight text-[#0A0A0A]">
+                <span className="text-lg font-light tracking-tight text-black">
                   Narrative
                 </span>
               </div>
 
-              {/* Title + Subtitle */}
+              {/* Title */}
               <div className="flex-shrink-0 mb-8 text-center">
-                <h1 className="text-[32px] font-bold text-[#0A0A0A] mb-2 leading-tight">
+                <h1 className="text-[32px] font-bold text-black mb-2 leading-tight">
                   Select Your Vibe
                 </h1>
-                <p className="text-[15px] font-light text-black/55">
-                  Choose your mood and topic to connect
-                </p>
               </div>
 
               {/* Vibe Section */}
-              <div className="flex-shrink-0 mb-6">
-                <h2 className="text-lg font-bold text-[#0A0A0A] mb-3">Select Your Vibe</h2>
-                <p className="text-[13px] text-black/55 max-w-[90%] mx-auto mb-3 text-center">
-                  Vibes describe your current mood or energy. They help match you with someone who feels the same way right now.
+              <div className="flex-shrink-0 mb-8">
+                <h2 className="text-[28px] font-bold text-black mb-3">Select Your Vibe</h2>
+                <p className="text-[14px] text-black/55 max-w-[90%] mx-auto mb-4 text-center">
+                  Vibes describe your current mood or energy and help match you with someone who feels the same way.
                 </p>
                 <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6" style={{ alignItems: 'center', overflowY: 'hidden' }}>
                   {VIBES.map((vibe) => (
@@ -184,9 +181,9 @@ export default function VibePage() {
               </div>
 
               {/* Topic Section */}
-              <div className="flex-shrink-0 mb-6">
-                <h2 className="text-lg font-bold text-[#0A0A0A] mb-3">Choose a Topic</h2>
-                <p className="text-[13px] text-black/55 max-w-[90%] mx-auto mb-3 text-center">
+              <div className="flex-shrink-0 mb-8">
+                <h2 className="text-[28px] font-bold text-black mb-3">Choose a Topic</h2>
+                <p className="text-[14px] text-black/55 max-w-[90%] mx-auto mb-4 text-center">
                   Topics are what you want to talk about. They guide the conversation so you connect with the right person.
                 </p>
                 <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-6 px-6" style={{ alignItems: 'center', overflowY: 'hidden' }}>
@@ -202,15 +199,10 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Duration Segmented Control - Light Theme */}
+              {/* Duration Segmented Control */}
               <div className="flex-shrink-0 mb-6">
                 <div 
-                  className="flex items-center gap-1 p-1 rounded-[12px] bg-white border border-[rgba(0,0,0,0.08)] relative overflow-hidden"
-                  style={{
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                  }}
+                  className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(0,0,0,0.05)] relative overflow-hidden"
                 >
                   {TIME_LIMITS.map((time) => (
                     <motion.button
@@ -220,14 +212,9 @@ export default function VibePage() {
                       className={cn(
                         "flex-1 px-4 py-2.5 rounded-[10px] text-base font-medium transition-all duration-300 relative z-10",
                         selectedTimeLimit === time 
-                          ? "bg-[#0A0A0A] text-white font-semibold"
-                          : "bg-transparent text-black/60 hover:text-black"
+                          ? "bg-black text-white font-semibold"
+                          : "bg-transparent text-black"
                       )}
-                      style={{
-                        boxShadow: selectedTimeLimit === time 
-                          ? '0 2px 8px rgba(0,0,0,0.12)' 
-                          : 'none'
-                      }}
                     >
                       {time}m
                     </motion.button>
@@ -239,66 +226,54 @@ export default function VibePage() {
               <div className="flex-1" />
             </div>
             
-            {/* Bottom Fixed Footer - Safe Area Aware, Above Nav Bar */}
+            {/* Bottom Fixed Footer - Side-by-Side Buttons Above Nav Bar */}
             <div 
-              className="fixed left-0 right-0 px-6 pt-5 bg-white border-t border-[rgba(0,0,0,0.08)]"
+              className="fixed left-0 right-0 bg-white flex flex-row gap-3"
               style={{
-                bottom: '80px', // Above nav bar (h-20 = 80px)
-                paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
-                paddingTop: '20px',
+                bottom: `calc(80px + env(safe-area-inset-bottom))`, // Above nav bar + safe area
+                padding: '16px 24px',
+                paddingBottom: `max(16px, calc(16px + env(safe-area-inset-bottom)))`,
                 zIndex: 50
               }}
             >
-              <AnimatePresence mode="wait">
-                {canConnect ? (
-                  <motion.button
-                    key="connect"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    whileTap={{ 
-                      scale: 0.97,
-                      backgroundColor: '#FFFFFF',
-                      color: '#0A0A0A'
-                    }}
-                    onClick={handleConnect}
-                    disabled={saving}
-                    className={cn(
-                      "w-full py-4 rounded-[14px] text-lg font-bold transition-all duration-300",
-                      "bg-[#0A0A0A] text-white",
-                      "disabled:opacity-50 disabled:cursor-not-allowed",
-                      "relative overflow-hidden mb-2"
-                    )}
-                    style={{
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
-                    }}
-                  >
-                    {saving ? "Connecting..." : "CONNECT"}
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    key="skip"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    whileTap={{ 
-                      scale: 0.97,
-                      backgroundColor: 'rgba(0,0,0,0.05)'
-                    }}
-                    onClick={handleSkipAndChat}
-                    className={cn(
-                      "w-full py-4 rounded-[14px] text-lg font-bold transition-all duration-300",
-                      "bg-transparent text-[#0A0A0A] border border-[rgba(0,0,0,0.15)]",
-                      "hover:bg-[rgba(0,0,0,0.02)]"
-                    )}
-                    style={{
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-                    }}
-                  >
-                    SKIP
-                  </motion.button>
+              {/* CONNECT Button - Always visible, disabled when canConnect is false */}
+              <motion.button
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileTap={{ 
+                  scale: canConnect ? 0.97 : 1,
+                  backgroundColor: canConnect ? '#FFFFFF' : undefined,
+                  color: canConnect ? '#000000' : undefined
+                }}
+                onClick={handleConnect}
+                disabled={saving || !canConnect}
+                className={cn(
+                  "flex-1 h-[52px] rounded-[14px] text-lg font-bold transition-all duration-300",
+                  canConnect
+                    ? "bg-black text-white"
+                    : "bg-[rgba(0,0,0,0.05)] text-black/40",
+                  "disabled:cursor-not-allowed"
                 )}
-              </AnimatePresence>
+              >
+                {saving ? "Connecting..." : "CONNECT"}
+              </motion.button>
+              
+              {/* SKIP Button - Always visible */}
+              <motion.button
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileTap={{ 
+                  scale: 0.97,
+                  backgroundColor: 'rgba(0,0,0,0.06)'
+                }}
+                onClick={handleSkipAndChat}
+                className={cn(
+                  "flex-1 h-[52px] rounded-[14px] text-lg font-bold transition-all duration-300",
+                  "bg-transparent text-black border border-[rgba(0,0,0,0.25)]"
+                )}
+              >
+                SKIP
+              </motion.button>
             </div>
             
             <BottomNav />

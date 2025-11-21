@@ -33,38 +33,31 @@ export function TopicChip({
       }}
       onClick={onClick}
       className={cn(
-        "shrink-0 px-4 py-2.5 rounded-[14px]",
+        "shrink-0 px-[14px] py-[10px] rounded-[12px]",
         "font-semibold text-base tracking-tight",
         "transition-all duration-300",
         "touch-manipulation",
         "overflow-hidden flex items-center gap-2",
         "relative",
-        "min-h-[42px]",
-        selected
-          ? "text-[#0A0A0A] border border-[#0A0A0A]"
-          : "text-[#0A0A0A]"
+        "bg-white",
+        "text-black"
       )}
       style={{
-        background: selected
-          ? 'rgba(0,0,0,0.05)'
-          : 'rgba(255,255,255,0.7)',
         border: selected
-          ? '1px solid rgba(0,0,0,0.2)'
-          : '1px solid rgba(0,0,0,0.08)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        boxShadow: selected
-          ? '0 2px 8px rgba(0,0,0,0.12)'
-          : '0 2px 8px rgba(0,0,0,0.08)',
+          ? '1.5px solid rgba(0,0,0,0.25)'
+          : '1px solid rgba(0,0,0,0.12)',
+        boxShadow: selected 
+          ? '0 2px 6px rgba(0,0,0,0.08)' 
+          : 'none',
         willChange: "transform"
       }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 0.8, scale: 1 }}
+        animate={{ opacity: 0.6, scale: 1 }}
         transition={{ duration: 0.2 }}
         className="flex-shrink-0"
-        style={{ color: 'rgba(0,0,0,0.8)' }}
+        style={{ color: 'rgba(0,0,0,0.6)' }}
       >
         {icon}
       </motion.div>
