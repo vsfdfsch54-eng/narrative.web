@@ -10,14 +10,14 @@ import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS, SPORTS_TOPICS }
 import { Vibe, Topic } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown, Compass, Mic, Newspaper, CircleDot } from "lucide-react"
 
-// Topic Categories with 2025 subtopics
+// Topic Categories with 2025 subtopics and icons
 const TOPIC_CATEGORIES = [
-  { id: "general", label: "General", topics: GENERAL_TOPICS },
-  { id: "pop-culture", label: "Pop Culture", topics: POP_CULTURE_TOPICS },
-  { id: "news", label: "News", topics: NEWS_TOPICS },
-  { id: "sports", label: "Sports", topics: SPORTS_TOPICS },
+  { id: "general", label: "General", topics: GENERAL_TOPICS, icon: Compass },
+  { id: "pop-culture", label: "Pop Culture", topics: POP_CULTURE_TOPICS, icon: Mic },
+  { id: "news", label: "News", topics: NEWS_TOPICS, icon: Newspaper },
+  { id: "sports", label: "Sports", topics: SPORTS_TOPICS, icon: CircleDot },
 ] as const
 
 const TIME_LIMITS = [5, 15, 30]
@@ -186,11 +186,11 @@ export default function VibePage() {
               }}
             >
               {/* Top Menu - Three dots in top left */}
-              <div className="flex-shrink-0 mb-8 flex items-start justify-between px-5">
+              <div className="flex-shrink-0 mb-7 flex items-start justify-between px-5">
                 <TopMenu />
-                {/* Logo - 13px, low contrast, centered */}
+                {/* Logo - small, centered */}
                 <div className="flex-1 flex justify-center">
-                  <span className="text-[13px] font-light tracking-tight text-[#F5F5F5]/40">
+                  <span className="text-[13px] font-light tracking-tight text-[#FFFFFF]/40">
                     Narrative
                   </span>
                 </div>
@@ -198,26 +198,24 @@ export default function VibePage() {
                 <div className="w-10" />
               </div>
 
-              {/* Main Title - 32px bold, centered, 32px spacing */}
-              <div className="flex-shrink-0 mb-8 text-center px-5">
-                <h1 className="text-[32px] font-bold text-[#FFFFFF] leading-tight">
+              {/* Main Title - 28-30px semibold, centered, 28px spacing */}
+              <div className="flex-shrink-0 mb-7 text-center px-5">
+                <h1 className="text-[30px] font-semibold text-[#FFFFFF] leading-tight">
                   Select Your Vibe
                 </h1>
               </div>
 
-              {/* Vibe Section - 32px spacing, 16px between heading/description, 16px between description/chips */}
-              <div className="flex-shrink-0 mb-8 px-5">
-                <p className="text-[14px] text-[rgba(255,255,255,0.55)] max-w-full mx-auto mb-4 text-center">
-                  Vibes describe your current mood or energy and help match you with someone who feels the same way.
-                </p>
+              {/* Vibe Section - 28px spacing, 16px above/below chip rows */}
+              <div className="flex-shrink-0 mb-7 px-5">
                 <div className="flex overflow-x-auto scrollbar-hide -mx-5 px-5" style={{ 
                   alignItems: 'center', 
                   overflowY: 'hidden',
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch',
-                  marginTop: '16px'
+                  marginTop: '16px',
+                  marginBottom: '16px'
                 }}>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     {VIBES.map((vibe) => (
                       <VibeChip
                         key={vibe.id}
@@ -231,31 +229,34 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Topic Section - 32px spacing */}
-              <div className="flex-shrink-0 mb-8 px-5">
-                <h2 className="text-[28px] font-bold text-[#FFFFFF] mb-4 text-center">Choose a Topic</h2>
-                <p className="text-[14px] text-[rgba(255,255,255,0.55)] mb-4 text-center">
-                  Topics are what you want to talk about. They guide the conversation so you connect with the right person.
-                </p>
+              {/* Topic Section - 28px spacing */}
+              <div className="flex-shrink-0 mb-7 px-5">
+                <h2 className="text-[30px] font-semibold text-[#FFFFFF] mb-4 text-center">Choose a Topic</h2>
                 
-                {/* Topic Category Dropdown - 16px spacing from description */}
+                {/* Topic Category Dropdown - 16px spacing from title */}
                 <div className="relative mb-4" ref={dropdownRef}>
                   <motion.button
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
                     className={cn(
-                      "w-full h-[48px] rounded-[20px]",
+                      "w-full h-[48px] rounded-[12px]",
                       "bg-white text-black",
-                      "border-[1.25px] border-[rgba(0,0,0,0.20)]",
+                      "border-[1.25px] border-[rgba(0,0,0,0.25)]",
                       "flex items-center justify-between px-3",
-                      "font-semibold text-base",
-                      "transition-all duration-300"
+                      "font-medium text-base",
+                      "transition-all duration-200"
                     )}
                   >
-                    <span>{TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.label || "General"}</span>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const CategoryIcon = TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.icon || Compass
+                        return <CategoryIcon className="w-4 h-4" />
+                      })()}
+                      <span>{TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.label || "General"}</span>
+                    </div>
                     <ChevronDown 
                       className={cn(
-                        "w-5 h-5 transition-transform duration-300",
+                        "w-4 h-4 transition-transform duration-200",
                         isCategoryDropdownOpen && "rotate-180"
                       )}
                     />
@@ -269,25 +270,29 @@ export default function VibePage() {
                       exit={{ opacity: 0, y: -10 }}
                       className="absolute top-full left-0 right-0 mt-2 z-50"
                     >
-                      <div className="bg-[#1A1A1A] border border-[rgba(255,255,255,0.1)] rounded-[16px] overflow-hidden shadow-lg">
-                        {TOPIC_CATEGORIES.map((category) => (
-                          <button
-                            key={category.id}
-                            onClick={() => {
-                              setSelectedCategory(category.id)
-                              setIsCategoryDropdownOpen(false)
-                            }}
-                            className={cn(
-                              "w-full px-4 py-3 text-left",
-                              "text-[#FFFFFF] text-base font-medium",
-                              "transition-all duration-200",
-                              "hover:bg-[rgba(255,255,255,0.05)]",
-                              selectedCategory === category.id && "bg-[rgba(255,255,255,0.1)]"
-                            )}
-                          >
-                            {category.label}
-                          </button>
-                        ))}
+                      <div className="bg-[#1A1A1A] border border-[rgba(255,255,255,0.1)] rounded-[12px] overflow-hidden">
+                        {TOPIC_CATEGORIES.map((category) => {
+                          const CategoryIcon = category.icon
+                          return (
+                            <button
+                              key={category.id}
+                              onClick={() => {
+                                setSelectedCategory(category.id)
+                                setIsCategoryDropdownOpen(false)
+                              }}
+                              className={cn(
+                                "w-full px-3 py-3 text-left flex items-center gap-2",
+                                "text-[#FFFFFF] text-base font-medium",
+                                "transition-all duration-200",
+                                "hover:bg-[rgba(255,255,255,0.05)]",
+                                selectedCategory === category.id && "bg-[rgba(255,255,255,0.1)]"
+                              )}
+                            >
+                              <CategoryIcon className="w-4 h-4" />
+                              {category.label}
+                            </button>
+                          )
+                        })}
                       </div>
                     </motion.div>
                   )}
@@ -299,9 +304,10 @@ export default function VibePage() {
                   overflowY: 'hidden',
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch',
-                  marginTop: '16px'
+                  marginTop: '16px',
+                  marginBottom: '16px'
                 }}>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     {currentTopics.map((topic) => (
                       <TopicChip
                         key={topic.id}
@@ -315,11 +321,11 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Duration Segmented Control - 32px spacing, 48px height */}
-              <div className="flex-shrink-0 mb-8 px-5">
+              {/* Duration Segmented Control - 28px spacing, 38-40px height, centered */}
+              <div className="flex-shrink-0 mb-7 px-5 flex justify-center">
                 <div 
-                  className="flex items-center gap-1 p-1 rounded-[20px] bg-[rgba(255,255,255,0.05)] relative overflow-hidden"
-                  style={{ height: '48px' }}
+                  className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(255,255,255,0.08)] relative overflow-hidden"
+                  style={{ height: '40px', width: 'fit-content' }}
                 >
                   {TIME_LIMITS.map((time) => (
                     <motion.button
@@ -327,8 +333,8 @@ export default function VibePage() {
                       onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
                       whileTap={{ scale: 0.97 }}
                       className={cn(
-                        "flex-1 h-full rounded-[20px] text-base font-semibold transition-all duration-300 relative z-10",
-                        "px-3",
+                        "h-full rounded-[10px] text-base font-medium transition-all duration-200 relative z-10",
+                        "px-4",
                         selectedTimeLimit === time 
                           ? "bg-white text-black"
                           : "bg-transparent text-[#FFFFFF]"
@@ -344,13 +350,24 @@ export default function VibePage() {
               <div className="flex-1" />
             </div>
             
+            {/* Gradient behind bottom nav */}
+            <div 
+              className="fixed left-0 right-0 pointer-events-none"
+              style={{
+                bottom: 0,
+                height: '76px',
+                background: 'linear-gradient(to top, #111111FF, #11111100)',
+                zIndex: 40
+              }}
+            />
+            
             {/* Bottom Fixed Footer - Pill Buttons */}
             <div 
               className="fixed left-0 right-0 flex flex-row"
               style={{
-                bottom: `calc(env(safe-area-inset-bottom) + 24px)`,
-                padding: '0 24px',
-                gap: '14px',
+                bottom: `calc(env(safe-area-inset-bottom) + 76px)`,
+                padding: '0 20px',
+                gap: '12px',
                 zIndex: 50,
                 width: '100%'
               }}
@@ -359,28 +376,21 @@ export default function VibePage() {
               <motion.button
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 whileTap={{ 
                   scale: 0.98,
-                  backgroundColor: '#000000',
-                  color: '#FFFFFF',
-                  transition: { duration: 0.15 }
+                  transition: { duration: 0.1 }
                 }}
                 onClick={handleConnect}
                 disabled={saving || !canConnect}
                 className={cn(
-                  "flex-1 h-[48px] rounded-[20px] text-base font-bold transition-all duration-300",
+                  "flex-1 h-[48px] rounded-[24px] text-base font-semibold transition-all duration-200",
                   "px-3",
                   canConnect
                     ? "bg-white text-black"
                     : "bg-[rgba(255,255,255,0.1)] text-[rgba(255,255,255,0.3)]",
                   "disabled:cursor-not-allowed"
                 )}
-                style={{
-                  boxShadow: canConnect 
-                    ? '0 4px 14px rgba(255,255,255,0.1)' 
-                    : 'none'
-                }}
               >
                 {saving ? "Connecting..." : "CONNECT"}
               </motion.button>
@@ -389,20 +399,19 @@ export default function VibePage() {
               <motion.button
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 whileTap={{ 
                   scale: 0.98,
-                  backgroundColor: 'rgba(255,255,255,0.10)',
-                  transition: { duration: 0.15 }
+                  transition: { duration: 0.1 }
                 }}
                 onClick={handleSkip}
                 className={cn(
-                  "flex-1 h-[48px] rounded-[20px] text-base font-bold transition-all duration-300",
+                  "flex-1 h-[48px] rounded-[24px] text-base font-semibold transition-all duration-200",
                   "px-3",
                   "bg-transparent text-[#FFFFFF]"
                 )}
                 style={{
-                  border: '1px solid rgba(255,255,255,0.3)'
+                  border: '1.5px solid rgba(255,255,255,0.4)'
                 }}
               >
                 SKIP

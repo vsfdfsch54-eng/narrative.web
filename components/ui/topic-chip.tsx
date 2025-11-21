@@ -40,23 +40,23 @@ export function TopicChip({
       }}
       onClick={onClick}
       className={cn(
-        "shrink-0 px-3 rounded-[20px]",
-        "font-semibold text-base tracking-tight",
-        "transition-all duration-300",
+        "shrink-0 px-2 rounded-[12px]",
+        "font-medium text-base tracking-tight",
+        "transition-all duration-200",
         "touch-manipulation",
         "overflow-hidden flex items-center gap-2",
         "relative",
         "text-black"
       )}
       style={{
-        height: '48px',
-        padding: '12px',
-        background: selected ? '#F2F2F2' : '#FFFFFF',
+        height: '44px',
+        padding: '8px 12px',
+        background: '#FFFFFF',
         border: selected
-          ? '2px solid #000000'
-          : '1.25px solid rgba(0,0,0,0.20)',
+          ? '1.25px solid rgba(0,0,0,0.4)'
+          : '1.25px solid rgba(0,0,0,0.25)',
         boxShadow: selected 
-          ? '0 1px 4px rgba(0,0,0,0.25)' 
+          ? '0 1px 3px rgba(0,0,0,0.15)' 
           : 'none',
         willChange: "transform"
       }}
@@ -68,8 +68,8 @@ export function TopicChip({
         className="flex-shrink-0"
         style={{ 
           color: iconColor,
-          width: '18px',
-          height: '18px',
+          width: '16px',
+          height: '16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'

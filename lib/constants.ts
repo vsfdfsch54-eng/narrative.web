@@ -39,7 +39,11 @@ export const GENERAL_TOPICS: Topic[] = [
 
 // Sports Topics (2025)
 export const SPORTS_TOPICS: Topic[] = [
-  { id: 'sports', label: 'Sports', icon: '⚽', category: 'sports' },
+  { id: 'nba', label: 'NBA', icon: '🏀', category: 'sports' },
+  { id: 'nfl', label: 'NFL', icon: '🏈', category: 'sports' },
+  { id: 'messi', label: 'Messi', icon: '⚽', category: 'sports' },
+  { id: 'tennis-gs', label: 'Tennis GS', icon: '🎾', category: 'sports' },
+  { id: 'olympics-prep', label: 'Olympics Prep', icon: '🏅', category: 'sports' },
 ]
 
 // All topics combined
