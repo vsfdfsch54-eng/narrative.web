@@ -150,7 +150,7 @@ export default function ProfilePage() {
   return (
     <AppShell>
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, paddingTop: tokens.layout.topTitleSpacing, paddingBottom: '120px' }}>
-        <div style={{ textAlign: 'center', padding: tokens.layout.sectionSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
+        <div style={{ textAlign: 'center', padding: tokens.layout.sectionSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected }}>
           <div style={{ fontSize: '64px', marginBottom: tokens.layout.elementSpacing }}>👤</div>
           {isEditingName ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
@@ -218,7 +218,7 @@ export default function ProfilePage() {
                 border: 'none',
                 borderRadius: tokens.radii.input,
                 color: tokens.colors.textOnPill,
-                boxShadow: tokens.shadows.pillUnselected
+                boxShadow: tokens.shadows.pillUnselected,
                 ...tokens.typography.body,
                 resize: 'none',
               }}
@@ -289,7 +289,7 @@ export default function ProfilePage() {
                         background: tokens.colors.pillUnselected,
                         color: tokens.colors.textOnPill,
                         border: 'none',
-                        boxShadow: tokens.shadows.pillUnselected
+                        boxShadow: tokens.shadows.pillUnselected,
                         ...tokens.typography.label,
                         whiteSpace: 'nowrap',
                         cursor: 'pointer',
