@@ -4,6 +4,102 @@ export const runtime = "nodejs"
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
 
+// Helper function to run matchmaking synchronously
+async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
+  try {
+    // Get all users waiting for a match
+    const { data: waitingUsers, error: fetchError } = await supabase
+      .from('pending_matches')
+      .select('*')
+      .eq('status', 'searching')
+      .order('created_at', { ascending: true })
+
+    if (fetchError) {
+      console.error('[Matchmaking] Error fetching waiting users:', fetchError)
+      return { matched: 0 }
+    }
+
+    if (!waitingUsers || waitingUsers.length < 2) {
+      return { matched: 0, waiting: waitingUsers?.length || 0 }
+    }
+
+    console.log(`[Matchmaking] Processing ${waitingUsers.length} waiting users`)
+
+    let matchedCount = 0
+    const processedUserIds = new Set<string>()
+
+    // Match users in pairs
+    for (let i = 0; i < waitingUsers.length - 1; i += 2) {
+      const user1 = waitingUsers[i]
+      const user2 = waitingUsers[i + 1]
+
+      if (processedUserIds.has(user1.user_id) || processedUserIds.has(user2.user_id)) {
+        continue
+      }
+
+      const user1Id = user1.user_id < user2.user_id ? user1.user_id : user2.user_id
+      const user2Id = user1.user_id < user2.user_id ? user2.user_id : user1.user_id
+      const isUser1First = user1.user_id === user1Id
+
+      // Create chat match
+      const { data: chatMatch, error: matchError } = await supabase
+        .from('chat_matches')
+        .insert({
+          user1_id: user1Id,
+          user2_id: user2Id,
+          user1_vibe: isUser1First ? (user1.vibe || null) : (user2.vibe || null),
+          user1_topic: isUser1First ? (user1.topic || null) : (user2.topic || null),
+          user1_timeframe: isUser1First ? (user1.timeframe || null) : (user2.timeframe || null),
+          user2_vibe: isUser1First ? (user2.vibe || null) : (user1.vibe || null),
+          user2_topic: isUser1First ? (user2.topic || null) : (user1.topic || null),
+          user2_timeframe: isUser1First ? (user2.timeframe || null) : (user1.timeframe || null),
+          status: 'active',
+        })
+        .select()
+        .single()
+
+      if (matchError) {
+        if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
+          // Match already exists, just update pending statuses
+          await supabase
+            .from('pending_matches')
+            .update({ status: 'matched', matched_at: new Date().toISOString() })
+            .in('user_id', [user1.user_id, user2.user_id])
+          matchedCount++
+          processedUserIds.add(user1.user_id)
+          processedUserIds.add(user2.user_id)
+          console.log(`[Matchmaking] ✅ Matched existing: ${user1.user_id} <-> ${user2.user_id}`)
+        } else {
+          console.error(`[Matchmaking] Error creating match:`, matchError)
+        }
+        continue
+      }
+
+      if (chatMatch) {
+        // Update both pending matches to matched
+        const { error: updateError } = await supabase
+          .from('pending_matches')
+          .update({ status: 'matched', matched_at: new Date().toISOString() })
+          .in('user_id', [user1.user_id, user2.user_id])
+
+        if (updateError) {
+          console.error(`[Matchmaking] Error updating pending:`, updateError)
+        }
+
+        matchedCount++
+        processedUserIds.add(user1.user_id)
+        processedUserIds.add(user2.user_id)
+        console.log(`[Matchmaking] ✅ Matched: ${user1.user_id} <-> ${user2.user_id}`)
+      }
+    }
+
+    return { matched: matchedCount }
+  } catch (error) {
+    console.error('[Matchmaking] Error:', error)
+    return { matched: 0 }
+  }
+}
+
 // POST - Create pending match and try to match immediately
 export async function POST(request: NextRequest) {
   try {
@@ -11,19 +107,13 @@ export async function POST(request: NextRequest) {
     const { userId, vibe, topic, timeframe } = body
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Missing userId' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
     }
 
     const supabase = createServerClient()
 
     // Remove any existing pending match for this user
-    await supabase
-      .from('pending_matches')
-      .delete()
-      .eq('user_id', userId)
+    await supabase.from('pending_matches').delete().eq('user_id', userId)
 
     // Create new pending match
     const { data: pendingMatch, error: insertError } = await supabase
@@ -39,38 +129,30 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error('Error creating pending match:', insertError)
-      return NextResponse.json(
-        { error: 'Failed to create pending match' },
-        { status: 500 }
-      )
+      console.error('[PendingMatches] Error creating pending match:', insertError)
+      return NextResponse.json({ error: 'Failed to create pending match' }, { status: 500 })
     }
 
-    // Immediately try to match with other waiting users
-    // Use a transaction-like approach: check, lock, match
-    const { data: otherPendingMatches, error: searchError } = await supabase
+    console.log(`[PendingMatches] User ${userId} added to queue`)
+
+    // Immediately try to find another user
+    const { data: otherPendingMatches } = await supabase
       .from('pending_matches')
       .select('*')
       .eq('status', 'searching')
       .neq('user_id', userId)
-      .order('created_at', { ascending: true }) // FIFO: oldest first
+      .order('created_at', { ascending: true })
       .limit(1)
 
-    if (!searchError && otherPendingMatches && otherPendingMatches.length > 0) {
-      // Found a match! Pair them up immediately
+    if (otherPendingMatches && otherPendingMatches.length > 0) {
       const otherMatch = otherPendingMatches[0]
       const otherUserId = otherMatch.user_id
 
-      console.log(`[PendingMatches] Immediate match found: ${userId} <-> ${otherUserId}`)
-
-      // Use consistent UUID ordering for chat_matches
       const user1Id = userId < otherUserId ? userId : otherUserId
       const user2Id = userId < otherUserId ? otherUserId : userId
-
-      // Determine which user is user1 and which is user2
       const isUser1 = userId === user1Id
 
-      // Create chat match with both users' selections
+      // Create chat match
       const { data: chatMatch, error: matchError } = await supabase
         .from('chat_matches')
         .insert({
@@ -88,7 +170,6 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (matchError) {
-        // If duplicate, try to get existing match
         if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
           const { data: existingMatch } = await supabase
             .from('chat_matches')
@@ -97,12 +178,12 @@ export async function POST(request: NextRequest) {
             .single()
 
           if (existingMatch) {
-            // Update both pending matches to matched
             await supabase
               .from('pending_matches')
               .update({ status: 'matched', matched_at: new Date().toISOString() })
               .in('user_id', [userId, otherUserId])
 
+            console.log(`[PendingMatches] ✅ Immediate match (existing): ${userId} <-> ${otherUserId}`)
             return NextResponse.json({ 
               success: true, 
               matched: true,
@@ -111,16 +192,14 @@ export async function POST(request: NextRequest) {
             })
           }
         }
-        console.error('Error creating chat match:', matchError)
-        // Fall through to queue response
+        console.error('[PendingMatches] Error creating match:', matchError)
       } else if (chatMatch) {
-        // Update both pending matches to matched
         await supabase
           .from('pending_matches')
           .update({ status: 'matched', matched_at: new Date().toISOString() })
           .in('user_id', [userId, otherUserId])
 
-        console.log(`[PendingMatches] Successfully created match for ${userId} <-> ${otherUserId}`)
+        console.log(`[PendingMatches] ✅ Immediate match: ${userId} <-> ${otherUserId}`)
         return NextResponse.json({ 
           success: true, 
           matched: true,
@@ -128,129 +207,44 @@ export async function POST(request: NextRequest) {
           otherUserId: otherUserId 
         })
       }
-    } else if (searchError) {
-      console.error('[PendingMatches] Error searching for matches:', searchError)
     }
 
-    // No match found, user is in queue
-    // Double-check for any other users that might have joined while we were processing
-    // Add a small delay to catch users who joined at nearly the same time
-    await new Promise(resolve => setTimeout(resolve, 300))
+    // No immediate match - run matchmaking processor synchronously
+    console.log(`[PendingMatches] No immediate match, running matchmaking processor...`)
+    const matchmakingResult = await runMatchmaking(supabase)
     
-    try {
-      const { data: allWaitingUsers, error: allWaitingError } = await supabase
-        .from('pending_matches')
+    // Check if current user was matched by the processor
+    const { data: updatedPendingMatch } = await supabase
+      .from('pending_matches')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (updatedPendingMatch && updatedPendingMatch.status === 'matched') {
+      // User was matched! Find the chat match
+      const { data: matches } = await supabase
+        .from('chat_matches')
         .select('*')
-        .eq('status', 'searching')
-        .order('created_at', { ascending: true })
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
 
-      if (allWaitingError) {
-        console.error('[PendingMatches] Error fetching all waiting users:', allWaitingError)
-      }
-
-      console.log(`[PendingMatches] After delay, found ${allWaitingUsers?.length || 0} users waiting`)
-
-      // If we have 2+ users now (including current user), match the first two
-      if (allWaitingUsers && allWaitingUsers.length >= 2) {
-        console.log(`[PendingMatches] Attempting to match ${allWaitingUsers.length} waiting users`)
-        // Find the two oldest users (FIFO)
-        const user1 = allWaitingUsers[0]
-        const user2 = allWaitingUsers.find(u => u.user_id !== user1.user_id) || allWaitingUsers[1]
-
-        // Only proceed if we found two distinct users
-        if (user1 && user2 && user1.user_id !== user2.user_id) {
-          const user1Id = user1.user_id < user2.user_id ? user1.user_id : user2.user_id
-          const user2Id = user1.user_id < user2.user_id ? user2.user_id : user1.user_id
-          const isUser1 = userId === user1Id
-
-          const { data: chatMatch, error: matchError } = await supabase
-            .from('chat_matches')
-            .insert({
-              user1_id: user1Id,
-              user2_id: user2Id,
-              user1_vibe: isUser1 ? (vibe || null) : (user2.vibe || null),
-              user1_topic: isUser1 ? (topic || null) : (user2.topic || null),
-              user1_timeframe: isUser1 ? (timeframe || null) : (user2.timeframe || null),
-              user2_vibe: isUser1 ? (user2.vibe || null) : (vibe || null),
-              user2_topic: isUser1 ? (user2.topic || null) : (topic || null),
-              user2_timeframe: isUser1 ? (user2.timeframe || null) : (timeframe || null),
-              status: 'active',
-            })
-            .select()
-            .single()
-
-          if (!matchError && chatMatch) {
-            // Update both users' pending matches to matched
-            const updateResult = await supabase
-              .from('pending_matches')
-              .update({ status: 'matched', matched_at: new Date().toISOString() })
-              .in('user_id', [user1.user_id, user2.user_id])
-
-            if (updateResult.error) {
-              console.error('[PendingMatches] Error updating pending matches in fallback:', updateResult.error)
-            } else {
-              console.log(`[PendingMatches] ✅ Fallback match successful: ${user1.user_id} <-> ${user2.user_id}`)
-            }
-
-            // If current user was matched, return match info
-            if (user1.user_id === userId || user2.user_id === userId) {
-              const otherUserId = user1.user_id === userId ? user2.user_id : user1.user_id
-              return NextResponse.json({ 
-                success: true, 
-                matched: true,
-                match: chatMatch,
-                otherUserId: otherUserId 
-              })
-            }
-          } else if (matchError) {
-            console.error('[PendingMatches] Error creating match in fallback:', matchError)
-            // If duplicate match error, try to get existing match
-            if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
-              const { data: existingMatch } = await supabase
-                .from('chat_matches')
-                .select('*')
-                .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
-                .single()
-
-              if (existingMatch && (user1.user_id === userId || user2.user_id === userId)) {
-                const otherUserId = user1.user_id === userId ? user2.user_id : user1.user_id
-                await supabase
-                  .from('pending_matches')
-                  .update({ status: 'matched', matched_at: new Date().toISOString() })
-                  .in('user_id', [user1.user_id, user2.user_id])
-                
-                return NextResponse.json({ 
-                  success: true, 
-                  matched: true,
-                  match: existingMatch,
-                  otherUserId: otherUserId 
-                })
-              }
-            }
-          }
+      if (matches) {
+        const match = Array.isArray(matches) ? matches[0] : matches
+        if (match) {
+          const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
+          console.log(`[PendingMatches] ✅ Processor matched: ${userId} <-> ${otherUserId}`)
+          return NextResponse.json({ 
+            success: true, 
+            matched: true,
+            match: match,
+            otherUserId: otherUserId 
+          })
         }
-      }
-    } catch (err) {
-      console.error('Error in inline matchmaking:', err)
     }
 
-    // Always trigger matchmaking processor as a backup
-    // This ensures that even if immediate matching failed, the processor will catch it
-    // Use absolute URL from request
-    const origin = request.headers.get('origin') || request.headers.get('host') || 'localhost:3000'
-    const protocol = request.headers.get('x-forwarded-proto') || (origin.includes('localhost') ? 'http' : 'https')
-    const baseUrl = `${protocol}://${origin.replace(/^https?:\/\//, '')}`
-    
-    fetch(`${baseUrl}/api/matchmaking/process`, {
-      method: 'GET',
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache',
-      }
-    }).catch(err => {
-      console.error('[PendingMatches] Failed to trigger matchmaking processor:', err)
-    })
-
+    console.log(`[PendingMatches] User ${userId} in queue (${matchmakingResult.matched} pairs matched by processor)`)
     return NextResponse.json({ 
       success: true, 
       inQueue: true,
@@ -258,11 +252,8 @@ export async function POST(request: NextRequest) {
       message: 'Added to queue. Matching in progress...' 
     })
   } catch (error) {
-    console.error('Error in POST /api/pending-matches:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[PendingMatches] Error in POST:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -272,14 +263,14 @@ export async function GET(request: NextRequest) {
   const userId = searchParams.get('userId')
 
   if (!userId) {
-    return NextResponse.json(
-      { error: 'Missing userId query parameter' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Missing userId query parameter' }, { status: 400 })
   }
 
   try {
     const supabase = createServerClient()
+
+    // First, run matchmaking processor to catch any waiting pairs
+    await runMatchmaking(supabase)
 
     // Check if user's pending match was matched
     const { data: pendingMatch, error: pendingError } = await supabase
@@ -288,14 +279,14 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId)
       .single()
 
-    if (pendingError && pendingError.code !== 'PGRST116') { // PGRST116 = no rows
-      console.error('Error checking pending match:', pendingError)
+    if (pendingError && pendingError.code !== 'PGRST116') {
+      console.error('[PendingMatches] Error checking pending match:', pendingError)
       return NextResponse.json({ success: true, matched: false, inQueue: false })
     }
 
     if (pendingMatch && pendingMatch.status === 'matched') {
       // User was matched! Find the chat match
-      const { data: matches, error: matchesError } = await supabase
+      const { data: matches } = await supabase
         .from('chat_matches')
         .select('*')
         .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
@@ -303,15 +294,11 @@ export async function GET(request: NextRequest) {
         .order('created_at', { ascending: false })
         .limit(1)
 
-      if (!matchesError && matches) {
-        // Handle both array and single object responses
+      if (matches) {
         const match = Array.isArray(matches) ? matches[0] : matches
         if (match) {
           const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
-
-          // Clean up pending match
           await supabase.from('pending_matches').delete().eq('user_id', userId)
-
           return NextResponse.json({ 
             success: true, 
             matched: true,
@@ -337,11 +324,8 @@ export async function GET(request: NextRequest) {
       inQueue: false 
     })
   } catch (error) {
-    console.error('Error in GET /api/pending-matches:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[PendingMatches] Error in GET:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -351,35 +335,21 @@ export async function DELETE(request: NextRequest) {
   const userId = searchParams.get('userId')
 
   if (!userId) {
-    return NextResponse.json(
-      { error: 'Missing userId query parameter' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Missing userId query parameter' }, { status: 400 })
   }
 
   try {
     const supabase = createServerClient()
-    
-    const { error } = await supabase
-      .from('pending_matches')
-      .delete()
-      .eq('user_id', userId)
+    const { error } = await supabase.from('pending_matches').delete().eq('user_id', userId)
 
     if (error) {
-      console.error('Error removing from pending matches:', error)
-      return NextResponse.json(
-        { error: 'Failed to remove from pending matches' },
-        { status: 500 }
-      )
+      console.error('[PendingMatches] Error removing from pending matches:', error)
+      return NextResponse.json({ error: 'Failed to remove from pending matches' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error in DELETE /api/pending-matches:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[PendingMatches] Error in DELETE:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-

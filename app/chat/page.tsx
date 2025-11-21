@@ -103,34 +103,15 @@ export default function ChatPage() {
         )
         .subscribe()
 
-      // Poll every 1 second to check for matches and trigger matchmaking
+      // Poll every 500ms to check for matches (GET endpoint now runs matchmaking)
       const interval = setInterval(async () => {
         try {
-          // Trigger matchmaking processor to pair any waiting users
-          // Use absolute URL to ensure it works
-          const matchmakingUrl = `${window.location.origin}/api/matchmaking/process`
-          fetch(matchmakingUrl, { 
-            method: 'GET',
+          // Check if user was matched (GET endpoint runs matchmaking automatically)
+          const response = await fetch(`/api/pending-matches?userId=${user.id}`, {
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache',
             }
-          }).then(response => {
-            if (!response.ok) {
-              console.error(`[ChatPage] Matchmaking processor returned ${response.status}`)
-            }
-            return response.json()
-          }).then(data => {
-            if (data.success && data.matched > 0) {
-              console.log(`[ChatPage] Matchmaking processor matched ${data.matched} pair(s)`)
-            }
-          }).catch(err => {
-            console.error('[ChatPage] Error calling matchmaking processor:', err)
-          })
-
-          // Check if user was matched
-          const response = await fetch(`/api/pending-matches?userId=${user.id}`, {
-            cache: 'no-store'
           })
           
           if (!response.ok) {
@@ -171,9 +152,9 @@ export default function ChatPage() {
             setLoading(false)
           }
         } catch (error) {
-          console.error('Error polling for match:', error)
+          console.error('[ChatPage] Error polling for match:', error)
         }
-      }, 1000) // Poll every 1 second
+      }, 500) // Poll every 500ms - GET endpoint runs matchmaking automatically
 
       // Cleanup after 2 minutes
       setTimeout(() => {
