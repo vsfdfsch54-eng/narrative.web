@@ -202,23 +202,35 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Duration Segmented Control - iOS Style */}
+              {/* Duration Segmented Control - iOS Style with Enhanced Glass */}
               <div className="flex-shrink-0 mb-6">
-                <div className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(255,255,255,0.06)] backdrop-blur-[12px]">
+                <div 
+                  className="flex items-center gap-1 p-1 rounded-[12px] bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.12)] relative overflow-hidden"
+                  style={{
+                    backdropFilter: 'blur(20px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)'
+                  }}
+                >
+                  {/* Glass highlight */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none rounded-[12px]" />
+                  
                   {TIME_LIMITS.map((time) => (
                     <motion.button
                       key={time}
                       onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
                       whileTap={{ scale: 0.97 }}
                       className={cn(
-                        "flex-1 px-4 py-2.5 rounded-[10px] text-base font-medium transition-all duration-300",
+                        "flex-1 px-4 py-2.5 rounded-[10px] text-base font-medium transition-all duration-300 relative z-10",
                         selectedTimeLimit === time 
-                          ? "bg-[rgba(255,255,255,0.16)] text-white font-semibold"
+                          ? "bg-[rgba(255,255,255,0.2)] text-white font-semibold"
                           : "bg-transparent text-white/60 hover:text-white"
                       )}
                       style={{
+                        backdropFilter: selectedTimeLimit === time ? 'blur(10px)' : 'none',
+                        WebkitBackdropFilter: selectedTimeLimit === time ? 'blur(10px)' : 'none',
                         boxShadow: selectedTimeLimit === time 
-                          ? '0 0 10px rgba(110,193,255,0.35)' 
+                          ? '0 0 12px rgba(110,193,255,0.4), inset 0 1px 0 rgba(255,255,255,0.1)' 
                           : 'none'
                       }}
                     >
@@ -246,15 +258,19 @@ export default function VibePage() {
                       disabled={saving}
                       className={cn(
                         "w-full py-4 rounded-[16px] text-lg font-bold transition-all duration-300",
-                        "bg-[#0A0A0A] text-white border border-[rgba(110,193,255,0.4)]",
+                        "bg-[rgba(10,10,10,0.8)] text-white border border-[rgba(110,193,255,0.5)]",
                         "disabled:opacity-50 disabled:cursor-not-allowed",
                         "relative overflow-hidden"
                       )}
                       style={{
-                        boxShadow: '0 0 12px rgba(110,193,255,0.35)'
+                        backdropFilter: 'blur(20px) saturate(180%)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                        boxShadow: '0 0 16px rgba(110,193,255,0.4), 0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'
                       }}
                     >
-                      {saving ? "Connecting..." : "CONNECT"}
+                      {/* Glass highlight */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none rounded-[16px]" />
+                      <span className="relative z-10">{saving ? "Connecting..." : "CONNECT"}</span>
                     </motion.button>
                   ) : (
                     <motion.button
@@ -264,16 +280,24 @@ export default function VibePage() {
                       exit={{ opacity: 0, y: -10 }}
                       whileTap={{ 
                         scale: 0.97,
-                        backgroundColor: 'rgba(255,255,255,0.08)'
+                        backgroundColor: 'rgba(255,255,255,0.1)'
                       }}
                       onClick={handleSkipAndChat}
                       className={cn(
                         "w-full py-4 rounded-[16px] text-lg font-bold transition-all duration-300",
-                        "bg-transparent text-white border border-[rgba(255,255,255,0.25)]",
-                        "hover:bg-[rgba(255,255,255,0.04)]"
+                        "bg-[rgba(255,255,255,0.06)] text-white border border-[rgba(255,255,255,0.3)]",
+                        "hover:bg-[rgba(255,255,255,0.08)]",
+                        "relative overflow-hidden"
                       )}
+                      style={{
+                        backdropFilter: 'blur(20px) saturate(180%)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)'
+                      }}
                     >
-                      SKIP
+                      {/* Glass highlight */}
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none rounded-[16px]" />
+                      <span className="relative z-10">SKIP</span>
                     </motion.button>
                   )}
                 </AnimatePresence>
