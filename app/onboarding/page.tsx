@@ -443,7 +443,7 @@ function OnboardingContent() {
                     background: tokens.colors.pillUnselected,
                     border: 'none',
                     color: tokens.colors.textOnPill,
-                    boxShadow: tokens.shadows.pillUnselected
+                    boxShadow: tokens.shadows.pillUnselected,
                     fontSize: '13px',
                     fontWeight: 400,
                     letterSpacing: '0',
@@ -543,7 +543,7 @@ function OnboardingContent() {
                     background: tokens.colors.pillUnselected,
                     border: 'none',
                     color: tokens.colors.textOnPill,
-                    boxShadow: tokens.shadows.pillUnselected
+                    boxShadow: tokens.shadows.pillUnselected,
                     fontSize: '13px',
                     fontWeight: 400,
                     letterSpacing: '0',
@@ -632,7 +632,7 @@ function OnboardingContent() {
                     background: tokens.colors.pillUnselected,
                     border: 'none',
                     color: tokens.colors.textOnPill,
-                    boxShadow: tokens.shadows.pillUnselected
+                    boxShadow: tokens.shadows.pillUnselected,
                     fontSize: '13px',
                     fontWeight: 400,
                     letterSpacing: '0',
@@ -671,7 +671,7 @@ function OnboardingContent() {
                     background: tokens.colors.pillUnselected,
                     border: passwordMatchError ? '1px solid rgba(239, 68, 68, 0.5)' : 'none',
                     color: tokens.colors.textOnPill,
-                    boxShadow: tokens.shadows.pillUnselected
+                    boxShadow: tokens.shadows.pillUnselected,
                     fontSize: '13px',
                     fontWeight: 400,
                     letterSpacing: '0',
@@ -781,7 +781,7 @@ function OnboardingContent() {
                               background: isSelected ? tokens.colors.pillUnselected : 'transparent',
                               border: isSelected ? 'none' : `1px solid ${tokens.colors.textSecondary}`,
                               color: isSelected ? tokens.colors.textOnPill : tokens.colors.textSecondary,
-                              boxShadow: isSelected ? tokens.shadows.pillUnselected: 'none',
+                              boxShadow: isSelected ? tokens.shadows.pillUnselected : 'none',
                               fontSize: '13px',
                               fontWeight: 500,
                               letterSpacing: '0',
