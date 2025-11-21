@@ -544,6 +544,7 @@ export async function autoMatchUser(newUserId: string): Promise<ChatMatch[]> {
     }
 
     // Get existing matches for the new user to avoid duplicates
+    // Check both directions (user1_id and user2_id)
     const { data: existingMatches, error: matchesError } = await supabaseServer
       .from('chat_matches')
       .select('user1_id, user2_id')
@@ -560,7 +561,7 @@ export async function autoMatchUser(newUserId: string): Promise<ChatMatch[]> {
       existingMatches.forEach(match => {
         if (match.user1_id === newUserId) {
           alreadyMatched.add(match.user2_id)
-        } else {
+        } else if (match.user2_id === newUserId) {
           alreadyMatched.add(match.user1_id)
         }
       })
@@ -575,14 +576,20 @@ export async function autoMatchUser(newUserId: string): Promise<ChatMatch[]> {
     }
 
     // Create matches in batches to avoid overwhelming the database
+    // Use consistent ordering: always put the smaller UUID first to avoid duplicates
     const batchSize = 10
     for (let i = 0; i < usersToMatch.length; i += batchSize) {
       const batch = usersToMatch.slice(i, i + batchSize)
-      const matchesToInsert = batch.map(user => ({
-        user1_id: newUserId,
-        user2_id: user.id,
-        status: 'active' as const,
-      }))
+      const matchesToInsert = batch.map(user => {
+        // Always put the smaller UUID first to ensure consistency
+        const user1Id = newUserId < user.id ? newUserId : user.id
+        const user2Id = newUserId < user.id ? user.id : newUserId
+        return {
+          user1_id: user1Id,
+          user2_id: user2Id,
+          status: 'active' as const,
+        }
+      })
 
       const { data: insertedMatches, error: insertError } = await supabaseServer
         .from('chat_matches')
@@ -590,7 +597,12 @@ export async function autoMatchUser(newUserId: string): Promise<ChatMatch[]> {
         .select()
 
       if (insertError) {
-        console.error('Error creating auto-matches:', insertError)
+        // If it's a duplicate key error, that's okay - match already exists
+        if (insertError.code === '23505' || insertError.message.includes('duplicate key')) {
+          console.log('Some matches already exist, continuing...')
+        } else {
+          console.error('Error creating auto-matches:', insertError)
+        }
         // Continue with next batch even if this one fails
         continue
       }
