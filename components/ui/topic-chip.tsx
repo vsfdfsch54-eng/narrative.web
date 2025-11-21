@@ -4,6 +4,7 @@ import * as React from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Topic } from "@/lib/types"
+import { TopicIcons, DefaultTopicIcon } from "./topic-icons"
 
 interface TopicChipProps {
   topic: Topic
@@ -18,6 +19,8 @@ export function TopicChip({
   onClick,
   delay = 0,
 }: TopicChipProps) {
+  const icon = TopicIcons[topic.id] || DefaultTopicIcon
+  
   return (
     <motion.button
       initial={{ opacity: 0 }}
@@ -31,34 +34,41 @@ export function TopicChip({
       onClick={onClick}
       className={cn(
         "shrink-0 px-4 py-2.5 rounded-[14px]",
-        "font-medium text-base tracking-tight",
+        "font-semibold text-base tracking-tight",
         "transition-all duration-300",
         "touch-manipulation",
-        "overflow-hidden flex items-center justify-center",
+        "overflow-hidden flex items-center gap-2",
         "relative",
         "min-h-[42px]",
         selected
-          ? "bg-[rgba(255,255,255,0.18)] text-white border border-[rgba(110,193,255,0.5)]"
-          : "bg-[rgba(255,255,255,0.06)] text-white border border-[rgba(255,255,255,0.12)]"
+          ? "text-[#0A0A0A] border border-[#0A0A0A]"
+          : "text-[#0A0A0A]"
       )}
       style={{
-        backdropFilter: 'blur(20px) saturate(180%)',
-        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-        boxShadow: selected 
-          ? '0px 0px 16px rgba(110,193,255,0.5), inset 0 1px 0 rgba(255,255,255,0.1)' 
-          : '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)',
+        background: selected
+          ? 'rgba(0,0,0,0.05)'
+          : 'rgba(255,255,255,0.7)',
+        border: selected
+          ? '1px solid rgba(0,0,0,0.2)'
+          : '1px solid rgba(0,0,0,0.08)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        boxShadow: selected
+          ? '0 2px 8px rgba(0,0,0,0.12)'
+          : '0 2px 8px rgba(0,0,0,0.08)',
         willChange: "transform"
       }}
     >
-      {/* Glass highlight overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none rounded-[14px]" />
-      
-      <span className={cn(
-        "relative z-10 text-center leading-tight whitespace-nowrap",
-        selected 
-          ? "text-white font-semibold drop-shadow-sm"
-          : "text-white"
-      )}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 0.8, scale: 1 }}
+        transition={{ duration: 0.2 }}
+        className="flex-shrink-0"
+        style={{ color: 'rgba(0,0,0,0.8)' }}
+      >
+        {icon}
+      </motion.div>
+      <span className="relative z-10 text-center leading-tight whitespace-nowrap">
         {topic.label}
       </span>
     </motion.button>
