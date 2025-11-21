@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { VibeChip } from "@/components/ui/vibe-chip"
 import { TopicChip } from "@/components/ui/topic-chip"
-import { BottomNav } from "@/components/ui/bottom-nav"
+import { TopMenu } from "@/components/ui/top-menu"
 import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS } from "@/lib/constants"
 import { Vibe, Topic } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
@@ -156,14 +156,20 @@ export default function VibePage() {
               className="phone-content px-5 overflow-y-auto flex flex-col h-full relative z-10" 
               style={{ 
                 paddingTop: '24px',
-                paddingBottom: 'calc(env(safe-area-inset-bottom) + 120px)'
+                paddingBottom: 'calc(env(safe-area-inset-bottom) + 100px)'
               }}
             >
-              {/* Logo - 13px, low contrast, centered */}
-              <div className="flex-shrink-0 mb-6 flex justify-center">
-                <span className="text-[13px] font-light tracking-tight text-[#F5F5F5]/40">
-                  Narrative
-                </span>
+              {/* Top Menu - Three dots in top left */}
+              <div className="flex-shrink-0 mb-6 flex items-start justify-between">
+                <TopMenu />
+                {/* Logo - 13px, low contrast, centered */}
+                <div className="flex-1 flex justify-center">
+                  <span className="text-[13px] font-light tracking-tight text-[#F5F5F5]/40">
+                    Narrative
+                  </span>
+                </div>
+                {/* Spacer to balance the menu */}
+                <div className="w-10" />
               </div>
 
               {/* Main Title - 32px bold, centered */}
@@ -255,22 +261,11 @@ export default function VibePage() {
               <div className="flex-1" />
             </div>
             
-            {/* Gradient behind bottom nav */}
-            <div 
-              className="fixed left-0 right-0 pointer-events-none"
-              style={{
-                bottom: 0,
-                height: '76px',
-                background: 'linear-gradient(to top, #111111FF, #11111100)',
-                zIndex: 40
-              }}
-            />
-            
-            {/* Bottom Fixed Footer - Pill Buttons Above Nav Bar */}
+            {/* Bottom Fixed Footer - Pill Buttons */}
             <div 
               className="fixed left-0 right-0 flex flex-row"
               style={{
-                bottom: `calc(env(safe-area-inset-bottom) + 76px)`,
+                bottom: `calc(env(safe-area-inset-bottom) + 24px)`,
                 padding: '0 24px',
                 gap: '14px',
                 zIndex: 50,
@@ -328,8 +323,6 @@ export default function VibePage() {
                 SKIP
               </motion.button>
             </div>
-            
-            <BottomNav />
           </div>
         </div>
       </div>
