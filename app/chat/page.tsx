@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence } from "framer-motion"
 import { ProfileCard, Profile } from "@/components/ui/profile-card"
-import { BottomNav } from "@/components/ui/bottom-nav"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -116,7 +115,6 @@ export default function ChatPage() {
                   Go Back
                 </button>
               </div>
-              <BottomNav />
             </div>
           </div>
         </div>
@@ -182,8 +180,6 @@ export default function ChatPage() {
               </div>
             </div>
 
-            {/* Bottom Navigation */}
-            <BottomNav />
           </div>
         </div>
       </div>

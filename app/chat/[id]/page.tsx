@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ChatBubble } from "@/components/ui/chat-bubble"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { EndConvoModal } from "@/components/ui/end-convo-modal"
-import { BottomNav } from "@/components/ui/bottom-nav"
 import { Message } from "@/lib/types"
 import { Send, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -452,8 +451,6 @@ export default function ChatDetailPage() {
               </div>
             </div>
             
-            {/* Bottom Navigation - Inside phone screen, part of layout */}
-            <BottomNav />
           </div>
         </div>
       </div>

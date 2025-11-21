@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { EmojiRating } from "@/components/ui/emoji-rating"
 import { ReportModal } from "@/components/ui/report-modal"
-import { BottomNav } from "@/components/ui/bottom-nav"
 import { cn } from "@/lib/utils"
 import { MessageSquare, Users, Flag, Check } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
@@ -406,8 +405,6 @@ export default function FeedbackPage() {
               </div>
             </div>
             
-            {/* Bottom Navigation */}
-            <BottomNav />
           </div>
         </div>
       </div>

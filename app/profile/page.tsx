@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { BottomNav } from "@/components/ui/bottom-nav"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, Save, Users, Edit2, MessageSquare } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
@@ -395,7 +394,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <BottomNav />
           </div>
         </div>
       </div>

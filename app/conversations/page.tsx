@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { ArrowLeft } from "lucide-react"
-import { BottomNav } from "@/components/ui/bottom-nav"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -176,8 +175,6 @@ export default function ConversationsPage() {
               </div>
             </div>
             
-            {/* Bottom Navigation */}
-            <BottomNav />
           </div>
         </div>
       </div>

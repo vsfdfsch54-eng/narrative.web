@@ -3,7 +3,6 @@
 import { useMemo, useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight, Info, Plus, Sparkles, Users, X } from "lucide-react"
-import { BottomNav } from "@/components/ui/bottom-nav"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -585,8 +584,6 @@ export default function CalendarPage() {
                 </motion.div>
               )}
             </AnimatePresence>
-
-              <BottomNav />
             </div>
           </div>
         </div>

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ProfileCard, Profile } from "@/components/ui/profile-card"
-import { BottomNav } from "@/components/ui/bottom-nav"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -96,7 +95,6 @@ export default function ConnectPage() {
                   </button>
                 </div>
               </div>
-              <BottomNav />
             </div>
           </div>
         </div>
@@ -196,8 +194,6 @@ export default function ConnectPage() {
               </div>
             </div>
 
-            {/* Bottom Navigation */}
-            <BottomNav />
           </div>
         </div>
       </div>
