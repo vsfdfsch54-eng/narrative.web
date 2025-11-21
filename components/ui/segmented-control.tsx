@@ -37,7 +37,7 @@ export function SegmentedControl({ options, value, onChange }: SegmentedControlP
               background: tokens.colors.pillUnselected,
               color: tokens.colors.textOnPill,
               border: 'none',
-              boxShadow: tokens.shadows.pill,
+              boxShadow: tokens.shadows.pillUnselected,
               fontSize: '13px',
               fontWeight: 500,
               letterSpacing: '0',
