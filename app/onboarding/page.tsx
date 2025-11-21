@@ -437,13 +437,16 @@ function OnboardingContent() {
                   disabled={loading || !!user}
                   style={{
                     width: '100%',
-                    padding: `12px ${tokens.spacing[18]}`,
+                    height: '40px',
+                    padding: `10px ${tokens.spacing[14]}`,
                     borderRadius: tokens.radii.input,
                     background: tokens.colors.pillPrimary,
                     border: 'none',
                     color: tokens.colors.textOnPill,
                     boxShadow: tokens.shadows.pill,
-                    ...tokens.typography.body,
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    letterSpacing: '0',
                   }}
                   autoFocus
                 />
@@ -534,13 +537,16 @@ function OnboardingContent() {
                   disabled={loading}
                   style={{
                     width: '100%',
-                    padding: `12px ${tokens.spacing[18]}`,
+                    height: '40px',
+                    padding: `10px ${tokens.spacing[14]}`,
                     borderRadius: tokens.radii.input,
                     background: tokens.colors.pillPrimary,
                     border: 'none',
                     color: tokens.colors.textOnPill,
                     boxShadow: tokens.shadows.pill,
-                    ...tokens.typography.body,
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    letterSpacing: '0',
                   }}
                   autoFocus
                 />
@@ -620,13 +626,16 @@ function OnboardingContent() {
                   disabled={loading}
                   style={{
                     width: '100%',
-                    padding: `12px ${tokens.spacing[18]}`,
+                    height: '40px',
+                    padding: `10px ${tokens.spacing[14]}`,
                     borderRadius: tokens.radii.input,
                     background: tokens.colors.pillPrimary,
                     border: 'none',
                     color: tokens.colors.textOnPill,
                     boxShadow: tokens.shadows.pill,
-                    ...tokens.typography.body,
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    letterSpacing: '0',
                   }}
                   autoFocus
                 />
@@ -656,13 +665,16 @@ function OnboardingContent() {
                   disabled={loading}
                   style={{
                     width: '100%',
-                    padding: `12px ${tokens.spacing[18]}`,
+                    height: '40px',
+                    padding: `10px ${tokens.spacing[14]}`,
                     borderRadius: tokens.radii.input,
                     background: tokens.colors.pillPrimary,
                     border: passwordMatchError ? '1px solid rgba(239, 68, 68, 0.5)' : 'none',
                     color: tokens.colors.textOnPill,
                     boxShadow: tokens.shadows.pill,
-                    ...tokens.typography.body,
+                    fontSize: '13px',
+                    fontWeight: 400,
+                    letterSpacing: '0',
                   }}
                 />
                 {passwordMatchError && (
@@ -763,13 +775,16 @@ function OnboardingContent() {
                             onClick={() => handleInterestToggle(interest.id)}
                             disabled={loading}
                             style={{
-                              padding: `12px ${tokens.spacing[18]}`,
+                              height: '40px',
+                              padding: `10px ${tokens.spacing[14]}`,
                               borderRadius: tokens.radii.pill,
                               background: isSelected ? tokens.colors.pillPrimary : 'transparent',
                               border: isSelected ? 'none' : `1px solid ${tokens.colors.textSecondary}`,
                               color: isSelected ? tokens.colors.textOnPill : tokens.colors.textSecondary,
                               boxShadow: isSelected ? tokens.shadows.pill : 'none',
-                              ...tokens.typography.label,
+                              fontSize: '13px',
+                              fontWeight: 500,
+                              letterSpacing: '0',
                               cursor: loading ? 'not-allowed' : 'pointer',
                               opacity: loading ? 0.5 : 1,
                             }}

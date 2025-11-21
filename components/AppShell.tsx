@@ -17,6 +17,7 @@ export function AppShell({ children }: AppShellProps) {
         background: tokens.colors.backgroundApp,
         paddingTop: 'env(safe-area-inset-top)',
         paddingBottom: '120px',
+        overflowY: 'auto',
       }}
     >
       <TopNav />
@@ -25,6 +26,7 @@ export function AppShell({ children }: AppShellProps) {
           maxWidth: tokens.layout.maxWidth,
           margin: '0 auto',
           padding: `0 ${tokens.layout.paddingHorizontal}`,
+          overflowY: 'visible',
         }}
       >
         {children}

@@ -56,15 +56,17 @@ export function VibeChip({
         "relative"
       )}
       style={{
-        height: '46px',
+        height: '40px',
         borderRadius: tokens.radii.pill,
-        padding: `12px ${tokens.spacing[18]}`,
-        gap: tokens.spacing[12],
+        padding: `10px ${tokens.spacing[14]}`,
+        gap: tokens.spacing[10],
         background: tokens.colors.pillPrimary,
         color: tokens.colors.textOnPill,
         border: 'none',
         boxShadow: tokens.shadows.pill,
-        ...tokens.typography.label,
+        fontSize: '13px',
+        fontWeight: 500,
+        letterSpacing: '0',
         willChange: "transform"
       }}
     >

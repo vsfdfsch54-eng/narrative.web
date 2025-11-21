@@ -220,8 +220,8 @@ export default function VibePage() {
               onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
               style={{
                 width: '100%',
-                height: '46px',
-                padding: `12px ${tokens.spacing[18]}`,
+                height: '40px',
+                padding: `10px ${tokens.spacing[14]}`,
                 borderRadius: tokens.radii.input,
                 background: tokens.colors.pillPrimary,
                 border: 'none',
@@ -230,8 +230,9 @@ export default function VibePage() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 boxShadow: tokens.shadows.pill,
-                ...tokens.typography.body,
+                fontSize: '13px',
                 fontWeight: 500,
+                letterSpacing: '0',
                 cursor: 'pointer',
               }}
             >
@@ -279,14 +280,15 @@ export default function VibePage() {
                           width: '100%',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: tokens.spacing[12],
-                          padding: `0 ${tokens.spacing[16]}`,
-                          height: '46px',
+                          gap: tokens.spacing[10],
+                          padding: `0 ${tokens.spacing[14]}`,
+                          height: '40px',
                           background: selectedCategory === category.id ? tokens.colors.pillSecondary : 'transparent',
                           border: 'none',
                           color: tokens.colors.textOnPill,
-                          ...tokens.typography.body,
+                          fontSize: '13px',
                           fontWeight: selectedCategory === category.id ? 500 : 400,
+                          letterSpacing: '0',
                           cursor: 'pointer',
                           textAlign: 'left',
                         }}
@@ -356,6 +358,13 @@ export default function VibePage() {
             style={{ flex: 1 }}
           >
             Skip
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/chat")}
+            style={{ flex: 1 }}
+          >
+            Chat
           </Button>
         </div>
       </div>

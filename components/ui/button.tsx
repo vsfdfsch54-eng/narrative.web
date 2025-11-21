@@ -22,12 +22,12 @@ export function Button({
   ...props
 }: ButtonProps) {
   const height = (size === "large" || size === "lg") 
-    ? '50px'
+    ? '44px'
     : size === "icon" 
-    ? '46px'
+    ? '40px'
     : size === "sm"
-    ? '42px'
-    : '46px'
+    ? '36px'
+    : '40px'
 
   const variantStyles = {
     primary: {
@@ -54,11 +54,12 @@ export function Button({
 
   const buttonStyles = {
     height,
-    padding: size === "icon" ? '0' : `12px ${tokens.spacing[18]}`,
+    padding: size === "icon" ? '0' : `10px ${tokens.spacing[14]}`,
     borderRadius: tokens.radii.button,
     ...variantStyles[variant],
-    fontSize: tokens.typography.body.fontSize,
+    fontSize: '13px',
     fontWeight: 500,
+    letterSpacing: '-0.01em',
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
     transition: 'all 0.15s ease',
