@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
 import { Loader2 } from "lucide-react"
+import { createBrowserClient } from "@supabase/ssr"
 
 export default function ChatPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -68,7 +69,45 @@ export default function ChatPage() {
     }
 
     const pollForMatch = async () => {
-      // Poll every 1 second for instant matching
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      )
+      
+      // Subscribe to realtime changes on pending_matches for this user
+      const channel = supabase
+        .channel(`pending_match_${user.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'pending_matches',
+            filter: `user_id=eq.${user.id}`,
+          },
+          async (payload) => {
+            const pendingMatch = payload.new as any
+            if (pendingMatch.status === 'matched') {
+              // User was matched! Find the chat match
+              const { data: matches, error } = await supabase
+                .from('chat_matches')
+                .select('*')
+                .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+                .eq('status', 'active')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+
+              if (!error && matches) {
+                const otherUserId = matches.user1_id === user.id ? matches.user2_id : matches.user1_id
+                router.push(`/chat/${otherUserId}?matchId=${matches.id}`)
+              }
+            }
+          }
+        )
+        .subscribe()
+
+      // Also poll every 5 seconds as backup (same interval as matchmaking processor)
       const interval = setInterval(async () => {
         try {
           const response = await fetch(`/api/pending-matches?userId=${user.id}`)
@@ -77,10 +116,12 @@ export default function ChatPage() {
           if (data.success && data.matched && data.match) {
             // Match found! Navigate immediately
             clearInterval(interval)
+            channel.unsubscribe()
             router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
           } else if (!data.inQueue) {
             // No longer in queue
             clearInterval(interval)
+            channel.unsubscribe()
             // Try to get existing matches
             const matchesResponse = await fetch(`/api/matches?userId=${user.id}`)
             const matchesData = await matchesResponse.json()
@@ -98,13 +139,20 @@ export default function ChatPage() {
         } catch (error) {
           console.error('Error polling for match:', error)
         }
-      }, 1000) // Poll every 1 second for instant matching
+      }, 5000) // Poll every 5 seconds (same as matchmaking processor)
 
       // Cleanup after 2 minutes
       setTimeout(() => {
         clearInterval(interval)
+        channel.unsubscribe()
         setLoading(false)
       }, 120000)
+
+      // Return cleanup function
+      return () => {
+        clearInterval(interval)
+        channel.unsubscribe()
+      }
     }
 
     loadMatches()

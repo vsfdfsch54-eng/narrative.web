@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS pending_matches (
   UNIQUE(user_id) -- One pending match per user at a time
 );
 
+-- Enable Realtime for pending_matches so frontend can listen for status changes
+ALTER PUBLICATION supabase_realtime ADD TABLE pending_matches;
+
 -- Create index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_pending_matches_status ON pending_matches(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_pending_matches_user_id ON pending_matches(user_id);
