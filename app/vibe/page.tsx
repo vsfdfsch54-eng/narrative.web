@@ -162,15 +162,16 @@ export default function VibePage() {
   return (
     <AppShell>
       <div style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: tokens.spacing[20], 
-        paddingTop: tokens.spacing[20], 
-        paddingBottom: '180px',
-        minHeight: '100vh',
+        height: '100vh',
+        overflowY: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        paddingTop: tokens.spacing[20],
+        paddingBottom: '140px',
         position: 'relative',
       }}>
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', marginBottom: tokens.spacing[20] }}>
           <h1 style={{ 
             ...tokens.typography.title,
             color: tokens.colors.textPrimaryOnDark,
@@ -189,19 +190,35 @@ export default function VibePage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          {VIBES.map((vibe) => (
-            <VibeChip
-              key={vibe.id}
-              vibe={vibe}
-              selected={selectedVibe?.id === vibe.id}
-              onClick={() => setSelectedVibe(selectedVibe?.id === vibe.id ? null : vibe)}
-              delay={0}
-            />
-          ))}
+        <div style={{ 
+          width: '100%',
+          marginBottom: tokens.spacing[20],
+        }}>
+          <div style={{ 
+            display: 'flex',
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            gap: '12px',
+            padding: '0 20px',
+            scrollSnapType: 'x mandatory',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          }}>
+            {VIBES.map((vibe) => (
+              <div key={vibe.id} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
+                <VibeChip
+                  vibe={vibe}
+                  selected={selectedVibe?.id === vibe.id}
+                  onClick={() => setSelectedVibe(selectedVibe?.id === vibe.id ? null : vibe)}
+                  delay={0}
+                />
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div>
+        <div style={{ width: '100%', marginBottom: tokens.spacing[20] }}>
           <h2 style={{ 
             ...tokens.typography.heading,
             color: tokens.colors.textPrimaryOnDark,
@@ -213,7 +230,7 @@ export default function VibePage() {
             Choose a Topic
           </h2>
           
-          <div className="relative mb-4" ref={dropdownRef}>
+          <div className="relative mb-4" ref={dropdownRef} style={{ marginBottom: tokens.spacing[12] }}>
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
@@ -311,66 +328,89 @@ export default function VibePage() {
           </div>
           
           <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            gap: '12px', 
-            flexWrap: 'wrap',
-            marginTop: tokens.spacing[12],
+            display: 'flex',
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            gap: '12px',
+            padding: '0 20px',
+            scrollSnapType: 'x mandatory',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
           }}>
             {currentTopics.map((topic) => (
-              <TopicChip
-                key={topic.id}
-                topic={topic}
-                selected={selectedTopic?.id === topic.id}
-                onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
-                delay={0}
-              />
+              <div key={topic.id} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
+                <TopicChip
+                  topic={topic}
+                  selected={selectedTopic?.id === topic.id}
+                  onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
+                  delay={0}
+                />
+              </div>
             ))}
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          {TIME_LIMITS.map((limit) => {
-            const isSelected = selectedTimeLimit === limit
-            return (
-              <motion.button
-                key={limit}
-                animate={{
-                  scale: isSelected ? 1.06 : 1,
-                  backgroundColor: isSelected ? tokens.colors.pillSelected : tokens.colors.pillUnselected,
-                }}
-                transition={{
-                  transform: { duration: 0.14, ease: 'easeOut' },
-                  backgroundColor: { duration: 0.18, ease: 'easeOut' },
-                }}
-                whileTap={{ scale: isSelected ? 1.06 : 0.98 }}
-                onClick={() => setSelectedTimeLimit(isSelected ? null : limit)}
-                style={{
-                  borderRadius: tokens.radii.pill,
-                  padding: '8px 14px',
-                  border: 'none',
-                  boxShadow: isSelected ? tokens.shadows.pillSelected : tokens.shadows.pillUnselected,
-                  fontSize: '15px',
-                  fontWeight: 400,
-                  letterSpacing: '0',
-                  color: tokens.colors.textOnPill,
-                  cursor: 'pointer',
-                  willChange: "transform, background-color"
-                }}
-              >
-                {limit}m
-              </motion.button>
-            )
-          })}
+        <div style={{ 
+          width: '100%',
+          marginBottom: tokens.spacing[20],
+        }}>
+          <div style={{ 
+            display: 'flex',
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            gap: '12px',
+            padding: '0 20px',
+            scrollSnapType: 'x mandatory',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            justifyContent: 'center',
+          }}>
+            {TIME_LIMITS.map((limit) => {
+              const isSelected = selectedTimeLimit === limit
+              return (
+                <div key={limit} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
+                  <motion.button
+                    animate={{
+                      scale: isSelected ? 1.06 : 1,
+                      backgroundColor: isSelected ? tokens.colors.pillSelected : tokens.colors.pillUnselected,
+                    }}
+                    transition={{
+                      transform: { duration: 0.14, ease: 'easeOut' },
+                      backgroundColor: { duration: 0.18, ease: 'easeOut' },
+                    }}
+                    whileTap={{ scale: isSelected ? 1.06 : 0.98 }}
+                    onClick={() => setSelectedTimeLimit(isSelected ? null : limit)}
+                    style={{
+                      borderRadius: tokens.radii.pill,
+                      padding: '8px 14px',
+                      border: 'none',
+                      boxShadow: isSelected ? tokens.shadows.pillSelected : tokens.shadows.pillUnselected,
+                      fontSize: '15px',
+                      fontWeight: 400,
+                      letterSpacing: '0',
+                      color: tokens.colors.textOnPill,
+                      cursor: 'pointer',
+                      willChange: "transform, background-color"
+                    }}
+                  >
+                    {limit}m
+                  </motion.button>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
-        <div style={{ flex: 1 }} />
-
         <div style={{ 
+          marginTop: '20px',
+          marginBottom: '100px',
           display: 'flex',
-          gap: '4%',
-          marginTop: tokens.spacing[28],
+          gap: '14px',
+          justifyContent: 'center',
           width: '100%',
+          padding: '0 20px',
         }}>
           {canConnect ? (
             <motion.button
@@ -382,7 +422,7 @@ export default function VibePage() {
               onClick={handleConnect}
               disabled={saving}
               style={{
-                width: '100%',
+                width: '48%',
                 height: '50px',
                 borderRadius: tokens.radii.button,
                 border: 'none',
@@ -407,7 +447,7 @@ export default function VibePage() {
               whileTap={{ scale: 0.98 }}
               onClick={handleSkip}
               style={{
-                width: '100%',
+                width: '48%',
                 height: '50px',
                 borderRadius: tokens.radii.button,
                 border: 'none',
