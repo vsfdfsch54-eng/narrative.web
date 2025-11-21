@@ -136,6 +136,18 @@ export default function VibePage() {
         })
       }
       
+      // Automatically match user with all existing users when they press Connect
+      try {
+        await fetch('/api/users/auto-match', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        })
+      } catch (matchError) {
+        // Don't fail the connect flow if matching fails
+        console.error('Error auto-matching user:', matchError)
+      }
+      
       router.push("/chat")
     } catch (error) {
       console.error('Error connecting:', error)
