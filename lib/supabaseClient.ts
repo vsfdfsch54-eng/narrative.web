@@ -35,6 +35,7 @@ export const supabase = createClient(
 )
 
 // Server-side Supabase client (uses service role key - only use in API routes)
+// Service role key bypasses RLS automatically
 export const createServerClient = () => {
   const supabaseUrl = getSupabaseUrl()
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -47,6 +48,9 @@ export const createServerClient = () => {
     auth: {
       autoRefreshToken: false,
       persistSession: false
+    },
+    db: {
+      schema: 'public'
     }
   })
 }

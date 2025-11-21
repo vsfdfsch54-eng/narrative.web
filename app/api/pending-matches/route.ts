@@ -118,6 +118,7 @@ export async function POST(request: NextRequest) {
           .update({ status: 'matched', matched_at: new Date().toISOString() })
           .in('user_id', [userId, otherUserId])
 
+        console.log(`[PendingMatches] Successfully created match for ${userId} <-> ${otherUserId}`)
         return NextResponse.json({ 
           success: true, 
           matched: true,
@@ -125,6 +126,8 @@ export async function POST(request: NextRequest) {
           otherUserId: otherUserId 
         })
       }
+    } else if (searchError) {
+      console.error('[PendingMatches] Error searching for matches:', searchError)
     }
 
     // No match found, user is in queue

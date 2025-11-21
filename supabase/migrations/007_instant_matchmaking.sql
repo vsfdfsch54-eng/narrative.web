@@ -22,7 +22,9 @@ CREATE INDEX IF NOT EXISTS idx_pending_matches_user_id ON pending_matches(user_i
 ALTER TABLE pending_matches ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
--- Allow all reads (needed for matching logic)
+-- Note: Service role key bypasses RLS automatically, but we still need policies for client-side access
+
+-- Allow all reads (needed for matching logic and client-side queries)
 CREATE POLICY "Anyone can read pending matches" ON pending_matches
   FOR SELECT USING (true);
 
@@ -30,8 +32,8 @@ CREATE POLICY "Anyone can read pending matches" ON pending_matches
 CREATE POLICY "Users can insert their own pending match" ON pending_matches
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Allow service role to update any pending match (for matching)
-CREATE POLICY "Service role can update pending matches" ON pending_matches
+-- Allow updates for matching (service role bypasses RLS, but this allows client updates if needed)
+CREATE POLICY "Allow pending match updates" ON pending_matches
   FOR UPDATE USING (true);
 
 -- Allow users to delete their own pending match
