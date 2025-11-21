@@ -8,6 +8,8 @@ import { ReportModal } from "@/components/ui/report-modal"
 import { cn } from "@/lib/utils"
 import { MessageSquare, Users, Flag, Check } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
+import { tokens } from "@/lib/design-tokens"
+import { AppShell } from "@/components/AppShell"
 
 interface FeedbackRatings {
   conversationQuality: number | null
@@ -191,97 +193,163 @@ export default function FeedbackPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
-      {/* Phone Frame Container */}
-      <div className="phone-frame-container">
-        {/* Phone Frame - Black & White */}
-        <div className="phone-frame">
-          {/* Phone Screen */}
-          <div className="phone-screen">
-            <div className="phone-content px-4 py-2 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
-              {/* Header */}
-              <div className={cn(
-                "flex items-center justify-between px-3 py-2",
-                "border-b border-white/10 bg-[#0a0a0c]",
-                "sticky top-0 z-10 flex-shrink-0"
-              )}>
-                <button
-                  onClick={() => router.push("/chat")}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold",
-                    "border border-white/10 bg-white/5",
-                    "text-white hover:bg-white/10",
-                    "transition-all duration-200",
-                    "touch-manipulation cursor-pointer"
-                  )}
+    <AppShell>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        paddingTop: tokens.spacing[20],
+        paddingBottom: tokens.spacing[20],
+        minHeight: 'calc(100vh - 140px)',
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: tokens.spacing[28],
+        }}>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => router.push("/chat")}
+            style={{
+              padding: `8px ${tokens.spacing[14]}`,
+              borderRadius: tokens.radii.pill,
+              background: tokens.colors.pillUnselected,
+              border: 'none',
+              color: tokens.colors.textOnPill,
+              boxShadow: tokens.shadows.pillUnselected,
+              fontSize: '13px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: tokens.spacing[8],
+            }}
+          >
+            <MessageSquare style={{ width: '14px', height: '14px' }} />
+            Next Chat
+          </motion.button>
+          
+          <h1 style={{
+            ...tokens.typography.title,
+            color: tokens.colors.textPrimaryOnDark,
+            margin: 0,
+            textAlign: 'center',
+            flex: 1,
+          }}>
+            Feedback
+          </h1>
+          
+          <div style={{ width: '100px' }} /> {/* Spacer */}
+        </div>
+
+        {/* Content */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}>
+          <AnimatePresence mode="wait">
+            {submitted ? (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flex: 1,
+                  textAlign: 'center',
+                }}
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                  }}
+                  style={{ marginBottom: tokens.spacing[20] }}
                 >
-                  <MessageSquare className="h-3 w-3" />
-                  Next Chat
-                </button>
-                
-                <h1 className="text-base font-bold text-white tracking-tight">
-                  Feedback
-                </h1>
-                
-                <div className="w-16" /> {/* Spacer */}
-              </div>
+                  <div style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: tokens.colors.pillUnselected,
+                    boxShadow: tokens.shadows.pillUnselected,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Check style={{ width: '32px', height: '32px', color: tokens.colors.textOnPill }} />
+                  </div>
+                </motion.div>
+                <h2 style={{
+                  ...tokens.typography.title,
+                  color: tokens.colors.textPrimaryOnDark,
+                  margin: 0,
+                  marginBottom: tokens.spacing[12],
+                }}>
+                  Thank You!
+                </h2>
+                <p style={{
+                  ...tokens.typography.body,
+                  color: tokens.colors.textSecondary,
+                  margin: 0,
+                }}>
+                  Your feedback helps us improve
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="form"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                  gap: tokens.spacing[20],
+                }}
+              >
+                {/* Sub-header */}
+                <div style={{ textAlign: 'center' }}>
+                  <h2 style={{
+                    ...tokens.typography.heading,
+                    color: tokens.colors.textPrimaryOnDark,
+                    margin: 0,
+                    marginBottom: tokens.spacing[8],
+                  }}>
+                    How was it?
+                  </h2>
+                  <p style={{
+                    ...tokens.typography.label,
+                    color: tokens.colors.textSecondary,
+                    margin: 0,
+                  }}>
+                    {profileName
+                      ? `Rate your conversation with ${profileName}`
+                      : "Rate your conversation"}
+                  </p>
+                </div>
 
-              {/* Content - No Scroll, Compact */}
-              <div className="flex-1 overflow-hidden flex flex-col p-3 min-h-0">
-                <AnimatePresence mode="wait">
-                  {submitted ? (
-                    <motion.div
-                      key="success"
-                      initial={{ opacity: 0, scale: 0.98 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                      className="flex flex-col items-center justify-center h-full text-center"
-                    >
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 200,
-                          damping: 15,
-                        }}
-                        className="mb-4"
-                      >
-                        <div className="h-16 w-16 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center">
-                          <Check className="h-8 w-8 text-white" />
-                        </div>
-                      </motion.div>
-                      <h2 className="text-xl font-bold text-white mb-2 tracking-tight">
-                        Thank You!
-                      </h2>
-                      <p className="text-xs text-[#f1f1f3]/60">
-                        Your feedback helps us improve
-                      </p>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="form"
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                      className="flex flex-col h-full"
-                    >
-                      {/* Sub-header - Compact */}
-                      <div className="text-center mb-2 flex-shrink-0">
-                        <h2 className="text-lg font-bold text-white tracking-tight mb-0.5">
-                          How was it?
-                        </h2>
-                        <p className="text-[9px] text-[#f1f1f3]/60">
-                          {profileName
-                            ? `Rate your conversation with ${profileName}`
-                            : "Rate your conversation"}
-                        </p>
-                      </div>
-
-                      {/* Rating Sections - Compact Grid */}
-                      <div className="flex-1 grid grid-cols-1 gap-2 mb-2 overflow-y-auto scrollbar-hide min-h-0">
+                {/* Rating Sections */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: tokens.spacing[16],
+                  flex: 1,
+                  overflowY: 'auto',
+                  minHeight: 0,
+                }}>
                         <EmojiRating
                           label="Conversation"
                           emojis={RATING_EMOJIS}
@@ -310,114 +378,158 @@ export default function FeedbackPage() {
                         />
                       </div>
 
-                      {/* Notes Section */}
-                      <div className="mb-2 flex-shrink-0">
-                        <label className="text-[10px] font-bold text-[#f1f1f3]/90 mb-1 block text-center">
-                          Notes about {profileName || "Alex"}
-                        </label>
-                        <textarea
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          placeholder={`Share your thoughts about ${profileName || "Alex"}...`}
-                          className={cn(
-                            "w-full px-3 py-2 rounded-lg",
-                            "bg-white/5 border-2 border-white/20",
-                            "text-white placeholder:text-[#f1f1f3]/50",
-                            "text-xs resize-none",
-                            "focus:outline-none focus:border-white/40",
-                            "focus:ring-2 focus:ring-white/20"
-                          )}
-                          rows={2}
-                        />
-                      </div>
+                  {/* Notes Section */}
+                  <div>
+                    <label style={{
+                      ...tokens.typography.label,
+                      color: tokens.colors.textPrimaryOnDark,
+                      marginBottom: tokens.spacing[8],
+                      display: 'block',
+                      textAlign: 'center',
+                    }}>
+                      Notes about {profileName || "Alex"}
+                    </label>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder={`Share your thoughts about ${profileName || "Alex"}...`}
+                      style={{
+                        width: '100%',
+                        padding: `${tokens.spacing[10]} ${tokens.spacing[14]}`,
+                        borderRadius: tokens.radii.input,
+                        background: tokens.colors.pillUnselected,
+                        border: 'none',
+                        color: tokens.colors.textOnPill,
+                        boxShadow: tokens.shadows.pillUnselected,
+                        fontSize: '15px',
+                        fontWeight: 400,
+                        letterSpacing: '0',
+                        resize: 'none',
+                        outline: 'none',
+                        minHeight: '80px',
+                      }}
+                      rows={3}
+                    />
+                  </div>
 
-                      {/* Action Buttons - Compact */}
-                      <div className="space-y-1.5 flex-shrink-0">
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            handleAddToCommunity()
-                          }}
-                          type="button"
-                          disabled={addedToCommunity}
-                          className={cn(
-                            "w-full px-3 py-2 rounded-full font-semibold text-[10px]",
-                            "flex items-center justify-center gap-1.5",
-                            "transition-all duration-200",
-                            "touch-manipulation relative z-10",
-                            addedToCommunity
-                              ? "bg-white/5 border border-white/10 text-[#f1f1f3]/40 cursor-not-allowed"
-                              : "bg-[#f1f1f3] text-[#0a0a0c] border border-white hover:bg-white/95 cursor-pointer pointer-events-auto"
-                          )}
-                        >
-                          <Users className="h-3 w-3" />
-                          {addedToCommunity
-                            ? `Added ${profileName || "them"} to Community`
-                            : `Add ${profileName || "them"} to Community`}
-                        </button>
+                  {/* Action Buttons */}
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: tokens.spacing[12],
+                  }}>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleAddToCommunity()
+                      }}
+                      type="button"
+                      disabled={addedToCommunity}
+                      style={{
+                        width: '100%',
+                        padding: `10px ${tokens.spacing[14]}`,
+                        borderRadius: tokens.radii.pill,
+                        background: addedToCommunity ? 'transparent' : tokens.colors.pillUnselected,
+                        border: addedToCommunity ? `1px solid rgba(255,255,255,0.12)` : 'none',
+                        color: tokens.colors.textOnPill,
+                        boxShadow: addedToCommunity ? 'none' : tokens.shadows.pillUnselected,
+                        fontSize: '15px',
+                        fontWeight: 400,
+                        letterSpacing: '0',
+                        cursor: addedToCommunity ? 'not-allowed' : 'pointer',
+                        opacity: addedToCommunity ? 0.5 : 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: tokens.spacing[8],
+                      }}
+                    >
+                      <Users style={{ width: '16px', height: '16px' }} />
+                      {addedToCommunity
+                        ? `Added ${profileName || "them"} to Community`
+                        : `Add ${profileName || "them"} to Community`}
+                    </motion.button>
 
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            setShowReportModal(true)
-                          }}
-                          type="button"
-                          className={cn(
-                            "w-full px-3 py-2 rounded-full font-semibold text-[10px]",
-                            "flex items-center justify-center gap-1.5",
-                            "border border-white/10 bg-white/5",
-                            "text-white hover:bg-white/8 hover:border-white/15",
-                            "transition-all duration-200",
-                            "touch-manipulation cursor-pointer pointer-events-auto relative z-10"
-                          )}
-                        >
-                          <Flag className="h-3 w-3" />
-                          Report {profileName || "this person"}
-                        </button>
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setShowReportModal(true)
+                      }}
+                      type="button"
+                      style={{
+                        width: '100%',
+                        padding: `10px ${tokens.spacing[14]}`,
+                        borderRadius: tokens.radii.pill,
+                        background: 'transparent',
+                        border: `1px solid rgba(255,255,255,0.12)`,
+                        color: tokens.colors.textPrimaryOnDark,
+                        fontSize: '15px',
+                        fontWeight: 400,
+                        letterSpacing: '0',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: tokens.spacing[8],
+                      }}
+                    >
+                      <Flag style={{ width: '16px', height: '16px' }} />
+                      Report {profileName || "this person"}
+                    </motion.button>
 
                         {/* Submit Button */}
                         <button
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            handleSubmit()
+                            if (!loading) {
+                              handleSubmit()
+                            }
                           }}
                           type="button"
                           disabled={loading}
-                          className={cn(
-                            "w-full px-3 py-2.5 rounded-full font-bold text-xs tracking-wide",
-                            "transition-all duration-200",
-                            "touch-manipulation relative z-10",
-                            "bg-[#f1f1f3] text-[#0a0a0c] border border-white",
-                            "hover:bg-white/95",
-                            "cursor-pointer pointer-events-auto",
-                            "disabled:opacity-50 disabled:cursor-not-allowed"
-                          )}
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            borderRadius: '18px',
+                            background: tokens.colors.pillUnselected,
+                            color: tokens.colors.textOnPill,
+                            border: 'none',
+                            boxShadow: tokens.shadows.pillUnselected,
+                            fontSize: '15px',
+                            fontWeight: 400,
+                            letterSpacing: '0',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: loading ? 0.5 : 1,
+                            pointerEvents: loading ? 'none' : 'auto',
+                            position: 'relative',
+                            zIndex: 100,
+                            transition: 'all 0.14s ease',
+                          }}
                         >
                           {loading ? "Submitting..." : hasAnyRating ? "Submit Feedback" : "Skip Feedback"}
                         </button>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-            
           </div>
-        </div>
-      </div>
 
-      {/* Report Modal */}
-      {profileName && (
-        <ReportModal
-          isOpen={showReportModal}
-          onClose={() => setShowReportModal(false)}
-          onConfirm={handleReport}
-          profileName={profileName}
-        />
-      )}
-    </div>
+        {/* Report Modal */}
+        {profileName && (
+          <ReportModal
+            isOpen={showReportModal}
+            onClose={() => setShowReportModal(false)}
+            onConfirm={handleReport}
+            profileName={profileName}
+          />
+        )}
+      </div>
+    </AppShell>
   )
 }

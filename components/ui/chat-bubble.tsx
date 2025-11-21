@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Message } from "@/lib/types"
 import { Check, CheckCheck } from "lucide-react"
+import { tokens } from "@/lib/design-tokens"
 
 interface ChatBubbleProps {
   message: Message
@@ -43,30 +44,37 @@ export function ChatBubble({ message, isOwn }: ChatBubbleProps) {
       )}
     >
       <div
-        className={cn(
-          "max-w-[75%] rounded-[20px] px-4 py-2.5",
-          isOwn
-            ? "bg-white text-black"
-            : "bg-white/5 border border-white/10 text-white"
-        )}
+        style={{
+          maxWidth: '75%',
+          borderRadius: tokens.radii.pill,
+          padding: `${tokens.spacing[10]} ${tokens.spacing[14]}`,
+          background: isOwn ? tokens.colors.pillUnselected : tokens.colors.pillUnselected,
+          boxShadow: tokens.shadows.pillUnselected,
+          border: 'none',
+        }}
       >
-        <p className={cn(
-          "text-sm leading-relaxed",
-          isOwn ? "text-black" : "text-white/90"
-        )}>
+        <p style={{
+          ...tokens.typography.body,
+          color: tokens.colors.textOnPill,
+          margin: 0,
+          marginBottom: tokens.spacing[8],
+        }}>
           {message.content}
         </p>
-        <div className={cn(
-          "flex items-center gap-1.5 mt-1.5 text-xs",
-          isOwn ? "text-black/60" : "text-white/50"
-        )}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: tokens.spacing[8],
+          fontSize: '12px',
+          color: tokens.colors.textMuted,
+        }}>
           <span>{time}</span>
           {isOwn && (
-            <span className="ml-1">
+            <span>
               {message.read ? (
-                <CheckCheck className="h-3 w-3 text-black/60" />
+                <CheckCheck style={{ width: '12px', height: '12px' }} />
               ) : (
-                <Check className="h-3 w-3 text-black/60" />
+                <Check style={{ width: '12px', height: '12px' }} />
               )}
             </span>
           )}

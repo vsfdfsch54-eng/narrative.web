@@ -7,9 +7,11 @@ import { ChatBubble } from "@/components/ui/chat-bubble"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { EndConvoModal } from "@/components/ui/end-convo-modal"
 import { Message } from "@/lib/types"
-import { Send, ArrowLeft } from "lucide-react"
+import { Send, ArrowLeft, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
+import { tokens } from "@/lib/design-tokens"
+import { AppShell } from "@/components/AppShell"
 
 export default function ChatDetailPage() {
   const params = useParams()
@@ -298,160 +300,230 @@ export default function ChatDetailPage() {
 
   if (authLoading || loadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-[#0a0a0c]">
-        <p className="text-[#f1f1f3]/60">Loading...</p>
-      </div>
+      <AppShell>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+        </div>
+      </AppShell>
     )
   }
 
   return (
-    <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">
-      {/* Phone Frame Container */}
-      <div className="phone-frame-container">
-        {/* Phone Frame - Black & White */}
-        <div className="phone-frame">
-          {/* Phone Screen */}
-          <div className="phone-screen">
-            <div className="phone-content px-4 py-2 sm:p-4 pb-4 overflow-hidden flex flex-col h-full">
-              {/* Header */}
-              <div className={cn(
-                "flex items-center justify-between px-3 py-2",
-                "border-b border-white/10 bg-[#0a0a0c]",
-                "sticky top-0 z-10 flex-shrink-0"
-              )}>
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <button
-                    onClick={() => router.push("/vibe")}
-                    className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
-                  >
-                    <ArrowLeft className="h-5 w-5 text-[#f1f1f3]/80" />
-                  </button>
-                  
-                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <span className="text-2xl">
-                      {profileGender === "male" ? "👨" : "👩"}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <h2 className="text-base font-bold text-white truncate">
-                        {profileName}
-                      </h2>
-                      <p className="text-xs text-[#f1f1f3]/60">
-                        {timeRemaining !== null && timeRemaining > 0
-                          ? `Time left: ${formatTimeRemaining(timeRemaining)}`
-                          : getStatusText()}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Add to Community Button */}
-                  <button
-                    onClick={handleAddToCommunity}
-                    className="px-3 py-1.5 rounded-lg bg-[#f1f1f3]/10 border border-[#f1f1f3]/20 text-[#f1f1f3] text-xs font-semibold hover:bg-[#f1f1f3]/20 transition-colors"
-                    title="Add to Community"
-                  >
-                    + Add
-                  </button>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {/* Add to Community Button */}
-                  <button
-                    onClick={handleAddToCommunity}
-                    className="px-3 py-1.5 rounded-lg bg-[#f1f1f3]/10 border border-[#f1f1f3]/20 text-[#f1f1f3] text-xs font-semibold hover:bg-[#f1f1f3]/20 transition-colors"
-                    title="Add to Community"
-                  >
-                    + Add
-                  </button>
-                  
-                  <button
-                  onClick={() => setShowEndModal(true)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-semibold",
-                    "border border-white/10 bg-white/5",
-                    "text-white hover:bg-white/10",
-                    "transition-all duration-200",
-                    "touch-manipulation cursor-pointer"
-                  )}
-                >
-                  End Convo
-                  </button>
-                </div>
-              </div>
-
-              {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto scrollbar-hide px-3 py-3 min-h-0">
-                {messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <p className="text-[#f1f1f3]/60 text-sm mb-1">
-                        Start the conversation!
-                      </p>
-                      <p className="text-[#f1f1f3]/50 text-xs">
-                        Say hello to {profileName}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {messages.map((msg) => (
-                      <div key={msg.id}>
-                        <ChatBubble
-                          message={msg}
-                          isOwn={msg.senderId === currentUserId}
-                        />
-                      </div>
-                    ))}
-                    {isTyping && <TypingIndicator />}
-                  </>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input Area */}
-              <div className={cn(
-                "px-3 py-2 border-t border-white/10",
-                "bg-[#0a0a0c]",
-                "flex-shrink-0"
-              )}>
-                <form onSubmit={handleSendMessage} className="flex gap-2 items-end">
-                  <div className="flex-1 relative">
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Type a message..."
-                      className={cn(
-                        "w-full px-4 py-2.5 rounded-full",
-                        "bg-white/5 border border-white/10",
-                        "text-white placeholder:text-[#f1f1f3]/50",
-                        "transition-all duration-200",
-                        "focus:outline-none focus:border-white/20",
-                        "focus:ring-1 focus:ring-white/20",
-                        "text-sm"
-                      )}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={!message.trim()}
-                    className={cn(
-                      "p-2.5 rounded-full",
-                      "bg-[#f1f1f3] text-[#0a0a0c]",
-                      "border border-white",
-                      "transition-all duration-200",
-                      "hover:bg-white/95",
-                      "disabled:opacity-50 disabled:cursor-not-allowed",
-                      "touch-manipulation cursor-pointer"
-                    )}
-                  >
-                    <Send className="h-4 w-4" />
-                  </button>
-                </form>
-              </div>
+    <AppShell>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: 'calc(100vh - 140px)',
+        maxHeight: 'calc(100vh - 140px)',
+        paddingTop: tokens.spacing[20],
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: tokens.spacing[20],
+          paddingBottom: tokens.spacing[16],
+          borderBottom: `1px solid rgba(255,255,255,0.08)`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], flex: 1, minWidth: 0 }}>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => router.push("/vibe")}
+              style={{
+                padding: tokens.spacing[8],
+                borderRadius: tokens.radii.pill,
+                background: 'transparent',
+                border: 'none',
+                color: tokens.colors.textPrimaryOnDark,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ArrowLeft style={{ width: '20px', height: '20px' }} />
+            </motion.button>
+            
+            <div style={{ fontSize: '32px' }}>
+              {profileGender === "male" ? "👨" : "👩"}
             </div>
             
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{
+                ...tokens.typography.heading,
+                color: tokens.colors.textPrimaryOnDark,
+                margin: 0,
+                marginBottom: tokens.spacing[4],
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}>
+                {profileName}
+              </h2>
+              <p style={{
+                ...tokens.typography.label,
+                color: tokens.colors.textSecondary,
+                margin: 0,
+                fontSize: '12px',
+              }}>
+                {timeRemaining !== null && timeRemaining > 0
+                  ? `Time left: ${formatTimeRemaining(timeRemaining)}`
+                  : getStatusText()}
+              </p>
+            </div>
           </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[10] }}>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={handleAddToCommunity}
+              style={{
+                padding: `8px ${tokens.spacing[14]}`,
+                borderRadius: tokens.radii.pill,
+                background: tokens.colors.pillUnselected,
+                border: 'none',
+                color: tokens.colors.textOnPill,
+                boxShadow: tokens.shadows.pillUnselected,
+                fontSize: '13px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: tokens.spacing[8],
+              }}
+            >
+              <Users style={{ width: '14px', height: '14px' }} />
+              Add
+            </motion.button>
+            
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowEndModal(true)}
+              style={{
+                padding: `8px ${tokens.spacing[14]}`,
+                borderRadius: tokens.radii.pill,
+                background: 'transparent',
+                border: `1px solid rgba(255,255,255,0.12)`,
+                color: tokens.colors.textPrimaryOnDark,
+                fontSize: '13px',
+                fontWeight: 500,
+                cursor: 'pointer',
+              }}
+            >
+              End
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: `${tokens.spacing[12]} 0`,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: tokens.spacing[12],
+        }}>
+          {messages.length === 0 ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flex: 1,
+              textAlign: 'center',
+            }}>
+              <div>
+                <p style={{
+                  ...tokens.typography.body,
+                  color: tokens.colors.textSecondary,
+                  margin: 0,
+                  marginBottom: tokens.spacing[8],
+                }}>
+                  Start the conversation!
+                </p>
+                <p style={{
+                  ...tokens.typography.label,
+                  color: tokens.colors.textMuted,
+                  margin: 0,
+                }}>
+                  Say hello to {profileName}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {messages.map((msg) => (
+                <div key={msg.id}>
+                  <ChatBubble
+                    message={msg}
+                    isOwn={msg.senderId === currentUserId}
+                  />
+                </div>
+              ))}
+              {isTyping && <TypingIndicator />}
+            </>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div style={{
+          paddingTop: tokens.spacing[16],
+          borderTop: `1px solid rgba(255,255,255,0.08)`,
+          marginTop: tokens.spacing[16],
+        }}>
+          <form onSubmit={handleSendMessage} style={{
+            display: 'flex',
+            gap: tokens.spacing[12],
+            alignItems: 'center',
+          }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+              <input
+                ref={inputRef}
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type a message..."
+                style={{
+                  width: '100%',
+                  padding: `10px ${tokens.spacing[14]}`,
+                  borderRadius: tokens.radii.input,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 400,
+                  letterSpacing: '0',
+                  outline: 'none',
+                }}
+              />
+            </div>
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              type="submit"
+              disabled={!message.trim()}
+              style={{
+                padding: tokens.spacing[10],
+                borderRadius: tokens.radii.button,
+                background: tokens.colors.pillUnselected,
+                border: 'none',
+                color: tokens.colors.textOnPill,
+                boxShadow: tokens.shadows.pillUnselected,
+                cursor: !message.trim() ? 'not-allowed' : 'pointer',
+                opacity: !message.trim() ? 0.5 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '44px',
+                height: '44px',
+              }}
+            >
+              <Send style={{ width: '18px', height: '18px' }} />
+            </motion.button>
+          </form>
         </div>
       </div>
 
@@ -462,6 +534,6 @@ export default function ChatDetailPage() {
         onConfirm={handleEndConvo}
         profileName={profileName}
       />
-    </div>
+    </AppShell>
   )
 }
