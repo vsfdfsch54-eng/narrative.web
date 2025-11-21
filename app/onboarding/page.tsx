@@ -162,7 +162,11 @@ function OnboardingContent() {
   }, [currentStep, user, authLoading, router])
 
   const validatePasswordMatch = useCallback(() => {
-    if (confirmPassword && password !== confirmPassword) {
+    if (!confirmPassword) {
+      setPasswordMatchError("")
+      return true
+    }
+    if (password !== confirmPassword) {
       setPasswordMatchError("Passwords do not match")
       return false
     } else {
@@ -199,7 +203,12 @@ function OnboardingContent() {
     setError("")
     
     if (currentStep === 'email') {
-      if (!email.trim() || !email.includes('@')) {
+      const trimmedEmail = email.trim()
+      if (!trimmedEmail) {
+        setError("Please enter your email address")
+        return
+      }
+      if (!trimmedEmail.includes('@') || !trimmedEmail.includes('.') || trimmedEmail.length < 5) {
         setError("Please enter a valid email address")
         return
       }
@@ -372,12 +381,14 @@ function OnboardingContent() {
       minHeight: '100vh', 
       background: tokens.colors.backgroundApp,
       paddingTop: 'env(safe-area-inset-top)',
-      paddingBottom: 'env(safe-area-inset-bottom)',
+      paddingBottom: 'calc(env(safe-area-inset-bottom) + 20px)',
+      overflowY: 'auto',
     }}>
       <div style={{
         maxWidth: tokens.layout.maxWidth,
         margin: '0 auto',
         padding: `${tokens.layout.topTitleSpacing} ${tokens.layout.paddingHorizontal}`,
+        minHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
       }}>
         {currentStep === 'email' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing }}>
@@ -430,7 +441,7 @@ function OnboardingContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && email.trim() && email.includes('@')) {
+                    if (e.key === 'Enter' && email.trim() && email.includes('@') && email.includes('.') && email.length >= 5) {
                       handleNext()
                     }
                   }}
@@ -453,14 +464,18 @@ function OnboardingContent() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12], marginTop: tokens.spacing[20] }}>
               <Button
                 onClick={handleNext}
                 variant="primary"
-                disabled={loading || !email.trim() || !email.includes('@')}
-                style={{ width: '100%' }}
+                  disabled={loading || !email.trim() || !email.includes('@') || !email.includes('.') || email.length < 5}
+                style={{ 
+                  width: '100%',
+                  minHeight: '50px',
+                  opacity: (loading || !email.trim() || !email.includes('@')) ? 0.6 : 1,
+                }}
               >
-                Continue
+                {loading ? 'Loading...' : 'Continue'}
               </Button>
               
               {!user && (
@@ -468,6 +483,7 @@ function OnboardingContent() {
                   textAlign: 'center',
                   ...tokens.typography.label,
                   color: tokens.colors.textSecondary,
+                  marginTop: tokens.spacing[8],
                 }}>
                   Already have an account?{" "}
                   <Link href="/login" style={{ color: tokens.colors.textPrimaryOnDark, textDecoration: 'underline' }}>
@@ -553,11 +569,12 @@ function OnboardingContent() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: tokens.spacing[16] }}>
+            <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.spacing[20] }}>
               <Button
                 onClick={handleBack}
                 variant="secondary"
-                style={{ flex: 1 }}
+                disabled={loading}
+                style={{ flex: 1, minHeight: '50px' }}
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
@@ -565,9 +582,9 @@ function OnboardingContent() {
                 onClick={handleNext}
                 variant="primary"
                 disabled={loading || !name.trim()}
-                style={{ flex: 1 }}
+                style={{ flex: 1, minHeight: '50px' }}
               >
-                Continue
+                {loading ? 'Loading...' : 'Continue'}
               </Button>
             </div>
           </div>
@@ -690,11 +707,12 @@ function OnboardingContent() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: tokens.spacing[16] }}>
+            <div style={{ display: 'flex', gap: tokens.spacing[16], marginTop: tokens.spacing[20] }}>
               <Button
                 onClick={handleBack}
                 variant="secondary"
-                style={{ flex: 1 }}
+                disabled={loading}
+                style={{ flex: 1, minHeight: '50px' }}
               >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
@@ -702,9 +720,9 @@ function OnboardingContent() {
                 onClick={handleNext}
                 variant="primary"
                 disabled={loading || password.length < 6 || !!passwordMatchError}
-                style={{ flex: 1 }}
+                style={{ flex: 1, minHeight: '50px' }}
               >
-                Continue
+                {loading ? 'Loading...' : 'Continue'}
               </Button>
             </div>
           </div>
@@ -778,15 +796,17 @@ function OnboardingContent() {
                               height: '40px',
                               padding: `10px ${tokens.spacing[14]}`,
                               borderRadius: tokens.radii.pill,
-                              background: isSelected ? tokens.colors.pillUnselected : 'transparent',
-                              border: isSelected ? 'none' : `1px solid ${tokens.colors.textSecondary}`,
-                              color: isSelected ? tokens.colors.textOnPill : tokens.colors.textSecondary,
-                              boxShadow: isSelected ? tokens.shadows.pillUnselected : 'none',
+                              background: isSelected ? tokens.colors.pillSelected : tokens.colors.pillUnselected,
+                              border: 'none',
+                              color: isSelected ? tokens.colors.textOnPill : tokens.colors.textOnPill,
+                              boxShadow: isSelected ? tokens.shadows.pillSelected : tokens.shadows.pillUnselected,
                               fontSize: '13px',
-                              fontWeight: 500,
+                              fontWeight: isSelected ? 500 : 400,
                               letterSpacing: '0',
                               cursor: loading ? 'not-allowed' : 'pointer',
                               opacity: loading ? 0.5 : 1,
+                              transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                              transition: 'all 0.14s ease',
                             }}
                           >
                             {interest.emoji && <span style={{ marginRight: tokens.spacing[8] }}>{interest.emoji}</span>}
