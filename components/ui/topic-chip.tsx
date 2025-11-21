@@ -41,10 +41,10 @@ export function TopicChip({
         "touch-manipulation",
         "overflow-hidden flex items-center gap-2",
         "relative",
-        "text-white"
+        "text-black"
       )}
       style={{
-        background: selected ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)',
+        background: '#FFFFFF',
         border: selected
           ? '1.5px solid rgba(255,255,255,0.3)'
           : '1px solid rgba(255,255,255,0.15)',
