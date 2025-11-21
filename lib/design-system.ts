@@ -185,7 +185,7 @@ export const motion = {
     normal: 150,
     slow: 160,
   },
-  easing: 'ease-in-out',
+  easing: [0.42, 0, 0.58, 1], // cubic-bezier for ease-in-out
   dropdown: {
     slide: '6px',
     maxSlide: '10px',

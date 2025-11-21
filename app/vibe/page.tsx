@@ -274,7 +274,7 @@ export default function VibePage() {
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.13, ease: "easeInOut" }}
+                      transition={{ duration: 0.13, ease: [0.42, 0, 0.58, 1] }}
                       className="absolute top-full left-0 right-0 mt-2 z-50"
                     >
                       <div style={{ background: '#151515', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px', overflow: 'hidden' }}>
@@ -351,7 +351,7 @@ export default function VibePage() {
                       key={time}
                       onClick={() => setSelectedTimeLimit(selectedTimeLimit === time ? null : time)}
                       whileTap={{ scale: 0.98 }}
-                      transition={{ duration: 0.12, ease: "easeInOut" }}
+                      transition={{ duration: 0.12, ease: [0.42, 0, 0.58, 1] }}
                       className={cn(
                         "h-full rounded-[10px] text-[15px] font-medium transition-all duration-150 ease-in-out relative z-10",
                         "px-4",
@@ -399,10 +399,10 @@ export default function VibePage() {
               <motion.button
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.15, ease: "easeInOut" }}
+                transition={{ duration: 0.15, ease: [0.42, 0, 0.58, 1] }}
                 whileTap={{ 
                   scale: 0.98,
-                  transition: { duration: 0.12, ease: "easeInOut" }
+                  transition: { duration: 0.12, ease: [0.42, 0, 0.58, 1] }
                 }}
                 onClick={handleConnect}
                 disabled={saving || !canConnect}
@@ -426,10 +426,10 @@ export default function VibePage() {
               <motion.button
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.15, ease: "easeInOut" }}
+                transition={{ duration: 0.15, ease: [0.42, 0, 0.58, 1] }}
                 whileTap={{ 
                   scale: 0.98,
-                  transition: { duration: 0.12, ease: "easeInOut" }
+                  transition: { duration: 0.12, ease: [0.42, 0, 0.58, 1] }
                 }}
                 onClick={handleSkip}
                 className={cn(
