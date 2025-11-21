@@ -222,7 +222,7 @@ export default function ChatPage() {
           paddingTop: tokens.layout.topTitleSpacing,
           textAlign: 'center',
         }}>
-          {/* Animated dots */}
+          {/* Animated dots - matching app design */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -252,7 +252,7 @@ export default function ChatPage() {
             ))}
           </div>
 
-          {/* Title */}
+          {/* Title - matching app typography */}
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -278,7 +278,7 @@ export default function ChatPage() {
             </p>
           </div>
 
-          {/* Go Back Button */}
+          {/* Go Back Button - matching app pill design */}
           <motion.button
             whileTap={{ scale: 0.98 }}
             onClick={() => router.push("/vibe")}
