@@ -242,6 +242,7 @@ export async function POST(request: NextRequest) {
             otherUserId: otherUserId 
           })
         }
+      }
     }
 
     console.log(`[PendingMatches] User ${userId} in queue (${matchmakingResult.matched} pairs matched by processor)`)
