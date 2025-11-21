@@ -7,9 +7,10 @@ interface CardProps {
   children: React.ReactNode
   className?: string
   padding?: boolean
+  variant?: "default" | "outlined"
 }
 
-export function Card({ children, className, padding = true }: CardProps) {
+export function Card({ children, className, padding = true, variant = "default" }: CardProps) {
   return (
     <div
       className={cn(
