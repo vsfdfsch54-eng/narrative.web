@@ -249,6 +249,8 @@ export default function FeedbackPage() {
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
+          overflowY: 'auto',
+          paddingBottom: tokens.spacing[20],
         }}>
           <AnimatePresence mode="wait">
             {submitted ? (
@@ -481,38 +483,40 @@ export default function FeedbackPage() {
                       Report {profileName || "this person"}
                     </motion.button>
 
-                        {/* Submit Button */}
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            if (!loading) {
-                              handleSubmit()
-                            }
-                          }}
-                          type="button"
-                          disabled={loading}
-                          style={{
-                            width: '100%',
-                            padding: '12px 16px',
-                            borderRadius: '18px',
-                            background: tokens.colors.pillUnselected,
-                            color: tokens.colors.textOnPill,
-                            border: 'none',
-                            boxShadow: tokens.shadows.pillUnselected,
-                            fontSize: '15px',
-                            fontWeight: 400,
-                            letterSpacing: '0',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            opacity: loading ? 0.5 : 1,
-                            pointerEvents: loading ? 'none' : 'auto',
-                            position: 'relative',
-                            zIndex: 100,
-                            transition: 'all 0.14s ease',
-                          }}
-                        >
-                          {loading ? "Submitting..." : hasAnyRating ? "Submit Feedback" : "Skip Feedback"}
-                        </button>
+                    {/* Submit Button */}
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        if (!loading) {
+                          handleSubmit()
+                        }
+                      }}
+                      type="button"
+                      disabled={loading}
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        borderRadius: tokens.radii.button,
+                        background: tokens.colors.pillUnselected,
+                        color: tokens.colors.textOnPill,
+                        border: 'none',
+                        boxShadow: tokens.shadows.pillUnselected,
+                        fontSize: '15px',
+                        fontWeight: 500,
+                        letterSpacing: '0',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.5 : 1,
+                        pointerEvents: loading ? 'none' : 'auto',
+                        position: 'relative',
+                        zIndex: 10,
+                        transition: 'all 0.14s ease',
+                        marginTop: tokens.spacing[8],
+                      }}
+                    >
+                      {loading ? "Submitting..." : hasAnyRating ? "Submit Feedback" : "Skip Feedback"}
+                    </motion.button>
                   </div>
                 </motion.div>
               )}
