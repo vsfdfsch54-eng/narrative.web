@@ -11,6 +11,7 @@ import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS } from "@/lib/co
 import { Vibe, Topic } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
+import { ChevronDown } from "lucide-react"
 
 // Reordered: General, Pop Culture, News
 const TOPIC_CATEGORIES = [
@@ -241,27 +242,29 @@ export default function VibePage() {
                 </div>
               </div>
 
-              {/* Middle Section: 3 Boxes - Uneven Distribution */}
+              {/* Middle Section: 2 Boxes */}
               <div className="flex flex-col flex-1 min-h-0 gap-4 mb-4">
-                {/* Box 1: Vibe Section - Smaller (one row) */}
+                {/* Box 1: Vibe Section */}
                 <div className="flex-[0.8] rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col min-h-0">
-                  <h2 className="text-sm font-medium text-[#f1f1f3] mb-3 flex-shrink-0">Your Vibe</h2>
-                  
-                  {/* Last Vibe Button - Compact */}
-                  {lastVibe && !loadingLastVibe && (
-                    <button
-                      onClick={handleSelectLastVibe}
-                      className={cn(
-                        "w-full px-3 py-1.5 rounded-lg text-left transition-all mb-2 text-xs font-medium border flex-shrink-0",
-                        selectedVibe?.id === lastVibe.id
-                          ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
-                          : "bg-white/5 text-[#f1f1f3]/70 border-white/10 hover:bg-white/8 hover:border-white/15"
-                      )}
-                    >
-                      <span className="text-[10px] text-[#f1f1f3]/50 font-medium uppercase mr-1.5">Last:</span>
-                      <span>{lastVibe.label}</span>
-                    </button>
-                  )}
+                  {/* Header with Last Vibe Pill on Right */}
+                  <div className="flex items-center justify-between mb-3 flex-shrink-0">
+                    <h2 className="text-lg font-semibold text-[#f1f1f3]">Vibe</h2>
+                    {lastVibe && !loadingLastVibe && (
+                      <button
+                        onClick={handleSelectLastVibe}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1.5",
+                          selectedVibe?.id === lastVibe.id
+                            ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
+                            : "bg-[#0a0a0c] text-[#f1f1f3] border-white/10 hover:border-white/20"
+                        )}
+                      >
+                        <span>Last vibe</span>
+                        <span className="text-[10px] text-[#f1f1f3]/50">•</span>
+                        <span className="text-[10px] text-[#f1f1f3]/50">Last time</span>
+                      </button>
+                    )}
+                  </div>
 
                   {/* Horizontal Scroll Row for Vibes */}
                   <div className="flex overflow-x-auto space-x-2 scrollbar-hide -mx-4 px-4 flex-1 min-h-0 items-center">
@@ -277,29 +280,27 @@ export default function VibePage() {
                   </div>
                 </div>
 
-                {/* Box 2: Topic Section - Larger (two rows: categories + topics) */}
+                {/* Box 2: Topic Section */}
                 <div className="flex-[1.4] rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col min-h-0">
-                  <h2 className="text-sm font-medium text-[#f1f1f3] mb-3 flex-shrink-0">Your Topic</h2>
+                  <h2 className="text-lg font-semibold text-[#f1f1f3] mb-3 flex-shrink-0">Topic</h2>
 
-                  {/* Category Buttons - Horizontal Row: General, Pop Culture, News */}
-                  <div className="flex overflow-x-auto space-x-2 mb-3 scrollbar-hide -mx-4 px-4 flex-shrink-0">
-                    {TOPIC_CATEGORIES.map((cat) => (
-                      <button
-                        key={cat.id}
-                        onClick={() => {
-                          setSelectedCategory(cat.id)
-                          setSelectedTopic(null)
-                        }}
-                        className={cn(
-                          "shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
-                          selectedCategory === cat.id
-                            ? "bg-[#f1f1f3] text-[#0a0a0c] border-[#f1f1f3]/20"
-                            : "bg-white/5 text-[#f1f1f3]/70 border-white/10 hover:bg-white/8 hover:border-white/15"
-                        )}
-                      >
-                        {cat.label}
-                      </button>
-                    ))}
+                  {/* Dropdown Menu for Categories */}
+                  <div className="relative mb-3 flex-shrink-0">
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value)
+                        setSelectedTopic(null)
+                      }}
+                      className="w-full appearance-none px-4 py-2.5 rounded-lg bg-[#0a0a0c] border border-white/10 text-[#f1f1f3] text-sm font-medium focus:outline-none focus:border-white/20 transition-all cursor-pointer"
+                    >
+                      {TOPIC_CATEGORIES.map((cat) => (
+                        <option key={cat.id} value={cat.id} className="bg-[#0a0a0c]">
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#f1f1f3]/60 pointer-events-none" />
                   </div>
 
                   {/* Horizontal Scroll Row for Topics */}
@@ -316,7 +317,7 @@ export default function VibePage() {
                   </div>
                 </div>
 
-                {/* Box 3: Make Your Own - Smaller */}
+                {/* Box 3: Make Your Own */}
                 <div className="flex-[0.8] rounded-xl border border-white/10 bg-white/5 p-4 flex flex-col min-h-0 justify-center">
                   <h2 className="text-sm font-medium text-[#f1f1f3] mb-2 flex-shrink-0">Make your own topic</h2>
                   <p className="text-xs text-[#f1f1f3]/60 mb-3 flex-shrink-0">Create a custom topic to discuss</p>
@@ -324,36 +325,38 @@ export default function VibePage() {
                     type="text"
                     value={customTopic}
                     onChange={(e) => setCustomTopic(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-[#f1f1f3] placeholder:text-[#f1f1f3]/40 focus:outline-none focus:border-white/20 transition-all text-sm flex-shrink-0"
+                    className="w-full px-4 py-3 rounded-lg bg-[#0a0a0c] border border-white/10 text-[#f1f1f3] placeholder:text-[#f1f1f3]/40 focus:outline-none focus:border-white/20 transition-all text-sm flex-shrink-0"
                     placeholder="Enter your topic..."
                   />
                 </div>
               </div>
 
-              {/* Bottom Section: Connect Button */}
-              <div className="flex-shrink-0 pt-4 border-t border-white/5 pb-2">
-                <AnimatePresence mode="wait">
-                  {canConnect ? (
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      onClick={handleConnect}
-                      disabled={saving}
-                      className="w-full rounded-xl h-12 text-sm font-semibold"
-                    >
-                      {saving ? "Connecting..." : "Connect"}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="primary"
-                      size="lg"
-                      onClick={handleSkipAndChat}
-                      className="w-full rounded-xl h-12 text-sm font-semibold"
-                    >
-                      Skip & Chat
-                    </Button>
-                  )}
-                </AnimatePresence>
+              {/* Bottom Section: Connect Button - Centered */}
+              <div className="flex-shrink-0 pt-4 pb-2 flex justify-center">
+                <div className="w-full max-w-md">
+                  <AnimatePresence mode="wait">
+                    {canConnect ? (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={handleConnect}
+                        disabled={saving}
+                        className="w-full rounded-xl h-12 text-sm font-semibold"
+                      >
+                        {saving ? "Connecting..." : "Connect"}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={handleSkipAndChat}
+                        className="w-full rounded-xl h-12 text-sm font-semibold"
+                      >
+                        Skip & Chat
+                      </Button>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
             
