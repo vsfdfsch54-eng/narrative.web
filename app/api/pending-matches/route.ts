@@ -114,34 +114,65 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, vibe, topic, timeframe } = body
 
+    console.log('[PendingMatches POST] Received request:', { userId, vibe, topic, timeframe })
+
     if (!userId) {
+      console.error('[PendingMatches POST] ❌ Missing userId in request body')
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
     }
 
+    // Check if service role key is available
+    const hasServiceKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    console.log('[PendingMatches POST] Service role key available:', hasServiceKey)
+    
+    if (!hasServiceKey) {
+      console.error('[PendingMatches POST] ❌ SUPABASE_SERVICE_ROLE_KEY is missing!')
+      return NextResponse.json({ 
+        error: 'Server configuration error: Missing service role key' 
+      }, { status: 500 })
+    }
+
     const supabase = createServerClient()
+    console.log('[PendingMatches POST] ✅ Service client created')
 
     // Remove any existing pending match for this user
-    await supabase.from('pending_matches').delete().eq('user_id', userId)
+    const deleteResult = await supabase.from('pending_matches').delete().eq('user_id', userId)
+    if (deleteResult.error) {
+      console.log('[PendingMatches POST] Delete existing match error:', deleteResult.error)
+    } else {
+      console.log('[PendingMatches POST] Deleted existing pending match (if any)')
+    }
 
     // Create new pending match
+    const insertData = {
+      user_id: userId,
+      vibe: vibe || null,
+      topic: topic || null,
+      timeframe: timeframe || null,
+      status: 'searching',
+    }
+    console.log('[PendingMatches POST] Inserting pending match:', insertData)
+    
     const { data: pendingMatch, error: insertError } = await supabase
       .from('pending_matches')
-      .insert({
-        user_id: userId,
-        vibe: vibe || null,
-        topic: topic || null,
-        timeframe: timeframe || null,
-        status: 'searching',
-      })
+      .insert(insertData)
       .select()
       .single()
 
     if (insertError) {
-      console.error('[PendingMatches] Error creating pending match:', insertError)
-      return NextResponse.json({ error: 'Failed to create pending match' }, { status: 500 })
+      console.error('[PendingMatches POST] ❌ Error creating pending match:', insertError)
+      console.error('[PendingMatches POST] Error details:', JSON.stringify(insertError, null, 2))
+      console.error('[PendingMatches POST] Error code:', insertError.code)
+      console.error('[PendingMatches POST] Error message:', insertError.message)
+      console.error('[PendingMatches POST] Error hint:', insertError.hint)
+      return NextResponse.json({ 
+        error: 'Failed to create pending match', 
+        details: insertError.message,
+        code: insertError.code 
+      }, { status: 500 })
     }
 
-    console.log(`[PendingMatches] User ${userId} added to queue`)
+    console.log(`[PendingMatches POST] ✅ User ${userId} added to queue:`, pendingMatch)
 
     // Small delay to ensure database write has propagated
     await new Promise(resolve => setTimeout(resolve, 100))

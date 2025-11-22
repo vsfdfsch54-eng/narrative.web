@@ -110,7 +110,10 @@ export default function VibePage() {
 
   const handleConnect = async () => {
     const userId = getUserId()
+    console.log('[VibePage] handleConnect - userId:', userId, 'user object:', user)
+    
     if (!userId) {
+      console.error('[VibePage] No userId found, redirecting to home')
       router.push("/")
       return
     }
@@ -138,41 +141,54 @@ export default function VibePage() {
             userId, 
             vibe: selectedVibe.label 
           })
-        }).catch(err => console.error('Error saving vibe:', err))
+        }).catch(err => console.error('[VibePage] Error saving vibe:', err))
       }
+      
+      const requestBody = { 
+        userId,
+        vibe: selectedVibe?.label || null,
+        topic: selectedTopic?.label || null,
+        timeframe: selectedTimeLimit || null,
+      }
+      console.log('[VibePage] Calling /api/pending-matches with:', requestBody)
       
       // Create pending match and try to match immediately (INSTANT MATCHING)
       const response = await fetch('/api/pending-matches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId,
-          vibe: selectedVibe?.label || null,
-          topic: selectedTopic?.label || null,
-          timeframe: selectedTimeLimit || null,
-        }),
+        body: JSON.stringify(requestBody),
         cache: 'no-store'
       })
       
+      console.log('[VibePage] Response status:', response.status, response.statusText)
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorText = await response.text()
+        console.error('[VibePage] HTTP error response:', errorText)
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
       }
       
       const data = await response.json()
+      console.log('[VibePage] Response data:', JSON.stringify(data, null, 2))
       
       if (data.success && data.matched && data.match && data.otherUserId) {
         // Matched immediately! Navigate to chat
+        console.log('[VibePage] ✅ Matched immediately with:', data.otherUserId)
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
         // In queue, navigate to chat page which will poll for matches
+        console.log('[VibePage] ⏳ Added to queue, navigating to chat page')
         router.push("/chat")
       } else {
         // Unexpected response, still navigate to chat
-        console.error('Unexpected response from pending-matches:', data)
+        console.error('[VibePage] ❌ Unexpected response from pending-matches:', data)
         router.push("/chat")
       }
     } catch (error) {
-      console.error('Error connecting:', error)
+      console.error('[VibePage] ❌ Error connecting:', error)
+      if (error instanceof Error) {
+        console.error('[VibePage] Error stack:', error.stack)
+      }
       // Still navigate to chat page even if there's an error
       router.push("/chat")
     } finally {
@@ -182,7 +198,10 @@ export default function VibePage() {
 
   const handleSkip = async () => {
     const userId = getUserId()
+    console.log('[VibePage] handleSkip - userId:', userId, 'user object:', user)
+    
     if (!userId) {
+      console.error('[VibePage] No userId found, redirecting to home')
       router.push("/")
       return
     }
@@ -190,38 +209,51 @@ export default function VibePage() {
     setSaving(true)
     
     try {
+      const requestBody = { 
+        userId,
+        vibe: null,
+        topic: null,
+        timeframe: null,
+      }
+      console.log('[VibePage] Calling /api/pending-matches (skip) with:', requestBody)
+      
       // Create pending match without vibe/topic/timeframe (instant matching)
       const response = await fetch('/api/pending-matches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          userId,
-          vibe: null,
-          topic: null,
-          timeframe: null,
-        }),
+        body: JSON.stringify(requestBody),
         cache: 'no-store'
       })
       
+      console.log('[VibePage] Response status:', response.status, response.statusText)
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorText = await response.text()
+        console.error('[VibePage] HTTP error response:', errorText)
+        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
       }
       
       const data = await response.json()
+      console.log('[VibePage] Response data:', JSON.stringify(data, null, 2))
       
       if (data.success && data.matched && data.match && data.otherUserId) {
         // Matched immediately! Navigate to chat
+        console.log('[VibePage] ✅ Matched immediately with:', data.otherUserId)
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
         // In queue, navigate to chat page which will poll for matches
+        console.log('[VibePage] ⏳ Added to queue, navigating to chat page')
         router.push("/chat")
       } else {
         // Error or unexpected response, still navigate to chat
-        console.error('Unexpected response from pending-matches:', data)
+        console.error('[VibePage] ❌ Unexpected response from pending-matches:', data)
         router.push("/chat")
       }
     } catch (error) {
-      console.error('Error joining match queue:', error)
+      console.error('[VibePage] ❌ Error joining match queue:', error)
+      if (error instanceof Error) {
+        console.error('[VibePage] Error stack:', error.stack)
+      }
       // Still navigate to chat page even if there's an error
       router.push("/chat")
     } finally {
