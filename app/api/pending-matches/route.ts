@@ -203,6 +203,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`[PendingMatches POST] ✅ User ${userId} added to queue:`, pendingMatch)
 
+    // CRITICAL: Verify the insert actually worked by querying it back
+    const { data: verifyInsert, error: verifyError } = await supabase
+      .from('pending_matches')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (verifyError || !verifyInsert) {
+      console.error(`[PendingMatches POST] ❌ CRITICAL: Insert verification failed!`, verifyError)
+      console.error(`[PendingMatches POST] Pending match was not found after insert!`)
+      return NextResponse.json({ 
+        error: 'Failed to verify pending match was created',
+        details: verifyError?.message || 'Pending match not found after insert'
+      }, { status: 500 })
+    }
+
+    console.log(`[PendingMatches POST] ✅ Verified pending match exists:`, verifyInsert)
+
     // Small delay to ensure database write has propagated
     await new Promise(resolve => setTimeout(resolve, 100))
 

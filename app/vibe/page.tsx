@@ -151,6 +151,7 @@ export default function VibePage() {
         timeframe: selectedTimeLimit || null,
       }
       console.log('[VibePage] Calling /api/pending-matches with:', requestBody)
+      console.log('[VibePage] User object:', { id: user?.id, email: user?.email })
       
       // Create pending match and try to match immediately (INSTANT MATCHING)
       const response = await fetch('/api/pending-matches', {
@@ -161,15 +162,22 @@ export default function VibePage() {
       })
       
       console.log('[VibePage] Response status:', response.status, response.statusText)
+      console.log('[VibePage] Response headers:', Object.fromEntries(response.headers.entries()))
       
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('[VibePage] HTTP error response:', errorText)
+        console.error('[VibePage] ❌ HTTP error response:', errorText)
+        console.error('[VibePage] Full error details:', { status: response.status, statusText: response.statusText, body: errorText })
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
       }
       
       const data = await response.json()
-      console.log('[VibePage] Response data:', JSON.stringify(data, null, 2))
+      console.log('[VibePage] ✅ Response data:', JSON.stringify(data, null, 2))
+      
+      // Verify the response indicates success
+      if (!data.success) {
+        console.error('[VibePage] ❌ API returned success: false', data)
+      }
       
       if (data.success && data.matched && data.match && data.otherUserId) {
         // Matched immediately! Navigate to chat
