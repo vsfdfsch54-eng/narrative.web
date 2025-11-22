@@ -63,6 +63,19 @@ export async function POST(request: NextRequest) {
 
     console.log('[PendingMatches POST] ✅ User verified in database:', { id: userRecord.id, email: userRecord.email })
 
+    // Close any existing active chat matches for this user
+    const { error: closeMatchesError } = await supabase
+      .from('chat_matches')
+      .update({ status: 'ended' })
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      .eq('status', 'active')
+
+    if (closeMatchesError) {
+      console.error('[PendingMatches POST] Failed to close active matches:', closeMatchesError)
+    } else {
+      console.log('[PendingMatches POST] Closed previous active matches for this user')
+    }
+
     // BEFORE inserting: Clean ONLY this user's old rows
     await supabase.from('pending_matches').delete().eq('user_id', userId)
     console.log('[PendingMatches POST] Cleaned old rows for user:', userId)
