@@ -110,12 +110,16 @@ export default function ChatPage() {
         try {
           console.log(`[ChatPage] Polling for match (attempt ${pollCount}) for user ${user.id}`)
           
-          // Every 10 polls (5 seconds), also trigger matchmaking directly as backup
-          if (pollCount % 10 === 0) {
+          // Every 5 polls (2.5 seconds), trigger matchmaking directly as backup
+          if (pollCount % 5 === 0) {
             console.log(`[ChatPage] Triggering direct matchmaking as backup (poll ${pollCount})`)
             fetch('/api/matchmaking/process', { 
               method: 'GET',
               cache: 'no-store'
+            }).then(r => r.json()).then(data => {
+              if (data.matched > 0) {
+                console.log(`[ChatPage] ✅ Backup matchmaking matched ${data.matched} pair(s)`)
+              }
             }).catch(err => console.error('[ChatPage] Error triggering matchmaking:', err))
           }
           

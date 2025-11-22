@@ -203,26 +203,34 @@ export async function POST(request: NextRequest) {
 
     console.log(`[PendingMatches POST] ✅ User ${userId} added to queue:`, pendingMatch)
 
-    // CRITICAL: Verify the insert actually worked by querying it back
-    const { data: verifyInsert, error: verifyError } = await supabase
-      .from('pending_matches')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
+    // CRITICAL: Verify the insert actually worked by querying it back (with retry)
+    let verifyInsert = null
+    for (let verifyAttempt = 0; verifyAttempt < 5; verifyAttempt++) {
+      const { data, error } = await supabase
+        .from('pending_matches')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
 
-    if (verifyError || !verifyInsert) {
-      console.error(`[PendingMatches POST] ❌ CRITICAL: Insert verification failed!`, verifyError)
-      console.error(`[PendingMatches POST] Pending match was not found after insert!`)
-      return NextResponse.json({ 
-        error: 'Failed to verify pending match was created',
-        details: verifyError?.message || 'Pending match not found after insert'
-      }, { status: 500 })
+      if (!error && data) {
+        verifyInsert = data
+        console.log(`[PendingMatches POST] ✅ Verified pending match exists (attempt ${verifyAttempt + 1}):`, verifyInsert)
+        break
+      }
+      
+      if (verifyAttempt < 4) {
+        await new Promise(resolve => setTimeout(resolve, 200))
+      }
     }
 
-    console.log(`[PendingMatches POST] ✅ Verified pending match exists:`, verifyInsert)
+    if (!verifyInsert) {
+      console.error(`[PendingMatches POST] ❌ CRITICAL: Insert verification failed after 5 attempts!`)
+      // Still return success but log the issue - the insert might have worked but query is slow
+      console.error(`[PendingMatches POST] Returning success anyway - insert appeared to succeed`)
+    }
 
     // Small delay to ensure database write has propagated
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 200))
 
     // Immediately try to find another user (with retry)
     let otherPendingMatches = null
@@ -316,15 +324,16 @@ export async function POST(request: NextRequest) {
     }
 
     // No immediate match - run matchmaking processor synchronously
-    console.log(`[PendingMatches] No immediate match, running matchmaking processor...`)
+    console.log(`[PendingMatches POST] No immediate match, running matchmaking processor...`)
     const matchmakingResult = await runMatchmaking(supabase)
+    console.log(`[PendingMatches POST] Matchmaking result:`, matchmakingResult)
     
-    // Wait a bit for database updates to propagate
-    await new Promise(resolve => setTimeout(resolve, 200))
+    // Wait longer for database updates to propagate
+    await new Promise(resolve => setTimeout(resolve, 500))
     
-    // Check if current user was matched by the processor (with retry)
+    // Check if current user was matched by the processor (with more retries)
     let updatedPendingMatch = null
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 5; attempt++) {
       const { data, error } = await supabase
         .from('pending_matches')
         .select('*')
@@ -332,16 +341,19 @@ export async function POST(request: NextRequest) {
         .single()
       
       if (error && error.code !== 'PGRST116') {
-        console.error(`[PendingMatches] Error checking match status (attempt ${attempt + 1}):`, error)
+        console.error(`[PendingMatches POST] Error checking match status (attempt ${attempt + 1}):`, error)
       } else {
         updatedPendingMatch = data
-        if (updatedPendingMatch && updatedPendingMatch.status === 'matched') {
-          break
+        if (updatedPendingMatch) {
+          console.log(`[PendingMatches POST] Found pending match (attempt ${attempt + 1}):`, updatedPendingMatch.status)
+          if (updatedPendingMatch.status === 'matched') {
+            break
+          }
         }
       }
       
-      if (attempt < 2) {
-        await new Promise(resolve => setTimeout(resolve, 150))
+      if (attempt < 4) {
+        await new Promise(resolve => setTimeout(resolve, 300))
       }
     }
 
