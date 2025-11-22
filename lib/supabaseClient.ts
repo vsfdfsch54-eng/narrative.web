@@ -34,23 +34,24 @@ export const supabase = createClient(
   getSupabaseAnonKey()
 )
 
-// Server-side Supabase client (uses service role key - only use in API routes)
-// Service role key bypasses RLS automatically
-export const createServerClient = () => {
-  const supabaseUrl = getSupabaseUrl()
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
+// Server-side Supabase ADMIN client (uses service role key - only use in API routes)
+// Service role key bypasses RLS automatically - CRITICAL for matchmaking
+export function createServerClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+  if (!supabaseUrl) {
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
+  }
+
   if (!serviceRoleKey) {
     throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable')
   }
-  
+
   return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    },
-    db: {
-      schema: 'public'
+    auth: { 
+      autoRefreshToken: false, 
+      persistSession: false 
     }
   })
 }
