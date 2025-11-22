@@ -4,6 +4,23 @@ export const runtime = "nodejs"
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
 
+// Helper function to clean stale rows
+async function cleanStaleRows(supabase: ReturnType<typeof createServerClient>) {
+  const twoMinutesAgo = new Date(Date.now() - 1000 * 60 * 2).toISOString()
+  
+  // Delete rows that are matched, null status, or older than 2 minutes
+  const { error: deleteError } = await supabase
+    .from('pending_matches')
+    .delete()
+    .or(`status.eq.matched,status.is.null,created_at.lt.${twoMinutesAgo}`)
+  
+  if (deleteError) {
+    console.error('[PendingMatches] Error cleaning stale rows:', deleteError)
+  } else {
+    console.log('[PendingMatches] ✅ Cleaned stale rows')
+  }
+}
+
 // POST - Create pending match
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +36,9 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient()
     console.log('[PendingMatches POST] ✅ Service client created')
+
+    // Clean stale rows before processing
+    await cleanStaleRows(supabase)
 
     // Verify user exists in users table
     const { data: userRecord, error: userCheckError } = await supabase
@@ -37,8 +57,9 @@ export async function POST(request: NextRequest) {
 
     console.log('[PendingMatches POST] ✅ User verified in database:', { id: userRecord.id, email: userRecord.email })
 
-    // Remove any existing pending match for this user
+    // BEFORE inserting: Clean ONLY this user's old rows
     await supabase.from('pending_matches').delete().eq('user_id', userId)
+    console.log('[PendingMatches POST] Cleaned old rows for user:', userId)
 
     // Create new pending match
     const insertData = {
@@ -67,35 +88,17 @@ export async function POST(request: NextRequest) {
 
     console.log(`[PendingMatches POST] ✅ User ${userId} added to queue:`, pendingMatch)
 
-    // Verify the insert worked
-    let verifyInsert = null
-    for (let verifyAttempt = 0; verifyAttempt < 3; verifyAttempt++) {
-      const { data, error } = await supabase
-        .from('pending_matches')
-        .select('*')
-        .eq('user_id', userId)
-        .single()
-
-      if (!error && data) {
-        verifyInsert = data
-        console.log(`[PendingMatches POST] ✅ Verified pending match exists (attempt ${verifyAttempt + 1})`)
-        break
-      }
-      
-      if (verifyAttempt < 2) {
-        await new Promise(resolve => setTimeout(resolve, 200))
-      }
-    }
-
     // Small delay for database propagation
     await new Promise(resolve => setTimeout(resolve, 200))
 
-    // Try immediate match with another user
+    // Try immediate match with another FRESH user (within last 2 minutes)
+    const twoMinutesAgo = new Date(Date.now() - 1000 * 60 * 2).toISOString()
     const { data: otherPendingMatches } = await supabase
       .from('pending_matches')
       .select('*')
       .eq('status', 'searching')
       .neq('user_id', userId)
+      .gte('created_at', twoMinutesAgo)
       .order('created_at', { ascending: true })
       .limit(1)
 
@@ -133,6 +136,7 @@ export async function POST(request: NextRequest) {
             .single()
 
           if (existingMatch) {
+            // ALWAYS update both users' status to matched
             await supabase
               .from('pending_matches')
               .update({ status: 'matched', matched_at: new Date().toISOString() })
@@ -149,10 +153,20 @@ export async function POST(request: NextRequest) {
         }
         console.error('[PendingMatches POST] Error creating match:', matchError)
       } else if (chatMatch) {
-        await supabase
+        // ALWAYS update both users' status to matched
+        const { error: updateError } = await supabase
           .from('pending_matches')
           .update({ status: 'matched', matched_at: new Date().toISOString() })
           .in('user_id', [userId, otherUserId])
+
+        if (updateError) {
+          console.error('[PendingMatches POST] ⚠️ Error updating status but match created:', updateError)
+          // Retry update
+          await supabase
+            .from('pending_matches')
+            .update({ status: 'matched', matched_at: new Date().toISOString() })
+            .in('user_id', [userId, otherUserId])
+        }
 
         console.log(`[PendingMatches POST] ✅ Immediate match: ${userId} <-> ${otherUserId}`)
         return NextResponse.json({ 
@@ -262,4 +276,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
-
