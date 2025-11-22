@@ -8,7 +8,7 @@ import { createServerClient } from '@/lib/supabaseClient'
  * MATCHMAKING PROCESSOR FUNCTION
  * FIFO matching - matches ANY two users waiting (no filtering)
  */
-export async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
+async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
   try {
     // Get all users waiting for a match
     const { data: waitingUsers, error: fetchError } = await supabase
