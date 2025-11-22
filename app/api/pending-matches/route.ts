@@ -135,6 +135,24 @@ export async function POST(request: NextRequest) {
     const supabase = createServerClient()
     console.log('[PendingMatches POST] ✅ Service client created')
 
+    // CRITICAL: Verify user exists in users table (foreign key constraint)
+    const { data: userRecord, error: userCheckError } = await supabase
+      .from('users')
+      .select('id, email, name')
+      .eq('id', userId)
+      .single()
+
+    if (userCheckError || !userRecord) {
+      console.error('[PendingMatches POST] ❌ User not found in users table:', userId)
+      console.error('[PendingMatches POST] User check error:', userCheckError)
+      return NextResponse.json({ 
+        error: 'User not found. Please complete signup first.',
+        details: userCheckError?.message || 'User does not exist in database'
+      }, { status: 404 })
+    }
+
+    console.log('[PendingMatches POST] ✅ User verified in database:', { id: userRecord.id, email: userRecord.email })
+
     // Remove any existing pending match for this user
     const deleteResult = await supabase.from('pending_matches').delete().eq('user_id', userId)
     if (deleteResult.error) {
