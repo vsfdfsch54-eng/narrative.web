@@ -104,8 +104,12 @@ export default function ChatPage() {
         .subscribe()
 
       // Poll every 500ms to check for matches (GET endpoint now runs matchmaking)
+      let pollCount = 0
       const interval = setInterval(async () => {
+        pollCount++
         try {
+          console.log(`[ChatPage] Polling for match (attempt ${pollCount}) for user ${user.id}`)
+          
           // Check if user was matched (GET endpoint runs matchmaking automatically)
           const response = await fetch(`/api/pending-matches?userId=${user.id}`, {
             cache: 'no-store',
@@ -115,13 +119,22 @@ export default function ChatPage() {
           })
           
           if (!response.ok) {
+            console.error(`[ChatPage] HTTP error! status: ${response.status}`)
             throw new Error(`HTTP error! status: ${response.status}`)
           }
           
           const data = await response.json()
+          console.log(`[ChatPage] Poll response:`, { 
+            success: data.success, 
+            matched: data.matched, 
+            inQueue: data.inQueue,
+            hasMatch: !!data.match,
+            hasOtherUserId: !!data.otherUserId
+          })
           
-          if (data.success && data.matched && data.match) {
+          if (data.success && data.matched && data.match && data.otherUserId) {
             // Match found! Navigate immediately
+            console.log(`[ChatPage] ✅ Match found! Navigating to chat with ${data.otherUserId}`)
             clearInterval(interval)
             channel.unsubscribe()
             router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
@@ -129,6 +142,7 @@ export default function ChatPage() {
           }
           
           if (!data.inQueue) {
+            console.log(`[ChatPage] User no longer in queue, checking for existing matches...`)
             // No longer in queue - check for existing matches
             clearInterval(interval)
             channel.unsubscribe()
@@ -144,12 +158,16 @@ export default function ChatPage() {
                 if (activeMatches.length > 0) {
                   const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
                   const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
+                  console.log(`[ChatPage] Found existing match, navigating to ${otherUserId}`)
                   router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
                   return
                 }
               }
             }
+            console.log(`[ChatPage] No matches found, stopping polling`)
             setLoading(false)
+          } else {
+            console.log(`[ChatPage] Still in queue, will poll again...`)
           }
         } catch (error) {
           console.error('[ChatPage] Error polling for match:', error)

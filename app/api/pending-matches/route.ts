@@ -361,19 +361,37 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const userId = searchParams.get('userId')
 
+  console.log('[PendingMatches GET] Request received for userId:', userId)
+
   if (!userId) {
+    console.error('[PendingMatches GET] ❌ Missing userId query parameter')
     return NextResponse.json({ error: 'Missing userId query parameter' }, { status: 400 })
   }
 
   try {
     const supabase = createServerClient()
 
+    // First, check current status before running matchmaking
+    const { data: initialPendingMatch } = await supabase
+      .from('pending_matches')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+    
+    console.log('[PendingMatches GET] Initial pending match status:', initialPendingMatch?.status || 'not found')
+
     // First, run matchmaking processor to catch any waiting pairs
     console.log(`[PendingMatches GET] Running matchmaking for user ${userId}`)
     const matchmakingResult = await runMatchmaking(supabase)
+    console.log(`[PendingMatches GET] Matchmaking result:`, matchmakingResult)
     if (matchmakingResult.matched > 0) {
-      console.log(`[PendingMatches GET] Matchmaking processor matched ${matchmakingResult.matched} pair(s)`)
+      console.log(`[PendingMatches GET] ✅ Matchmaking processor matched ${matchmakingResult.matched} pair(s)`)
+    } else {
+      console.log(`[PendingMatches GET] ⏳ No matches made (${matchmakingResult.waiting || 0} users waiting)`)
     }
+
+    // Wait a moment for database updates to propagate
+    await new Promise(resolve => setTimeout(resolve, 100))
 
     // Check if user's pending match was matched
     const { data: pendingMatch, error: pendingError } = await supabase
@@ -382,12 +400,20 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId)
       .single()
 
+    console.log('[PendingMatches GET] Pending match check:', {
+      found: !!pendingMatch,
+      status: pendingMatch?.status,
+      error: pendingError?.code
+    })
+
     if (pendingError && pendingError.code !== 'PGRST116') {
-      console.error('[PendingMatches] Error checking pending match:', pendingError)
+      console.error('[PendingMatches GET] Error checking pending match:', pendingError)
       return NextResponse.json({ success: true, matched: false, inQueue: false })
     }
 
     if (pendingMatch && pendingMatch.status === 'matched') {
+      console.log(`[PendingMatches GET] ✅ User ${userId} status is 'matched', finding chat match...`)
+      
       // User was matched! Find the chat match
       const { data: matches, error: matchesError } = await supabase
         .from('chat_matches')
@@ -403,8 +429,11 @@ export async function GET(request: NextRequest) {
         const match = Array.isArray(matches) ? matches[0] : matches
         if (match) {
           const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
-          console.log(`[PendingMatches GET] ✅ User ${userId} matched with ${otherUserId}`)
+          console.log(`[PendingMatches GET] ✅ Found match! User ${userId} matched with ${otherUserId}`)
+          
+          // Clean up pending match
           await supabase.from('pending_matches').delete().eq('user_id', userId)
+          
           return NextResponse.json({ 
             success: true, 
             matched: true,
@@ -412,13 +441,16 @@ export async function GET(request: NextRequest) {
             otherUserId: otherUserId 
           })
         } else {
-          console.warn(`[PendingMatches GET] User ${userId} has status 'matched' but no chat match found`)
+          console.warn(`[PendingMatches GET] ⚠️ User ${userId} has status 'matched' but no chat match found in results`)
         }
+      } else {
+        console.warn(`[PendingMatches GET] ⚠️ User ${userId} has status 'matched' but matches query returned null/empty`)
       }
     }
 
     // Check if still in queue
     if (pendingMatch && pendingMatch.status === 'searching') {
+      console.log(`[PendingMatches GET] ⏳ User ${userId} still in queue (searching)`)
       return NextResponse.json({ 
         success: true, 
         matched: false,
@@ -426,6 +458,8 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // No pending match found - user might have been matched and cleaned up, or never joined
+    console.log(`[PendingMatches GET] ℹ️ User ${userId} has no pending match (might be matched already or never joined)`)
     return NextResponse.json({ 
       success: true, 
       matched: false,
