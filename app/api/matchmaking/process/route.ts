@@ -32,6 +32,13 @@ async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
     }
 
     // Get ONLY fresh users waiting for a match (within last 2 minutes)
+    console.log('[Matchmaking] 🔍 Querying for fresh waiting users...')
+    console.log('[Matchmaking] Query filters:', {
+      status: 'searching',
+      created_at_gte: twoMinutesAgo,
+      order: 'created_at ASC'
+    })
+    
     const { data: waitingUsers, error: fetchError } = await supabase
       .from('pending_matches')
       .select('*')
@@ -40,17 +47,34 @@ async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
       .order('created_at', { ascending: true })
 
     if (fetchError) {
-      console.error('[Matchmaking] Error fetching waiting users:', fetchError)
+      console.error('[Matchmaking] ❌ Error fetching waiting users:', fetchError)
       console.error('[Matchmaking] Error details:', JSON.stringify(fetchError, null, 2))
       return { matched: 0 }
     }
 
+    console.log(`[Matchmaking] 📊 Query result: Found ${waitingUsers?.length || 0} fresh user(s) waiting`)
+    
+    if (waitingUsers && waitingUsers.length > 0) {
+      console.log('[Matchmaking] Waiting users details:')
+      waitingUsers.forEach((user, index) => {
+        console.log(`[Matchmaking]   User ${index + 1}:`, {
+          id: user.id,
+          user_id: user.user_id,
+          vibe: user.vibe,
+          topic: user.topic,
+          timeframe: user.timeframe,
+          status: user.status,
+          created_at: user.created_at
+        })
+      })
+    }
+
     if (!waitingUsers || waitingUsers.length < 2) {
-      console.log(`[Matchmaking] Only ${waitingUsers?.length || 0} fresh user(s) waiting, need 2+ to match`)
+      console.log(`[Matchmaking] ⏸️  Only ${waitingUsers?.length || 0} fresh user(s) waiting, need 2+ to match`)
       return { matched: 0, waiting: waitingUsers?.length || 0 }
     }
 
-    console.log(`[Matchmaking] Processing ${waitingUsers.length} fresh waiting users`)
+    console.log(`[Matchmaking] ✅ Processing ${waitingUsers.length} fresh waiting users for matching`)
 
     let matchedCount = 0
     const processedUserIds = new Set<string>()

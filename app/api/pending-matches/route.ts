@@ -33,7 +33,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, vibe, topic, timeframe } = body
 
-    console.log('[PendingMatches POST] Received request:', { userId, vibe, topic, timeframe })
+    console.log('[PendingMatches POST] ==========================================')
+    console.log('[PendingMatches POST] Received request:', { 
+      userId, 
+      vibe: vibe || null, 
+      topic: topic || null, 
+      timeframe: timeframe || null 
+    })
+    console.log('[PendingMatches POST] Request body keys:', Object.keys(body))
 
     if (!userId) {
       console.error('[PendingMatches POST] ❌ Missing userId in request body')
@@ -41,7 +48,7 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createServerClient()
-    console.log('[PendingMatches POST] ✅ Service client created')
+    console.log('[PendingMatches POST] ✅ Service client created (using SUPABASE_SERVICE_ROLE_KEY)')
 
     // Clean stale rows before processing
     await cleanStaleRows(supabase)
@@ -88,7 +95,14 @@ export async function POST(request: NextRequest) {
       timeframe: timeframe || null,
       status: 'searching',
     }
-    console.log('[PendingMatches POST] Inserting pending match:', insertData)
+    console.log('[PendingMatches POST] 📝 Inserting pending match with data:', JSON.stringify(insertData, null, 2))
+    console.log('[PendingMatches POST] Data breakdown:', {
+      user_id: insertData.user_id,
+      vibe: insertData.vibe,
+      topic: insertData.topic,
+      timeframe: insertData.timeframe,
+      status: insertData.status
+    })
     
     const { data: pendingMatch, error: insertError } = await supabase
       .from('pending_matches')
@@ -98,6 +112,7 @@ export async function POST(request: NextRequest) {
 
     if (insertError) {
       console.error('[PendingMatches POST] ❌ Error creating pending match:', insertError)
+      console.error('[PendingMatches POST] Error details:', JSON.stringify(insertError, null, 2))
       return NextResponse.json({ 
         error: 'Failed to create pending match', 
         details: insertError.message,
@@ -105,7 +120,17 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    console.log(`[PendingMatches POST] ✅ User ${userId} added to queue:`, pendingMatch)
+    console.log(`[PendingMatches POST] ✅ User ${userId} successfully inserted into pending_matches:`)
+    console.log('[PendingMatches POST] Inserted row:', JSON.stringify(pendingMatch, null, 2))
+    console.log('[PendingMatches POST] Row details:', {
+      id: pendingMatch.id,
+      user_id: pendingMatch.user_id,
+      vibe: pendingMatch.vibe,
+      topic: pendingMatch.topic,
+      timeframe: pendingMatch.timeframe,
+      status: pendingMatch.status,
+      created_at: pendingMatch.created_at
+    })
 
     // Small delay for database propagation
     await new Promise(resolve => setTimeout(resolve, 200))
