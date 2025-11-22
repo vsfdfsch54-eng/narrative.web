@@ -19,6 +19,21 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
 
+    // Clean stale rows before checking status
+    const twoMinutesAgo = new Date(Date.now() - 1000 * 60 * 2).toISOString()
+    
+    // Delete rows that are matched or null status
+    await supabase
+      .from('pending_matches')
+      .delete()
+      .or('status.eq.matched,status.is.null')
+    
+    // Delete rows older than 2 minutes
+    await supabase
+      .from('pending_matches')
+      .delete()
+      .lt('created_at', twoMinutesAgo)
+
     // First, trigger matchmaking processor to catch any waiting pairs
     const origin = request.headers.get('origin') || request.headers.get('host') || 'localhost:3000'
     const protocol = request.headers.get('x-forwarded-proto') || (origin.includes('localhost') ? 'http' : 'https')
