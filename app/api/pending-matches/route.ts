@@ -4,121 +4,6 @@ export const runtime = "nodejs"
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
 
-// Helper function to run matchmaking synchronously
-async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
-  try {
-    // Get all users waiting for a match
-    const { data: waitingUsers, error: fetchError } = await supabase
-      .from('pending_matches')
-      .select('*')
-      .eq('status', 'searching')
-      .order('created_at', { ascending: true })
-
-    if (fetchError) {
-      console.error('[Matchmaking] Error fetching waiting users:', fetchError)
-      console.error('[Matchmaking] Error details:', JSON.stringify(fetchError, null, 2))
-      return { matched: 0 }
-    }
-
-    if (!waitingUsers || waitingUsers.length < 2) {
-      console.log(`[Matchmaking] Only ${waitingUsers?.length || 0} user(s) waiting, need 2+ to match`)
-      return { matched: 0, waiting: waitingUsers?.length || 0 }
-    }
-
-    console.log(`[Matchmaking] Processing ${waitingUsers.length} waiting users`)
-
-    let matchedCount = 0
-    const processedUserIds = new Set<string>()
-
-    // Match users in pairs
-    for (let i = 0; i < waitingUsers.length - 1; i += 2) {
-      const user1 = waitingUsers[i]
-      const user2 = waitingUsers[i + 1]
-
-      if (processedUserIds.has(user1.user_id) || processedUserIds.has(user2.user_id)) {
-        continue
-      }
-
-      const user1Id = user1.user_id < user2.user_id ? user1.user_id : user2.user_id
-      const user2Id = user1.user_id < user2.user_id ? user2.user_id : user1.user_id
-      const isUser1First = user1.user_id === user1Id
-
-      // Create chat match
-      const { data: chatMatch, error: matchError } = await supabase
-        .from('chat_matches')
-        .insert({
-          user1_id: user1Id,
-          user2_id: user2Id,
-          user1_vibe: isUser1First ? (user1.vibe || null) : (user2.vibe || null),
-          user1_topic: isUser1First ? (user1.topic || null) : (user2.topic || null),
-          user1_timeframe: isUser1First ? (user1.timeframe || null) : (user2.timeframe || null),
-          user2_vibe: isUser1First ? (user2.vibe || null) : (user1.vibe || null),
-          user2_topic: isUser1First ? (user2.topic || null) : (user1.topic || null),
-          user2_timeframe: isUser1First ? (user2.timeframe || null) : (user1.timeframe || null),
-          status: 'active',
-        })
-        .select()
-        .single()
-
-      if (matchError) {
-        if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
-          // Match already exists, just update pending statuses
-          await supabase
-            .from('pending_matches')
-            .update({ status: 'matched', matched_at: new Date().toISOString() })
-            .in('user_id', [user1.user_id, user2.user_id])
-          matchedCount++
-          processedUserIds.add(user1.user_id)
-          processedUserIds.add(user2.user_id)
-          console.log(`[Matchmaking] ✅ Matched existing: ${user1.user_id} <-> ${user2.user_id}`)
-        } else {
-          console.error(`[Matchmaking] Error creating match:`, matchError)
-        }
-        continue
-      }
-
-      if (chatMatch) {
-        // Update both pending matches to matched - try multiple times if needed
-        let updateSuccess = false
-        for (let updateAttempt = 0; updateAttempt < 3; updateAttempt++) {
-          const { error: updateError, data: updateData } = await supabase
-            .from('pending_matches')
-            .update({ status: 'matched', matched_at: new Date().toISOString() })
-            .in('user_id', [user1.user_id, user2.user_id])
-            .select()
-
-          if (updateError) {
-            console.error(`[Matchmaking] Error updating pending matches (attempt ${updateAttempt + 1}):`, updateError)
-            if (updateAttempt < 2) {
-              await new Promise(resolve => setTimeout(resolve, 100))
-            }
-          } else {
-            console.log(`[Matchmaking] ✅ Updated ${updateData?.length || 0} pending match(es) to 'matched'`)
-            updateSuccess = true
-            break
-          }
-        }
-
-        if (!updateSuccess) {
-          console.error(`[Matchmaking] ⚠️ Failed to update pending matches after 3 attempts, but match was created`)
-        }
-
-        matchedCount++
-        processedUserIds.add(user1.user_id)
-        processedUserIds.add(user2.user_id)
-        console.log(`[Matchmaking] ✅ Matched: ${user1.user_id} <-> ${user2.user_id} (chat_match created)`)
-      } else {
-        console.warn(`[Matchmaking] ⚠️ Chat match creation returned null for ${user1.user_id} and ${user2.user_id}`)
-      }
-    }
-
-    return { matched: matchedCount }
-  } catch (error) {
-    console.error('[Matchmaking] Error:', error)
-    return { matched: 0 }
-  }
-}
-
 // POST - Create pending match and try to match immediately
 export async function POST(request: NextRequest) {
   try {
@@ -225,7 +110,6 @@ export async function POST(request: NextRequest) {
 
     if (!verifyInsert) {
       console.error(`[PendingMatches POST] ❌ CRITICAL: Insert verification failed after 5 attempts!`)
-      // Still return success but log the issue - the insert might have worked but query is slow
       console.error(`[PendingMatches POST] Returning success anyway - insert appeared to succeed`)
     }
 
@@ -244,7 +128,7 @@ export async function POST(request: NextRequest) {
         .limit(1)
       
       if (error) {
-        console.error(`[PendingMatches] Error finding other users (attempt ${attempt + 1}):`, error)
+        console.error(`[PendingMatches POST] Error finding other users (attempt ${attempt + 1}):`, error)
       } else {
         otherPendingMatches = data
         if (otherPendingMatches && otherPendingMatches.length > 0) {
@@ -297,7 +181,7 @@ export async function POST(request: NextRequest) {
               .update({ status: 'matched', matched_at: new Date().toISOString() })
               .in('user_id', [userId, otherUserId])
 
-            console.log(`[PendingMatches] ✅ Immediate match (existing): ${userId} <-> ${otherUserId}`)
+            console.log(`[PendingMatches POST] ✅ Immediate match (existing): ${userId} <-> ${otherUserId}`)
             return NextResponse.json({ 
               success: true, 
               matched: true,
@@ -306,14 +190,14 @@ export async function POST(request: NextRequest) {
             })
           }
         }
-        console.error('[PendingMatches] Error creating match:', matchError)
+        console.error('[PendingMatches POST] Error creating match:', matchError)
       } else if (chatMatch) {
         await supabase
           .from('pending_matches')
           .update({ status: 'matched', matched_at: new Date().toISOString() })
           .in('user_id', [userId, otherUserId])
 
-        console.log(`[PendingMatches] ✅ Immediate match: ${userId} <-> ${otherUserId}`)
+        console.log(`[PendingMatches POST] ✅ Immediate match: ${userId} <-> ${otherUserId}`)
         return NextResponse.json({ 
           success: true, 
           matched: true,
@@ -323,15 +207,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // No immediate match - run matchmaking processor synchronously
-    console.log(`[PendingMatches POST] No immediate match, running matchmaking processor...`)
-    const matchmakingResult = await runMatchmaking(supabase)
-    console.log(`[PendingMatches POST] Matchmaking result:`, matchmakingResult)
+    // No immediate match - trigger matchmaking processor
+    console.log(`[PendingMatches POST] No immediate match, triggering matchmaking processor...`)
     
-    // Wait longer for database updates to propagate
+    // Call matchmaking processor endpoint
+    const origin = request.headers.get('origin') || request.headers.get('host') || 'localhost:3000'
+    const protocol = request.headers.get('x-forwarded-proto') || (origin.includes('localhost') ? 'http' : 'https')
+    const baseUrl = `${protocol}://${origin.replace(/^https?:\/\//, '')}`
+    
+    try {
+      const matchmakingResponse = await fetch(`${baseUrl}/api/matchmaking/process`, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      })
+      
+      if (matchmakingResponse.ok) {
+        const matchmakingData = await matchmakingResponse.json()
+        console.log(`[PendingMatches POST] Matchmaking processor result:`, matchmakingData)
+      }
+    } catch (err) {
+      console.error('[PendingMatches POST] Error calling matchmaking processor:', err)
+    }
+    
+    // Wait for database updates to propagate
     await new Promise(resolve => setTimeout(resolve, 500))
     
-    // Check if current user was matched by the processor (with more retries)
+    // Check if current user was matched by the processor (with retries)
     let updatedPendingMatch = null
     for (let attempt = 0; attempt < 5; attempt++) {
       const { data, error } = await supabase
@@ -368,12 +272,12 @@ export async function POST(request: NextRequest) {
         .limit(1)
 
       if (matchesError) {
-        console.error('[PendingMatches] Error finding chat match:', matchesError)
+        console.error('[PendingMatches POST] Error finding chat match:', matchesError)
       } else if (matches) {
         const match = Array.isArray(matches) ? matches[0] : matches
         if (match) {
           const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
-          console.log(`[PendingMatches] ✅ Processor matched: ${userId} <-> ${otherUserId}`)
+          console.log(`[PendingMatches POST] ✅ Processor matched: ${userId} <-> ${otherUserId}`)
           return NextResponse.json({ 
             success: true, 
             matched: true,
@@ -384,15 +288,55 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`[PendingMatches] User ${userId} in queue (${matchmakingResult.matched} pairs matched by processor)`)
+    // Final check - verify user is still in queue
+    const { data: finalCheck } = await supabase
+      .from('pending_matches')
+      .select('*')
+      .eq('user_id', userId)
+      .single()
+
+    if (finalCheck && finalCheck.status === 'searching') {
+      console.log(`[PendingMatches POST] ✅ User ${userId} confirmed in queue (status: searching)`)
+      return NextResponse.json({ 
+        success: true, 
+        inQueue: true,
+        pendingMatch: finalCheck,
+        message: 'Added to queue. Matching in progress...' 
+      })
+    } else if (finalCheck && finalCheck.status === 'matched') {
+      // User was matched! Find the chat match
+      const { data: matches } = await supabase
+        .from('chat_matches')
+        .select('*')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (matches) {
+        const match = Array.isArray(matches) ? matches[0] : matches
+        if (match) {
+          const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
+          console.log(`[PendingMatches POST] ✅ User was matched during processing: ${userId} <-> ${otherUserId}`)
+          return NextResponse.json({ 
+            success: true, 
+            matched: true,
+            match: match,
+            otherUserId: otherUserId 
+          })
+        }
+      }
+    }
+
+    console.log(`[PendingMatches POST] ⚠️ User ${userId} final status:`, finalCheck?.status || 'not found')
     return NextResponse.json({ 
       success: true, 
-      inQueue: true,
-      pendingMatch: pendingMatch,
-      message: 'Added to queue. Matching in progress...' 
+      inQueue: !!finalCheck && finalCheck.status === 'searching',
+      pendingMatch: finalCheck || pendingMatch,
+      message: finalCheck ? 'Processing...' : 'Added to queue. Matching in progress...' 
     })
   } catch (error) {
-    console.error('[PendingMatches] Error in POST:', error)
+    console.error('[PendingMatches POST] Error in POST:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -412,23 +356,30 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
 
-    // First, check current status before running matchmaking
-    const { data: initialPendingMatch } = await supabase
-      .from('pending_matches')
-      .select('*')
-      .eq('user_id', userId)
-      .single()
+    // First, trigger matchmaking processor to catch any waiting pairs
+    const origin = request.headers.get('origin') || request.headers.get('host') || 'localhost:3000'
+    const protocol = request.headers.get('x-forwarded-proto') || (origin.includes('localhost') ? 'http' : 'https')
+    const baseUrl = `${protocol}://${origin.replace(/^https?:\/\//, '')}`
     
-    console.log('[PendingMatches GET] Initial pending match status:', initialPendingMatch?.status || 'not found')
-
-    // First, run matchmaking processor to catch any waiting pairs
-    console.log(`[PendingMatches GET] Running matchmaking for user ${userId}`)
-    const matchmakingResult = await runMatchmaking(supabase)
-    console.log(`[PendingMatches GET] Matchmaking result:`, matchmakingResult)
-    if (matchmakingResult.matched > 0) {
-      console.log(`[PendingMatches GET] ✅ Matchmaking processor matched ${matchmakingResult.matched} pair(s)`)
-    } else {
-      console.log(`[PendingMatches GET] ⏳ No matches made (${matchmakingResult.waiting || 0} users waiting)`)
+    try {
+      console.log(`[PendingMatches GET] Triggering matchmaking processor for user ${userId}`)
+      const matchmakingResponse = await fetch(`${baseUrl}/api/matchmaking/process`, {
+        method: 'GET',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        }
+      })
+      
+      if (matchmakingResponse.ok) {
+        const matchmakingData = await matchmakingResponse.json()
+        console.log(`[PendingMatches GET] Matchmaking result:`, matchmakingData)
+        if (matchmakingData.matched > 0) {
+          console.log(`[PendingMatches GET] ✅ Matchmaking processor matched ${matchmakingData.matched} pair(s)`)
+        }
+      }
+    } catch (err) {
+      console.error('[PendingMatches GET] Error calling matchmaking processor:', err)
     }
 
     // Wait a moment for database updates to propagate
@@ -507,7 +458,7 @@ export async function GET(request: NextRequest) {
       inQueue: false 
     })
   } catch (error) {
-    console.error('[PendingMatches] Error in GET:', error)
+    console.error('[PendingMatches GET] Error in GET:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
@@ -526,13 +477,13 @@ export async function DELETE(request: NextRequest) {
     const { error } = await supabase.from('pending_matches').delete().eq('user_id', userId)
 
     if (error) {
-      console.error('[PendingMatches] Error removing from pending matches:', error)
+      console.error('[PendingMatches DELETE] Error removing from pending matches:', error)
       return NextResponse.json({ error: 'Failed to remove from pending matches' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('[PendingMatches] Error in DELETE:', error)
+    console.error('[PendingMatches DELETE] Error in DELETE:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

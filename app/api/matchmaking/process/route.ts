@@ -5,84 +5,46 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
 
 /**
- * MATCHMAKING PROCESSOR
- * Runs every 5 seconds to pair waiting users (FIFO)
- * No filtering - matches ANY two users waiting
+ * MATCHMAKING PROCESSOR FUNCTION
+ * FIFO matching - matches ANY two users waiting (no filtering)
  */
-export async function GET(request: NextRequest) {
+export async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
   try {
-    const supabase = createServerClient()
-    
-    // Get all users waiting for a match (FIFO order)
+    // Get all users waiting for a match
     const { data: waitingUsers, error: fetchError } = await supabase
       .from('pending_matches')
       .select('*')
       .eq('status', 'searching')
-      .order('created_at', { ascending: true }) // FIFO: oldest first
+      .order('created_at', { ascending: true })
 
     if (fetchError) {
       console.error('[Matchmaking] Error fetching waiting users:', fetchError)
-      return NextResponse.json(
-        { error: 'Failed to fetch waiting users', details: fetchError.message },
-        { status: 500 }
-      )
-    }
-
-    console.log(`[Matchmaking] Found ${waitingUsers?.length || 0} users waiting`)
-
-    // Log all waiting user IDs for debugging
-    if (waitingUsers && waitingUsers.length > 0) {
-      console.log(`[Matchmaking] Waiting user IDs:`, waitingUsers.map(u => u.user_id))
+      console.error('[Matchmaking] Error details:', JSON.stringify(fetchError, null, 2))
+      return { matched: 0 }
     }
 
     if (!waitingUsers || waitingUsers.length < 2) {
-      return NextResponse.json({ 
-        success: true, 
-        matched: 0,
-        waiting: waitingUsers?.length || 0,
-        message: `Only ${waitingUsers?.length || 0} user(s) waiting, need 2+ to match` 
-      })
+      console.log(`[Matchmaking] Only ${waitingUsers?.length || 0} user(s) waiting, need 2+ to match`)
+      return { matched: 0, waiting: waitingUsers?.length || 0 }
     }
 
+    console.log(`[Matchmaking] Processing ${waitingUsers.length} waiting users`)
+
     let matchedCount = 0
-    const pairs: Array<{ user1: string, user2: string }> = []
     const processedUserIds = new Set<string>()
 
-    // Pair users in FIFO order (first two, then next two, etc.)
+    // Match users in pairs
     for (let i = 0; i < waitingUsers.length - 1; i += 2) {
       const user1 = waitingUsers[i]
       const user2 = waitingUsers[i + 1]
 
-      // Skip if either user was already processed in this run
       if (processedUserIds.has(user1.user_id) || processedUserIds.has(user2.user_id)) {
         continue
       }
 
-      // Use consistent UUID ordering for chat_matches
       const user1Id = user1.user_id < user2.user_id ? user1.user_id : user2.user_id
       const user2Id = user1.user_id < user2.user_id ? user2.user_id : user1.user_id
-
-      // Determine which user's data goes where
       const isUser1First = user1.user_id === user1Id
-
-      // Verify both users are still searching before creating match
-      // Use a more lenient check - if at least one is searching, try to match
-      const { data: verifyUsers } = await supabase
-        .from('pending_matches')
-        .select('user_id, status')
-        .in('user_id', [user1.user_id, user2.user_id])
-        .eq('status', 'searching')
-
-      if (!verifyUsers || verifyUsers.length < 2) {
-        console.log(`[Matchmaking] Users ${user1.user_id} and ${user2.user_id} - only ${verifyUsers?.length || 0} still searching, skipping`)
-        continue
-      }
-
-      // Double-check we have exactly 2 users
-      if (verifyUsers.length !== 2) {
-        console.log(`[Matchmaking] Expected 2 users, got ${verifyUsers.length}, skipping`)
-        continue
-      }
 
       // Create chat match
       const { data: chatMatch, error: matchError } = await supabase
@@ -102,78 +64,91 @@ export async function GET(request: NextRequest) {
         .single()
 
       if (matchError) {
-        // If duplicate, try to get existing match
         if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
-          const { data: existingMatch } = await supabase
-            .from('chat_matches')
-            .select('*')
-            .or(`and(user1_id.eq.${user1Id},user2_id.eq.${user2Id}),and(user1_id.eq.${user2Id},user2_id.eq.${user1Id})`)
-            .single()
-
-          if (existingMatch) {
-            // Match already exists, just update pending statuses
-            await supabase
-              .from('pending_matches')
-              .update({ 
-                status: 'matched', 
-                matched_at: new Date().toISOString() 
-              })
-              .in('user_id', [user1.user_id, user2.user_id])
-
-            matchedCount++
-            pairs.push({ user1: user1.user_id, user2: user2.user_id })
-            continue
-          }
+          // Match already exists, just update pending statuses
+          await supabase
+            .from('pending_matches')
+            .update({ status: 'matched', matched_at: new Date().toISOString() })
+            .in('user_id', [user1.user_id, user2.user_id])
+          matchedCount++
+          processedUserIds.add(user1.user_id)
+          processedUserIds.add(user2.user_id)
+          console.log(`[Matchmaking] ✅ Matched existing: ${user1.user_id} <-> ${user2.user_id}`)
+        } else {
+          console.error(`[Matchmaking] Error creating match:`, matchError)
         }
-        
-        console.error(`Error creating match for ${user1.user_id} and ${user2.user_id}:`, matchError)
-        continue // Skip this pair and continue with next
+        continue
       }
 
       if (chatMatch) {
-        // Update both pending matches to matched
-        const { error: updateError } = await supabase
-          .from('pending_matches')
-          .update({ 
-            status: 'matched', 
-            matched_at: new Date().toISOString() 
-          })
-          .in('user_id', [user1.user_id, user2.user_id])
+        // Update both pending matches to matched - try multiple times if needed
+        let updateSuccess = false
+        for (let updateAttempt = 0; updateAttempt < 3; updateAttempt++) {
+          const { error: updateError, data: updateData } = await supabase
+            .from('pending_matches')
+            .update({ status: 'matched', matched_at: new Date().toISOString() })
+            .in('user_id', [user1.user_id, user2.user_id])
+            .select()
 
-        if (updateError) {
-          console.error(`[Matchmaking] Error updating pending matches for ${user1.user_id} and ${user2.user_id}:`, updateError)
-          // Still count as matched since chat_match was created
-          matchedCount++
-          pairs.push({ user1: user1.user_id, user2: user2.user_id })
-          processedUserIds.add(user1.user_id)
-          processedUserIds.add(user2.user_id)
-          console.log(`[Matchmaking] Matched ${user1.user_id} with ${user2.user_id} (pending update failed but match created)`)
-        } else {
-          matchedCount++
-          pairs.push({ user1: user1.user_id, user2: user2.user_id })
-          processedUserIds.add(user1.user_id)
-          processedUserIds.add(user2.user_id)
-          console.log(`[Matchmaking] ✅ Successfully matched ${user1.user_id} with ${user2.user_id}`)
+          if (updateError) {
+            console.error(`[Matchmaking] Error updating pending matches (attempt ${updateAttempt + 1}):`, updateError)
+            if (updateAttempt < 2) {
+              await new Promise(resolve => setTimeout(resolve, 100))
+            }
+          } else {
+            console.log(`[Matchmaking] ✅ Updated ${updateData?.length || 0} pending match(es) to 'matched'`)
+            updateSuccess = true
+            break
+          }
         }
+
+        if (!updateSuccess) {
+          console.error(`[Matchmaking] ⚠️ Failed to update pending matches after 3 attempts, but match was created`)
+        }
+
+        matchedCount++
+        processedUserIds.add(user1.user_id)
+        processedUserIds.add(user2.user_id)
+        console.log(`[Matchmaking] ✅ Matched: ${user1.user_id} <-> ${user2.user_id} (chat_match created)`)
       } else {
-        console.error(`[Matchmaking] Chat match creation returned null for ${user1.user_id} and ${user2.user_id}`)
+        console.warn(`[Matchmaking] ⚠️ Chat match creation returned null for ${user1.user_id} and ${user2.user_id}`)
       }
     }
 
-    console.log(`[Matchmaking] Completed: ${matchedCount} pair(s) matched`)
+    return { matched: matchedCount }
+  } catch (error) {
+    console.error('[Matchmaking] Error:', error)
+    return { matched: 0 }
+  }
+}
+
+/**
+ * GET - Run matchmaking processor
+ * This endpoint is called by:
+ * - POST /api/pending-matches (after adding user to queue)
+ * - GET /api/pending-matches (during polling)
+ * - Client-side polling (as backup)
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = createServerClient()
+    
+    console.log('[Matchmaking GET] Running matchmaking processor...')
+    const result = await runMatchmaking(supabase)
+    
+    console.log(`[Matchmaking GET] Completed: ${result.matched} pair(s) matched, ${result.waiting || 0} users waiting`)
 
     return NextResponse.json({ 
       success: true, 
-      matched: matchedCount,
-      pairs: pairs.length,
-      message: `Matched ${matchedCount} pair(s) of users` 
+      matched: result.matched,
+      waiting: result.waiting || 0,
+      message: `Matched ${result.matched} pair(s) of users` 
     })
   } catch (error) {
-    console.error('Error in matchmaking processor:', error)
+    console.error('[Matchmaking GET] Error in matchmaking processor:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
     )
   }
 }
-
