@@ -13,13 +13,20 @@ async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
     // Clean stale rows before matching
     const twoMinutesAgo = new Date(Date.now() - 1000 * 60 * 2).toISOString()
     
-    const { error: deleteError } = await supabase
+    // Delete rows that are matched or null status
+    const { error: deleteMatchedError } = await supabase
       .from('pending_matches')
       .delete()
-      .or(`status.eq.matched,status.is.null,created_at.lt.${twoMinutesAgo}`)
+      .or('status.eq.matched,status.is.null')
     
-    if (deleteError) {
-      console.error('[Matchmaking] Error cleaning stale rows:', deleteError)
+    // Delete rows older than 2 minutes
+    const { error: deleteOldError } = await supabase
+      .from('pending_matches')
+      .delete()
+      .lt('created_at', twoMinutesAgo)
+    
+    if (deleteMatchedError || deleteOldError) {
+      console.error('[Matchmaking] Error cleaning stale rows:', deleteMatchedError || deleteOldError)
     } else {
       console.log('[Matchmaking] ✅ Cleaned stale rows')
     }

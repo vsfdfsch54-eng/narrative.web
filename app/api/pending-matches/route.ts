@@ -8,14 +8,20 @@ import { createServerClient } from '@/lib/supabaseClient'
 async function cleanStaleRows(supabase: ReturnType<typeof createServerClient>) {
   const twoMinutesAgo = new Date(Date.now() - 1000 * 60 * 2).toISOString()
   
-  // Delete rows that are matched, null status, or older than 2 minutes
-  const { error: deleteError } = await supabase
+  // Delete rows that are matched or null status
+  const { error: deleteMatchedError } = await supabase
     .from('pending_matches')
     .delete()
-    .or(`status.eq.matched,status.is.null,created_at.lt.${twoMinutesAgo}`)
+    .or('status.eq.matched,status.is.null')
   
-  if (deleteError) {
-    console.error('[PendingMatches] Error cleaning stale rows:', deleteError)
+  // Delete rows older than 2 minutes
+  const { error: deleteOldError } = await supabase
+    .from('pending_matches')
+    .delete()
+    .lt('created_at', twoMinutesAgo)
+  
+  if (deleteMatchedError || deleteOldError) {
+    console.error('[PendingMatches] Error cleaning stale rows:', deleteMatchedError || deleteOldError)
   } else {
     console.log('[PendingMatches] ✅ Cleaned stale rows')
   }
