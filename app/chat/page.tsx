@@ -55,9 +55,12 @@ export default function ChatPage() {
         // No matches found, check if in pending queue
         if (pendingData.inQueue) {
           // Already in queue, poll for match
+          console.log('[ChatPage] User is in queue, starting polling...')
+          setLoading(false) // Stop loading, show waiting UI
           pollForMatch()
         } else {
           // Not in queue, show empty state
+          console.log('[ChatPage] User not in queue, showing empty state')
           setProfiles([])
           setLoading(false)
         }
@@ -105,10 +108,21 @@ export default function ChatPage() {
 
       // Poll every 500ms to check for matches (GET endpoint now runs matchmaking)
       let pollCount = 0
+      const maxPolls = 240 // 2 minutes max (240 * 500ms = 120s)
+      
       const interval = setInterval(async () => {
         pollCount++
         try {
-          console.log(`[ChatPage] Polling for match (attempt ${pollCount}) for user ${user.id}`)
+          // Stop polling after max attempts
+          if (pollCount > maxPolls) {
+            console.log(`[ChatPage] Max polls reached (${maxPolls}), stopping...`)
+            clearInterval(interval)
+            channel.unsubscribe()
+            setLoading(false)
+            return
+          }
+          
+          console.log(`[ChatPage] Polling for match (attempt ${pollCount}/${maxPolls}) for user ${user.id}`)
           
           // Every 5 polls (2.5 seconds), trigger matchmaking directly as backup
           if (pollCount % 5 === 0) {
@@ -133,7 +147,8 @@ export default function ChatPage() {
           
           if (!response.ok) {
             console.error(`[ChatPage] HTTP error! status: ${response.status}`)
-            throw new Error(`HTTP error! status: ${response.status}`)
+            // Don't throw, just log and continue polling
+            return
           }
           
           const data = await response.json()
@@ -150,6 +165,7 @@ export default function ChatPage() {
             console.log(`[ChatPage] ✅ Match found! Navigating to chat with ${data.otherUserId}`)
             clearInterval(interval)
             channel.unsubscribe()
+            setLoading(false)
             router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
             return
           }
@@ -172,6 +188,7 @@ export default function ChatPage() {
                   const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
                   const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
                   console.log(`[ChatPage] Found existing match, navigating to ${otherUserId}`)
+                  setLoading(false)
                   router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
                   return
                 }
@@ -180,19 +197,32 @@ export default function ChatPage() {
             console.log(`[ChatPage] No matches found, stopping polling`)
             setLoading(false)
           } else {
-            console.log(`[ChatPage] Still in queue, will poll again...`)
+            // Still in queue - keep polling but don't log every time to reduce noise
+            if (pollCount % 10 === 0) {
+              console.log(`[ChatPage] Still in queue (${pollCount} polls)...`)
+            }
           }
         } catch (error) {
           console.error('[ChatPage] Error polling for match:', error)
+          // Don't stop polling on error, just log it
         }
       }, 500) // Poll every 500ms - GET endpoint runs matchmaking automatically
 
       // Cleanup after 2 minutes
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
+        console.log(`[ChatPage] Timeout reached, stopping polling`)
         clearInterval(interval)
         channel.unsubscribe()
         setLoading(false)
       }, 120000)
+
+      // Return cleanup function
+      return () => {
+        clearInterval(interval)
+        clearTimeout(timeout)
+        channel.unsubscribe()
+        setLoading(false)
+      }
 
       // Return cleanup function
       return () => {
