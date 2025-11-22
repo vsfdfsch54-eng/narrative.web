@@ -34,30 +34,31 @@ export async function GET(request: NextRequest) {
       .delete()
       .lt('created_at', twoMinutesAgo)
 
-    // First, trigger matchmaking processor to catch any waiting pairs
+    // Force-trigger matchmaking processor on every poll (fire-and-forget)
     const origin = request.headers.get('origin') || request.headers.get('host') || 'localhost:3000'
     const protocol = request.headers.get('x-forwarded-proto') || (origin.includes('localhost') ? 'http' : 'https')
-    const baseUrl = `${protocol}://${origin.replace(/^https?:\/\//, '')}`
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 
+      `${protocol}://${origin.replace(/^https?:\/\//, '')}`
     
+    // Fire-and-forget - don't wait for response
+    fetch(`${baseUrl}/api/matchmaking/process`, {
+      method: "GET",
+      cache: "no-store"
+    }).catch(err => {
+      console.error("[PendingMatches Status] Failed to trigger processor:", err);
+    });
+
+    // Force-trigger matchmaking processor on every poll
     try {
-      console.log(`[PendingMatches Status GET] Triggering matchmaking processor for user ${userId}`)
-      const matchmakingResponse = await fetch(`${baseUrl}/api/matchmaking/process`, {
-        method: 'GET',
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache',
-        }
-      })
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || 
+        (origin ? `${protocol}://${origin.replace(/^https?:\/\//, '')}` : 'http://localhost:3000')
       
-      if (matchmakingResponse.ok) {
-        const matchmakingData = await matchmakingResponse.json()
-        console.log(`[PendingMatches Status GET] Matchmaking result:`, matchmakingData)
-        if (matchmakingData.matched > 0) {
-          console.log(`[PendingMatches Status GET] ✅ Matchmaking processor matched ${matchmakingData.matched} pair(s)`)
-        }
-      }
+      await fetch(`${baseUrl}/api/matchmaking/process`, {
+        method: "GET",
+        cache: "no-store"
+      });
     } catch (err) {
-      console.error('[PendingMatches Status GET] Error calling matchmaking processor:', err)
+      console.error("[PendingMatches Status] Failed to trigger processor:", err);
     }
 
     // Wait for database updates to propagate
