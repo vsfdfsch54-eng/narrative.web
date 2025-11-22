@@ -25,7 +25,7 @@ export default function ChatPage() {
       setLoading(true)
       try {
         // First, check if user has a pending match that was just matched
-        const pendingResponse = await fetch(`/api/pending-matches?userId=${user.id}`)
+        const pendingResponse = await fetch(`/api/pending-matches/status?userId=${user.id}`)
         const pendingData = await pendingResponse.json()
         
         if (pendingData.success && pendingData.matched && pendingData.match) {
@@ -137,8 +137,8 @@ export default function ChatPage() {
             }).catch(err => console.error('[ChatPage] Error triggering matchmaking:', err))
           }
           
-          // Check if user was matched (GET endpoint runs matchmaking automatically)
-          const response = await fetch(`/api/pending-matches?userId=${user.id}`, {
+          // Check if user was matched (status endpoint runs matchmaking automatically)
+          const response = await fetch(`/api/pending-matches/status?userId=${user.id}`, {
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache',
