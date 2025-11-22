@@ -108,23 +108,30 @@ async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
       const isUser1First = user1.user_id === user1Id
 
       // Create chat match
+      const chatMatchData = {
+        user1_id: user1Id,
+        user2_id: user2Id,
+        user1_vibe: isUser1First ? (user1.vibe || null) : (user2.vibe || null),
+        user1_topic: isUser1First ? (user1.topic || null) : (user2.topic || null),
+        user1_timeframe: isUser1First ? (user1.timeframe || null) : (user2.timeframe || null),
+        user2_vibe: isUser1First ? (user2.vibe || null) : (user1.vibe || null),
+        user2_topic: isUser1First ? (user2.topic || null) : (user1.topic || null),
+        user2_timeframe: isUser1First ? (user2.timeframe || null) : (user1.timeframe || null),
+        status: 'active',
+      }
+      
+      console.log(`[Matchmaking] 💬 Creating chat match between ${user1Id} and ${user2Id}:`)
+      console.log('[Matchmaking] Chat match data:', JSON.stringify(chatMatchData, null, 2))
+      
       const { data: chatMatch, error: matchError } = await supabase
         .from('chat_matches')
-        .insert({
-          user1_id: user1Id,
-          user2_id: user2Id,
-          user1_vibe: isUser1First ? (user1.vibe || null) : (user2.vibe || null),
-          user1_topic: isUser1First ? (user1.topic || null) : (user2.topic || null),
-          user1_timeframe: isUser1First ? (user1.timeframe || null) : (user2.timeframe || null),
-          user2_vibe: isUser1First ? (user2.vibe || null) : (user1.vibe || null),
-          user2_topic: isUser1First ? (user2.topic || null) : (user1.topic || null),
-          user2_timeframe: isUser1First ? (user2.timeframe || null) : (user1.timeframe || null),
-          status: 'active',
-        })
+        .insert(chatMatchData)
         .select()
         .single()
 
       if (matchError) {
+        console.error(`[Matchmaking] ❌ Error creating chat match:`, matchError)
+        console.error('[Matchmaking] Error details:', JSON.stringify(matchError, null, 2))
         if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
           // Match already exists, just update pending statuses
           const { error: updateError } = await supabase
