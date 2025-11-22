@@ -78,26 +78,37 @@ async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
       }
 
       if (chatMatch) {
-        // Update both pending matches to matched
-        const { error: updateError, data: updateData } = await supabase
-          .from('pending_matches')
-          .update({ status: 'matched', matched_at: new Date().toISOString() })
-          .in('user_id', [user1.user_id, user2.user_id])
-          .select()
+        // Update both pending matches to matched - try multiple times if needed
+        let updateSuccess = false
+        for (let updateAttempt = 0; updateAttempt < 3; updateAttempt++) {
+          const { error: updateError, data: updateData } = await supabase
+            .from('pending_matches')
+            .update({ status: 'matched', matched_at: new Date().toISOString() })
+            .in('user_id', [user1.user_id, user2.user_id])
+            .select()
 
-        if (updateError) {
-          console.error(`[Matchmaking] Error updating pending matches:`, updateError)
-          console.error(`[Matchmaking] Update error details:`, JSON.stringify(updateError, null, 2))
-        } else {
-          console.log(`[Matchmaking] Updated ${updateData?.length || 0} pending match(es) to 'matched'`)
+          if (updateError) {
+            console.error(`[Matchmaking] Error updating pending matches (attempt ${updateAttempt + 1}):`, updateError)
+            if (updateAttempt < 2) {
+              await new Promise(resolve => setTimeout(resolve, 100))
+            }
+          } else {
+            console.log(`[Matchmaking] ✅ Updated ${updateData?.length || 0} pending match(es) to 'matched'`)
+            updateSuccess = true
+            break
+          }
+        }
+
+        if (!updateSuccess) {
+          console.error(`[Matchmaking] ⚠️ Failed to update pending matches after 3 attempts, but match was created`)
         }
 
         matchedCount++
         processedUserIds.add(user1.user_id)
         processedUserIds.add(user2.user_id)
-        console.log(`[Matchmaking] ✅ Matched: ${user1.user_id} <-> ${user2.user_id}`)
+        console.log(`[Matchmaking] ✅ Matched: ${user1.user_id} <-> ${user2.user_id} (chat_match created)`)
       } else {
-        console.warn(`[Matchmaking] Chat match creation returned null for ${user1.user_id} and ${user2.user_id}`)
+        console.warn(`[Matchmaking] ⚠️ Chat match creation returned null for ${user1.user_id} and ${user2.user_id}`)
       }
     }
 
