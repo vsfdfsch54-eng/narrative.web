@@ -209,7 +209,7 @@ export default function VibePage() {
       
       const data = await response.json()
       
-      if (data.success && data.matched && data.match) {
+      if (data.success && data.matched && data.match && data.otherUserId) {
         // Matched immediately! Navigate to chat
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
