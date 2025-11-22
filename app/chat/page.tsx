@@ -223,12 +223,6 @@ export default function ChatPage() {
         channel.unsubscribe()
         setLoading(false)
       }
-
-      // Return cleanup function
-      return () => {
-        clearInterval(interval)
-        channel.unsubscribe()
-      }
     }
 
     loadMatches()
