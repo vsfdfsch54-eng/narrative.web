@@ -10,8 +10,21 @@ const getOpenAIClient = () => {
   const apiKey = process.env.OPENAI_API_KEY
   
   if (!apiKey) {
-    throw new Error('OPENAI_API_KEY environment variable is not set. Please add it to your .env.local file.')
+    console.error('[OpenAI Service] ❌ OPENAI_API_KEY is missing from environment variables')
+    console.error('[OpenAI Service] Make sure:')
+    console.error('  1. .env.local file exists in project root')
+    console.error('  2. OPENAI_API_KEY=sk-... is in .env.local')
+    console.error('  3. Dev server was restarted after adding the key')
+    throw new Error('OPENAI_API_KEY environment variable is not set. Please add it to your .env.local file and restart your dev server.')
   }
+  
+  // Validate key format
+  if (!apiKey.startsWith('sk-')) {
+    console.error('[OpenAI Service] ❌ OPENAI_API_KEY format is invalid (should start with "sk-")')
+    throw new Error('OPENAI_API_KEY format is invalid. OpenAI API keys should start with "sk-".')
+  }
+  
+  console.log('[OpenAI Service] ✅ OpenAI client initialized (key length:', apiKey.length, ')')
   
   return new OpenAI({
     apiKey: apiKey,

@@ -11,6 +11,14 @@ import { generatePersonalityProfile } from '@/lib/ai/openai-service'
  */
 export async function POST(request: NextRequest) {
   try {
+    // Debug: Check if API key is available
+    const hasApiKey = !!process.env.OPENAI_API_KEY
+    console.log('[Personality Generate] OPENAI_API_KEY available:', hasApiKey)
+    if (!hasApiKey) {
+      console.error('[Personality Generate] ❌ OPENAI_API_KEY is missing!')
+      console.error('[Personality Generate] Check .env.local file and restart dev server')
+    }
+    
     const body = await request.json()
     const { userId, questionnaireAnswers, interests, vibe, topic } = body
 
