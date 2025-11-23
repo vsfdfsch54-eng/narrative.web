@@ -111,10 +111,22 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('[Personality Generate] Error:', error)
     
-    // Handle OpenAI API errors
-    if (error.message?.includes('OPENAI_API_KEY')) {
+    // Handle OpenAI API key errors
+    if (error.message?.includes('OPENAI_API_KEY_INVALID') || 
+        error.message?.includes('Invalid API key') ||
+        error.message?.includes('invalid_api_key')) {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to your environment variables.' },
+        { 
+          error: 'Invalid OpenAI API key. Please check your OPENAI_API_KEY in .env.local and ensure it is correct. You can get a new key at https://platform.openai.com/api-keys',
+          details: 'The API key may be expired, revoked, or incorrectly formatted.'
+        },
+        { status: 500 }
+      )
+    }
+    
+    if (error.message?.includes('OPENAI_API_KEY') && error.message?.includes('not set')) {
+      return NextResponse.json(
+        { error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to your .env.local file and restart your dev server.' },
         { status: 500 }
       )
     }

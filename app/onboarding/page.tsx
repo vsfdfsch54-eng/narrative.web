@@ -519,11 +519,14 @@ function OnboardingContent() {
       const personalityData = await personalityResponse.json()
       
       if (!personalityData.success) {
-        setError(personalityData.error || "Failed to generate personality profile. Please try again.")
+        const errorMessage = personalityData.error || "Failed to generate personality profile. Please try again."
+        const errorDetails = personalityData.details ? `\n\nDetails: ${personalityData.details}` : ''
+        setError(errorMessage + errorDetails)
         setLoading(false)
+        console.error('[Onboarding] ❌ Personality generation failed:', personalityData)
         return
       }
-
+      
       console.log('[Onboarding] ✅ Personality profile generated successfully')
       clearOnboardingData()
       setLoading(false)

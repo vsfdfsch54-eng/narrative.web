@@ -39,6 +39,14 @@ export async function generatePersonalityEmbedding(text: string): Promise<number
   } catch (error: any) {
     console.error('[OpenAI Service] Error generating embedding:', error)
     
+    // Check for invalid API key
+    if (error.status === 401 || 
+        error.message?.includes('Invalid API key') || 
+        error.message?.includes('Incorrect API key') ||
+        error.message?.includes('invalid_api_key')) {
+      throw new Error('OPENAI_API_KEY_INVALID: Your OpenAI API key is invalid. Please check your .env.local file and ensure the key is correct.')
+    }
+    
     // Retry logic for rate limits
     if (error.status === 429 || error.message?.includes('rate limit')) {
       console.log('[OpenAI Service] Rate limit hit, retrying after delay...')
@@ -119,6 +127,14 @@ Generate a detailed personality summary that would be useful for matching them w
   } catch (error: any) {
     console.error('[OpenAI Service] Error generating personality summary:', error)
     
+    // Check for invalid API key
+    if (error.status === 401 || 
+        error.message?.includes('Invalid API key') || 
+        error.message?.includes('Incorrect API key') ||
+        error.message?.includes('invalid_api_key')) {
+      throw new Error('OPENAI_API_KEY_INVALID: Your OpenAI API key is invalid. Please check your .env.local file and ensure the key is correct.')
+    }
+    
     // Retry logic for rate limits
     if (error.status === 429 || error.message?.includes('rate limit')) {
       console.log('[OpenAI Service] Rate limit hit, retrying after delay...')
@@ -187,6 +203,14 @@ Return ONLY valid JSON, no other text.`
     return traits
   } catch (error: any) {
     console.error('[OpenAI Service] Error extracting traits:', error)
+    
+    // Check for invalid API key
+    if (error.status === 401 || 
+        error.message?.includes('Invalid API key') || 
+        error.message?.includes('Incorrect API key') ||
+        error.message?.includes('invalid_api_key')) {
+      throw new Error('OPENAI_API_KEY_INVALID: Your OpenAI API key is invalid. Please check your .env.local file and ensure the key is correct.')
+    }
     
     // Retry logic for rate limits
     if (error.status === 429 || error.message?.includes('rate limit')) {
