@@ -46,23 +46,15 @@ const getSupabaseAnonKey = () => {
 
 // Client-side Supabase client (uses anon key)
 // Will throw at runtime if env vars are missing, but allows build to succeed
-let supabaseUrl: string
-let supabaseAnonKey: string
+const supabaseUrl = getSupabaseUrl()
+const supabaseAnonKey = getSupabaseAnonKey()
 
-try {
-  supabaseUrl = getSupabaseUrl()
-  supabaseAnonKey = getSupabaseAnonKey()
-} catch (error) {
-  // During build, allow empty strings
-  supabaseUrl = ''
-  supabaseAnonKey = ''
-}
-
-// Create client - if env vars are missing, this will fail at runtime with a clear error
-// During build, empty strings are allowed to prevent build failures
+// Create client with proper error handling
+// If env vars are missing during build, use placeholders to allow compilation
+// At runtime, the getters will throw clear errors if vars are missing
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key',
+  supabaseUrl || (typeof window === 'undefined' ? 'https://placeholder.supabase.co' : ''),
+  supabaseAnonKey || (typeof window === 'undefined' ? 'placeholder-key' : ''),
   {
     auth: {
       persistSession: true,
@@ -72,20 +64,20 @@ export const supabase = createClient(
   }
 )
 
-// Add runtime validation for client-side usage
+// Runtime validation for client-side usage
 if (typeof window !== 'undefined') {
-  // Validate that we have real credentials (not placeholders)
-  if (supabaseUrl && supabaseAnonKey && supabaseUrl !== 'https://placeholder.supabase.co') {
-    // Test the client by checking if we can make a simple request
-    supabase.auth.getSession().catch((error) => {
-      if (error.message?.includes('Invalid API key') || error.message?.includes('JWT')) {
-        console.error('❌ Supabase API key validation failed. Please check your NEXT_PUBLIC_SUPABASE_ANON_KEY')
-        console.error('Error details:', error.message)
-      }
-    })
-  } else {
-    console.error('❌ Supabase client initialized with placeholder credentials')
-    console.error('Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment variables')
+  // Check if we have valid credentials
+  const hasValidUrl = supabaseUrl && supabaseUrl.startsWith('http')
+  const hasValidKey = supabaseAnonKey && supabaseAnonKey.length > 50
+  
+  if (!hasValidUrl || !hasValidKey) {
+    console.error('❌ Supabase environment variables are missing or invalid!')
+    console.error('Required variables:')
+    console.error('  - NEXT_PUBLIC_SUPABASE_URL:', hasValidUrl ? '✅ Set' : '❌ Missing')
+    console.error('  - NEXT_PUBLIC_SUPABASE_ANON_KEY:', hasValidKey ? '✅ Set' : '❌ Missing')
+    console.error('')
+    console.error('Please add these to your .env.local file or Vercel environment variables.')
+    console.error('Get your keys from: https://app.supabase.com → Your Project → Settings → API')
   }
 }
 
