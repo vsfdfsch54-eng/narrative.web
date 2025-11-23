@@ -3,230 +3,193 @@ export const runtime = "nodejs"
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
+import { findBestMatch } from '@/lib/ai/matching-service'
 
 /**
- * MATCHMAKING PROCESSOR FUNCTION
- * FIFO matching - matches ANY two FRESH users waiting (within last 2 minutes)
+ * AI MATCHMAKING PROCESSOR
+ * Replaces FIFO matching with AI-driven personality-based matching
+ * 
+ * GET /api/matchmaking/process
+ * Processes users in waiting_pool and finds best AI matches
  */
-async function runMatchmaking(supabase: ReturnType<typeof createServerClient>) {
+async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>) {
   try {
-    // Clean stale rows before matching
-    const twoMinutesAgo = new Date(Date.now() - 1000 * 60 * 2).toISOString()
+    console.log('[AI Matchmaking] 🔍 Starting AI matching process...')
+
+    // Clean stale entries (older than 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 1000 * 60 * 5).toISOString()
     
-    // Delete rows that are matched or null status
-    const { error: deleteMatchedError } = await supabase
-      .from('pending_matches')
+    const { error: cleanupError } = await supabase
+      .from('waiting_pool')
       .delete()
-      .or('status.eq.matched,status.is.null')
-    
-    // Delete rows older than 2 minutes
-    const { error: deleteOldError } = await supabase
-      .from('pending_matches')
-      .delete()
-      .lt('created_at', twoMinutesAgo)
-    
-    if (deleteMatchedError || deleteOldError) {
-      console.error('[Matchmaking] Error cleaning stale rows:', deleteMatchedError || deleteOldError)
+      .lt('created_at', fiveMinutesAgo)
+
+    if (cleanupError) {
+      console.error('[AI Matchmaking] Error cleaning stale entries:', cleanupError)
     } else {
-      console.log('[Matchmaking] ✅ Cleaned stale rows')
+      console.log('[AI Matchmaking] ✅ Cleaned stale waiting pool entries')
     }
 
-    // Get ONLY fresh users waiting for a match (within last 2 minutes)
-    console.log('[Matchmaking] 🔍 Querying for fresh waiting users...')
-    console.log('[Matchmaking] Query filters:', {
-      status: 'searching',
-      created_at_gte: twoMinutesAgo,
-      order: 'created_at ASC'
-    })
-    
+    // Get all users in waiting pool
     const { data: waitingUsers, error: fetchError } = await supabase
-      .from('pending_matches')
+      .from('waiting_pool')
       .select('*')
-      .eq('status', 'searching')
-      .gte('created_at', twoMinutesAgo)
       .order('created_at', { ascending: true })
 
     if (fetchError) {
-      console.error('[Matchmaking] ❌ Error fetching waiting users:', fetchError)
-      console.error('[Matchmaking] Error details:', JSON.stringify(fetchError, null, 2))
-      return { matched: 0 }
-    }
-
-    console.log(`[Matchmaking] 📊 Query result: Found ${waitingUsers?.length || 0} fresh user(s) waiting`)
-    
-    if (waitingUsers && waitingUsers.length > 0) {
-      console.log('[Matchmaking] Waiting users details:')
-      waitingUsers.forEach((user, index) => {
-        console.log(`[Matchmaking]   User ${index + 1}:`, {
-          id: user.id,
-          user_id: user.user_id,
-          vibe: user.vibe,
-          topic: user.topic,
-          timeframe: user.timeframe,
-          status: user.status,
-          created_at: user.created_at
-        })
-      })
+      console.error('[AI Matchmaking] ❌ Error fetching waiting pool:', fetchError)
+      return { matched: 0, error: fetchError.message }
     }
 
     if (!waitingUsers || waitingUsers.length < 2) {
-      console.log(`[Matchmaking] ⏸️  Only ${waitingUsers?.length || 0} fresh user(s) waiting, need 2+ to match`)
+      console.log(`[AI Matchmaking] ⏸️  Only ${waitingUsers?.length || 0} user(s) in waiting pool, need 2+ to match`)
       return { matched: 0, waiting: waitingUsers?.length || 0 }
     }
 
-    console.log(`[Matchmaking] ✅ Processing ${waitingUsers.length} fresh waiting users for matching`)
+    console.log(`[AI Matchmaking] 📊 Found ${waitingUsers.length} users in waiting pool`)
 
     let matchedCount = 0
     const processedUserIds = new Set<string>()
 
-    // Match users in pairs
-    for (let i = 0; i < waitingUsers.length - 1; i += 2) {
-      const user1 = waitingUsers[i]
-      const user2 = waitingUsers[i + 1]
-
-      // Skip if either user was already processed in this run
-      if (processedUserIds.has(user1.user_id) || processedUserIds.has(user2.user_id)) {
-        console.log(`[Matchmaking] Skipping ${user1.user_id} or ${user2.user_id} - already processed`)
+    // Process each user in the waiting pool
+    for (const waitingUser of waitingUsers) {
+      // Skip if already processed
+      if (processedUserIds.has(waitingUser.user_id)) {
         continue
       }
 
-      // Verify both users are still searching and fresh
-      const { data: verifyUsers } = await supabase
-        .from('pending_matches')
-        .select('user_id, status, created_at')
-        .in('user_id', [user1.user_id, user2.user_id])
-        .eq('status', 'searching')
-        .gte('created_at', twoMinutesAgo)
+      try {
+        // Get user's embedding from users table (more reliable than waiting_pool copy)
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('personality_embedding')
+          .eq('id', waitingUser.user_id)
+          .single()
 
-      if (!verifyUsers || verifyUsers.length !== 2) {
-        console.log(`[Matchmaking] Users ${user1.user_id} and ${user2.user_id} - only ${verifyUsers?.length || 0} still searching and fresh, skipping`)
-        continue
-      }
+        if (userError || !userData || !userData.personality_embedding) {
+          console.error(`[AI Matchmaking] User ${waitingUser.user_id} has no embedding, skipping`)
+          // Remove from waiting pool if no embedding
+          await supabase.from('waiting_pool').delete().eq('user_id', waitingUser.user_id)
+          continue
+        }
 
-      const user1Id = user1.user_id < user2.user_id ? user1.user_id : user2.user_id
-      const user2Id = user1.user_id < user2.user_id ? user2.user_id : user1.user_id
-      const isUser1First = user1.user_id === user1Id
-
-      // Create chat match
-      const chatMatchData = {
-        user1_id: user1Id,
-        user2_id: user2Id,
-        user1_vibe: isUser1First ? (user1.vibe || null) : (user2.vibe || null),
-        user1_topic: isUser1First ? (user1.topic || null) : (user2.topic || null),
-        user1_timeframe: isUser1First ? (user1.timeframe || null) : (user2.timeframe || null),
-        user2_vibe: isUser1First ? (user2.vibe || null) : (user1.vibe || null),
-        user2_topic: isUser1First ? (user2.topic || null) : (user1.topic || null),
-        user2_timeframe: isUser1First ? (user2.timeframe || null) : (user1.timeframe || null),
-        status: 'active',
-      }
-      
-      console.log(`[Matchmaking] 💬 Creating chat match between ${user1Id} and ${user2Id}:`)
-      console.log('[Matchmaking] Chat match data:', JSON.stringify(chatMatchData, null, 2))
-      
-      const { data: chatMatch, error: matchError } = await supabase
-        .from('chat_matches')
-        .insert(chatMatchData)
-        .select()
-        .single()
-
-      if (matchError) {
-        console.error(`[Matchmaking] ❌ Error creating chat match:`, matchError)
-        console.error('[Matchmaking] Error details:', JSON.stringify(matchError, null, 2))
-        if (matchError.code === '23505' || matchError.message.includes('duplicate')) {
-          // Match already exists, just update pending statuses
-          const { error: updateError } = await supabase
-            .from('pending_matches')
-            .update({ status: 'matched', matched_at: new Date().toISOString() })
-            .in('user_id', [user1.user_id, user2.user_id])
-
-          if (updateError) {
-            console.error(`[Matchmaking] Error updating status for existing match:`, updateError)
-            // Retry update
-            await supabase
-              .from('pending_matches')
-              .update({ status: 'matched', matched_at: new Date().toISOString() })
-              .in('user_id', [user1.user_id, user2.user_id])
-          }
-
-          matchedCount++
-          processedUserIds.add(user1.user_id)
-          processedUserIds.add(user2.user_id)
-          console.log(`[Matchmaking] ✅ Matched existing: ${user1.user_id} <-> ${user2.user_id}`)
+        // Parse embedding
+        const embeddingString = userData.personality_embedding
+        let userEmbedding: number[]
+        
+        if (typeof embeddingString === 'string') {
+          const cleaned = embeddingString.replace(/[\[\]]/g, '')
+          userEmbedding = cleaned.split(',').map(Number)
+        } else if (Array.isArray(embeddingString)) {
+          userEmbedding = embeddingString
         } else {
-          console.error(`[Matchmaking] Error creating match:`, matchError)
-        }
-        continue
-      }
-
-      if (chatMatch) {
-        // ALWAYS update both pending matches to matched - try multiple times if needed
-        let updateSuccess = false
-        for (let updateAttempt = 0; updateAttempt < 3; updateAttempt++) {
-          const { error: updateError, data: updateData } = await supabase
-            .from('pending_matches')
-            .update({ status: 'matched', matched_at: new Date().toISOString() })
-            .in('user_id', [user1.user_id, user2.user_id])
-            .select()
-
-          if (updateError) {
-            console.error(`[Matchmaking] Error updating pending matches (attempt ${updateAttempt + 1}):`, updateError)
-            if (updateAttempt < 2) {
-              await new Promise(resolve => setTimeout(resolve, 100))
-            }
-          } else {
-            console.log(`[Matchmaking] ✅ Updated ${updateData?.length || 0} pending match(es) to 'matched'`)
-            updateSuccess = true
-            break
-          }
+          console.error(`[AI Matchmaking] Invalid embedding format for user ${waitingUser.user_id}`)
+          continue
         }
 
-        if (!updateSuccess) {
-          console.error(`[Matchmaking] ⚠️ Failed to update pending matches after 3 attempts, but match was created`)
-          // Final attempt - must succeed
-          await supabase
-            .from('pending_matches')
-            .update({ status: 'matched', matched_at: new Date().toISOString() })
-            .in('user_id', [user1.user_id, user2.user_id])
+        // Find best match using AI matching service
+        const matchResult = await findBestMatch(waitingUser.user_id, userEmbedding)
+
+        if (!matchResult) {
+          console.log(`[AI Matchmaking] No match found for user ${waitingUser.user_id}`)
+          continue
         }
 
+        const matchedUserId = matchResult.userId
+        const matchScore = matchResult.matchScore
+        const traitsUsed = matchResult.traitsUsed
+
+        // Verify matched user is still in waiting pool
+        const { data: matchedUserInPool } = await supabase
+          .from('waiting_pool')
+          .select('user_id')
+          .eq('user_id', matchedUserId)
+          .single()
+
+        if (!matchedUserInPool) {
+          console.log(`[AI Matchmaking] Matched user ${matchedUserId} no longer in waiting pool`)
+          continue
+        }
+
+        // Verify we haven't already matched these users
+        if (processedUserIds.has(matchedUserId)) {
+          console.log(`[AI Matchmaking] Matched user ${matchedUserId} already processed`)
+          continue
+        }
+
+        // Determine user1_id and user2_id (alphabetical order for consistency)
+        const user1Id = waitingUser.user_id < matchedUserId ? waitingUser.user_id : matchedUserId
+        const user2Id = waitingUser.user_id < matchedUserId ? matchedUserId : waitingUser.user_id
+
+        // Check if match already exists
+        const { data: existingMatch } = await supabase
+          .from('chat_matches')
+          .select('id')
+          .eq('user1_id', user1Id)
+          .eq('user2_id', user2Id)
+          .single()
+
+        if (existingMatch) {
+          console.log(`[AI Matchmaking] Match already exists between ${user1Id} and ${user2Id}`)
+          // Remove both from waiting pool
+          await supabase.from('waiting_pool').delete().eq('user_id', waitingUser.user_id)
+          await supabase.from('waiting_pool').delete().eq('user_id', matchedUserId)
+          processedUserIds.add(waitingUser.user_id)
+          processedUserIds.add(matchedUserId)
+          continue
+        }
+
+        // Create chat match
+        const { data: chatMatch, error: matchError } = await supabase
+          .from('chat_matches')
+          .insert({
+            user1_id: user1Id,
+            user2_id: user2Id,
+            status: 'active',
+            match_score: matchScore,
+            traits_used: traitsUsed,
+          })
+          .select()
+          .single()
+
+        if (matchError) {
+          console.error(`[AI Matchmaking] Error creating chat match:`, matchError)
+          continue
+        }
+
+        // Remove both users from waiting pool
+        await supabase.from('waiting_pool').delete().eq('user_id', waitingUser.user_id)
+        await supabase.from('waiting_pool').delete().eq('user_id', matchedUserId)
+
+        processedUserIds.add(waitingUser.user_id)
+        processedUserIds.add(matchedUserId)
         matchedCount++
-        processedUserIds.add(user1.user_id)
-        processedUserIds.add(user2.user_id)
-        console.log(`[Matchmaking] ✅ Matched: ${user1.user_id} <-> ${user2.user_id} (chat_match created)`)
-      } else {
-        console.warn(`[Matchmaking] ⚠️ Chat match creation returned null for ${user1.user_id} and ${user2.user_id}`)
+
+        console.log(`[AI Matchmaking] ✅ Matched ${waitingUser.user_id} with ${matchedUserId} (score: ${matchScore.toFixed(3)})`)
+      } catch (error: any) {
+        console.error(`[AI Matchmaking] Error processing user ${waitingUser.user_id}:`, error)
+        // Continue with next user
       }
     }
 
-    return { matched: matchedCount }
-  } catch (error) {
-    console.error('[Matchmaking] Error:', error)
-    return { matched: 0 }
+    console.log(`[AI Matchmaking] ✅ Completed: ${matchedCount} match(es) created`)
+    return { matched: matchedCount, waiting: waitingUsers.length - (matchedCount * 2) }
+  } catch (error: any) {
+    console.error('[AI Matchmaking] Fatal error:', error)
+    return { matched: 0, error: error.message }
   }
 }
 
-/**
- * GET - Run matchmaking processor
- */
+// GET - Process AI matching
 export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
-    
-    console.log('[Matchmaking GET] Running matchmaking processor...')
-    const result = await runMatchmaking(supabase)
-    
-    console.log(`[Matchmaking GET] Completed: ${result.matched} pair(s) matched, ${result.waiting || 0} users waiting`)
-
-    return NextResponse.json({ 
-      success: true, 
-      matched: result.matched,
-      waiting: result.waiting || 0,
-      message: `Matched ${result.matched} pair(s) of users` 
-    })
-  } catch (error) {
-    console.error('[Matchmaking GET] Error in matchmaking processor:', error)
+    const result = await runAIMatchmaking(supabase)
+    return NextResponse.json(result)
+  } catch (error: any) {
+    console.error('[AI Matchmaking] Route error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { matched: 0, error: error.message || 'Internal server error' },
       { status: 500 }
     )
   }

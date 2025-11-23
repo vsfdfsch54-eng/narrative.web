@@ -8,18 +8,19 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/hooks/use-auth"
 import { INTERESTS, INTEREST_CATEGORIES, getAllCategories } from "@/lib/interests"
+import { PERSONALITY_QUESTIONS } from "@/lib/personality-questions"
 import { cn } from "@/lib/utils"
 import { ChevronLeft } from "lucide-react"
 import { supabase } from "@/lib/supabaseClient"
 import { tokens } from "@/lib/design-tokens"
 
-type Step = 'email' | 'name' | 'password' | 'interests' | 'verify'
+type Step = 'email' | 'name' | 'password' | 'interests' | 'personality' | 'verify'
 
 function OnboardingContent() {
   const getInitialStep = (): Step => {
     if (typeof window === 'undefined') return 'email'
     const saved = localStorage.getItem('onboarding_step')
-    if (saved && ['email', 'name', 'password', 'interests', 'verify'].includes(saved)) {
+    if (saved && ['email', 'name', 'password', 'interests', 'personality', 'verify'].includes(saved)) {
       return saved as Step
     }
     return 'email'
@@ -53,6 +54,19 @@ function OnboardingContent() {
     }
     return []
   })
+  const [personalityAnswers, setPersonalityAnswers] = useState<Record<string, string | string[]>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('onboarding_personality')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch {
+          return {}
+        }
+      }
+    }
+    return {}
+  })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [passwordMatchError, setPasswordMatchError] = useState("")
@@ -70,8 +84,9 @@ function OnboardingContent() {
       if (email) localStorage.setItem('onboarding_email', email)
       if (name) localStorage.setItem('onboarding_name', name)
       localStorage.setItem('onboarding_interests', JSON.stringify(selectedInterests))
+      localStorage.setItem('onboarding_personality', JSON.stringify(personalityAnswers))
     }
-  }, [email, name, selectedInterests])
+  }, [email, name, selectedInterests, personalityAnswers])
 
   const clearOnboardingData = () => {
     if (typeof window !== 'undefined') {
@@ -79,6 +94,7 @@ function OnboardingContent() {
       localStorage.removeItem('onboarding_email')
       localStorage.removeItem('onboarding_name')
       localStorage.removeItem('onboarding_interests')
+      localStorage.removeItem('onboarding_personality')
     }
   }
 
@@ -105,7 +121,16 @@ function OnboardingContent() {
             if (data.data.name) setName(data.data.name)
             if (data.data.interests) setSelectedInterests(data.data.interests)
             
-            if (hasName && !hasInterests) {
+            // Check if user has personality profile
+            const hasPersonality = data.data.personality_embedding || data.data.personality_summary
+            
+            if (hasName && hasInterests && hasPersonality) {
+              clearOnboardingData()
+              router.push('/vibe')
+              return
+            } else if (hasName && hasInterests && !hasPersonality) {
+              setCurrentStep('personality')
+            } else if (hasName && !hasInterests) {
               setCurrentStep('interests')
             } else if (!hasName) {
               setCurrentStep('name')
@@ -235,6 +260,20 @@ function OnboardingContent() {
         setError("Please select at least one interest")
         return
       }
+      setCurrentStep('personality')
+    } else if (currentStep === 'personality') {
+      // Validate all questions are answered
+      const allAnswered = PERSONALITY_QUESTIONS.every(q => {
+        const answer = personalityAnswers[q.id]
+        if (q.id === 'social_intention') {
+          return Array.isArray(answer) && answer.length > 0
+        }
+        return !!answer
+      })
+      if (!allAnswered) {
+        setError("Please answer all personality questions")
+        return
+      }
       handleSubmit()
     }
   }
@@ -247,7 +286,39 @@ function OnboardingContent() {
       setCurrentStep('name')
     } else if (currentStep === 'interests') {
       setCurrentStep('password')
+    } else if (currentStep === 'personality') {
+      setCurrentStep('interests')
     }
+  }
+
+  const handlePersonalityAnswer = (questionId: string, answer: string | string[]) => {
+    setPersonalityAnswers(prev => {
+      // Handle multi-select for social_intention
+      if (questionId === 'social_intention') {
+        const currentAnswers = Array.isArray(prev[questionId]) ? prev[questionId] : []
+        const answerValue = Array.isArray(answer) ? answer[0] : answer
+        
+        // Toggle selection
+        if (currentAnswers.includes(answerValue)) {
+          return {
+            ...prev,
+            [questionId]: currentAnswers.filter(a => a !== answerValue)
+          }
+        } else {
+          return {
+            ...prev,
+            [questionId]: [...currentAnswers, answerValue]
+          }
+        }
+      }
+      
+      // Single select for other questions
+      return {
+        ...prev,
+        [questionId]: answer
+      }
+    })
+    if (error) setError("")
   }
 
   const handleSubmit = async () => {
@@ -283,6 +354,15 @@ function OnboardingContent() {
       setError("Please select at least one interest")
       return
     }
+
+    // Validate personality answers if on personality step
+    if (currentStep === 'personality') {
+      const allAnswered = PERSONALITY_QUESTIONS.every(q => personalityAnswers[q.id])
+      if (!allAnswered) {
+        setError("Please answer all personality questions")
+        return
+      }
+    }
     
     setLoading(true)
 
@@ -306,7 +386,8 @@ function OnboardingContent() {
         const userId = result.data.user.id
         
         try {
-          const response = await fetch('/api/users', {
+          // Save user data (name, interests)
+          const userResponse = await fetch('/api/users', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -316,14 +397,36 @@ function OnboardingContent() {
             })
           })
 
-          const userData = await response.json()
+          const userData = await userResponse.json()
           
           if (!userData.success) {
             console.error('Error saving user data:', userData.error)
-            // Don't fail the entire flow, but log the error
+          }
+
+          // Generate personality profile if we have answers
+          if (Object.keys(personalityAnswers).length > 0) {
+            console.log('[Onboarding] Generating personality profile...')
+            const personalityResponse = await fetch('/api/personality/generate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId,
+                questionnaireAnswers: personalityAnswers,
+                interests: selectedInterests,
+              })
+            })
+
+            const personalityData = await personalityResponse.json()
+            
+            if (!personalityData.success) {
+              console.error('Error generating personality profile:', personalityData.error)
+              // Don't fail the entire flow, but log the error
+            } else {
+              console.log('[Onboarding] ✅ Personality profile generated successfully')
+            }
           }
         } catch (userError) {
-          console.error('Error calling /api/users:', userError)
+          console.error('Error calling APIs:', userError)
           // Don't fail the entire flow
         }
       }
@@ -360,6 +463,20 @@ function OnboardingContent() {
         setLoading(false)
         return
       }
+
+      // Validate personality answers
+      const allAnswered = PERSONALITY_QUESTIONS.every(q => {
+        const answer = personalityAnswers[q.id]
+        if (q.id === 'social_intention') {
+          return Array.isArray(answer) && answer.length > 0
+        }
+        return !!answer
+      })
+      if (!allAnswered) {
+        setError("Please answer all personality questions")
+        setLoading(false)
+        return
+      }
       
       const userResponse = await fetch(`/api/users?userId=${user.id}`)
       const userData = await userResponse.json()
@@ -368,7 +485,8 @@ function OnboardingContent() {
         ? userData.data.name 
         : name.trim() || user.email?.split('@')[0] || 'User'
       
-      const response = await fetch('/api/users', {
+      // Save user data
+      const userUpdateResponse = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -378,16 +496,38 @@ function OnboardingContent() {
         })
       })
 
-      const data = await response.json()
+      const userUpdateData = await userUpdateResponse.json()
       
-      if (data.success) {
-        clearOnboardingData()
+      if (!userUpdateData.success) {
+        setError(userUpdateData.error || "Failed to save user data. Please try again.")
         setLoading(false)
-        router.push('/vibe')
-      } else {
-        setError(data.error || "Failed to complete onboarding. Please try again.")
-        setLoading(false)
+        return
       }
+
+      // Generate personality profile
+      console.log('[Onboarding] Generating personality profile...')
+      const personalityResponse = await fetch('/api/personality/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          questionnaireAnswers: personalityAnswers,
+          interests: selectedInterests,
+        })
+      })
+
+      const personalityData = await personalityResponse.json()
+      
+      if (!personalityData.success) {
+        setError(personalityData.error || "Failed to generate personality profile. Please try again.")
+        setLoading(false)
+        return
+      }
+
+      console.log('[Onboarding] ✅ Personality profile generated successfully')
+      clearOnboardingData()
+      setLoading(false)
+      router.push('/vibe')
     } catch (err: any) {
       console.error('Error completing onboarding:', err)
       setError(err.message || "Something went wrong. Please try again.")
@@ -412,7 +552,7 @@ function OnboardingContent() {
     )
   }
 
-  const stepNumber = currentStep === 'email' ? 1 : currentStep === 'name' ? 2 : currentStep === 'password' ? 3 : currentStep === 'interests' ? 4 : 5
+  const stepNumber = currentStep === 'email' ? 1 : currentStep === 'name' ? 2 : currentStep === 'password' ? 3 : currentStep === 'interests' ? 4 : currentStep === 'personality' ? 5 : 6
 
   return (
     <div style={{ 
@@ -999,6 +1139,188 @@ function OnboardingContent() {
                 }}
               >
                 {loading ? "Saving..." : selectedInterests.length === 0 ? "Select at least 1" : `Continue (${selectedInterests.length})`}
+              </motion.button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 'personality' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, paddingBottom: '120px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <h1 style={{ 
+                ...tokens.typography.title,
+                color: tokens.colors.textPrimaryOnDark,
+                margin: 0,
+                marginBottom: tokens.spacing[8],
+              }}>
+                Tell us about yourself
+              </h1>
+              <p style={{ 
+                ...tokens.typography.label,
+                color: tokens.colors.textSecondary,
+                margin: 0,
+              }}>
+                Step {stepNumber} of 5 • Help us find your perfect match
+              </p>
+            </div>
+
+            {error && (
+              <div style={{
+                padding: tokens.spacing[16],
+                borderRadius: tokens.radii.input,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#FCA5A5',
+                ...tokens.typography.label,
+              }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ 
+              maxHeight: '60vh', 
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: tokens.layout.elementSpacing,
+              paddingRight: tokens.spacing[8],
+            }}>
+              {PERSONALITY_QUESTIONS.map((question, questionIndex) => {
+                const selectedAnswer = personalityAnswers[question.id]
+                return (
+                  <div key={question.id} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+                    <h3 style={{ 
+                      ...tokens.typography.label,
+                      color: tokens.colors.textPrimaryOnDark,
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      marginBottom: tokens.spacing[4],
+                    }}>
+                      {questionIndex + 1}. {question.question}
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[10] }}>
+                      {question.options.map((option) => {
+                        // Handle multi-select for social_intention
+                        const isSelected = question.id === 'social_intention'
+                          ? Array.isArray(selectedAnswer) && selectedAnswer.includes(option.value)
+                          : selectedAnswer === option.value
+                        
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => handlePersonalityAnswer(question.id, option.value)}
+                            disabled={loading}
+                            style={{
+                              width: '100%',
+                              minHeight: '50px',
+                              padding: `12px ${tokens.spacing[16]}`,
+                              borderRadius: tokens.radii.pill,
+                              background: isSelected ? tokens.colors.pillSelected : tokens.colors.pillUnselected,
+                              border: 'none',
+                              color: tokens.colors.textOnPill,
+                              boxShadow: isSelected ? tokens.shadows.pillSelected : tokens.shadows.pillUnselected,
+                              fontSize: '14px',
+                              fontWeight: isSelected ? 500 : 400,
+                              textAlign: 'left',
+                              cursor: loading ? 'not-allowed' : 'pointer',
+                              opacity: loading ? 0.5 : 1,
+                              transform: isSelected ? 'scale(1.01)' : 'scale(1)',
+                              transition: 'all 0.14s ease',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: tokens.spacing[8],
+                            }}
+                          >
+                            {option.emoji && <span style={{ fontSize: '20px' }}>{option.emoji}</span>}
+                            <span style={{ fontWeight: isSelected ? 600 : 500 }}>
+                              {option.label}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              gap: tokens.spacing[16], 
+              marginTop: tokens.layout.elementSpacing,
+              position: 'relative',
+              zIndex: 10,
+            }}>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={handleBack}
+                disabled={loading}
+                style={{ 
+                  flex: 1,
+                  minHeight: '50px',
+                  padding: `12px ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.5 : 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ChevronLeft style={{ width: '16px', height: '16px' }} />
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={handleNext}
+                disabled={loading || !PERSONALITY_QUESTIONS.every(q => {
+                  const answer = personalityAnswers[q.id]
+                  if (q.id === 'social_intention') {
+                    return Array.isArray(answer) && answer.length > 0
+                  }
+                  return !!answer
+                })}
+                style={{ 
+                  flex: 1,
+                  minHeight: '50px',
+                  padding: `12px ${tokens.spacing[16]}`,
+                  borderRadius: tokens.radii.button,
+                  background: tokens.colors.pillUnselected,
+                  border: 'none',
+                  color: tokens.colors.textOnPill,
+                  boxShadow: tokens.shadows.pillUnselected,
+                  fontSize: '15px',
+                  fontWeight: 500,
+                  cursor: (loading || !PERSONALITY_QUESTIONS.every(q => {
+                    const answer = personalityAnswers[q.id]
+                    if (q.id === 'social_intention') {
+                      return Array.isArray(answer) && answer.length > 0
+                    }
+                    return !!answer
+                  })) ? 'not-allowed' : 'pointer',
+                  opacity: (loading || !PERSONALITY_QUESTIONS.every(q => {
+                    const answer = personalityAnswers[q.id]
+                    if (q.id === 'social_intention') {
+                      return Array.isArray(answer) && answer.length > 0
+                    }
+                    return !!answer
+                  })) ? 0.7 : 1,
+                }}
+              >
+                {loading ? "Generating your profile..." : PERSONALITY_QUESTIONS.every(q => {
+                  const answer = personalityAnswers[q.id]
+                  if (q.id === 'social_intention') {
+                    return Array.isArray(answer) && answer.length > 0
+                  }
+                  return !!answer
+                }) ? "Continue" : "Answer all questions"}
               </motion.button>
             </div>
           </div>

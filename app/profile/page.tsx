@@ -22,6 +22,9 @@ export default function ProfilePage() {
   const [tempName, setTempName] = useState("")
   const [notifications, setNotifications] = useState<any[]>([])
   const [loadingNotifications, setLoadingNotifications] = useState(true)
+  const [personalitySummary, setPersonalitySummary] = useState<string | null>(null)
+  const [personalityTraits, setPersonalityTraits] = useState<any>(null)
+  const [loadingPersonality, setLoadingPersonality] = useState(true)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -48,6 +51,14 @@ export default function ProfilePage() {
             setUserName(fallbackName)
             setTempName(fallbackName)
           }
+          
+          // Load personality data
+          if (data.data.personality_summary) {
+            setPersonalitySummary(data.data.personality_summary)
+          }
+          if (data.data.traits) {
+            setPersonalityTraits(data.data.traits)
+          }
         } else {
           const fallbackName = user.user_metadata?.name || user.email?.split('@')[0] || "User"
           setUserName(fallbackName)
@@ -60,6 +71,7 @@ export default function ProfilePage() {
         setTempName(fallbackName)
       } finally {
         setLoadingProfile(false)
+        setLoadingPersonality(false)
       }
     }
 
@@ -312,6 +324,123 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Personality Profile Section */}
+        {personalitySummary && (
+          <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
+            <h2 style={{ 
+              ...tokens.typography.heading,
+              color: tokens.colors.textOnPill,
+              margin: 0,
+              marginBottom: tokens.layout.elementSpacing,
+              textAlign: 'center',
+            }}>
+              Your Personality Profile
+            </h2>
+            
+            {loadingPersonality ? (
+              <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, textAlign: 'center', padding: tokens.layout.sectionSpacing }}>
+                Loading personality profile...
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+                {/* Personality Summary */}
+                <div>
+                  <h3 style={{ 
+                    ...tokens.typography.label,
+                    color: tokens.colors.textOnPill,
+                    fontWeight: 600,
+                    marginBottom: tokens.spacing[8],
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                  }}>
+                    Summary
+                  </h3>
+                  <p style={{ 
+                    ...tokens.typography.body,
+                    color: tokens.colors.textOnPill,
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}>
+                    {personalitySummary}
+                  </p>
+                </div>
+
+                {/* Personality Traits */}
+                {personalityTraits && (
+                  <div>
+                    <h3 style={{ 
+                      ...tokens.typography.label,
+                      color: tokens.colors.textOnPill,
+                      fontWeight: 600,
+                      marginBottom: tokens.spacing[12],
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                    }}>
+                      Key Traits
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+                      {personalityTraits.communicationStyle && (
+                        <div>
+                          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0, marginBottom: tokens.spacing[4] }}>
+                            Communication Style
+                          </p>
+                          <p style={{ ...tokens.typography.body, color: tokens.colors.textOnPill, margin: 0, textTransform: 'capitalize' }}>
+                            {personalityTraits.communicationStyle}
+                          </p>
+                        </div>
+                      )}
+                      {personalityTraits.socialEnergy && (
+                        <div>
+                          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0, marginBottom: tokens.spacing[4] }}>
+                            Social Energy
+                          </p>
+                          <p style={{ ...tokens.typography.body, color: tokens.colors.textOnPill, margin: 0, textTransform: 'capitalize' }}>
+                            {personalityTraits.socialEnergy}
+                          </p>
+                        </div>
+                      )}
+                      {personalityTraits.conversationDepth && (
+                        <div>
+                          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0, marginBottom: tokens.spacing[4] }}>
+                            Conversation Preference
+                          </p>
+                          <p style={{ ...tokens.typography.body, color: tokens.colors.textOnPill, margin: 0, textTransform: 'capitalize' }}>
+                            {personalityTraits.conversationDepth}
+                          </p>
+                        </div>
+                      )}
+                      {personalityTraits.socialIntention && Array.isArray(personalityTraits.socialIntention) && personalityTraits.socialIntention.length > 0 && (
+                        <div>
+                          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0, marginBottom: tokens.spacing[4] }}>
+                            Social Intentions
+                          </p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[8] }}>
+                            {personalityTraits.socialIntention.map((intention: string) => (
+                              <span
+                                key={intention}
+                                style={{
+                                  padding: `6px ${tokens.spacing[12]}`,
+                                  borderRadius: tokens.radii.pill,
+                                  background: tokens.colors.pillSelected,
+                                  color: tokens.colors.textOnPill,
+                                  fontSize: '12px',
+                                  textTransform: 'capitalize',
+                                }}
+                              >
+                                {intention}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
           <h2 style={{ 

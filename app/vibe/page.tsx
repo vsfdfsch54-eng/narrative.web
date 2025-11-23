@@ -150,11 +150,11 @@ export default function VibePage() {
         topic: selectedTopic?.label || null,
         timeframe: selectedTimeLimit || null,
       }
-      console.log('[VibePage] Calling /api/pending-matches with:', requestBody)
+      console.log('[VibePage] Calling /api/connect with:', requestBody)
       console.log('[VibePage] User object:', { id: user?.id, email: user?.email })
       
-      // Create pending match and try to match immediately (INSTANT MATCHING)
-      const response = await fetch('/api/pending-matches', {
+      // Connect using AI matching (replaces old pending-matches endpoint)
+      const response = await fetch('/api/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
@@ -180,16 +180,20 @@ export default function VibePage() {
       }
       
       if (data.success && data.matched && data.match && data.otherUserId) {
-        // Matched immediately! Navigate to chat
-        console.log('[VibePage] ✅ Matched immediately with:', data.otherUserId)
+        // Matched immediately via AI! Navigate to chat
+        console.log('[VibePage] ✅ AI matched with:', data.otherUserId, 'Score:', data.matchScore)
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
-        // In queue, navigate to chat page which will poll for matches
-        console.log('[VibePage] ⏳ Added to queue, navigating to chat page')
+        // In queue, AI is finding best match
+        console.log('[VibePage] ⏳ Added to AI matching queue, navigating to chat page')
         router.push("/chat")
+      } else if (data.needsOnboarding) {
+        // User needs to complete personality questionnaire
+        console.log('[VibePage] ⚠️ User needs to complete onboarding')
+        router.push("/onboarding")
       } else {
         // Unexpected response, still navigate to chat
-        console.error('[VibePage] ❌ Unexpected response from pending-matches:', data)
+        console.error('[VibePage] ❌ Unexpected response from connect:', data)
         router.push("/chat")
       }
     } catch (error) {

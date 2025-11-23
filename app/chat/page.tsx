@@ -24,17 +24,7 @@ export default function ChatPage() {
     const loadMatches = async () => {
       setLoading(true)
       try {
-        // First, check if user has a pending match that was just matched
-        const pendingResponse = await fetch(`/api/pending-matches/status?userId=${user.id}`)
-        const pendingData = await pendingResponse.json()
-        
-        if (pendingData.success && pendingData.matched && pendingData.match) {
-          // Matched! Navigate to chat immediately
-          router.push(`/chat/${pendingData.otherUserId}?matchId=${pendingData.match.id}`)
-          return
-        }
-        
-        // Get all existing active matches for this user
+        // First, check if user has an active match
         const response = await fetch(`/api/matches?userId=${user.id}`)
         const data = await response.json()
         
@@ -52,12 +42,23 @@ export default function ChatPage() {
           }
         }
         
-        // No matches found, check if in pending queue
-        if (pendingData.inQueue) {
-          // Already in queue, poll for match
-          console.log('[ChatPage] User is in queue, starting polling...')
+        // Check if user is in waiting pool (AI matching queue)
+        const waitingResponse = await fetch(`/api/connect/status?userId=${user.id}`, { 
+          method: 'GET',
+          cache: 'no-store'
+        })
+        const waitingData = await waitingResponse.json()
+        
+        if (waitingData.inQueue) {
+          // Already in AI matching queue, poll for match
+          console.log('[ChatPage] User is in AI matching queue, starting polling...')
           setLoading(false) // Stop loading, show waiting UI
           pollForMatch()
+        } else if (waitingData.matched && waitingData.match) {
+          // Already matched! Navigate immediately
+          console.log('[ChatPage] User already matched, navigating to chat')
+          const otherUserId = waitingData.otherUserId
+          router.push(`/chat/${otherUserId}?matchId=${waitingData.match.id}`)
         } else {
           // Not in queue, show empty state
           console.log('[ChatPage] User not in queue, showing empty state')
@@ -72,44 +73,41 @@ export default function ChatPage() {
     }
 
     const pollForMatch = async () => {
+      let pollCount = 0
+      const maxPolls = 240 // 2 minutes at 0.5s intervals
       
-      // Subscribe to realtime changes on pending_matches for this user
+      // Subscribe to realtime changes on waiting_pool for this user
       const channel = supabase
-        .channel(`pending_match_${user.id}`)
+        .channel(`waiting_pool_${user.id}`)
         .on(
           'postgres_changes',
           {
-            event: 'UPDATE',
+            event: 'DELETE',
             schema: 'public',
-            table: 'pending_matches',
+            table: 'waiting_pool',
             filter: `user_id=eq.${user.id}`,
           },
           async (payload: any) => {
-            const pendingMatch = payload?.new
-            if (pendingMatch?.status === 'matched') {
-              // User was matched! Find the chat match
-              const { data: matches, error } = await supabase
-                .from('chat_matches')
-                .select('*')
-                .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-                .eq('status', 'active')
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single()
+            // User was removed from waiting pool - likely matched!
+            // Check for new chat match
+            const { data: matches, error } = await supabase
+              .from('chat_matches')
+              .select('*')
+              .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+              .eq('status', 'active')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single()
 
-              if (!error && matches) {
-                const otherUserId = matches.user1_id === user.id ? matches.user2_id : matches.user1_id
-                router.push(`/chat/${otherUserId}?matchId=${matches.id}`)
-              }
+            if (!error && matches) {
+              const otherUserId = matches.user1_id === user.id ? matches.user2_id : matches.user1_id
+              router.push(`/chat/${otherUserId}?matchId=${matches.id}`)
             }
           }
         )
         .subscribe()
 
-      // Poll every 500ms to check for matches (GET endpoint now runs matchmaking)
-      let pollCount = 0
-      const maxPolls = 240 // 2 minutes max (240 * 500ms = 120s)
-      
+      // Poll every 500ms to check for matches (GET endpoint now runs AI matching)
       const interval = setInterval(async () => {
         pollCount++
         try {
@@ -122,23 +120,23 @@ export default function ChatPage() {
             return
           }
           
-          console.log(`[ChatPage] Polling for match (attempt ${pollCount}/${maxPolls}) for user ${user.id}`)
+          console.log(`[ChatPage] Polling for AI match (attempt ${pollCount}/${maxPolls}) for user ${user.id}`)
           
-          // Every 5 polls (2.5 seconds), trigger matchmaking directly as backup
+          // Every 5 polls (2.5 seconds), trigger AI matchmaking directly as backup
           if (pollCount % 5 === 0) {
-            console.log(`[ChatPage] Triggering direct matchmaking as backup (poll ${pollCount})`)
+            console.log(`[ChatPage] Triggering direct AI matchmaking as backup (poll ${pollCount})`)
             fetch('/api/matchmaking/process', { 
               method: 'GET',
               cache: 'no-store'
             }).then(r => r.json()).then(data => {
               if (data.matched > 0) {
-                console.log(`[ChatPage] ✅ Backup matchmaking matched ${data.matched} pair(s)`)
+                console.log(`[ChatPage] ✅ Backup AI matchmaking matched ${data.matched} pair(s)`)
               }
             }).catch(err => console.error('[ChatPage] Error triggering matchmaking:', err))
           }
           
-          // Check if user was matched (status endpoint runs matchmaking automatically)
-          const response = await fetch(`/api/pending-matches/status?userId=${user.id}`, {
+          // Check if user was matched (status endpoint runs AI matching automatically)
+          const response = await fetch(`/api/connect/status?userId=${user.id}`, {
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache',
@@ -157,12 +155,13 @@ export default function ChatPage() {
             matched: data.matched, 
             inQueue: data.inQueue,
             hasMatch: !!data.match,
-            hasOtherUserId: !!data.otherUserId
+            hasOtherUserId: !!data.otherUserId,
+            matchScore: data.matchScore
           })
           
           if (data.success && data.matched && data.match && data.otherUserId) {
-            // Match found! Navigate immediately
-            console.log(`[ChatPage] ✅ Match found! Navigating to chat with ${data.otherUserId}`)
+            // AI match found! Navigate immediately
+            console.log(`[ChatPage] ✅ AI match found! Navigating to chat with ${data.otherUserId} (score: ${data.matchScore})`)
             clearInterval(interval)
             channel.unsubscribe()
             setLoading(false)
@@ -199,14 +198,14 @@ export default function ChatPage() {
           } else {
             // Still in queue - keep polling but don't log every time to reduce noise
             if (pollCount % 10 === 0) {
-              console.log(`[ChatPage] Still in queue (${pollCount} polls)...`)
+              console.log(`[ChatPage] Still in AI matching queue (${pollCount} polls)...`)
             }
           }
         } catch (error) {
           console.error('[ChatPage] Error polling for match:', error)
           // Don't stop polling on error, just log it
         }
-      }, 500) // Poll every 500ms - GET endpoint runs matchmaking automatically
+      }, 500) // Poll every 500ms - GET endpoint runs AI matching automatically
 
       // Cleanup after 2 minutes
       const timeout = setTimeout(() => {
@@ -221,7 +220,6 @@ export default function ChatPage() {
         clearInterval(interval)
         clearTimeout(timeout)
         channel.unsubscribe()
-        setLoading(false)
       }
     }
 
@@ -327,7 +325,7 @@ export default function ChatPage() {
               color: tokens.colors.textPrimaryOnDark,
               margin: 0,
             }}>
-              Finding Your Match
+              AI is Finding Your Match
             </h1>
             <p style={{
               ...tokens.typography.body,
@@ -337,7 +335,7 @@ export default function ChatPage() {
               marginLeft: 'auto',
               marginRight: 'auto',
             }}>
-              We&apos;re connecting you with someone right now. This should only take a moment...
+              Our AI is analyzing personalities to find your perfect conversation partner. This should only take a moment...
             </p>
           </div>
 
