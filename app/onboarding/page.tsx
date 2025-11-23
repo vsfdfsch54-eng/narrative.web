@@ -506,6 +506,23 @@ function OnboardingContent() {
 
       // Generate personality profile
       console.log('[Onboarding] Generating personality profile...')
+      
+      // First, test if OpenAI API key is accessible
+      try {
+        const testResponse = await fetch('/api/test-openai')
+        const testData = await testResponse.json()
+        if (!testData.success) {
+          console.error('[Onboarding] ❌ OpenAI API key test failed:', testData)
+          setError(`OpenAI API key issue: ${testData.error}\n\n${testData.details || ''}\n\nPlease check your .env.local file and restart your dev server.`)
+          setLoading(false)
+          return
+        }
+        console.log('[Onboarding] ✅ OpenAI API key test passed')
+      } catch (testError) {
+        console.error('[Onboarding] Error testing OpenAI key:', testError)
+        // Continue anyway - might be a network issue
+      }
+      
       const personalityResponse = await fetch('/api/personality/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
