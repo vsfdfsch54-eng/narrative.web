@@ -729,7 +729,7 @@ function OnboardingContent() {
                     }
                   }}
                   disabled={loading}
-                  readOnly={!!user && user.email_confirmed_at}
+                  readOnly={!!(user && user.email_confirmed_at)}
                   style={{
                     width: '100%',
                     height: '40px',
