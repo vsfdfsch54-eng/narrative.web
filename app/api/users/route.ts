@@ -10,7 +10,15 @@ export async function GET(request: NextRequest) {
   const userId = searchParams.get('userId')
 
   if (!userId) {
-    return NextResponse.json({ success: false, error: 'User ID required' }, { status: 400 })
+    return NextResponse.json(
+      { success: false, error: 'User ID required' }, 
+      { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
   }
 
   try {
@@ -25,7 +33,15 @@ export async function GET(request: NextRequest) {
       .maybeSingle()
 
     if (fetchError && fetchError.code !== 'PGRST116') {
-      return NextResponse.json({ success: false, error: fetchError.message }, { status: 500 })
+      return NextResponse.json(
+        { success: false, error: fetchError.message }, 
+        { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
     }
 
     // If user doesn't exist, try to create from auth
@@ -41,7 +57,12 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ 
             success: false, 
             error: 'User not found. Please complete signup first.' 
-          }, { status: 404 })
+          }, { 
+            status: 404,
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          })
         }
 
         // Auto-create user record using upsert to handle duplicate email/id
@@ -113,7 +134,12 @@ export async function GET(request: NextRequest) {
               success: false, 
               error: 'User not found. Please complete onboarding to create your profile.',
               details: 'User was not created and could not be found after multiple attempts. Please try again.'
-            }, { status: 404 })
+            }, { 
+              status: 404,
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            })
           }
 
           userData = fetchedUser
@@ -130,9 +156,24 @@ export async function GET(request: NextRequest) {
       userData = existingUser
     }
 
-    return NextResponse.json({ success: true, data: userData })
+    return NextResponse.json(
+      { success: true, data: userData },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: error.message }, 
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
   }
 }
 
@@ -142,7 +183,15 @@ export async function PUT(request: NextRequest) {
     const { userId, name, interests } = body
 
     if (!userId || !name) {
-      return NextResponse.json({ success: false, error: 'User ID and name required' }, { status: 400 })
+      return NextResponse.json(
+        { success: false, error: 'User ID and name required' }, 
+        { 
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
     }
 
     const supabase = createServerClient()
@@ -155,7 +204,15 @@ export async function PUT(request: NextRequest) {
       .maybeSingle()
 
     if (fetchError) {
-      return NextResponse.json({ success: false, error: fetchError.message }, { status: 500 })
+      return NextResponse.json(
+        { success: false, error: fetchError.message }, 
+        { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
     }
 
     // If user doesn't exist, get email from auth and create user
@@ -169,7 +226,12 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ 
           success: false, 
           error: 'User not found in auth. Please complete signup first.' 
-        }, { status: 404 })
+        }, { 
+          status: 404,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
       }
       email = authUser.user.email
       console.log('[Users API] Found user in auth, email:', email)
@@ -209,26 +271,72 @@ export async function PUT(request: NextRequest) {
           .select()
         
         if (updateError) {
-          return NextResponse.json({ success: false, error: updateError.message }, { status: 500 })
-    }
+          return NextResponse.json(
+            { success: false, error: updateError.message }, 
+            { 
+              status: 500,
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            }
+          )
+        }
 
         // Handle array response
         const finalData = Array.isArray(updateData) ? updateData[0] : updateData
-        return NextResponse.json({ success: true, data: finalData })
+        return NextResponse.json(
+          { success: true, data: finalData },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          }
+        )
       }
       
-      return NextResponse.json({ success: false, error: upsertError.message }, { status: 500 })
+      return NextResponse.json(
+        { success: false, error: upsertError.message }, 
+        { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
     }
 
     // Handle array response from upsert
     const finalData = Array.isArray(upsertData) ? upsertData[0] : upsertData
     if (!finalData) {
-      return NextResponse.json({ success: false, error: 'Failed to save user data' }, { status: 500 })
+      return NextResponse.json(
+        { success: false, error: 'Failed to save user data' }, 
+        { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
     }
 
-    return NextResponse.json({ success: true, data: finalData })
+    return NextResponse.json(
+      { success: true, data: finalData },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    return NextResponse.json(
+      { success: false, error: error.message }, 
+      { 
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
   }
 }
 
