@@ -107,7 +107,7 @@ export function PersonalityStep({
         }}>
           {currentQuestion.question}
         </h1>
-        {currentQuestion.description && (
+        {'description' in currentQuestion && currentQuestion.description && (
           <p style={{
             ...tokens.typography.body,
             color: tokens.colors.textSecondary,
