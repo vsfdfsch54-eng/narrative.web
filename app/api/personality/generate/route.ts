@@ -91,60 +91,52 @@ export async function POST(request: NextRequest) {
           })
           .select('id, email, name')
 
+        // Log upsert error details for debugging
         if (createError) {
-          // Handle duplicate email error gracefully
-          if (createError.message.includes('duplicate key') || 
-              createError.message.includes('unique constraint') || 
-              createError.code === '23505') {
-            // User already exists, fetch it instead
-            console.log('[Personality Generate] User already exists, fetching...')
-            const { data: existingUser, error: fetchError } = await supabase
-              .from('users')
-              .select('id, email, name')
-              .eq('id', userId)
-              .single()
-            
-            if (fetchError || !existingUser) {
-              console.error('[Personality Generate] Failed to fetch existing user:', fetchError)
-              return NextResponse.json(
-                { error: 'Failed to create/fetch user record', details: fetchError?.message || createError.message },
-                { status: 500 }
-              )
-            }
-            
-            user = existingUser
-            console.log('[Personality Generate] ✅ User already exists, using existing record')
-          } else {
-            console.error('[Personality Generate] Failed to create user:', createError)
-            return NextResponse.json(
-              { error: 'Failed to create user record', details: createError.message },
-              { status: 500 }
-            )
-          }
-        } else if (upsertResult && upsertResult.length > 0) {
-          // Upsert returns an array, take the first element
-          user = Array.isArray(upsertResult) ? upsertResult[0] : upsertResult
-          console.log('[Personality Generate] ✅ User auto-created from auth')
-        } else {
-          // If upsert didn't return data, try fetching the user
-          console.log('[Personality Generate] Upsert returned no data, fetching user...')
-          const { data: existingUser, error: fetchError } = await supabase
-            .from('users')
-            .select('id, email, name')
-            .eq('id', userId)
-            .single()
-          
-          if (fetchError || !existingUser) {
-            console.error('[Personality Generate] Failed to fetch user after upsert:', fetchError)
-            return NextResponse.json(
-              { error: 'Failed to create user record - no data returned' },
-              { status: 500 }
-            )
-          }
-          
-          user = existingUser
-          console.log('[Personality Generate] ✅ User fetched after upsert')
+          console.error('[Personality Generate] Upsert error details:', {
+            message: createError.message,
+            code: createError.code,
+            details: createError.details,
+            hint: createError.hint
+          })
         }
+
+        // Always try to fetch the user after upsert to ensure we have the latest data
+        // This handles cases where upsert doesn't return data or returns unexpected format
+        const { data: fetchedUser, error: fetchError } = await supabase
+          .from('users')
+          .select('id, email, name')
+          .eq('id', userId)
+          .maybeSingle() // Use maybeSingle to handle case where user doesn't exist
+
+        if (fetchError) {
+          console.error('[Personality Generate] Error fetching user after upsert:', {
+            message: fetchError.message,
+            code: fetchError.code,
+            details: fetchError.details
+          })
+          return NextResponse.json(
+            { 
+              error: 'Failed to create/fetch user record', 
+              details: fetchError.message || createError?.message || 'Unknown error'
+            },
+            { status: 500 }
+          )
+        }
+
+        if (!fetchedUser) {
+          console.error('[Personality Generate] User not found after upsert and fetch')
+          return NextResponse.json(
+            { 
+              error: 'Failed to create user record', 
+              details: 'User was not created and could not be found'
+            },
+            { status: 500 }
+          )
+        }
+
+        user = fetchedUser
+        console.log('[Personality Generate] ✅ User verified:', { id: user.id, email: user.email })
       } catch (error: any) {
         console.error('[Personality Generate] Error creating user:', error)
         return NextResponse.json(
