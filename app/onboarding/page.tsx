@@ -112,10 +112,11 @@ function OnboardingContent() {
           if (data.success && data.data) {
             const hasName = data.data.name && data.data.name.trim() !== ''
             const hasInterests = data.data.interests && data.data.interests.length > 0
+            const hasPersonality = data.data.personality_embedding && data.data.personality_embedding.length > 0
             
-            // If user has name and interests, onboarding is complete - redirect to vibe
-            if (hasName && hasInterests) {
-              console.log('[Onboarding] ✅ User has name and interests, redirecting to /vibe')
+            // If user has name, interests, and personality, onboarding is complete - redirect to vibe
+            if (hasName && hasInterests && hasPersonality) {
+              console.log('[Onboarding] ✅ User has name, interests, and personality, redirecting to /vibe')
               setIsRedirecting(true)
               clearOnboardingData()
               router.push('/vibe')
@@ -134,10 +135,16 @@ function OnboardingContent() {
             } else if (!hasInterests) {
               console.log('[Onboarding] Missing interests, showing interests step')
               setCurrentStep('interests')
-            } else {
-              // Has name and interests, show personality step (optional)
-              console.log('[Onboarding] Has name and interests, showing personality step (optional)')
+            } else if (!hasPersonality) {
+              // Has name and interests, but missing personality - show personality step (required)
+              console.log('[Onboarding] Missing personality, showing personality step (required)')
               setCurrentStep('personality')
+            } else {
+              // All complete - should have redirected above, but just in case
+              console.log('[Onboarding] All complete, redirecting to /vibe')
+              setIsRedirecting(true)
+              clearOnboardingData()
+              router.push('/vibe')
             }
           } else {
             // User not found in database - start from name step
@@ -171,10 +178,14 @@ function OnboardingContent() {
             const hasName = data.data.name
             const hasInterests = data.data.interests && data.data.interests.length > 0
             
-            if (hasName && hasInterests) {
+            const hasPersonality = data.data.personality_embedding && data.data.personality_embedding.length > 0
+            
+            if (hasName && hasInterests && hasPersonality) {
               setIsRedirecting(true)
               clearOnboardingData()
               router.push('/vibe')
+            } else if (hasName && hasInterests) {
+              setCurrentStep('personality')
             } else if (hasName) {
               setCurrentStep('interests')
               if (data.data.interests) setSelectedInterests(data.data.interests)
@@ -419,9 +430,9 @@ function OnboardingContent() {
 
           console.log('[Onboarding] ✅ User created in database:', userData.data?.id)
 
-          // Generate personality profile if we have answers
+          // Generate personality profile if we have answers (REQUIRED)
           if (Object.keys(personalityAnswers).length > 0) {
-            console.log('[Onboarding] Generating personality profile...')
+            console.log('[Onboarding] Generating personality profile (required)...')
             try {
               const personalityResponse = await fetch('/api/personality/generate', {
                 method: 'POST',
@@ -436,15 +447,27 @@ function OnboardingContent() {
               const personalityData = await personalityResponse.json()
               
               if (!personalityData.success) {
-                console.error('[Onboarding] ⚠️ Personality generation failed:', personalityData.error)
-                // Don't fail the entire flow - user can still proceed without personality
+                console.error('[Onboarding] ❌ Personality generation failed:', personalityData.error)
+                setError(`Failed to generate personality profile: ${personalityData.error || 'Unknown error'}. Please complete the personality questionnaire.`)
+                setLoading(false)
+                setCurrentStep('personality')
+                return
               } else {
                 console.log('[Onboarding] ✅ Personality profile generated successfully')
               }
-            } catch (personalityError) {
-              console.error('[Onboarding] ⚠️ Personality generation error:', personalityError)
-              // Don't fail the entire flow
+            } catch (personalityError: any) {
+              console.error('[Onboarding] ❌ Personality generation error:', personalityError)
+              setError(`Failed to generate personality profile: ${personalityError.message || 'Unknown error'}. Please try again.`)
+              setLoading(false)
+              setCurrentStep('personality')
+              return
             }
+          } else {
+            // No personality answers - redirect to personality step
+            console.log('[Onboarding] No personality answers, showing personality step')
+            setLoading(false)
+            setCurrentStep('personality')
+            return
           }
         } catch (userError: any) {
           console.error('[Onboarding] ❌ Error creating user:', userError)
@@ -467,14 +490,21 @@ function OnboardingContent() {
             if (checkData.success && checkData.data) {
               const hasName = checkData.data.name && checkData.data.name.trim() !== ''
               const hasInterests = checkData.data.interests && checkData.data.interests.length > 0
+              const hasPersonality = checkData.data.personality_embedding && checkData.data.personality_embedding.length > 0
               
-              if (hasName && hasInterests) {
+              if (hasName && hasInterests && hasPersonality) {
                 // Onboarding complete - go to vibe
-                console.log('[Onboarding] ✅ Signup complete with name and interests, redirecting to /vibe')
+                console.log('[Onboarding] ✅ Signup complete with name, interests, and personality, redirecting to /vibe')
                 setIsRedirecting(true)
                 clearOnboardingData()
                 setLoading(false)
                 router.push('/vibe')
+                return
+              } else if (hasName && hasInterests) {
+                // Has name and interests but missing personality - go to personality step
+                console.log('[Onboarding] Signup complete but missing personality, showing personality step')
+                setLoading(false)
+                setCurrentStep('personality')
                 return
               }
             }
@@ -619,36 +649,66 @@ function OnboardingContent() {
         // Continue anyway - might be a network issue
       }
       
-      // Generate personality profile (optional - don't block if it fails)
-      if (Object.keys(personalityAnswers).length > 0) {
-        console.log('[Onboarding] Generating personality profile (optional)...')
-        try {
-          const personalityResponse = await fetch('/api/personality/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.id,
-              questionnaireAnswers: personalityAnswers,
-              interests: selectedInterests,
-            })
+      // Generate personality profile (REQUIRED)
+      if (Object.keys(personalityAnswers).length === 0) {
+        setError("Please answer all personality questions to complete onboarding.")
+        setLoading(false)
+        return
+      }
+      
+      console.log('[Onboarding] Generating personality profile (required)...')
+      try {
+        const personalityResponse = await fetch('/api/personality/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            questionnaireAnswers: personalityAnswers,
+            interests: selectedInterests,
           })
+        })
 
-          const personalityData = await personalityResponse.json()
-          
-          if (!personalityData.success) {
-            console.warn('[Onboarding] ⚠️ Personality generation failed (optional):', personalityData.error)
-            console.warn('[Onboarding] User can still proceed without personality profile')
-            // Don't block - personality generation is optional
-          } else {
-            console.log('[Onboarding] ✅ Personality profile generated successfully')
+        const personalityData = await personalityResponse.json()
+        
+        if (!personalityData.success) {
+          console.error('[Onboarding] ❌ Personality generation failed:', personalityData.error)
+          setError(`Failed to generate personality profile: ${personalityData.error || 'Unknown error'}. Please try again.`)
+          setLoading(false)
+          return
+        }
+        
+        console.log('[Onboarding] ✅ Personality profile generated successfully')
+      } catch (personalityError: any) {
+        console.error('[Onboarding] ❌ Personality generation error:', personalityError)
+        setError(`Failed to generate personality profile: ${personalityError.message || 'Unknown error'}. Please try again.`)
+        setLoading(false)
+        return
+      }
+      
+      // Verify personality was created before proceeding
+      let personalityVerified = false
+      for (let attempt = 0; attempt < 5; attempt++) {
+        await new Promise(resolve => setTimeout(resolve, 300))
+        const verifyResponse = await fetch(`/api/users?userId=${user.id}`)
+        const verifyData = await verifyResponse.json()
+        
+        if (verifyData.success && verifyData.data) {
+          const hasPersonality = verifyData.data.personality_embedding && verifyData.data.personality_embedding.length > 0
+          if (hasPersonality) {
+            personalityVerified = true
+            console.log('[Onboarding] ✅ Personality verified in database')
+            break
           }
-        } catch (personalityError: any) {
-          console.warn('[Onboarding] ⚠️ Personality generation error (optional):', personalityError)
-          // Don't block - personality generation is optional
         }
       }
       
-      // Always proceed to vibe page, even if personality generation failed
+      if (!personalityVerified) {
+        setError("Personality profile was generated but could not be verified. Please try again.")
+        setLoading(false)
+        return
+      }
+      
+      // Only proceed to vibe page if personality generation succeeded
       setIsRedirecting(true)
       clearOnboardingData()
       setLoading(false)
@@ -1589,10 +1649,14 @@ function OnboardingContent() {
                         const hasName = data.data.name
                         const hasInterests = data.data.interests && data.data.interests.length > 0
                         
-                        if (hasName && hasInterests) {
+                        const hasPersonality = data.data.personality_embedding && data.data.personality_embedding.length > 0
+                        
+                        if (hasName && hasInterests && hasPersonality) {
                           setIsRedirecting(true)
                           clearOnboardingData()
                           router.push('/vibe')
+                        } else if (hasName && hasInterests) {
+                          setCurrentStep('personality')
                         } else if (hasName) {
                           setCurrentStep('interests')
                           if (data.data.interests) setSelectedInterests(data.data.interests)
@@ -1643,3 +1707,4 @@ export default function OnboardingPage() {
     </Suspense>
   )
 }
+

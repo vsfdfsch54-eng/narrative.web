@@ -27,15 +27,15 @@ export default function Home() {
           if (data.success && data.data) {
             const hasName = data.data.name && data.data.name.trim() !== ''
             const hasInterests = data.data.interests && data.data.interests.length > 0
-            // Personality is optional - don't require it for onboarding completion
+            const hasPersonality = data.data.personality_embedding && data.data.personality_embedding.length > 0
             
-            if (hasName && hasInterests) {
+            if (hasName && hasInterests && hasPersonality) {
               // Onboarding complete → go to vibe
-              console.log('[Welcome Page] ✅ Onboarding complete (name and interests present), redirecting to /vibe')
+              console.log('[Welcome Page] ✅ Onboarding complete (name, interests, and personality present), redirecting to /vibe')
               router.push("/vibe")
             } else {
               // Onboarding incomplete → go to onboarding
-              console.log('[Welcome Page] ⚠️ Onboarding incomplete (missing name or interests), redirecting to /onboarding')
+              console.log('[Welcome Page] ⚠️ Onboarding incomplete (missing name, interests, or personality), redirecting to /onboarding')
               router.push("/onboarding")
             }
           } else {
