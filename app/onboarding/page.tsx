@@ -807,6 +807,20 @@ function OnboardingContent() {
                 {loading ? 'Loading...' : 'Continue'}
               </motion.button>
               
+              <Link 
+                href="/"
+                style={{ 
+                  textAlign: 'center',
+                  ...tokens.typography.label,
+                  color: tokens.colors.textSecondary,
+                  marginTop: tokens.spacing[8],
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                }}
+              >
+                ← Back to Welcome
+              </Link>
+              
               {!user && (
                 <p style={{ 
                   textAlign: 'center',
