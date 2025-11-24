@@ -3,10 +3,9 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Save, Users, Edit2, Bell, Check, X } from "lucide-react"
+import { Save, Users, Edit2, Bell, Check, X, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
-import { Button } from "@/components/ui/button"
 import { tokens } from "@/lib/design-tokens"
 
 export default function ProfilePage() {
@@ -188,7 +187,6 @@ export default function ProfilePage() {
       
       const data = await response.json()
       if (data.success) {
-        // Remove notification from list
         setNotifications(prev => prev.filter(n => n.id !== notificationId))
         alert('Added to community!')
       } else {
@@ -215,7 +213,6 @@ export default function ProfilePage() {
       })
       
       if (response.ok) {
-        // Remove notification from list
         setNotifications(prev => prev.filter(n => n.id !== notificationId))
       }
     } catch (error) {
@@ -239,24 +236,41 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, paddingTop: tokens.layout.topTitleSpacing, paddingBottom: '120px' }}>
-        <div style={{ textAlign: 'center', padding: tokens.layout.sectionSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected }}>
-          <div style={{ fontSize: '64px', marginBottom: tokens.layout.elementSpacing }}>👤</div>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: tokens.spacing[28],
+        paddingTop: tokens.layout.topTitleSpacing, 
+        paddingBottom: '120px' 
+      }}>
+        {/* Header Section - Name and Quote */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center',
+          gap: tokens.spacing[20],
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: '64px' }}>👤</div>
+          
           {isEditingName ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12], width: '100%' }}>
               <input
                 type="text"
                 value={tempName}
                 onChange={(e) => setTempName(e.target.value)}
                 style={{
                   ...tokens.typography.heading,
-                  color: tokens.colors.textOnPill,
-                  background: tokens.colors.pillUnselected,
+                  color: tokens.colors.textPrimaryOnDark,
+                  background: 'transparent',
                   border: 'none',
                   borderRadius: tokens.radii.input,
-                  padding: `12px ${tokens.spacing[18]}`,
+                  padding: `${tokens.spacing[12]} ${tokens.spacing[18]}`,
                   textAlign: 'center',
-                  width: '200px',
+                  maxWidth: '300px',
+                  width: '100%',
+                  outline: 'none',
+                  borderBottom: `2px solid ${tokens.colors.textSecondary}`,
                 }}
                 autoFocus
                 onBlur={handleSaveName}
@@ -271,96 +285,85 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
-              <h2 style={{ 
-                ...tokens.typography.heading,
-                color: tokens.colors.textOnPill,
+              <h1 style={{ 
+                ...tokens.typography.title,
+                color: tokens.colors.textPrimaryOnDark,
                 margin: 0,
               }}>
                 {userName || "User"}
-              </h2>
+              </h1>
               <motion.button
-                whileTap={{ scale: 0.98 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setIsEditingName(true)}
                 style={{
                   padding: tokens.spacing[8],
                   borderRadius: tokens.radii.button,
                   background: 'transparent',
                   border: 'none',
-                  color: tokens.colors.textMuted,
+                  color: tokens.colors.textSecondary,
                   cursor: 'pointer',
                 }}
               >
-                <Edit2 className="w-4 h-4" />
+                <Edit2 style={{ width: '18px', height: '18px' }} />
               </motion.button>
             </div>
           )}
-          <div style={{ marginTop: tokens.layout.sectionSpacing }}>
-            <textarea
-              value={quoteOfDay}
-              onChange={(e) => setQuoteOfDay(e.target.value)}
-              onBlur={handleSaveQuote}
-              placeholder="What's on your mind today?"
-              style={{
-                width: '100%',
-                minHeight: '80px',
-                padding: `12px ${tokens.spacing[18]}`,
-                background: tokens.colors.pillUnselected,
-                border: 'none',
-                borderRadius: tokens.radii.input,
-                color: tokens.colors.textOnPill,
-                boxShadow: tokens.shadows.pillUnselected,
-                ...tokens.typography.body,
-                resize: 'none',
-              }}
-              rows={3}
-            />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: tokens.spacing[16] }}>
-              <Button
-                variant="primary"
-                onClick={handleSaveQuote}
-              >
-                <Save className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          
+          <textarea
+            value={quoteOfDay}
+            onChange={(e) => setQuoteOfDay(e.target.value)}
+            onBlur={handleSaveQuote}
+            placeholder="What's on your mind today?"
+            style={{
+              width: '100%',
+              maxWidth: tokens.layout.maxWidth,
+              minHeight: '80px',
+              padding: `${tokens.spacing[16]} ${tokens.spacing[20]}`,
+              background: 'transparent',
+              border: 'none',
+              borderRadius: tokens.radii.input,
+              color: tokens.colors.textSecondary,
+              ...tokens.typography.body,
+              resize: 'none',
+              outline: 'none',
+              borderBottom: `1px solid rgba(255,255,255,0.08)`,
+            }}
+            rows={3}
+          />
         </div>
 
         {/* Personality Profile Section */}
         {personalitySummary && (
-          <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: tokens.spacing[20],
+            paddingTop: tokens.spacing[28],
+            borderTop: `1px solid rgba(255,255,255,0.08)`,
+          }}>
             <h2 style={{ 
               ...tokens.typography.heading,
-              color: tokens.colors.textOnPill,
+              color: tokens.colors.textPrimaryOnDark,
               margin: 0,
-              marginBottom: tokens.layout.elementSpacing,
               textAlign: 'center',
             }}>
-              Your Personality Profile
+              Your Personality
             </h2>
             
             {loadingPersonality ? (
-              <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, textAlign: 'center', padding: tokens.layout.sectionSpacing }}>
+              <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center' }}>
                 Loading personality profile...
               </p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
                 {/* Personality Summary */}
                 <div>
-                  <h3 style={{ 
-                    ...tokens.typography.label,
-                    color: tokens.colors.textOnPill,
-                    fontWeight: 600,
-                    marginBottom: tokens.spacing[8],
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.1em',
-                  }}>
-                    Summary
-                  </h3>
                   <p style={{ 
                     ...tokens.typography.body,
-                    color: tokens.colors.textOnPill,
+                    color: tokens.colors.textSecondary,
                     lineHeight: 1.6,
                     margin: 0,
+                    textAlign: 'center',
                   }}>
                     {personalitySummary}
                   </p>
@@ -368,73 +371,69 @@ export default function ProfilePage() {
 
                 {/* Personality Traits */}
                 {personalityTraits && (
-                  <div>
-                    <h3 style={{ 
-                      ...tokens.typography.label,
-                      color: tokens.colors.textOnPill,
-                      fontWeight: 600,
-                      marginBottom: tokens.spacing[12],
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                    }}>
-                      Key Traits
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
-                      {personalityTraits.communicationStyle && (
-                        <div>
-                          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0, marginBottom: tokens.spacing[4] }}>
-                            Communication Style
-                          </p>
-                          <p style={{ ...tokens.typography.body, color: tokens.colors.textOnPill, margin: 0, textTransform: 'capitalize' }}>
-                            {personalityTraits.communicationStyle}
-                          </p>
-                        </div>
-                      )}
-                      {personalityTraits.socialEnergy && (
-                        <div>
-                          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0, marginBottom: tokens.spacing[4] }}>
-                            Social Energy
-                          </p>
-                          <p style={{ ...tokens.typography.body, color: tokens.colors.textOnPill, margin: 0, textTransform: 'capitalize' }}>
-                            {personalityTraits.socialEnergy}
-                          </p>
-                        </div>
-                      )}
-                      {personalityTraits.conversationDepth && (
-                        <div>
-                          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0, marginBottom: tokens.spacing[4] }}>
-                            Conversation Preference
-                          </p>
-                          <p style={{ ...tokens.typography.body, color: tokens.colors.textOnPill, margin: 0, textTransform: 'capitalize' }}>
-                            {personalityTraits.conversationDepth}
-                          </p>
-                        </div>
-                      )}
-                      {personalityTraits.socialIntention && Array.isArray(personalityTraits.socialIntention) && personalityTraits.socialIntention.length > 0 && (
-                        <div>
-                          <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0, marginBottom: tokens.spacing[4] }}>
-                            Social Intentions
-                          </p>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: tokens.spacing[8] }}>
-                            {personalityTraits.socialIntention.map((intention: string) => (
-                              <span
-                                key={intention}
-                                style={{
-                                  padding: `6px ${tokens.spacing[12]}`,
-                                  borderRadius: tokens.radii.pill,
-                                  background: tokens.colors.pillSelected,
-                                  color: tokens.colors.textOnPill,
-                                  fontSize: '12px',
-                                  textTransform: 'capitalize',
-                                }}
-                              >
-                                {intention}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                  <div style={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: tokens.spacing[10],
+                    justifyContent: 'center',
+                  }}>
+                    {personalityTraits.communicationStyle && (
+                      <span style={{
+                        padding: `6px ${tokens.spacing[14]}`,
+                        borderRadius: tokens.radii.pill,
+                        background: tokens.colors.pillUnselected,
+                        color: tokens.colors.textOnPill,
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        textTransform: 'capitalize',
+                      }}>
+                        {personalityTraits.communicationStyle}
+                      </span>
+                    )}
+                    {personalityTraits.socialEnergy && (
+                      <span style={{
+                        padding: `6px ${tokens.spacing[14]}`,
+                        borderRadius: tokens.radii.pill,
+                        background: tokens.colors.pillUnselected,
+                        color: tokens.colors.textOnPill,
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        textTransform: 'capitalize',
+                      }}>
+                        {personalityTraits.socialEnergy}
+                      </span>
+                    )}
+                    {personalityTraits.conversationDepth && (
+                      <span style={{
+                        padding: `6px ${tokens.spacing[14]}`,
+                        borderRadius: tokens.radii.pill,
+                        background: tokens.colors.pillUnselected,
+                        color: tokens.colors.textOnPill,
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        textTransform: 'capitalize',
+                      }}>
+                        {personalityTraits.conversationDepth}
+                      </span>
+                    )}
+                    {personalityTraits.socialIntention && Array.isArray(personalityTraits.socialIntention) && personalityTraits.socialIntention.length > 0 && (
+                      personalityTraits.socialIntention.map((intention: string) => (
+                        <span
+                          key={intention}
+                          style={{
+                            padding: `6px ${tokens.spacing[14]}`,
+                            borderRadius: tokens.radii.pill,
+                            background: tokens.colors.pillUnselected,
+                            color: tokens.colors.textOnPill,
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            textTransform: 'capitalize',
+                          }}
+                        >
+                          {intention}
+                        </span>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
@@ -442,56 +441,80 @@ export default function ProfilePage() {
           </div>
         )}
 
-        <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
+        {/* Friends Section */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: tokens.spacing[20],
+          paddingTop: tokens.spacing[28],
+          borderTop: `1px solid rgba(255,255,255,0.08)`,
+        }}>
           <h2 style={{ 
             ...tokens.typography.heading,
-            color: tokens.colors.textOnPill,
+            color: tokens.colors.textPrimaryOnDark,
             margin: 0,
-            marginBottom: tokens.layout.elementSpacing,
             textAlign: 'center',
           }}>
             My Friends
           </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.elementSpacing }}>
-            <div style={{ padding: tokens.spacing[16] }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentOrange }} />
-                  <p style={{ ...tokens.typography.label, color: tokens.colors.textOnPill, fontWeight: 500, margin: 0 }}>Inner Circle</p>
-                </div>
-                <span style={{ ...tokens.typography.label, color: tokens.colors.textMuted }}>0</span>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              padding: `${tokens.spacing[16]} 0`,
+              borderBottom: `1px solid rgba(255,255,255,0.05)`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentOrange }} />
+                <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimaryOnDark, fontWeight: 500, margin: 0 }}>
+                  Inner Circle
+                </p>
               </div>
-              <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, margin: 0, fontSize: tokens.typography.label.fontSize }}>No inner circle members yet</p>
+              <span style={{ ...tokens.typography.body, color: tokens.colors.textSecondary }}>0</span>
             </div>
 
-            <div style={{ padding: tokens.spacing[16] }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentBlue }} />
-                  <p style={{ ...tokens.typography.label, color: tokens.colors.textOnPill, fontWeight: 500, margin: 0 }}>Close Friends</p>
-                </div>
-                <span style={{ ...tokens.typography.label, color: tokens.colors.textMuted }}>0</span>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              padding: `${tokens.spacing[16]} 0`,
+              borderBottom: `1px solid rgba(255,255,255,0.05)`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentBlue }} />
+                <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimaryOnDark, fontWeight: 500, margin: 0 }}>
+                  Close Friends
+                </p>
               </div>
-              <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, margin: 0, fontSize: tokens.typography.label.fontSize }}>No close friends yet</p>
+              <span style={{ ...tokens.typography.body, color: tokens.colors.textSecondary }}>0</span>
             </div>
 
-            <div style={{ padding: tokens.spacing[16] }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              gap: tokens.spacing[12],
+              padding: `${tokens.spacing[16]} 0`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentGreen }} />
-                  <p style={{ ...tokens.typography.label, color: tokens.colors.textOnPill, fontWeight: 500, margin: 0 }}>Community</p>
+                  <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimaryOnDark, fontWeight: 500, margin: 0 }}>
+                    Community
+                  </p>
                 </div>
-                <span style={{ ...tokens.typography.label, color: tokens.colors.textMuted }}>{communityMembers.length}</span>
+                <span style={{ ...tokens.typography.body, color: tokens.colors.textSecondary }}>{communityMembers.length}</span>
               </div>
               {communityMembers.length > 0 ? (
-                <div style={{ display: 'flex', gap: tokens.spacing[12], overflowX: 'auto', paddingBottom: tokens.spacing[8] }}>
+                <div style={{ display: 'flex', gap: tokens.spacing[10], overflowX: 'auto', paddingTop: tokens.spacing[8] }}>
                   {communityMembers.map((member) => (
                     <motion.button
                       key={member.id}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => router.push(`/chat/${member.id}`)}
                       style={{
-                        padding: `12px ${tokens.spacing[18]}`,
+                        padding: `8px ${tokens.spacing[16]}`,
                         borderRadius: tokens.radii.pill,
                         background: tokens.colors.pillUnselected,
                         color: tokens.colors.textOnPill,
@@ -507,79 +530,104 @@ export default function ProfilePage() {
                   ))}
                 </div>
               ) : (
-                <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, margin: 0, fontSize: tokens.typography.label.fontSize }}>No community members yet</p>
+                <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: '13px' }}>
+                  No community members yet
+                </p>
               )}
             </div>
           </div>
         </div>
 
-        <div style={{ padding: tokens.layout.elementSpacing, borderRadius: tokens.radii.pill, background: tokens.colors.pillUnselected, boxShadow: tokens.shadows.pillUnselected}}>
+        {/* Recent Chats Section */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: tokens.spacing[16],
+          paddingTop: tokens.spacing[28],
+          borderTop: `1px solid rgba(255,255,255,0.08)`,
+        }}>
           <h2 style={{ 
             ...tokens.typography.heading,
-            color: tokens.colors.textOnPill,
+            color: tokens.colors.textPrimaryOnDark,
             margin: 0,
-            marginBottom: tokens.layout.elementSpacing,
             textAlign: 'center',
           }}>
             Recent Chats
           </h2>
+          
           {loadingChats ? (
-            <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, textAlign: 'center', padding: tokens.layout.sectionSpacing }}>
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center' }}>
               Loading...
             </p>
           ) : recentChats.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
-              {recentChats.map((chat) => (
-                <motion.button
-                  key={chat.id}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => router.push(`/chat/${chat.id}`)}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: tokens.spacing[16],
-                    padding: tokens.spacing[16],
-                    background: tokens.colors.pillUnselected,
-                    border: 'none',
-                    borderRadius: tokens.radii.input,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <span style={{ fontSize: '24px' }}>{chat.emoji || "👤"}</span>
-                  <div style={{ flex: 1 }}>
-                    <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textOnPill, margin: 0 }}>
-                      {chat.name}
-                    </p>
-                    <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>
-                      {chat.lastMessage || "No messages yet"}
-                    </p>
-                  </div>
-                  <p style={{ ...tokens.typography.label, color: tokens.colors.textMuted, margin: 0 }}>
-                    {chat.time}
-                  </p>
-                </motion.button>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+              {recentChats.map((chat) => {
+                const otherUserId = chat.user1_id === user.id ? chat.user2_id : chat.user1_id
+                return (
+                  <motion.button
+                    key={chat.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => router.push(`/chat/${otherUserId}?matchId=${chat.id}`)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: tokens.spacing[16],
+                      padding: `${tokens.spacing[16]} 0`,
+                      background: 'transparent',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      borderBottom: `1px solid rgba(255,255,255,0.05)`,
+                    }}
+                  >
+                    <span style={{ fontSize: '32px' }}>👤</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimaryOnDark, margin: 0 }}>
+                        User {otherUserId.slice(0, 8)}
+                      </p>
+                      <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0, marginTop: tokens.spacing[4] }}>
+                        {new Date(chat.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </motion.button>
+                )
+              })}
             </div>
           ) : (
-            <p style={{ ...tokens.typography.body, color: tokens.colors.textMuted, textAlign: 'center', padding: tokens.layout.sectionSpacing }}>
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center' }}>
               No recent chats
             </p>
           )}
         </div>
 
-        <div style={{ marginTop: tokens.layout.elementSpacing }}>
-          <Button
-            variant="secondary"
+        {/* Sign Out Button */}
+        <div style={{ paddingTop: tokens.spacing[28], borderTop: `1px solid rgba(255,255,255,0.08)` }}>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
             onClick={async () => {
               await signOut()
               router.push("/")
             }}
-            style={{ width: '100%' }}
+            style={{
+              width: '100%',
+              padding: `${tokens.spacing[14]} ${tokens.spacing[20]}`,
+              borderRadius: tokens.radii.button,
+              background: 'transparent',
+              border: `1px solid rgba(255,255,255,0.12)`,
+              color: tokens.colors.textPrimaryOnDark,
+              ...tokens.typography.body,
+              fontWeight: 500,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: tokens.spacing[10],
+            }}
           >
+            <LogOut style={{ width: '18px', height: '18px' }} />
             Sign Out
-          </Button>
+          </motion.button>
         </div>
       </div>
     </AppShell>
