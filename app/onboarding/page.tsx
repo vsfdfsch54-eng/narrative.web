@@ -106,8 +106,11 @@ function OnboardingContent() {
       return
     }
     
+    // Capture currentStep value before any type narrowing
+    const stepValue = currentStep
+    
     // CRITICAL: Don't run status check if user is on personality step - they're actively completing it
-    if (currentStep === 'personality') {
+    if (stepValue === 'personality') {
       console.log('[Onboarding] Skipping status check - user is on personality step')
       return
     }
@@ -122,11 +125,10 @@ function OnboardingContent() {
         if (hasChecked) return
         hasChecked = true
         
-        // Triple-check flags and step before proceeding (they might have changed)
-        // Capture currentStep before async operations to avoid type narrowing issues
-        const step = currentStep as Step
-        if (isRedirecting || isCompletingStep || step === 'personality') {
-          console.log('[Onboarding] Skipping status check - redirecting, completing step, or on personality step')
+        // Double-check flags before proceeding (they might have changed)
+        // Note: stepValue is already checked at the top level, so we don't need to check it again here
+        if (isRedirecting || isCompletingStep) {
+          console.log('[Onboarding] Skipping status check - redirecting or completing step')
           return
         }
         
@@ -683,25 +685,6 @@ function OnboardingContent() {
         return
       }
 
-      // Generate personality profile
-      console.log('[Onboarding] Generating personality profile...')
-      
-      // First, test if OpenAI API key is accessible
-      try {
-        const testResponse = await fetch('/api/test-openai')
-        const testData = await testResponse.json()
-        if (!testData.success) {
-          console.error('[Onboarding] ❌ OpenAI API key test failed:', testData)
-          setError(`OpenAI API key issue: ${testData.error}\n\n${testData.details || ''}\n\nPlease check your .env.local file and restart your dev server.`)
-          setLoading(false)
-          return
-        }
-        console.log('[Onboarding] ✅ OpenAI API key test passed')
-      } catch (testError) {
-        console.error('[Onboarding] Error testing OpenAI key:', testError)
-        // Continue anyway - might be a network issue
-      }
-      
       // Generate personality profile if we have answers (optional - skip if GPT unavailable)
       if (Object.keys(personalityAnswers).length > 0) {
         console.log('[Onboarding] Generating personality profile (optional)...')

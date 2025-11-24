@@ -259,10 +259,8 @@ export default function VibePage() {
 
   const handleSkip = async () => {
     const userId = getUserId()
-    console.log('[VibePage] handleSkip - userId:', userId, 'user object:', user)
     
     if (!userId) {
-      console.error('[VibePage] No userId found, redirecting to home')
       router.push("/")
       return
     }
@@ -276,46 +274,35 @@ export default function VibePage() {
         topic: null,
         timeframe: null,
       }
-      console.log('[VibePage] Calling /api/pending-matches (skip) with:', requestBody)
       
-      // Create pending match without vibe/topic/timeframe (instant matching)
-      const response = await fetch('/api/pending-matches', {
+      // Use connect API (replaces old pending-matches)
+      const response = await fetch('/api/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
         cache: 'no-store'
       })
       
-      console.log('[VibePage] Response status:', response.status, response.statusText)
-      
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('[VibePage] HTTP error response:', errorText)
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
+        if (response.status === 404 && errorText.includes('User not found')) {
+          router.push('/onboarding')
+          return
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
       
       const data = await response.json()
-      console.log('[VibePage] Response data:', JSON.stringify(data, null, 2))
       
       if (data.success && data.matched && data.match && data.otherUserId) {
-        // Matched immediately! Navigate to chat
-        console.log('[VibePage] ✅ Matched immediately with:', data.otherUserId)
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
-        // In queue, navigate to chat page which will poll for matches
-        console.log('[VibePage] ⏳ Added to queue, navigating to chat page')
         router.push("/chat")
       } else {
-        // Error or unexpected response, still navigate to chat
-        console.error('[VibePage] ❌ Unexpected response from pending-matches:', data)
         router.push("/chat")
       }
     } catch (error) {
-      console.error('[VibePage] ❌ Error joining match queue:', error)
-      if (error instanceof Error) {
-        console.error('[VibePage] Error stack:', error.stack)
-      }
-      // Still navigate to chat page even if there's an error
+      console.error('[VibePage] Error connecting:', error)
       router.push("/chat")
     } finally {
       setSaving(false)

@@ -15,8 +15,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { userId, vibe, topic } = body
 
-    console.log('[Connect API] ==========================================')
-    console.log('[Connect API] Received request:', { userId, vibe, topic })
+    // Log request (production: remove or use structured logging)
 
     if (!userId) {
       console.error('[Connect API] ❌ Missing userId')
