@@ -101,6 +101,16 @@ const config = {
           from: { transform: "translateY(20px)", opacity: "0" },
           to: { transform: "translateY(0)", opacity: "1" },
         },
+        "slide-up-fade": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(8px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
+          },
+        },
         "glow": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.5" },
@@ -114,6 +124,7 @@ const config = {
         "slide-in": "slide-in 0.3s ease-out",
         "slide-out": "slide-out 0.3s ease-out",
         "slide-up": "slide-up 0.4s ease-out",
+        "slide-up-fade": "slide-up-fade 0.4s ease-out",
         "glow": "glow 2s ease-in-out infinite",
       },
       backdropBlur: {

@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { AnimatedButton } from "@/components/ui/animated-button"
-import { Pill } from "@/components/ui/pill"
+import { HeroPill } from "@/components/ui/hero-pill"
 import { tokens } from "@/lib/design-tokens"
 import { INTERESTS, INTEREST_CATEGORIES, getAllCategories } from "@/lib/interests"
 import { ChevronLeft } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface InterestsStepProps {
   selectedInterests: string[]
@@ -87,20 +88,36 @@ export function InterestsStep({
         paddingBottom: tokens.spacing[8],
         WebkitOverflowScrolling: 'touch',
       }}>
-        <Pill
-          selected={selectedCategory === null}
+        <button
+          type="button"
           onClick={() => setSelectedCategory(null)}
+          className="group"
         >
-          All
-        </Pill>
+          <HeroPill
+            text="All"
+            className={cn(
+              "mb-0",
+              selectedCategory === null && "[&>p]:bg-accent [&>p]:text-accent-foreground"
+            )}
+            animate={false}
+          />
+        </button>
         {categories.map(category => (
-          <Pill
+          <button
             key={category}
-            selected={selectedCategory === category}
+            type="button"
             onClick={() => setSelectedCategory(category)}
+            className="group"
           >
-            {category}
-          </Pill>
+            <HeroPill
+              text={category}
+              className={cn(
+                "mb-0",
+                selectedCategory === category && "[&>p]:bg-accent [&>p]:text-accent-foreground"
+              )}
+              animate={false}
+            />
+          </button>
         ))}
       </div>
 
@@ -114,13 +131,21 @@ export function InterestsStep({
         paddingBottom: tokens.spacing[20],
       }}>
         {displayedInterests.map(interest => (
-          <Pill
+          <button
             key={interest.id}
-            selected={localInterests.includes(interest.id)}
+            type="button"
             onClick={() => toggleInterest(interest.id)}
+            className="group"
           >
-            {interest.emoji} {interest.label}
-          </Pill>
+            <HeroPill
+              text={`${interest.emoji} ${interest.label}`}
+              className={cn(
+                "mb-0",
+                localInterests.includes(interest.id) && "[&>p]:bg-accent [&>p]:text-accent-foreground"
+              )}
+              animate={false}
+            />
+          </button>
         ))}
       </div>
 

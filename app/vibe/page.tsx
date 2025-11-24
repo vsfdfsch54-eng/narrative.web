@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { VibeChip } from "@/components/ui/vibe-chip"
-import { TopicChip } from "@/components/ui/topic-chip"
+import { HeroPill } from "@/components/ui/hero-pill"
 import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS, SPORTS_TOPICS } from "@/lib/constants"
 import { Vibe, Topic } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
+import { VibeIcons } from "@/components/ui/vibe-icons"
+import { TopicIcons } from "@/components/ui/topic-icons"
 import { ChevronDown, Compass, Mic, Newspaper, CircleDot } from "lucide-react"
 import { AppShell } from "@/components/AppShell"
 import { AnimatedButton } from "@/components/ui/animated-button"
@@ -319,16 +320,29 @@ export default function VibePage() {
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
           }}>
-            {VIBES.map((vibe) => (
-              <div key={vibe.id} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
-                <VibeChip
-                  vibe={vibe}
-                  selected={selectedVibe?.id === vibe.id}
-                  onClick={() => setSelectedVibe(selectedVibe?.id === vibe.id ? null : vibe)}
-                  delay={0}
-                />
-              </div>
-            ))}
+            {VIBES.map((vibe) => {
+              const isSelected = selectedVibe?.id === vibe.id
+              const icon = VibeIcons[vibe.id] || null
+              return (
+                <div key={vibe.id} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedVibe(isSelected ? null : vibe)}
+                    className="group"
+                  >
+                    <HeroPill
+                      icon={icon}
+                      text={vibe.label}
+                      className={cn(
+                        "mb-0",
+                        isSelected && "[&>p]:bg-accent [&>p]:text-accent-foreground"
+                      )}
+                      animate={false}
+                    />
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -452,16 +466,29 @@ export default function VibePage() {
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
           }}>
-            {currentTopics.map((topic) => (
-              <div key={topic.id} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
-                <TopicChip
-                  topic={topic}
-                  selected={selectedTopic?.id === topic.id}
-                  onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
-                  delay={0}
-                />
-              </div>
-            ))}
+            {currentTopics.map((topic) => {
+              const isSelected = selectedTopic?.id === topic.id
+              const icon = TopicIcons[topic.id] || null
+              return (
+                <div key={topic.id} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTopic(isSelected ? null : topic)}
+                    className="group"
+                  >
+                    <HeroPill
+                      icon={icon}
+                      text={topic.label}
+                      className={cn(
+                        "mb-0",
+                        isSelected && "[&>p]:bg-accent [&>p]:text-accent-foreground"
+                      )}
+                      animate={false}
+                    />
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -485,32 +512,20 @@ export default function VibePage() {
               const isSelected = selectedTimeLimit === limit
               return (
                 <div key={limit} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
-                  <motion.button
-                    animate={{
-                      scale: isSelected ? 1.06 : 1,
-                      backgroundColor: isSelected ? tokens.colors.pillSelected : tokens.colors.pillUnselected,
-                    }}
-                    transition={{
-                      transform: { duration: 0.14, ease: 'easeOut' },
-                      backgroundColor: { duration: 0.18, ease: 'easeOut' },
-                    }}
-                    whileTap={{ scale: isSelected ? 1.06 : 0.98 }}
+                  <button
+                    type="button"
                     onClick={() => setSelectedTimeLimit(isSelected ? null : limit)}
-                    style={{
-                      borderRadius: tokens.radii.pill,
-                      padding: '8px 14px',
-                      border: 'none',
-                      boxShadow: isSelected ? tokens.shadows.pillSelected : tokens.shadows.pillUnselected,
-                      fontSize: '15px',
-                      fontWeight: 400,
-                      letterSpacing: '0',
-                      color: tokens.colors.textOnPill,
-                      cursor: 'pointer',
-                      willChange: "transform, background-color"
-                    }}
+                    className="group"
                   >
-                    {limit}m
-                  </motion.button>
+                    <HeroPill
+                      text={`${limit} min`}
+                      className={cn(
+                        "mb-0",
+                        isSelected && "[&>p]:bg-accent [&>p]:text-accent-foreground"
+                      )}
+                      animate={false}
+                    />
+                  </button>
                 </div>
               )
             })}
