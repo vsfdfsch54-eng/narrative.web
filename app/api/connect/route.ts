@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Create user record using upsert to handle duplicate email/id
-        const { data: newUser, error: createError } = await supabase
+        // Note: upsert returns an array, so we don't use .single()
+        const { data: upsertResult, error: createError } = await supabase
           .from('users')
           .upsert({
             id: userId,
@@ -70,7 +71,6 @@ export async function POST(request: NextRequest) {
             ignoreDuplicates: false
           })
           .select('id, email, name, personality_embedding')
-          .single()
 
         if (createError) {
           // Handle duplicate email error gracefully
@@ -102,15 +102,29 @@ export async function POST(request: NextRequest) {
               { status: 500 }
             )
           }
-        } else if (newUser) {
-          userRecord = newUser
+        } else if (upsertResult && upsertResult.length > 0) {
+          // Upsert returns an array, take the first element
+          userRecord = Array.isArray(upsertResult) ? upsertResult[0] : upsertResult
           console.log('[Connect API] ✅ User created from auth:', { id: userRecord.id, email: userRecord.email })
         } else {
-          console.error('[Connect API] ❌ No user returned from upsert')
-          return NextResponse.json(
-            { error: 'Failed to create user record - no data returned' },
-            { status: 500 }
-          )
+          // If upsert didn't return data, try fetching the user
+          console.log('[Connect API] Upsert returned no data, fetching user...')
+          const { data: existingUser, error: fetchError } = await supabase
+            .from('users')
+            .select('id, email, name, personality_embedding')
+            .eq('id', userId)
+            .single()
+          
+          if (fetchError || !existingUser) {
+            console.error('[Connect API] ❌ Failed to fetch user after upsert:', fetchError)
+            return NextResponse.json(
+              { error: 'Failed to create user record - no data returned' },
+              { status: 500 }
+            )
+          }
+          
+          userRecord = existingUser
+          console.log('[Connect API] ✅ User fetched after upsert')
         }
       } catch (error: any) {
         console.error('[Connect API] ❌ Error creating user:', error)

@@ -45,7 +45,8 @@ export async function GET(request: NextRequest) {
         }
 
         // Auto-create user record using upsert to handle duplicate email/id
-        const { data: newUser, error: createError } = await supabase
+        // Note: upsert returns an array, so we don't use .single()
+        const { data: upsertResult, error: createError } = await supabase
           .from('users')
           .upsert({
             id: userId,
@@ -57,7 +58,6 @@ export async function GET(request: NextRequest) {
             ignoreDuplicates: false
           })
           .select('*')
-          .single()
 
         if (createError) {
           // Handle duplicate email error gracefully
@@ -89,15 +89,29 @@ export async function GET(request: NextRequest) {
               error: 'User not found. Please complete onboarding to create your profile.' 
             }, { status: 404 })
           }
-        } else if (newUser) {
-          userData = newUser
+        } else if (upsertResult && upsertResult.length > 0) {
+          // Upsert returns an array, take the first element
+          userData = Array.isArray(upsertResult) ? upsertResult[0] : upsertResult
           console.log('[Users API GET] ✅ User auto-created from auth')
         } else {
-          console.error('[Users API GET] No user returned from upsert')
-          return NextResponse.json({ 
-            success: false, 
-            error: 'User not found. Please complete onboarding to create your profile.' 
-          }, { status: 404 })
+          // If upsert didn't return data, try fetching the user
+          console.log('[Users API GET] Upsert returned no data, fetching user...')
+          const { data: existingUser, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single()
+          
+          if (fetchError || !existingUser) {
+            console.error('[Users API GET] Failed to fetch user after upsert:', fetchError)
+            return NextResponse.json({ 
+              success: false, 
+              error: 'User not found. Please complete onboarding to create your profile.' 
+            }, { status: 404 })
+          }
+          
+          userData = existingUser
+          console.log('[Users API GET] ✅ User fetched after upsert')
         }
       } catch (error: any) {
         console.error('[Users API GET] Error creating user:', error)
