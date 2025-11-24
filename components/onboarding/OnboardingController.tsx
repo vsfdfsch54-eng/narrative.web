@@ -46,10 +46,23 @@ export function OnboardingController() {
     personalityAnswers: {},
     loading: false,
     error: null,
-    userLoaded: false,
+    userLoaded: false, // Will be set to true once we check user or confirm no user needed
   })
   
   const isInitializing = useRef(true)
+  
+  // Immediately allow email step to show if no user (for new signups)
+  useEffect(() => {
+    if (!authLoading && !user) {
+      // No user yet - allow email step to show immediately
+      setState(prev => {
+        if (prev.step === 'email' && !prev.userLoaded) {
+          return { ...prev, userLoaded: true, loading: false }
+        }
+        return prev
+      })
+    }
+  }, [authLoading, user])
 
   const renderShell = (content: ReactNode) => (
     <AppShell title="Onboarding" showDock={false}>
@@ -390,8 +403,12 @@ export function OnboardingController() {
     }
   }, [router, updateOnboardingStep])
 
-  // Show loading only if we're waiting for auth or initializing (and not on email step)
-  if (authLoading || (!user && state.step !== 'email' && !state.userLoaded)) {
+  // Show loading only if:
+  // 1. Auth is still loading AND we don't have a user yet
+  // 2. We're not on email step AND user is not loaded
+  const shouldShowLoading = authLoading && !user && !state.userLoaded
+  
+  if (shouldShowLoading) {
     return renderShell(
       <div
         style={{
