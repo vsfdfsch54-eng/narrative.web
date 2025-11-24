@@ -30,7 +30,6 @@ export async function getWaitingPoolUsers(excludeUserId: string): Promise<Waitin
     .neq('user_id', excludeUserId)
   
   if (error) {
-    console.error('[Matching Service] Error fetching waiting pool:', error)
     throw new Error(`Failed to fetch waiting pool: ${error.message}`)
   }
   
@@ -62,8 +61,6 @@ export function calculateCompatibilityScore(
   traits2: Record<string, any> | null
 ): number {
   // Base score from embedding similarity (cosine similarity)
-  // pgvector uses 1 - cosine_distance, so higher = more similar
-  // We'll calculate this in SQL, but for reference:
   const embeddingSimilarity = calculateCosineSimilarity(embedding1, embedding2)
   
   // Trait complementarity bonus (0.0 to 0.2)
@@ -106,7 +103,6 @@ export function calculateCompatibilityScore(
  */
 function calculateCosineSimilarity(vec1: number[], vec2: number[]): number {
   if (vec1.length !== vec2.length) {
-    console.warn('[Matching Service] Vector length mismatch')
     return 0.0
   }
   
@@ -140,35 +136,21 @@ export async function findBestMatch(
 ): Promise<MatchResult | null> {
   const supabase = createServerClient()
   
-  console.log('[Matching Service] Finding best match for user:', userId)
-  
   // Get user's traits for complementarity calculation
-  const { data: userData, error: userError } = await supabase
+  const { data: userData } = await supabase
     .from('users')
     .select('traits')
     .eq('id', userId)
     .single()
   
-  if (userError || !userData) {
-    console.error('[Matching Service] Error fetching user traits:', userError)
-    // Continue without traits
-  }
-  
   const userTraits = userData?.traits || null
   
   // Get all waiting users and calculate similarity manually
-  // pgvector RPC functions require SQL functions which we'll add via migration if needed
-  // For now, use manual calculation which is more reliable
-  console.log('[Matching Service] Using manual similarity calculation')
-  
   const waitingUsers = await getWaitingPoolUsers(userId)
   
   if (waitingUsers.length === 0) {
-    console.log('[Matching Service] No users in waiting pool')
     return null
   }
-  
-  console.log(`[Matching Service] Found ${waitingUsers.length} candidate(s) in waiting pool`)
   
   // Calculate scores for each candidate
   const candidates = await Promise.all(
@@ -180,20 +162,19 @@ export async function findBestMatch(
         .eq('id', candidate.user_id)
         .single()
       
-        const candidateTraits = candidateData?.traits || null
-        
-        // Parse candidate embedding if needed
-        let candidateEmbedding: number[]
-        if (typeof candidate.embedding === 'string') {
-          const cleaned = candidate.embedding.replace(/[\[\]]/g, '')
-          candidateEmbedding = cleaned.split(',').map(Number)
-        } else if (Array.isArray(candidate.embedding)) {
-          candidateEmbedding = candidate.embedding
-        } else {
-          console.warn('[Matching Service] Invalid embedding format for candidate:', candidate.user_id)
-          candidateEmbedding = []
-        }
+      const candidateTraits = candidateData?.traits || null
       
+      // Parse candidate embedding if needed
+      let candidateEmbedding: number[]
+      if (typeof candidate.embedding === 'string') {
+        const cleaned = candidate.embedding.replace(/[\[\]]/g, '')
+        candidateEmbedding = cleaned.split(',').map(Number)
+      } else if (Array.isArray(candidate.embedding)) {
+        candidateEmbedding = candidate.embedding
+      } else {
+        candidateEmbedding = []
+      }
+    
       // Calculate compatibility score
       const score = calculateCompatibilityScore(
         userEmbedding,
@@ -224,15 +205,12 @@ export async function findBestMatch(
   const threshold = waitingUsers.length === 1 ? 0.0 : 0.1
   
   if (bestMatch.matchScore < threshold) {
-    console.log(`[Matching Service] Best match score too low: ${bestMatch.matchScore} (threshold: ${threshold})`)
     // If only 2 users total (1 candidate), match them anyway (FIFO fallback)
     if (waitingUsers.length === 1) {
-      console.log('[Matching Service] Only 2 users total, matching anyway (FIFO fallback)')
       return bestMatch
     }
     return null
   }
   
-  console.log('[Matching Service] ✅ Found best match:', bestMatch.userId, 'Score:', bestMatch.matchScore)
   return bestMatch
 }

@@ -10,21 +10,13 @@ const getOpenAIClient = () => {
   const apiKey = process.env.OPENAI_API_KEY
   
   if (!apiKey) {
-    console.error('[OpenAI Service] ❌ OPENAI_API_KEY is missing from environment variables')
-    console.error('[OpenAI Service] Make sure:')
-    console.error('  1. .env.local file exists in project root')
-    console.error('  2. OPENAI_API_KEY=sk-... is in .env.local')
-    console.error('  3. Dev server was restarted after adding the key')
     throw new Error('OPENAI_API_KEY environment variable is not set. Please add it to your .env.local file and restart your dev server.')
   }
   
   // Validate key format
   if (!apiKey.startsWith('sk-')) {
-    console.error('[OpenAI Service] ❌ OPENAI_API_KEY format is invalid (should start with "sk-")')
     throw new Error('OPENAI_API_KEY format is invalid. OpenAI API keys should start with "sk-".')
   }
-  
-  console.log('[OpenAI Service] ✅ OpenAI client initialized (key length:', apiKey.length, ')')
   
   return new OpenAI({
     apiKey: apiKey,
@@ -50,8 +42,6 @@ export async function generatePersonalityEmbedding(text: string): Promise<number
     
     return response.data[0].embedding
   } catch (error: any) {
-    console.error('[OpenAI Service] Error generating embedding:', error)
-    
     // Check for invalid API key
     if (error.status === 401 || 
         error.message?.includes('Invalid API key') || 
@@ -62,7 +52,6 @@ export async function generatePersonalityEmbedding(text: string): Promise<number
     
     // Retry logic for rate limits
     if (error.status === 429 || error.message?.includes('rate limit')) {
-      console.log('[OpenAI Service] Rate limit hit, retrying after delay...')
       await new Promise(resolve => setTimeout(resolve, 2000))
       return generatePersonalityEmbedding(text)
     }
@@ -138,8 +127,6 @@ Generate a detailed personality summary that would be useful for matching them w
     
     return summary.trim()
   } catch (error: any) {
-    console.error('[OpenAI Service] Error generating personality summary:', error)
-    
     // Check for invalid API key
     if (error.status === 401 || 
         error.message?.includes('Invalid API key') || 
@@ -150,7 +137,6 @@ Generate a detailed personality summary that would be useful for matching them w
     
     // Retry logic for rate limits
     if (error.status === 429 || error.message?.includes('rate limit')) {
-      console.log('[OpenAI Service] Rate limit hit, retrying after delay...')
       await new Promise(resolve => setTimeout(resolve, 2000))
       return generatePersonalitySummary(questionnaireAnswers, interests, vibe, topic)
     }
@@ -215,8 +201,6 @@ Return ONLY valid JSON, no other text.`
     const traits = JSON.parse(traitsJson)
     return traits
   } catch (error: any) {
-    console.error('[OpenAI Service] Error extracting traits:', error)
-    
     // Check for invalid API key
     if (error.status === 401 || 
         error.message?.includes('Invalid API key') || 
@@ -227,13 +211,11 @@ Return ONLY valid JSON, no other text.`
     
     // Retry logic for rate limits
     if (error.status === 429 || error.message?.includes('rate limit')) {
-      console.log('[OpenAI Service] Rate limit hit, retrying after delay...')
       await new Promise(resolve => setTimeout(resolve, 2000))
       return extractPersonalityTraits(summary)
     }
     
     // Fallback to basic structure if extraction fails
-    console.warn('[OpenAI Service] Trait extraction failed, using fallback structure')
     return {
       bigFive: {
         openness: 0.5,
@@ -265,19 +247,14 @@ export async function generatePersonalityProfile(
   embedding: number[]
   traits: Record<string, any>
 }> {
-  console.log('[OpenAI Service] Generating personality profile...')
-  
   // Step 1: Generate personality summary
   const summary = await generatePersonalitySummary(questionnaireAnswers, interests, vibe, topic)
-  console.log('[OpenAI Service] ✅ Personality summary generated')
   
   // Step 2: Generate embedding from summary
   const embedding = await generatePersonalityEmbedding(summary)
-  console.log('[OpenAI Service] ✅ Personality embedding generated')
   
   // Step 3: Extract structured traits
   const traits = await extractPersonalityTraits(summary)
-  console.log('[OpenAI Service] ✅ Personality traits extracted')
   
   return {
     summary,
