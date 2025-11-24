@@ -254,14 +254,14 @@ export default function CalendarPage() {
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: tokens.spacing[16], 
-        paddingTop: tokens.spacing[20], 
+        gap: tokens.spacing[12], 
+        paddingTop: tokens.spacing[16], 
         paddingBottom: '120px',
         background: tokens.colors.backgroundApp,
-        maxHeight: 'calc(100vh - 200px)',
+        height: 'calc(100vh - 200px)',
         overflow: 'hidden',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.sectionSpacing }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[8] }}>
           <h1 style={{ 
             ...tokens.typography.heading,
             color: tokens.colors.textPrimaryOnDark,
