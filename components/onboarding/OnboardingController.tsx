@@ -19,6 +19,7 @@ import {
   getNextStep,
   isValidOnboardingStep,
   getInitialStep,
+  normalizeOnboardingStep,
   STEP_ORDER
 } from "@/lib/onboarding"
 
@@ -31,7 +32,7 @@ interface OnboardingState {
   personalityAnswers: Record<string, string | string[]>
   loading: boolean
   error: string | null
-  userLoaded: boolean
+  dbStepLoaded: boolean // True when we've loaded onboarding_step from DB
 }
 
 export function OnboardingController() {
@@ -46,23 +47,10 @@ export function OnboardingController() {
     personalityAnswers: {},
     loading: false,
     error: null,
-    userLoaded: false, // Will be set to true once we check user or confirm no user needed
+    dbStepLoaded: false,
   })
   
-  const isInitializing = useRef(true)
-  
-  // Immediately allow email step to show if no user (for new signups)
-  useEffect(() => {
-    if (!authLoading && !user) {
-      // No user yet - allow email step to show immediately
-      setState(prev => {
-        if (prev.step === 'email' && !prev.userLoaded) {
-          return { ...prev, userLoaded: true, loading: false }
-        }
-        return prev
-      })
-    }
-  }, [authLoading, user])
+  const initializationRef = useRef(false)
 
   const renderShell = (content: ReactNode) => (
     <AppShell title="Onboarding" showDock={false}>
@@ -70,31 +58,37 @@ export function OnboardingController() {
     </AppShell>
   )
 
-  // Initialize: Load user from database and set step
-  // Only initialize if we have a user (skip for new signups on email step)
+  // PHASE 1: Initialize - Load user from database and set step
+  // This is the ONLY place we read onboarding_step from DB
   useEffect(() => {
-    if (authLoading || !isInitializing.current) return
+    // Wait for auth to finish loading
+    if (authLoading) return
     
-    // If no user and we're on email step, that's fine - let them sign up
-    if (!user && state.step === 'email') {
-      setState(prev => ({ ...prev, userLoaded: true, loading: false }))
+    // If no user, allow email step to show (for new signups)
+    if (!user) {
+      setState(prev => ({
+        ...prev,
+        step: 'email',
+        dbStepLoaded: true,
+        loading: false,
+      }))
       return
     }
-    
-    // If no user and not on email step, wait
-    if (!user) return
 
-    const initializeUser = async () => {
-      isInitializing.current = false
+    // Prevent multiple initializations
+    if (initializationRef.current) return
+    initializationRef.current = true
+
+    const initializeFromDB = async () => {
       setState(prev => ({ ...prev, loading: true }))
       
       try {
-        // Fetch user from database - this is the single source of truth
+        // Fetch user from database - SINGLE SOURCE OF TRUTH
         const response = await fetch(`/api/users?userId=${user.id}`)
         const data = await response.json()
         
         if (!data.success || !data.data) {
-          // User doesn't exist - create with initial step
+          // User doesn't exist in DB - create with 'email' step
           const createResponse = await fetch('/api/users', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -113,87 +107,58 @@ export function OnboardingController() {
               ...prev, 
               loading: false, 
               error: 'Failed to initialize. Please refresh.',
-              userLoaded: true 
+              dbStepLoaded: true 
             }))
             return
           }
 
-          // Set initial step
-          const initialStep = getInitialStep()
+          // New user - start at email step
           setState(prev => ({
             ...prev,
-            step: initialStep,
+            step: 'email',
             email: user.email || '',
             loading: false,
-            userLoaded: true,
+            dbStepLoaded: true,
           }))
           return
         }
 
-        const existingUser = data.data
+        const dbUser = data.data
         
-        // Read onboarding_step from database - single source of truth
-        const dbStep = existingUser.onboarding_step || 'start'
-        const currentStep: OnboardingStep = isValidOnboardingStep(dbStep) 
-          ? dbStep 
-          : getInitialStep()
-
-        // If complete, redirect to vibe
-        if (currentStep === 'complete') {
+        // Read onboarding_step from database - SINGLE SOURCE OF TRUTH
+        const dbStep = normalizeOnboardingStep(dbUser.onboarding_step)
+        
+        // If complete, redirect immediately
+        if (dbStep === 'complete') {
           router.push(getOnboardingRouteForStep('complete'))
           return
         }
 
-        // Pre-fill state with existing data
+        // Set step from database
         setState(prev => ({
           ...prev,
-          email: existingUser.email || user.email || '',
-          name: existingUser.name || '',
-          interests: existingUser.interests || [],
-          step: currentStep === 'start' ? getInitialStep() : currentStep,
+          step: dbStep,
+          email: dbUser.email || user.email || '',
+          name: dbUser.name || '',
+          interests: dbUser.interests || [],
           loading: false,
-          userLoaded: true,
+          dbStepLoaded: true,
         }))
       } catch (error) {
         setState(prev => ({ 
           ...prev, 
           loading: false, 
           error: 'Failed to initialize. Please refresh.',
-          userLoaded: true 
+          dbStepLoaded: true 
         }))
       }
     }
 
-    initializeUser()
-  }, [user, authLoading, router, state.step])
-
-  const goToStep = useCallback((step: OnboardingStep) => {
-    setState(prev => ({ ...prev, step, error: null }))
-  }, [])
-
-  const goNext = useCallback(() => {
-    const currentIndex = STEP_ORDER.indexOf(state.step)
-    if (currentIndex < STEP_ORDER.length - 1) {
-      goToStep(STEP_ORDER[currentIndex + 1])
-    }
-  }, [state.step, goToStep])
-
-  const goBack = useCallback(() => {
-    const currentIndex = STEP_ORDER.indexOf(state.step)
-    if (currentIndex > 0) {
-      goToStep(STEP_ORDER[currentIndex - 1])
-    }
-  }, [state.step, goToStep])
-
-  const updateField = useCallback(<K extends keyof OnboardingState>(
-    field: K,
-    value: OnboardingState[K]
-  ) => {
-    setState(prev => ({ ...prev, [field]: value, error: null }))
-  }, [])
+    initializeFromDB()
+  }, [user, authLoading, router])
 
   // Helper to update onboarding step in database
-  const updateOnboardingStep = useCallback(async (step: OnboardingStep) => {
+  const updateOnboardingStepInDB = useCallback(async (step: OnboardingStep): Promise<boolean> => {
     if (!user?.id) return false
 
     try {
@@ -207,42 +172,43 @@ export function OnboardingController() {
       })
 
       const data = await response.json()
-      if (!data.success) {
-        return false
-      }
-      return true
+      return data.success === true
     } catch (error) {
       return false
     }
   }, [user])
 
+  // Email step handler
   const handleEmailSubmit = useCallback(async (email: string) => {
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
       // Sign up user with email
-      const result = await signUp(email, '') // Password will be set later
+      const result = await signUp(email, '')
       
       if (result.error) {
         setState(prev => ({ ...prev, loading: false, error: result.error || 'Failed to sign up' }))
         return
       }
 
-      // Check if we got a user from signup (might not have session if email confirmation required)
       const signupUserId = result.data?.user?.id
       
       if (signupUserId) {
-        // User was created, update step in database
-        try {
-          await updateOnboardingStep('name')
-        } catch (err) {
-          // If update fails, continue anyway - user will be created on next step
-        }
+        // User created - update DB step to 'name' BEFORE advancing
+        const updated = await updateOnboardingStepInDB('name')
         
-        updateField('email', email)
-        goNext()
+        if (updated) {
+          setState(prev => ({
+            ...prev,
+            email,
+            step: 'name',
+            loading: false,
+          }))
+        } else {
+          setState(prev => ({ ...prev, loading: false, error: 'Failed to save progress. Please try again.' }))
+        }
       } else {
-        // No user yet (email confirmation required) - show message and stay on email step
+        // Email confirmation required
         setState(prev => ({ 
           ...prev, 
           loading: false, 
@@ -252,10 +218,11 @@ export function OnboardingController() {
     } catch (error: any) {
       setState(prev => ({ ...prev, loading: false, error: error.message || 'Failed to sign up' }))
     }
-  }, [signUp, updateField, goNext, updateOnboardingStep])
+  }, [signUp, updateOnboardingStepInDB])
 
+  // Name step handler
   const handleNameSubmit = useCallback(async (name: string) => {
-    setState(prev => ({ ...prev, loading: true }))
+    setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
       // Save name and update step to 'password' in database
@@ -275,50 +242,53 @@ export function OnboardingController() {
         return
       }
 
-      updateField('name', name)
-      goNext()
+      // Only advance after DB confirms update
+      setState(prev => ({
+        ...prev,
+        name,
+        step: 'password',
+        loading: false,
+      }))
     } catch (error) {
       setState(prev => ({ ...prev, loading: false, error: 'Failed to save name. Please try again.' }))
-    } finally {
-      setState(prev => ({ ...prev, loading: false }))
     }
-  }, [user, updateField, goNext])
+  }, [user])
 
+  // Password step handler
   const handlePasswordSubmit = useCallback(async (password: string) => {
-    setState(prev => ({ ...prev, loading: true }))
+    setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
       // Update password in Supabase Auth if provided
       if (password && user) {
         try {
-          const { error: updateError } = await supabase.auth.updateUser({
-            password: password
-          })
-          
-          if (updateError) {
-            // Continue anyway - password update is optional
-          }
+          await supabase.auth.updateUser({ password })
         } catch (error) {
-          // Continue anyway
+          // Continue anyway - password update is optional
         }
       }
 
       // Update step to 'interests' in database
-      await updateOnboardingStep('interests')
+      const updated = await updateOnboardingStepInDB('interests')
       
-      updateField('password', password)
-      goNext()
+      if (updated) {
+        setState(prev => ({
+          ...prev,
+          password,
+          step: 'interests',
+          loading: false,
+        }))
+      } else {
+        setState(prev => ({ ...prev, loading: false, error: 'Failed to save progress. Please try again.' }))
+      }
     } catch (error) {
-      // Continue anyway
-      updateField('password', password)
-      goNext()
-    } finally {
-      setState(prev => ({ ...prev, loading: false }))
+      setState(prev => ({ ...prev, loading: false, error: 'Failed to save progress. Please try again.' }))
     }
-  }, [user, updateField, goNext, updateOnboardingStep])
+  }, [user, updateOnboardingStepInDB])
 
+  // Interests step handler
   const handleInterestsSubmit = useCallback(async (interests: string[]) => {
-    setState(prev => ({ ...prev, loading: true }))
+    setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
       // Save interests and update step to 'personality' in database
@@ -338,77 +308,89 @@ export function OnboardingController() {
         return
       }
 
-      updateField('interests', interests)
-      goNext()
+      // Only advance after DB confirms update
+      setState(prev => ({
+        ...prev,
+        interests,
+        step: 'personality',
+        loading: false,
+      }))
     } catch (error) {
       setState(prev => ({ ...prev, loading: false, error: 'Failed to save interests. Please try again.' }))
-    } finally {
-      setState(prev => ({ ...prev, loading: false }))
     }
-  }, [user, updateField, goNext])
+  }, [user])
 
+  // Personality step handler
   const handlePersonalitySubmit = useCallback(async (answers: Record<string, string | string[]>) => {
-    updateField('personalityAnswers', answers)
-    setState(prev => ({ ...prev, loading: true, error: null }))
+    setState(prev => ({ ...prev, loading: true, error: null, personalityAnswers: answers }))
     
     try {
-      // Try to generate personality (optional - won't block if it fails)
+      // Try to generate personality (optional - won't block)
       if (user?.id) {
-        const response = await fetch('/api/personality/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            questionnaireAnswers: answers,
-            interests: state.interests,
-            vibe: null,
-            topic: null,
-          }),
-        })
-
-        const data = await response.json()
-        if (!data.success) {
+        try {
+          await fetch('/api/personality/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              questionnaireAnswers: answers,
+              interests: state.interests,
+              vibe: null,
+              topic: null,
+            }),
+          })
+        } catch (error) {
           // Continue anyway - personality is optional
         }
       }
 
       // Update step to 'complete' in database
-      await updateOnboardingStep('complete')
-
-      // Redirect to vibe
-      router.push(getNextOnboardingRoute('complete'))
+      const updated = await updateOnboardingStepInDB('complete')
+      
+      if (updated) {
+        // Redirect to vibe
+        router.push(getNextOnboardingRoute('complete'))
+      } else {
+        setState(prev => ({ ...prev, loading: false, error: 'Failed to complete. Please try again.' }))
+      }
     } catch (error) {
-      // Update step to 'complete' anyway
-      await updateOnboardingStep('complete')
+      // Try to update anyway
+      await updateOnboardingStepInDB('complete')
       router.push(getNextOnboardingRoute('complete'))
-    } finally {
-      setState(prev => ({ ...prev, loading: false }))
     }
-  }, [user, state.interests, updateField, router, updateOnboardingStep])
+  }, [user, state.interests, router, updateOnboardingStepInDB])
 
+  // Skip personality handler
   const handleSkipPersonality = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true }))
     
     try {
       // Update step to 'complete' in database
-      await updateOnboardingStep('complete')
+      const updated = await updateOnboardingStepInDB('complete')
       
-      // Redirect to vibe
-      router.push(getNextOnboardingRoute('complete'))
+      if (updated) {
+        router.push(getNextOnboardingRoute('complete'))
+      } else {
+        setState(prev => ({ ...prev, loading: false, error: 'Failed to complete. Please try again.' }))
+      }
     } catch (error) {
-      // Redirect anyway
+      // Try to update anyway
+      await updateOnboardingStepInDB('complete')
       router.push(getNextOnboardingRoute('complete'))
-    } finally {
-      setState(prev => ({ ...prev, loading: false }))
     }
-  }, [router, updateOnboardingStep])
+  }, [router, updateOnboardingStepInDB])
 
-  // Show loading only if:
-  // 1. Auth is still loading AND we don't have a user yet
-  // 2. We're not on email step AND user is not loaded
-  const shouldShowLoading = authLoading && !user && !state.userLoaded
-  
-  if (shouldShowLoading) {
+  // Go back handler
+  const goBack = useCallback(() => {
+    const currentIndex = STEP_ORDER.indexOf(state.step)
+    if (currentIndex > 0) {
+      const prevStep = STEP_ORDER[currentIndex - 1]
+      setState(prev => ({ ...prev, step: prevStep, error: null }))
+    }
+  }, [state.step])
+
+  // Show loading while initializing from DB
+  if (authLoading || (!state.dbStepLoaded && user)) {
     return renderShell(
       <div
         style={{
@@ -423,8 +405,7 @@ export function OnboardingController() {
     )
   }
 
-  // Allow email step to show even without user (for new signups)
-  // For other steps, require user
+  // For steps other than email, require user
   if (!user && state.step !== 'email') {
     return renderShell(
       <div
@@ -445,7 +426,6 @@ export function OnboardingController() {
 
   const currentStepIndex = STEP_ORDER.indexOf(state.step)
   const canGoBack = currentStepIndex > 0
-  const isLastStep = currentStepIndex === STEP_ORDER.length - 1
 
   return renderShell(
     <div
@@ -455,7 +435,8 @@ export function OnboardingController() {
         gap: tokens.spacing[20],
       }}
     >
-      {!isLastStep && (
+      {/* Progress indicators */}
+      {state.step !== 'complete' && (
         <div
           style={{
             display: 'flex',
@@ -464,7 +445,7 @@ export function OnboardingController() {
             gap: tokens.spacing[8],
           }}
         >
-          {STEP_ORDER.slice(0, -1).map((step, index) => (
+          {STEP_ORDER.map((step, index) => (
             <span
               key={step}
               style={{
@@ -482,6 +463,7 @@ export function OnboardingController() {
         </div>
       )}
 
+      {/* Error message */}
       {state.error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -500,6 +482,7 @@ export function OnboardingController() {
         </motion.div>
       )}
 
+      {/* Step content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={state.step}
@@ -513,7 +496,7 @@ export function OnboardingController() {
             {state.step === 'email' && (
               <EmailStep
                 email={state.email}
-                onEmailChange={(email) => updateField('email', email)}
+                onEmailChange={(email) => setState(prev => ({ ...prev, email }))}
                 onSubmit={handleEmailSubmit}
                 loading={state.loading}
                 error={state.error}
@@ -524,7 +507,7 @@ export function OnboardingController() {
             {state.step === 'name' && (
               <NameStep
                 name={state.name}
-                onNameChange={(name) => updateField('name', name)}
+                onNameChange={(name) => setState(prev => ({ ...prev, name }))}
                 onSubmit={handleNameSubmit}
                 loading={state.loading}
                 error={state.error}
@@ -535,7 +518,7 @@ export function OnboardingController() {
             {state.step === 'password' && (
               <PasswordStep
                 password={state.password}
-                onPasswordChange={(password) => updateField('password', password)}
+                onPasswordChange={(password) => setState(prev => ({ ...prev, password }))}
                 onSubmit={handlePasswordSubmit}
                 loading={state.loading}
                 error={state.error}
@@ -546,7 +529,7 @@ export function OnboardingController() {
             {state.step === 'interests' && (
               <InterestsStep
                 selectedInterests={state.interests}
-                onInterestsChange={(interests) => updateField('interests', interests)}
+                onInterestsChange={(interests) => setState(prev => ({ ...prev, interests }))}
                 onSubmit={handleInterestsSubmit}
                 loading={state.loading}
                 error={state.error}
@@ -557,30 +540,13 @@ export function OnboardingController() {
             {state.step === 'personality' && (
               <PersonalityStep
                 answers={state.personalityAnswers}
-                onAnswersChange={(answers) => updateField('personalityAnswers', answers)}
+                onAnswersChange={(answers) => setState(prev => ({ ...prev, personalityAnswers: answers }))}
                 onSubmit={handlePersonalitySubmit}
                 onSkip={handleSkipPersonality}
                 loading={state.loading}
                 error={state.error}
                 onBack={canGoBack ? goBack : undefined}
               />
-            )}
-
-            {state.step === 'complete' && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  minHeight: '240px',
-                  textAlign: 'center',
-                }}
-              >
-                <p style={{ color: tokens.colors.textPrimaryOnDark, ...tokens.typography.heading }}>
-                  Setting up your profile...
-                </p>
-              </div>
             )}
           </div>
         </motion.div>

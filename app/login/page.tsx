@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/hooks/use-auth"
 import { tokens } from "@/lib/design-tokens"
 import Link from "next/link"
+import { getOnboardingRouteForStep, normalizeOnboardingStep } from "@/lib/onboarding"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -20,38 +21,35 @@ export default function LoginPage() {
 
   // Redirect if user is already authenticated
   useEffect(() => {
-    if (!authLoading && user) {
-      if (user.email_confirmed_at) {
-        // User is verified, check onboarding step from database
-        const checkOnboarding = async () => {
-          try {
-            const response = await fetch(`/api/users?userId=${user.id}`)
-            const data = await response.json()
+    if (!authLoading && user && user.email_confirmed_at) {
+      const checkOnboarding = async () => {
+        try {
+          // Fetch user from database - SINGLE SOURCE OF TRUTH
+          const response = await fetch(`/api/users?userId=${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
             
-            if (data.success && data.data) {
-              const onboardingStep = data.data.onboarding_step || 'start'
-              
-              if (onboardingStep === 'complete') {
-                // Onboarding complete - redirect to /vibe
-                router.push("/vibe")
-              } else {
-                // Need onboarding
-                router.push("/onboarding")
-              }
+            // Redirect based on DB step
+            if (dbStep === 'complete') {
+              router.push("/vibe")
             } else {
-              // Need onboarding
               router.push("/onboarding")
             }
-          } catch (err) {
+          } else {
             // Need onboarding
             router.push("/onboarding")
           }
+        } catch (err) {
+          // Need onboarding
+          router.push("/onboarding")
         }
-        checkOnboarding()
-      } else {
-        // User is logged in but not verified, go to verify page
-        router.push("/verify")
       }
+      checkOnboarding()
+    } else if (!authLoading && user && !user.email_confirmed_at) {
+      // User is logged in but not verified
+      router.push("/verify")
     }
   }, [user, authLoading, router])
 
@@ -63,7 +61,7 @@ export default function LoginPage() {
     try {
       const result = await signIn(email, password)
       if (result.success) {
-        // Check onboarding step from database
+        // After successful login, check onboarding step from DB
         const checkOnboarding = async () => {
           try {
             const userId = (result as any).data?.user?.id || user?.id
@@ -72,14 +70,15 @@ export default function LoginPage() {
               return
             }
             
+            // Fetch user from database - SINGLE SOURCE OF TRUTH
             const response = await fetch(`/api/users?userId=${userId}`)
             const data = await response.json()
             
             if (data.success && data.data) {
-              const onboardingStep = data.data.onboarding_step || 'start'
+              const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
               
-              if (onboardingStep === 'complete') {
-                // Onboarding complete - redirect to /vibe
+              // Redirect based on DB step
+              if (dbStep === 'complete') {
                 router.push("/vibe")
               } else {
                 router.push("/onboarding")

@@ -74,9 +74,6 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
             onChange={(e) => {
               const newEmail = e.target.value
               setLocalEmail(newEmail)
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('onboarding_email', newEmail)
-              }
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && isValid && !loading) {

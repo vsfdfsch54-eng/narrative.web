@@ -14,6 +14,7 @@ import { AppShell } from "@/components/AppShell"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { tokens } from "@/lib/design-tokens"
+import { normalizeOnboardingStep } from "@/lib/onboarding"
 
 const TOPIC_CATEGORIES = [
   { id: "general", label: "General", topics: GENERAL_TOPICS, icon: Compass },
@@ -42,47 +43,40 @@ export default function VibePage() {
   const router = useRouter()
   const { user, loading } = useAuth()
   
+  // Check onboarding_step from DB on mount - redirect if not complete
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return
+    
+    if (!user) {
       router.push("/")
       return
     }
     
-    // Only check onboarding on initial load, not on every render
-    // The welcome page should have already handled this, so this is just a safety check
-    if (!loading && user) {
-      let hasChecked = false
-      
-      const checkOnboarding = async () => {
-        // Prevent multiple checks
-        if (hasChecked) return
-        hasChecked = true
+    const checkOnboarding = async () => {
+      try {
+        // Fetch user from database - SINGLE SOURCE OF TRUTH
+        const response = await fetch(`/api/users?userId=${user.id}`)
+        const data = await response.json()
         
-        try {
-          const response = await fetch(`/api/users?userId=${user.id}`)
-          const data = await response.json()
+        if (data.success && data.data) {
+          const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
           
-          if (data.success && data.data) {
-            const onboardingStep = data.data.onboarding_step || 'start'
-            
-            if (onboardingStep !== 'complete') {
-              // Onboarding incomplete → redirect to onboarding
-              router.push("/onboarding")
-            }
-          } else {
-            // User not found in database → redirect to onboarding
+          // If not complete, redirect to onboarding
+          if (dbStep !== 'complete') {
             router.push("/onboarding")
           }
-        } catch (error) {
-          // On error, redirect to onboarding to be safe
+        } else {
+          // User not found in database → redirect to onboarding
           router.push("/onboarding")
         }
+      } catch (error) {
+        // On error, redirect to onboarding to be safe
+        router.push("/onboarding")
       }
-      
-      // Only check once on mount
-      checkOnboarding()
     }
-  }, [user?.id, loading, router]) // Added router to dependencies
+    
+    checkOnboarding()
+  }, [user, loading, router])
   
   const getUserId = () => {
     if (user?.id) return user.id

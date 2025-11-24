@@ -70,9 +70,6 @@ export function NameStep({ name, onNameChange, onSubmit, loading, error, onBack 
             onChange={(e) => {
               const newName = e.target.value
               setLocalName(newName)
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('onboarding_name', newName)
-              }
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && localName.trim() && !loading) {

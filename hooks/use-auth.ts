@@ -63,9 +63,6 @@ export function useAuth() {
         ? `${window.location.origin}/auth/callback`
         : '/auth/callback'
 
-      console.log('Attempting signup with email:', email)
-      console.log('Redirect URL:', redirectUrl)
-
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -75,13 +72,6 @@ export function useAuth() {
             name: name || email.split('@')[0],
           },
         },
-      })
-
-      console.log('Signup response:', { 
-        user: data?.user?.id, 
-        session: !!data?.session,
-        error: error?.message,
-        emailSent: !error && !!data?.user
       })
 
       if (error) {
@@ -100,7 +90,6 @@ export function useAuth() {
 
       // Don't create user record here - let the API route handle it with service role key
       // This avoids RLS policy issues and ensures proper user creation
-      console.log('[Auth] User signed up, user record will be created during onboarding')
 
       return { success: true, data }
     } catch (error: any) {

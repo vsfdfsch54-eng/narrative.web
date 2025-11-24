@@ -5,32 +5,32 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { getOnboardingRouteForStep, normalizeOnboardingStep } from "@/lib/onboarding"
 
 export default function Home() {
-  const { user, loading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [checking, setChecking] = useState(false)
 
-  // Auto-redirect authenticated users to appropriate page
+  // Redirect authenticated users based on onboarding_step from DB
   useEffect(() => {
-    if (loading) return
+    if (authLoading) return
     
     if (user) {
       setChecking(true)
-      // Check onboarding step from database - single source of truth
       const checkAndRedirect = async () => {
         try {
+          // Fetch user from database - SINGLE SOURCE OF TRUTH
           const response = await fetch(`/api/users?userId=${user.id}`)
           const data = await response.json()
           
           if (data.success && data.data) {
-            const onboardingStep = data.data.onboarding_step || 'start'
+            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
             
-            if (onboardingStep === 'complete') {
-              // Onboarding complete → go to vibe
+            // Redirect based on DB step
+            if (dbStep === 'complete') {
               router.push("/vibe")
             } else {
-              // Onboarding incomplete → go to onboarding
               router.push("/onboarding")
             }
           } else {
@@ -47,10 +47,10 @@ export default function Home() {
       
       checkAndRedirect()
     }
-  }, [user, loading, router])
+  }, [user, authLoading, router])
 
   // Show loading while checking auth or onboarding status
-  if (loading || checking) {
+  if (authLoading || checking) {
     return (
       <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
         <p className="text-[#f1f1f3]/60">Loading...</p>
