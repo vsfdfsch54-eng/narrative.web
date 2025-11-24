@@ -27,6 +27,7 @@ function OnboardingContent() {
   }
 
   const [currentStep, setCurrentStep] = useState<Step>(getInitialStep)
+  const [isRedirecting, setIsRedirecting] = useState(false) // Prevent redirect loops
   const [email, setEmail] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('onboarding_email') || ""
@@ -99,8 +100,9 @@ function OnboardingContent() {
   }
 
   useEffect(() => {
-    if (authLoading || !user) return
+    if (authLoading || !user || isRedirecting) return
     
+    // Only check onboarding status if user is verified
     if (user.email_confirmed_at) {
       const checkComplete = async () => {
         try {
@@ -108,10 +110,13 @@ function OnboardingContent() {
           const data = await response.json()
           
           if (data.success && data.data) {
-            const hasName = data.data.name
+            const hasName = data.data.name && data.data.name.trim() !== ''
             const hasInterests = data.data.interests && data.data.interests.length > 0
             
+            // If user has name and interests, onboarding is complete - redirect to vibe
             if (hasName && hasInterests) {
+              console.log('[Onboarding] ✅ User has name and interests, redirecting to /vibe')
+              setIsRedirecting(true)
               clearOnboardingData()
               router.push('/vibe')
               return
@@ -122,32 +127,34 @@ function OnboardingContent() {
             if (data.data.name) setName(data.data.name)
             if (data.data.interests) setSelectedInterests(data.data.interests)
             
-            // Check if user has personality profile
-            const hasPersonality = data.data.personality_embedding || data.data.personality_summary
-            
-            if (hasName && hasInterests && hasPersonality) {
-              clearOnboardingData()
-              router.push('/vibe')
-              return
-            } else if (hasName && hasInterests && !hasPersonality) {
-              setCurrentStep('personality')
-            } else if (hasName && !hasInterests) {
-              setCurrentStep('interests')
-            } else if (!hasName) {
+            // Determine which step to show based on what's missing
+            if (!hasName) {
+              console.log('[Onboarding] Missing name, showing name step')
               setCurrentStep('name')
+            } else if (!hasInterests) {
+              console.log('[Onboarding] Missing interests, showing interests step')
+              setCurrentStep('interests')
+            } else {
+              // Has name and interests, show personality step (optional)
+              console.log('[Onboarding] Has name and interests, showing personality step (optional)')
+              setCurrentStep('personality')
             }
           } else {
-            // Only set email from user if email field is empty (don't override user's manual input)
+            // User not found in database - start from name step
+            console.log('[Onboarding] User not found in database, starting from name step')
             if (user.email && !email) setEmail(user.email)
             setCurrentStep('name')
           }
         } catch (err) {
-          console.error('Error checking onboarding:', err)
+          console.error('[Onboarding] Error checking onboarding:', err)
+          // On error, start from name step
+          if (user.email && !email) setEmail(user.email)
+          setCurrentStep('name')
         }
       }
       checkComplete()
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading, router, email, isRedirecting])
 
   useEffect(() => {
     if (authLoading || currentStep !== 'verify' || !user) return
@@ -165,6 +172,7 @@ function OnboardingContent() {
             const hasInterests = data.data.interests && data.data.interests.length > 0
             
             if (hasName && hasInterests) {
+              setIsRedirecting(true)
               clearOnboardingData()
               router.push('/vibe')
             } else if (hasName) {
@@ -446,10 +454,40 @@ function OnboardingContent() {
         }
       }
 
-      if (result.data.user.email_confirmed_at) {
-        clearOnboardingData()
-        setLoading(false)
-        router.push('/vibe')
+      // After signup, check if user was created with name and interests
+      // If so, redirect to vibe immediately (personality is optional)
+      if (result.data.user?.email_confirmed_at && result.data.user?.id) {
+        const userId = result.data.user.id
+        // User is already verified, check if onboarding is complete
+        const checkOnboardingStatus = async () => {
+          try {
+            const checkResponse = await fetch(`/api/users?userId=${userId}`)
+            const checkData = await checkResponse.json()
+            
+            if (checkData.success && checkData.data) {
+              const hasName = checkData.data.name && checkData.data.name.trim() !== ''
+              const hasInterests = checkData.data.interests && checkData.data.interests.length > 0
+              
+              if (hasName && hasInterests) {
+                // Onboarding complete - go to vibe
+                console.log('[Onboarding] ✅ Signup complete with name and interests, redirecting to /vibe')
+                setIsRedirecting(true)
+                clearOnboardingData()
+                setLoading(false)
+                router.push('/vibe')
+                return
+              }
+            }
+          } catch (err) {
+            console.error('[Onboarding] Error checking onboarding status after signup:', err)
+          }
+          
+          // If not complete, continue to verification step
+          setLoading(false)
+          setCurrentStep('verify')
+        }
+        
+        checkOnboardingStatus()
         return
       }
 
@@ -611,6 +649,7 @@ function OnboardingContent() {
       }
       
       // Always proceed to vibe page, even if personality generation failed
+      setIsRedirecting(true)
       clearOnboardingData()
       setLoading(false)
       router.push('/vibe')
@@ -1551,6 +1590,7 @@ function OnboardingContent() {
                         const hasInterests = data.data.interests && data.data.interests.length > 0
                         
                         if (hasName && hasInterests) {
+                          setIsRedirecting(true)
                           clearOnboardingData()
                           router.push('/vibe')
                         } else if (hasName) {
