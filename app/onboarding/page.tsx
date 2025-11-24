@@ -708,21 +708,49 @@ function OnboardingContent() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
               <div>
-                <label style={{ 
-                  ...tokens.typography.label,
-                  color: tokens.colors.textSecondary,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  marginBottom: tokens.spacing[8],
-                  display: 'block',
-                }}>
-                  Email
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacing[8] }}>
+                  <label style={{ 
+                    ...tokens.typography.label,
+                    color: tokens.colors.textSecondary,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    display: 'block',
+                  }}>
+                    Email
+                  </label>
+                  {email && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail("")
+                        if (typeof window !== 'undefined') {
+                          localStorage.removeItem('onboarding_email')
+                        }
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: tokens.colors.textSecondary,
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        padding: 0,
+                      }}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
                 <input
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (typeof window !== 'undefined') {
+                      localStorage.setItem('onboarding_email', e.target.value)
+                    }
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && email.trim() && email.includes('@') && email.includes('.') && email.length >= 5) {
                       handleNext()
