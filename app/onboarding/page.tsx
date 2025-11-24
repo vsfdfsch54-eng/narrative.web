@@ -101,7 +101,10 @@ function OnboardingContent() {
   }
 
   useEffect(() => {
-    if (authLoading || !user || isRedirecting || isCompletingStep) return
+    if (authLoading || !user || isRedirecting || isCompletingStep) {
+      // If redirecting or completing step, don't run status check
+      return
+    }
     
     // Only check onboarding status if user is verified
     if (user.email_confirmed_at) {
@@ -112,6 +115,12 @@ function OnboardingContent() {
         // Prevent multiple checks
         if (hasChecked) return
         hasChecked = true
+        
+        // Double-check flags before proceeding (they might have changed)
+        if (isRedirecting || isCompletingStep) {
+          console.log('[Onboarding] Skipping status check - redirecting or completing step')
+          return
+        }
         
         try {
           const response = await fetch(`/api/users?userId=${user.id}`)
@@ -126,8 +135,11 @@ function OnboardingContent() {
             if (hasName && hasInterests) {
               console.log('[Onboarding] ✅ User has name and interests, redirecting to /vibe (personality optional)')
               setIsRedirecting(true)
+              setIsCompletingStep(true)
               clearOnboardingData()
-              router.push('/vibe')
+              setTimeout(() => {
+                router.push('/vibe')
+              }, 100)
               return
             }
             
@@ -138,6 +150,7 @@ function OnboardingContent() {
             
             // Determine which step to show based on what's missing (only on initial load)
             // Don't override if user is actively on a step (not on email/verify step)
+            // Also don't override if user is on personality step (they're completing it)
             const step = currentStep // Capture current step value
             if (step === 'email' || step === 'verify') {
               if (!hasName) {
@@ -148,6 +161,7 @@ function OnboardingContent() {
                 setCurrentStep('interests')
               }
             }
+            // Don't change step if user is on personality step - they're actively completing it
           } else {
             // User not found in database - start from name step (only if on initial step)
             const step = currentStep // Capture current step value
@@ -170,7 +184,7 @@ function OnboardingContent() {
       checkComplete()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading, isCompletingStep]) // Only depend on user.id and authLoading to prevent loops
+  }, [user?.id, authLoading, isCompletingStep, isRedirecting]) // Include isRedirecting in deps
 
   useEffect(() => {
     if (authLoading || currentStep !== 'verify' || !user) return
@@ -710,10 +724,16 @@ function OnboardingContent() {
       }
       
       // Always proceed to vibe page (personality is optional until GPT is available)
+      // Set redirecting flag BEFORE clearing data to prevent useEffect from interfering
       setIsRedirecting(true)
+      setIsCompletingStep(true) // Also set this to prevent status check
       clearOnboardingData()
       setLoading(false)
-      router.push('/vibe')
+      
+      // Use setTimeout to ensure state updates are processed before redirect
+      setTimeout(() => {
+        router.push('/vibe')
+      }, 100)
     } catch (err: any) {
       console.error('Error completing onboarding:', err)
       setError(err.message || "Something went wrong. Please try again.")
