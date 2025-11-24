@@ -47,6 +47,36 @@ export default function VibePage() {
       router.push("/")
     } else if (!loading && user && !user.email_confirmed_at) {
       router.push("/verify")
+    } else if (!loading && user && user.email_confirmed_at) {
+      // Check if onboarding is complete
+      const checkOnboarding = async () => {
+        try {
+          const response = await fetch(`/api/users?userId=${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            const hasName = data.data.name && data.data.name.trim() !== ''
+            const hasInterests = data.data.interests && data.data.interests.length > 0
+            const hasPersonality = data.data.personality_embedding && data.data.personality_embedding.length > 0
+            
+            if (!hasName || !hasInterests || !hasPersonality) {
+              // Onboarding incomplete → redirect to onboarding
+              console.log('[VibePage] Onboarding incomplete, redirecting to /onboarding')
+              router.push("/onboarding")
+            }
+          } else {
+            // User not found in database → redirect to onboarding
+            console.log('[VibePage] User not found in database, redirecting to /onboarding')
+            router.push("/onboarding")
+          }
+        } catch (error) {
+          console.error('[VibePage] Error checking onboarding status:', error)
+          // On error, redirect to onboarding to be safe
+          router.push("/onboarding")
+        }
+      }
+      
+      checkOnboarding()
     }
   }, [user, loading, router])
   

@@ -22,8 +22,32 @@ export default function Home() {
     await new Promise(resolve => setTimeout(resolve, 100))
     
     if (user && user.email_confirmed_at) {
-      // User is logged in AND verified → go directly to /vibe
-      router.push("/vibe")
+      // User is logged in AND verified → check if onboarding is complete
+      try {
+        const response = await fetch(`/api/users?userId=${user.id}`)
+        const data = await response.json()
+        
+        if (data.success && data.data) {
+          const hasName = data.data.name && data.data.name.trim() !== ''
+          const hasInterests = data.data.interests && data.data.interests.length > 0
+          const hasPersonality = data.data.personality_embedding && data.data.personality_embedding.length > 0
+          
+          if (hasName && hasInterests && hasPersonality) {
+            // Onboarding complete → go to /vibe
+            router.push("/vibe")
+          } else {
+            // Onboarding incomplete → go to /onboarding
+            router.push("/onboarding")
+          }
+        } else {
+          // User not found in database → go to onboarding
+          router.push("/onboarding")
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error)
+        // On error, redirect to onboarding to be safe
+        router.push("/onboarding")
+      }
     } else if (user && !user.email_confirmed_at) {
       // User is logged in but NOT verified → go to /verify
       router.push("/verify")
