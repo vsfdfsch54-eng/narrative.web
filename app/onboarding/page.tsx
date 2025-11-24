@@ -388,87 +388,59 @@ function OnboardingContent() {
         const userId = result.data.user.id
         
         try {
-          // Ensure user is created in database (with retry logic)
+          // Create user in database immediately after signup
           console.log('[Onboarding] Creating user in database...')
-          let userCreated = false
-          for (let attempt = 0; attempt < 5; attempt++) {
-            const userResponse = await fetch('/api/users', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId,
-                name: name.trim(),
-                interests: selectedInterests
-              })
+          const userResponse = await fetch('/api/users', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId,
+              name: name.trim(),
+              interests: selectedInterests
             })
+          })
 
-            const userData = await userResponse.json()
-            
-            if (userData.success) {
-              userCreated = true
-              console.log('[Onboarding] ✅ User created in database')
-              break
-            } else {
-              console.error(`[Onboarding] Attempt ${attempt + 1} failed:`, userData.error)
-              if (attempt < 4) {
-                await new Promise(resolve => setTimeout(resolve, 300))
-              }
-            }
-          }
-
-          if (!userCreated) {
-            console.error('[Onboarding] ❌ Failed to create user after 5 attempts')
-            setError("Failed to create user account. Please try again.")
+          const userData = await userResponse.json()
+          
+          if (!userData.success) {
+            console.error('[Onboarding] ❌ Failed to create user:', userData.error)
+            setError(`Failed to create user account: ${userData.error || 'Unknown error'}. Please try again.`)
             setLoading(false)
             return
           }
 
-          // Verify user exists before generating personality
-          console.log('[Onboarding] Verifying user exists in database...')
-          let userVerified = false
-          for (let attempt = 0; attempt < 5; attempt++) {
-            const verifyResponse = await fetch(`/api/users?userId=${userId}`)
-            const verifyData = await verifyResponse.json()
-            if (verifyData.success && verifyData.data) {
-              userVerified = true
-              console.log('[Onboarding] ✅ User verified in database')
-              break
-            }
-            await new Promise(resolve => setTimeout(resolve, 200))
-          }
-
-          if (!userVerified) {
-            console.error('[Onboarding] ❌ User not found in database after creation')
-            setError("User account created but verification failed. Please refresh and try again.")
-            setLoading(false)
-            return
-          }
+          console.log('[Onboarding] ✅ User created in database:', userData.data?.id)
 
           // Generate personality profile if we have answers
           if (Object.keys(personalityAnswers).length > 0) {
             console.log('[Onboarding] Generating personality profile...')
-            const personalityResponse = await fetch('/api/personality/generate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId,
-                questionnaireAnswers: personalityAnswers,
-                interests: selectedInterests,
+            try {
+              const personalityResponse = await fetch('/api/personality/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  userId,
+                  questionnaireAnswers: personalityAnswers,
+                  interests: selectedInterests,
+                })
               })
-            })
 
-            const personalityData = await personalityResponse.json()
-            
-            if (!personalityData.success) {
-              console.error('Error generating personality profile:', personalityData.error)
-              // Don't fail the entire flow, but log the error
-            } else {
-              console.log('[Onboarding] ✅ Personality profile generated successfully')
+              const personalityData = await personalityResponse.json()
+              
+              if (!personalityData.success) {
+                console.error('[Onboarding] ⚠️ Personality generation failed:', personalityData.error)
+                // Don't fail the entire flow - user can still proceed without personality
+              } else {
+                console.log('[Onboarding] ✅ Personality profile generated successfully')
+              }
+            } catch (personalityError) {
+              console.error('[Onboarding] ⚠️ Personality generation error:', personalityError)
+              // Don't fail the entire flow
             }
           }
-        } catch (userError) {
-          console.error('Error calling APIs:', userError)
-          setError("Failed to complete setup. Please try again.")
+        } catch (userError: any) {
+          console.error('[Onboarding] ❌ Error creating user:', userError)
+          setError(`Failed to complete setup: ${userError.message || 'Unknown error'}. Please try again.`)
           setLoading(false)
           return
         }

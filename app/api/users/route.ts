@@ -67,10 +67,11 @@ export async function GET(request: NextRequest) {
 
         // Auto-create user record using upsert to handle duplicate email/id
         // Note: upsert returns an array, so we don't use .single()
+        const userName = authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User'
         console.log('[Users API GET] Attempting to upsert user:', {
           userId,
           email: authUser.user.email,
-          name: authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User'
+          name: userName
         })
         
         const { data: upsertResult, error: createError } = await supabase
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
           .upsert({
             id: userId,
             email: authUser.user.email,
-            name: authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User',
+            name: userName,
             interests: [],
           }, {
             onConflict: 'id', // Update if user with this id exists
@@ -87,111 +88,80 @@ export async function GET(request: NextRequest) {
           .select('*')
 
         // Log upsert result and error details for debugging
-        console.log('[Users API GET] Upsert result:', {
-          hasResult: !!upsertResult,
-          isArray: Array.isArray(upsertResult),
-          length: Array.isArray(upsertResult) ? upsertResult.length : 'N/A',
-          result: upsertResult
-        })
-        
         if (createError) {
-          console.error('[Users API GET] Upsert error details:', {
+          console.error('[Users API GET] ❌ Upsert error:', {
             message: createError.message,
             code: createError.code,
             details: createError.details,
             hint: createError.hint
           })
-        }
-
-        // First, try to use the upsert result if available
-        if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
-          userData = upsertResult[0]
-          console.log('[Users API GET] ✅ User from upsert result:', { id: userData.id, email: userData.email })
-        } else if (upsertResult && !Array.isArray(upsertResult) && typeof upsertResult === 'object') {
-          // Handle case where upsert returns a single object instead of array
-          userData = upsertResult as any
-          console.log('[Users API GET] ✅ User from upsert result (single object):', { id: (userData as any).id, email: (userData as any).email })
-        } else {
-          // If upsert didn't return data, try fetching with retry logic
-          console.log('[Users API GET] Upsert returned no data, fetching user with retry...')
-          console.log('[Users API GET] Upsert had error?', !!createError)
-          console.log('[Users API GET] Upsert result type:', typeof upsertResult)
           
-          let fetchedUser = null
-          
-          // Retry up to 5 times with increasing delays
-          for (let attempt = 0; attempt < 5; attempt++) {
-            const delay = 200 * (attempt + 1) // 200ms, 400ms, 600ms, 800ms, 1000ms
-            console.log(`[Users API GET] Fetch attempt ${attempt + 1}, waiting ${delay}ms...`)
-            await new Promise(resolve => setTimeout(resolve, delay))
-            
-            const { data: userData, error: fetchError } = await supabase
+          // If upsert fails, try a direct insert (in case of unique constraint on email)
+          if (createError.code === '23505' || createError.message.includes('duplicate key')) {
+            console.log('[Users API GET] Duplicate key error, trying to fetch existing user...')
+            const { data: existingUser, error: fetchError } = await supabase
               .from('users')
               .select('*')
               .eq('id', userId)
               .maybeSingle()
-
-            console.log(`[Users API GET] Fetch attempt ${attempt + 1} result:`, {
-              hasData: !!userData,
-              hasError: !!fetchError,
-              error: fetchError ? {
-                message: fetchError.message,
-                code: fetchError.code,
-                details: fetchError.details
-              } : null
-            })
-
-            if (fetchError) {
-              console.error(`[Users API GET] Fetch attempt ${attempt + 1} error:`, {
-                message: fetchError.message,
-                code: fetchError.code,
-                details: fetchError.details
+            
+            if (existingUser && !fetchError) {
+              userData = existingUser
+              console.log('[Users API GET] ✅ Found existing user:', { id: userData.id, email: userData.email })
+            } else {
+              return NextResponse.json({ 
+                success: false, 
+                error: 'Failed to create user record. Please try again.',
+                details: createError.message
+              }, { 
+                status: 500,
+                headers: {
+                  'Content-Type': 'application/json',
+                }
               })
-              // Continue to next attempt
-              continue
             }
-
-            if (userData) {
-              fetchedUser = userData
-              console.log(`[Users API GET] ✅ User found on attempt ${attempt + 1}:`, { id: fetchedUser.id, email: fetchedUser.email })
-              break
-            }
-          }
-
-          if (!fetchedUser) {
-            console.error('[Users API GET] ❌ User not found after upsert and all fetch attempts')
-            console.error('[Users API GET] Final upsert result:', JSON.stringify(upsertResult, null, 2))
-            console.error('[Users API GET] Final upsert error:', createError)
-            
-            // Try one more direct query to see if user exists at all
-            const { data: finalCheck, error: finalError } = await supabase
-              .from('users')
-              .select('id, email, name')
-              .eq('id', userId)
-              .maybeSingle()
-            
-            console.log('[Users API GET] Final direct check:', {
-              hasData: !!finalCheck,
-              hasError: !!finalError,
-              error: finalError?.message
-            })
-            
+          } else {
             return NextResponse.json({ 
               success: false, 
-              error: 'User not found. Please complete onboarding to create your profile.',
-              details: createError 
-                ? `Upsert failed: ${createError.message}` 
-                : 'User was not created and could not be found after multiple attempts. Please try again.'
+              error: 'Failed to create user record.',
+              details: createError.message
             }, { 
-              status: 404,
+              status: 500,
               headers: {
                 'Content-Type': 'application/json',
               }
             })
           }
-
-          userData = fetchedUser
-          console.log('[Users API GET] ✅ User verified after retry:', { id: userData.id, email: userData.email })
+        } else {
+          // Handle upsert result - it's always an array
+          if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
+            userData = upsertResult[0]
+            console.log('[Users API GET] ✅ User created/updated:', { id: userData.id, email: userData.email })
+          } else {
+            // If no data returned, try fetching once
+            console.log('[Users API GET] Upsert returned no data, fetching user...')
+            const { data: fetchedUser, error: fetchError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .maybeSingle()
+            
+            if (fetchedUser && !fetchError) {
+              userData = fetchedUser
+              console.log('[Users API GET] ✅ User found after fetch:', { id: userData.id, email: userData.email })
+            } else {
+              return NextResponse.json({ 
+                success: false, 
+                error: 'User was created but could not be retrieved. Please try again.',
+                details: fetchError?.message || 'Unknown error'
+              }, { 
+                status: 500,
+                headers: {
+                  'Content-Type': 'application/json',
+                }
+              })
+            }
+          }
         }
       } catch (error: any) {
         console.error('[Users API GET] Error creating user:', error)
@@ -290,6 +260,8 @@ export async function PUT(request: NextRequest) {
     // Now upsert with email and interests
     // Use upsert to handle both new users and existing users
     // onConflict: 'id' means update if user with this id exists
+    console.log('[Users API PUT] Upserting user:', { userId, email, name, interestsCount: interests?.length || 0 })
+    
     const { data: upsertData, error: upsertError } = await supabase
       .from('users')
       .upsert({
@@ -305,9 +277,16 @@ export async function PUT(request: NextRequest) {
       .select()
 
     if (upsertError) {
+      console.error('[Users API PUT] ❌ Upsert error:', {
+        message: upsertError.message,
+        code: upsertError.code,
+        details: upsertError.details
+      })
+      
       // Handle duplicate email error gracefully
       if (upsertError.message.includes('duplicate key') || upsertError.message.includes('unique constraint') || upsertError.code === '23505') {
         // Email already exists, try to update by id instead
+        console.log('[Users API PUT] Duplicate email detected, updating by id...')
         const { data: updateData, error: updateError } = await supabase
           .from('users')
           .update({
@@ -319,6 +298,7 @@ export async function PUT(request: NextRequest) {
           .select()
         
         if (updateError) {
+          console.error('[Users API PUT] ❌ Update error:', updateError.message)
           return NextResponse.json(
             { success: false, error: updateError.message }, 
             { 
@@ -332,6 +312,7 @@ export async function PUT(request: NextRequest) {
 
         // Handle array response
         const finalData = Array.isArray(updateData) ? updateData[0] : updateData
+        console.log('[Users API PUT] ✅ User updated:', { id: finalData?.id, email: finalData?.email })
         return NextResponse.json(
           { success: true, data: finalData },
           {
@@ -356,8 +337,9 @@ export async function PUT(request: NextRequest) {
     // Handle array response from upsert
     const finalData = Array.isArray(upsertData) ? upsertData[0] : upsertData
     if (!finalData) {
+      console.error('[Users API PUT] ❌ Upsert returned no data')
       return NextResponse.json(
-        { success: false, error: 'Failed to save user data' }, 
+        { success: false, error: 'Failed to save user data. Please try again.' }, 
         { 
           status: 500,
           headers: {
@@ -367,6 +349,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    console.log('[Users API PUT] ✅ User saved successfully:', { id: finalData.id, email: finalData.email })
     return NextResponse.json(
       { success: true, data: finalData },
       {
