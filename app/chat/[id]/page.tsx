@@ -1,33 +1,40 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChatBubble } from "@/components/ui/chat-bubble"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { EndConvoModal } from "@/components/ui/end-convo-modal"
+import { ChatSearch } from "@/components/ui/chat-search"
 import { Message } from "@/lib/types"
-import { Send, ArrowLeft, Users } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Send, ArrowLeft, Users, Image as ImageIcon, Paperclip } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { tokens } from "@/lib/design-tokens"
 import { AppShell } from "@/components/AppShell"
+import { useRealtimeChat } from "@/hooks/use-realtime-chat"
+import { useTypingIndicator } from "@/hooks/use-typing-indicator"
+import { usePresence } from "@/hooks/use-presence"
 
 export default function ChatDetailPage() {
   const params = useParams()
   const router = useRouter()
   const chatId = params.id as string
-  const [messages, setMessages] = useState<Message[]>([])
   const [message, setMessage] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
   const [showEndModal, setShowEndModal] = useState(false)
-  const [isOnline, setIsOnline] = useState(true)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [profileName, setProfileName] = useState("User")
   const [profileGender, setProfileGender] = useState<"male" | "female">("male")
   const [loadingProfile, setLoadingProfile] = useState(true)
+  const [otherUserPresence, setOtherUserPresence] = useState<{ isOnline: boolean; lastSeenAt: Date | null }>({
+    isOnline: false,
+    lastSeenAt: null,
+  })
+  const [uploadingFile, setUploadingFile] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const { user, loading: authLoading } = useAuth()
   
@@ -53,15 +60,12 @@ export default function ChatDetailPage() {
     const loadProfile = async () => {
       setLoadingProfile(true)
       try {
-        // Try to get profile from match or user ID
         const response = await fetch(`/api/users?userId=${chatId}`)
         const data = await response.json()
         if (data.success && data.data) {
           setProfileName(data.data.name || "User")
-          // Default to male if gender not available
           setProfileGender("male")
         } else {
-          // Fallback: use chatId as name
           setProfileName(`User ${chatId.slice(0, 5)}`)
         }
       } catch (error) {
@@ -79,20 +83,17 @@ export default function ChatDetailPage() {
   const getMatchId = async () => {
     if (!currentUserId || !chatId) return null
     
-    // Check URL params first
     const urlParams = new URLSearchParams(window.location.search)
     const matchIdFromUrl = urlParams.get('matchId')
     if (matchIdFromUrl) {
       return matchIdFromUrl
     }
     
-      // Try to find existing match in database
     try {
       const response = await fetch(`/api/matches?userId=${currentUserId}`)
       const data = await response.json()
       if (data.success && data.data) {
         const match = data.data
-        // Check if this match involves the chatId user
         if ((match.user1_id === currentUserId && match.user2_id === chatId) ||
             (match.user2_id === currentUserId && match.user1_id === chatId)) {
           return match.id
@@ -113,42 +114,66 @@ export default function ChatDetailPage() {
     }
   }, [currentUserId, chatId])
 
+  // Real-time chat hook
+  const { messages, setMessages } = useRealtimeChat(matchId, currentUserId)
+
+  // Typing indicator hook
+  const { isOtherUserTyping, setTyping } = useTypingIndicator(matchId, currentUserId, chatId)
+
+  // Presence hook
+  const { presence, getOtherUserPresence } = usePresence(currentUserId)
+
+  // Load other user's presence
   useEffect(() => {
-    if (!user || !currentUserId || !matchId) return
-    
-    // Load messages from database
-    const loadMessages = async () => {
-      try {
-        const response = await fetch(`/api/messages?matchId=${matchId}`)
-        const data = await response.json()
-        if (data.success && data.data) {
-          // Convert database messages to UI format
-          const dbMessages: Message[] = data.data.map((msg: any) => ({
-            id: msg.id,
-            senderId: msg.sender_id,
-            content: msg.text,
-            timestamp: new Date(msg.created_at),
-            read: true,
-          }))
-          setMessages(dbMessages)
-        } else {
-          // No messages yet - start with empty array
-          setMessages([])
-        }
-      } catch (error) {
-        console.error('Error loading messages:', error)
-        setMessages([])
-      }
+    if (!chatId) return
+    const loadPresence = async () => {
+      const presenceData = await getOtherUserPresence(chatId)
+      setOtherUserPresence(presenceData)
     }
-    
-    loadMessages()
-    
-    // Poll for new messages every 2 seconds
-    const messagePollInterval = setInterval(loadMessages, 2000)
-    
-    return () => clearInterval(messagePollInterval)
-    
-    // Track recent chat
+    loadPresence()
+    const interval = setInterval(loadPresence, 10000) // Update every 10 seconds
+    return () => clearInterval(interval)
+  }, [chatId, getOtherUserPresence])
+
+  // Mark messages as read when they come into view
+  useEffect(() => {
+    if (!matchId || !currentUserId || messages.length === 0) return
+
+    const unreadMessages = messages.filter(
+      msg => msg.senderId !== currentUserId && !msg.read && !msg.readAt
+    )
+
+    if (unreadMessages.length > 0) {
+      const messageIds = unreadMessages.map(msg => msg.id)
+      fetch('/api/messages/mark-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchId,
+          userId: currentUserId,
+          messageIds,
+        }),
+      }).catch(console.error)
+    }
+  }, [messages, matchId, currentUserId])
+
+  // Update presence when match changes
+  useEffect(() => {
+    if (!currentUserId || !matchId) return
+    fetch('/api/presence', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUserId,
+        isOnline: true,
+        currentMatchId: matchId,
+      }),
+    }).catch(console.error)
+  }, [currentUserId, matchId])
+
+  // Track recent chat
+  useEffect(() => {
+    if (!chatId || !profileName) return
     const recentChats = JSON.parse(localStorage.getItem("recentChats") || "[]")
     const chatExists = recentChats.find((chat: { id: string }) => chat.id === chatId)
     
@@ -161,21 +186,22 @@ export default function ChatDetailPage() {
         timestamp: new Date().toISOString(),
       }
       recentChats.unshift(newChat)
-      // Keep only last 10 chats
       const updatedChats = recentChats.slice(0, 10)
       localStorage.setItem("recentChats", JSON.stringify(updatedChats))
     }
+  }, [chatId, profileName, profileGender])
 
-    // Get time limit from localStorage
+  // Get time limit from localStorage
+  useEffect(() => {
     const savedTimeLimit = localStorage.getItem("timeLimit")
     if (savedTimeLimit) {
       const timeLimitMinutes = Number(savedTimeLimit)
       if (!isNaN(timeLimitMinutes) && timeLimitMinutes > 0) {
-      const timeLimitMs = timeLimitMinutes * 60 * 1000
-      setTimeRemaining(timeLimitMs)
+        const timeLimitMs = timeLimitMinutes * 60 * 1000
+        setTimeRemaining(timeLimitMs)
       }
     }
-  }, [chatId, matchId, currentUserId, user, profileName, profileGender])
+  }, [])
 
   // Timer countdown
   useEffect(() => {
@@ -184,7 +210,6 @@ export default function ChatDetailPage() {
     const timer = setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev === null || prev <= 1000) {
-          // Time's up - navigate to feedback
           localStorage.setItem("feedbackChatId", chatId)
           localStorage.setItem("feedbackProfileName", profileName)
           router.push("/feedback")
@@ -197,13 +222,41 @@ export default function ChatDetailPage() {
     return () => clearInterval(timer)
   }, [timeRemaining, chatId, profileName, router])
 
+  // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, isTyping])
+  }, [messages, isOtherUserTyping])
+
+  // Handle typing indicator
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(e.target.value)
+    
+    // Set typing status
+    if (e.target.value.trim() && matchId) {
+      setTyping(true)
+      
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
+      
+      // Stop typing after 2 seconds of no input
+      typingTimeoutRef.current = setTimeout(() => {
+        setTyping(false)
+      }, 2000)
+    } else {
+      setTyping(false)
+    }
+  }
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentUserId || !message.trim() || !matchId) return
+    
+    setTyping(false)
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
     
     const messageText = message.trim()
     setMessage("")
@@ -215,6 +268,7 @@ export default function ChatDetailPage() {
       content: messageText,
       timestamp: new Date(),
       read: false,
+      messageType: 'text',
     }
     setMessages(prev => [...prev, newMessage])
     
@@ -227,6 +281,7 @@ export default function ChatDetailPage() {
           matchId,
           senderId: currentUserId,
           text: messageText,
+          messageType: 'text',
         })
       })
       
@@ -240,15 +295,97 @@ export default function ChatDetailPage() {
                 senderId: data.data.sender_id,
                 content: data.data.text,
                 timestamp: new Date(data.data.created_at),
-                read: true,
+                read: !!data.data.read_at,
+                readAt: data.data.read_at ? new Date(data.data.read_at) : null,
+                reactions: data.data.reactions || {},
+                messageType: data.data.message_type || 'text',
+                fileUrl: data.data.file_url,
+                fileName: data.data.file_name,
+                fileSize: data.data.file_size,
               }
             : msg
         ))
       }
     } catch (error) {
       console.error('Error saving message:', error)
-      // Revert optimistic update on error
       setMessages(prev => prev.filter(msg => msg.id !== newMessage.id))
+    }
+  }
+
+  const handleFileUpload = async (file: File) => {
+    if (!matchId || !currentUserId) return
+
+    setUploadingFile(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('matchId', matchId)
+      formData.append('userId', currentUserId)
+
+      const uploadResponse = await fetch('/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const uploadData = await uploadResponse.json()
+      if (!uploadData.success) {
+        throw new Error(uploadData.error || 'Upload failed')
+      }
+
+      const { url, fileName, fileSize, fileType } = uploadData.data
+
+      // Send message with file
+      const messageResponse = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchId,
+          senderId: currentUserId,
+          text: fileName,
+          messageType: fileType,
+          fileUrl: url,
+          fileName,
+          fileSize,
+        })
+      })
+
+      const messageData = await messageResponse.json()
+      if (!messageData.success) {
+        throw new Error('Failed to send file message')
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error)
+      alert('Failed to upload file. Please try again.')
+    } finally {
+      setUploadingFile(false)
+    }
+  }
+
+  const handleReactionToggle = async (messageId: string, emoji: string) => {
+    if (!currentUserId) return
+
+    try {
+      const response = await fetch('/api/messages/reactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageId,
+          userId: currentUserId,
+          emoji,
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        // Update message reactions in local state
+        setMessages(prev => prev.map(msg =>
+          msg.id === messageId
+            ? { ...msg, reactions: data.reactions }
+            : msg
+        ))
+      }
+    } catch (error) {
+      console.error('Error toggling reaction:', error)
     }
   }
 
@@ -267,7 +404,6 @@ export default function ChatDetailPage() {
       
       const data = await response.json()
       if (data.success) {
-        // Show success feedback
         alert(`${profileName} will receive a notification to add you back!`)
       } else {
         alert('Failed to send community request. Please try again.')
@@ -279,12 +415,9 @@ export default function ChatDetailPage() {
   }
 
   const handleEndConvo = () => {
-    // Close modal first
     setShowEndModal(false)
-    // Save chat info for feedback page
     localStorage.setItem("feedbackChatId", chatId)
     localStorage.setItem("feedbackProfileName", profileName)
-    // Navigate to feedback
     setTimeout(() => {
       router.push("/feedback")
     }, 100)
@@ -297,8 +430,28 @@ export default function ChatDetailPage() {
   }
 
   const getStatusText = () => {
-    if (isOnline) return "Active now"
-    return "Last seen 5m ago"
+    if (otherUserPresence.isOnline) return "Active now"
+    if (otherUserPresence.lastSeenAt) {
+      const diff = Date.now() - otherUserPresence.lastSeenAt.getTime()
+      const minutes = Math.floor(diff / 60000)
+      if (minutes < 1) return "Active now"
+      if (minutes < 60) return `Last seen ${minutes}m ago`
+      const hours = Math.floor(minutes / 60)
+      if (hours < 24) return `Last seen ${hours}h ago`
+      return `Last seen ${Math.floor(hours / 24)}d ago`
+    }
+    return "Offline"
+  }
+
+  const scrollToMessage = (messageId: string) => {
+    const element = document.getElementById(`message-${messageId}`)
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      element.style.background = 'rgba(255,255,255,0.1)'
+      setTimeout(() => {
+        element.style.background = 'transparent'
+      }, 2000)
+    }
   }
 
   if (authLoading || loadingProfile) {
@@ -378,6 +531,7 @@ export default function ChatDetailPage() {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[10] }}>
+            <ChatSearch messages={messages} onMessageSelect={scrollToMessage} />
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleAddToCommunity}
@@ -458,14 +612,16 @@ export default function ChatDetailPage() {
           ) : (
             <>
               {messages.map((msg) => (
-                <div key={msg.id}>
+                <div key={msg.id} id={`message-${msg.id}`}>
                   <ChatBubble
                     message={msg}
                     isOwn={msg.senderId === currentUserId}
+                    currentUserId={currentUserId || ''}
+                    onReactionToggle={handleReactionToggle}
                   />
                 </div>
               ))}
-              {isTyping && <TypingIndicator />}
+              {isOtherUserTyping && <TypingIndicator />}
             </>
           )}
           <div ref={messagesEndRef} />
@@ -482,12 +638,46 @@ export default function ChatDetailPage() {
             gap: tokens.spacing[12],
             alignItems: 'center',
           }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf,.doc,.docx,.txt"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) {
+                  handleFileUpload(file)
+                }
+              }}
+            />
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingFile}
+              style={{
+                padding: tokens.spacing[10],
+                borderRadius: tokens.radii.button,
+                background: 'transparent',
+                border: 'none',
+                color: tokens.colors.textPrimaryOnDark,
+                cursor: uploadingFile ? 'not-allowed' : 'pointer',
+                opacity: uploadingFile ? 0.5 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '44px',
+                height: '44px',
+              }}
+            >
+              <Paperclip style={{ width: '18px', height: '18px' }} />
+            </motion.button>
             <div style={{ flex: 1, position: 'relative' }}>
               <input
                 ref={inputRef}
                 type="text"
                 value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                onChange={handleInputChange}
                 placeholder="Type a message..."
                 style={{
                   width: '100%',
@@ -507,7 +697,7 @@ export default function ChatDetailPage() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               type="submit"
-              disabled={!message.trim()}
+              disabled={!message.trim() || uploadingFile}
               style={{
                 padding: tokens.spacing[10],
                 borderRadius: tokens.radii.button,
@@ -515,8 +705,8 @@ export default function ChatDetailPage() {
                 border: 'none',
                 color: tokens.colors.textOnPill,
                 boxShadow: tokens.shadows.pillUnselected,
-                cursor: !message.trim() ? 'not-allowed' : 'pointer',
-                opacity: !message.trim() ? 0.5 : 1,
+                cursor: (!message.trim() || uploadingFile) ? 'not-allowed' : 'pointer',
+                opacity: (!message.trim() || uploadingFile) ? 0.5 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',

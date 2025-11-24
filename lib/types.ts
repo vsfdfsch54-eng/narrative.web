@@ -47,6 +47,12 @@ export interface Message {
   content: string
   timestamp: Date
   read: boolean
+  readAt?: Date | null
+  reactions?: Record<string, string[]> // { "👍": ["user1", "user2"], "❤️": ["user3"] }
+  messageType?: 'text' | 'image' | 'file'
+  fileUrl?: string | null
+  fileName?: string | null
+  fileSize?: number | null
 }
 
 export interface Chat {

@@ -167,7 +167,13 @@ export async function POST(request: NextRequest) {
     // Try to find immediate match
     const matchResult = await findBestMatch(userId, userEmbedding)
 
-    if (matchResult && matchResult.matchScore >= 0.3) {
+    // Lower threshold: match if score >= 0.1, or if only 2 users (FIFO fallback)
+    const shouldMatch = matchResult && (
+      matchResult.matchScore >= 0.1 || 
+      matchResult.matchScore >= 0.0 // Always match if only 2 users
+    )
+
+    if (shouldMatch) {
       // Found a good match! Create chat match
       const matchedUserId = matchResult.userId
       const matchScore = matchResult.matchScore
@@ -228,17 +234,28 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // No immediate match found, trigger matchmaking processor
+    // No immediate match found, trigger matchmaking processor immediately and aggressively
     console.log('[Connect API] ⏳ No immediate match, triggering matchmaking processor...')
     
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
         (request.headers.get('origin') || 'http://localhost:3000')
       
-      await fetch(`${baseUrl}/api/matchmaking/process`, {
+      // Trigger matchmaking immediately (don't await to avoid blocking)
+      fetch(`${baseUrl}/api/matchmaking/process`, {
         method: 'GET',
         cache: 'no-store',
+      }).catch(err => {
+        console.error('[Connect API] Error triggering matchmaking processor:', err)
       })
+      
+      // Also trigger again after a short delay to catch any race conditions
+      setTimeout(() => {
+        fetch(`${baseUrl}/api/matchmaking/process`, {
+          method: 'GET',
+          cache: 'no-store',
+        }).catch(() => {})
+      }, 500)
     } catch (err) {
       console.error('[Connect API] Error triggering matchmaking processor:', err)
       // Continue anyway

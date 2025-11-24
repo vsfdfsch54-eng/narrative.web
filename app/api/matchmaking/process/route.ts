@@ -16,13 +16,13 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>)
   try {
     console.log('[AI Matchmaking] 🔍 Starting AI matching process...')
 
-    // Clean stale entries (older than 5 minutes)
-    const fiveMinutesAgo = new Date(Date.now() - 1000 * 60 * 5).toISOString()
+    // Clean stale entries (older than 10 minutes - more lenient)
+    const tenMinutesAgo = new Date(Date.now() - 1000 * 60 * 10).toISOString()
     
     const { error: cleanupError } = await supabase
       .from('waiting_pool')
       .delete()
-      .lt('created_at', fiveMinutesAgo)
+      .lt('created_at', tenMinutesAgo)
 
     if (cleanupError) {
       console.error('[AI Matchmaking] Error cleaning stale entries:', cleanupError)
@@ -88,7 +88,30 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>)
         }
 
         // Find best match using AI matching service
-        const matchResult = await findBestMatch(waitingUser.user_id, userEmbedding)
+        let matchResult = await findBestMatch(waitingUser.user_id, userEmbedding)
+
+        // FIFO fallback: if AI matching fails and there are other users, match the first one
+        if (!matchResult && waitingUsers.length > 1) {
+          console.log(`[AI Matchmaking] AI matching failed, using FIFO fallback for user ${waitingUser.user_id}`)
+          // Find first available user in waiting pool (excluding current user)
+          const otherUser = waitingUsers.find(u => 
+            u.user_id !== waitingUser.user_id && 
+            !processedUserIds.has(u.user_id)
+          )
+          
+          if (otherUser) {
+            // Create a basic match result for FIFO fallback
+            matchResult = {
+              userId: otherUser.user_id,
+              matchScore: 0.5, // Default score for FIFO matches
+              traitsUsed: {
+                method: 'FIFO_fallback',
+                reason: 'AI matching failed or score too low',
+              },
+            }
+            console.log(`[AI Matchmaking] FIFO fallback: matching ${waitingUser.user_id} with ${otherUser.user_id}`)
+          }
+        }
 
         if (!matchResult) {
           console.log(`[AI Matchmaking] No match found for user ${waitingUser.user_id}`)

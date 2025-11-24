@@ -234,6 +234,12 @@ export interface Database {
           match_id: string
           sender_id: string
           text: string
+          read_at: string | null
+          reactions: Json | null
+          message_type: 'text' | 'image' | 'file'
+          file_url: string | null
+          file_name: string | null
+          file_size: number | null
           created_at: string
         }
         Insert: {
@@ -241,6 +247,12 @@ export interface Database {
           match_id: string
           sender_id: string
           text: string
+          read_at?: string | null
+          reactions?: Json | null
+          message_type?: 'text' | 'image' | 'file'
+          file_url?: string | null
+          file_name?: string | null
+          file_size?: number | null
           created_at?: string
         }
         Update: {
@@ -248,7 +260,62 @@ export interface Database {
           match_id?: string
           sender_id?: string
           text?: string
+          read_at?: string | null
+          reactions?: Json | null
+          message_type?: 'text' | 'image' | 'file'
+          file_url?: string | null
+          file_name?: string | null
+          file_size?: number | null
           created_at?: string
+        }
+      }
+      typing_status: {
+        Row: {
+          id: string
+          match_id: string
+          user_id: string
+          is_typing: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          user_id: string
+          is_typing?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          user_id?: string
+          is_typing?: boolean
+          updated_at?: string
+        }
+      }
+      user_presence: {
+        Row: {
+          id: string
+          user_id: string
+          is_online: boolean
+          last_seen_at: string
+          current_match_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          is_online?: boolean
+          last_seen_at?: string
+          current_match_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          is_online?: boolean
+          last_seen_at?: string
+          current_match_id?: string | null
+          updated_at?: string
         }
       }
       calendar_events: {

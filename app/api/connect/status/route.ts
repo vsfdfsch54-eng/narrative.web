@@ -25,23 +25,32 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
 
-    // Trigger matchmaking processor before checking status
+    // Trigger matchmaking processor aggressively before checking status
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
         (request.headers.get('origin') || 'http://localhost:3000')
       
+      // Trigger immediately
       fetch(`${baseUrl}/api/matchmaking/process`, {
         method: 'GET',
         cache: 'no-store',
       }).catch(err => {
         console.error('[Connect Status] Failed to trigger processor:', err)
       })
+      
+      // Also trigger after a short delay to ensure processing
+      setTimeout(() => {
+        fetch(`${baseUrl}/api/matchmaking/process`, {
+          method: 'GET',
+          cache: 'no-store',
+        }).catch(() => {})
+      }, 300)
     } catch (err) {
       // Ignore errors
     }
 
     // Small delay for processing
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 200))
 
     // Check if user is still in waiting pool
     const { data: waitingPoolEntry } = await supabase

@@ -6,10 +6,15 @@ import { cn } from "@/lib/utils"
 import { Message } from "@/lib/types"
 import { Check, CheckCheck } from "lucide-react"
 import { tokens } from "@/lib/design-tokens"
+import { MessageReactions } from "./message-reactions"
+import { ImagePreview } from "./image-preview"
+import { FilePreview } from "./file-preview"
 
 interface ChatBubbleProps {
   message: Message
   isOwn: boolean
+  currentUserId: string
+  onReactionToggle?: (messageId: string, emoji: string) => void
 }
 
 function formatTime(timestamp: Date): string {
@@ -30,8 +35,9 @@ function formatTime(timestamp: Date): string {
   })
 }
 
-export function ChatBubble({ message, isOwn }: ChatBubbleProps) {
+export function ChatBubble({ message, isOwn, currentUserId, onReactionToggle }: ChatBubbleProps) {
   const time = formatTime(message.timestamp)
+  const isRead = message.read || !!message.readAt
 
   return (
     <motion.div
@@ -53,25 +59,49 @@ export function ChatBubble({ message, isOwn }: ChatBubbleProps) {
           border: 'none',
         }}
       >
-        <p style={{
-          ...tokens.typography.body,
-          color: tokens.colors.textOnPill,
-          margin: 0,
-          marginBottom: tokens.spacing[8],
-        }}>
-          {message.content}
-        </p>
+        {/* Message content */}
+        {message.messageType === 'image' && message.fileUrl ? (
+          <ImagePreview url={message.fileUrl} fileName={message.fileName || undefined} />
+        ) : message.messageType === 'file' && message.fileUrl ? (
+          <FilePreview 
+            url={message.fileUrl} 
+            fileName={message.fileName || 'File'} 
+            fileSize={message.fileSize || undefined}
+          />
+        ) : (
+          <p style={{
+            ...tokens.typography.body,
+            color: tokens.colors.textOnPill,
+            margin: 0,
+            marginBottom: tokens.spacing[8],
+          }}>
+            {message.content}
+          </p>
+        )}
+
+        {/* Reactions */}
+        {message.reactions && Object.keys(message.reactions).length > 0 && onReactionToggle && (
+          <MessageReactions
+            messageId={message.id}
+            reactions={message.reactions}
+            currentUserId={currentUserId}
+            onReactionToggle={(emoji) => onReactionToggle(message.id, emoji)}
+          />
+        )}
+
+        {/* Timestamp and read receipt */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: tokens.spacing[8],
           fontSize: '12px',
           color: tokens.colors.textMuted,
+          marginTop: tokens.spacing[8],
         }}>
           <span>{time}</span>
           {isOwn && (
             <span>
-              {message.read ? (
+              {isRead ? (
                 <CheckCheck style={{ width: '12px', height: '12px' }} />
               ) : (
                 <Check style={{ width: '12px', height: '12px' }} />

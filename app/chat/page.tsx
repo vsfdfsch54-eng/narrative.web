@@ -122,8 +122,8 @@ export default function ChatPage() {
           
           console.log(`[ChatPage] Polling for AI match (attempt ${pollCount}/${maxPolls}) for user ${user.id}`)
           
-          // Every 5 polls (2.5 seconds), trigger AI matchmaking directly as backup
-          if (pollCount % 5 === 0) {
+          // Every 2 polls (1 second), trigger AI matchmaking directly as backup (more aggressive)
+          if (pollCount % 2 === 0) {
             console.log(`[ChatPage] Triggering direct AI matchmaking as backup (poll ${pollCount})`)
             fetch('/api/matchmaking/process', { 
               method: 'GET',
