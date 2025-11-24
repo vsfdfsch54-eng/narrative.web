@@ -271,7 +271,7 @@ export default function CalendarPage() {
           }}>
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[8] }}>
             <motion.button
               type="button"
               onClick={() => changeMonth("prev")}
