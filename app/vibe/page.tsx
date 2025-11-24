@@ -46,7 +46,7 @@ export default function VibePage() {
     if (!loading && !user) {
       router.push("/")
     } else if (!loading && user) {
-      // Check if onboarding is complete (regardless of email verification)
+      // Quick safety check - if onboarding incomplete, redirect (welcome page should have caught this)
       const checkOnboarding = async () => {
         try {
           const response = await fetch(`/api/users?userId=${user.id}`)
@@ -59,12 +59,14 @@ export default function VibePage() {
             
             if (!hasName || !hasInterests || !hasPersonality) {
               // Onboarding incomplete → redirect to onboarding
-              console.log('[VibePage] Onboarding incomplete, redirecting to /onboarding')
+              console.log('[VibePage] ⚠️ Onboarding incomplete, redirecting to /onboarding')
               router.push("/onboarding")
+            } else {
+              console.log('[VibePage] ✅ Onboarding complete, user can access vibe page')
             }
           } else {
             // User not found in database → redirect to onboarding
-            console.log('[VibePage] User not found in database, redirecting to /onboarding')
+            console.log('[VibePage] ⚠️ User not found in database, redirecting to /onboarding')
             router.push("/onboarding")
           }
         } catch (error) {

@@ -4,21 +4,60 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 export default function Home() {
   const { user, loading } = useAuth()
   const router = useRouter()
+  const [checking, setChecking] = useState(false)
 
-  // Auto-redirect authenticated users to vibe (homepage)
+  // Auto-redirect authenticated users to appropriate page
   useEffect(() => {
-    if (!loading && user) {
-      router.push("/vibe")
+    if (loading) return
+    
+    if (user) {
+      setChecking(true)
+      // Check onboarding completion before redirecting
+      const checkAndRedirect = async () => {
+        try {
+          console.log('[Welcome Page] User authenticated, checking onboarding status...')
+          const response = await fetch(`/api/users?userId=${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            const hasName = data.data.name && data.data.name.trim() !== ''
+            const hasInterests = data.data.interests && data.data.interests.length > 0
+            const hasPersonality = data.data.personality_embedding && data.data.personality_embedding.length > 0
+            
+            if (hasName && hasInterests && hasPersonality) {
+              // Onboarding complete → go to vibe
+              console.log('[Welcome Page] ✅ Onboarding complete, redirecting to /vibe')
+              router.push("/vibe")
+            } else {
+              // Onboarding incomplete → go to onboarding
+              console.log('[Welcome Page] ⚠️ Onboarding incomplete, redirecting to /onboarding')
+              router.push("/onboarding")
+            }
+          } else {
+            // User not found in database → go to onboarding
+            console.log('[Welcome Page] ⚠️ User not found in database, redirecting to /onboarding')
+            router.push("/onboarding")
+          }
+        } catch (error) {
+          console.error('[Welcome Page] Error checking onboarding:', error)
+          // On error, redirect to onboarding to be safe
+          router.push("/onboarding")
+        } finally {
+          setChecking(false)
+        }
+      }
+      
+      checkAndRedirect()
     }
   }, [user, loading, router])
 
-  // Show loading only while auth is loading
-  if (loading) {
+  // Show loading while checking auth or onboarding status
+  if (loading || checking) {
     return (
       <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
         <p className="text-[#f1f1f3]/60">Loading...</p>
