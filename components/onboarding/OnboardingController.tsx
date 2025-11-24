@@ -18,6 +18,7 @@ import {
   getOnboardingRouteForStep,
   normalizeOnboardingStep,
   isValidOnboardingStep,
+  isValidStepTransition,
   STEP_ORDER
 } from "@/lib/onboarding"
 
@@ -115,8 +116,13 @@ export function OnboardingController() {
           return
         }
 
-        // Use URL step if provided and valid, otherwise use DB step
-        const stepToUse = initialStep && isValidOnboardingStep(initialStep) ? initialStep : dbStep
+        // Use URL step if provided and valid, and transition is legal, otherwise use DB step
+        const stepToUse =
+          initialStep &&
+          isValidOnboardingStep(initialStep) &&
+          isValidStepTransition(dbStep, initialStep)
+            ? initialStep
+            : dbStep
 
         // Set step from database or URL
         setState(prev => ({
@@ -387,7 +393,9 @@ export function OnboardingController() {
       router.push(getNextOnboardingRoute('complete'))
     } catch (error) {
       // Try to update step anyway
-      updateOnboardingStepInDB('complete').catch(() => {})
+      updateOnboardingStepInDB('complete').catch((error) => {
+        console.error('[Onboarding] Failed to update step to complete (fallback):', error)
+      })
       router.push(getNextOnboardingRoute('complete'))
     }
   }, [user, state.interests, router, updateOnboardingStepInDB])
@@ -414,12 +422,16 @@ export function OnboardingController() {
         router.push(getNextOnboardingRoute('complete'))
       } else {
         // Try anyway
-        updateOnboardingStepInDB('complete').catch(() => {})
+        updateOnboardingStepInDB('complete').catch((error) => {
+          console.error('[Onboarding] Failed to update step to complete (fallback):', error)
+        })
         router.push(getNextOnboardingRoute('complete'))
       }
     } catch (error) {
       // Redirect anyway
-      updateOnboardingStepInDB('complete').catch(() => {})
+      updateOnboardingStepInDB('complete').catch((error) => {
+        console.error('[Onboarding] Failed to update step to complete (fallback):', error)
+      })
       router.push(getNextOnboardingRoute('complete'))
     }
   }, [user, router, updateOnboardingStepInDB])

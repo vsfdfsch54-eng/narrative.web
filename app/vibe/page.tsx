@@ -78,13 +78,13 @@ export default function VibePage() {
         } else {
           // User not found in database → redirect to onboarding
           if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-            router.push("/onboarding")
+            router.push("/onboarding?step=email")
           }
         }
       } catch (error) {
         // On error, redirect to onboarding to be safe
         if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-          router.push("/onboarding")
+          router.push("/onboarding?step=email")
         }
       }
     }

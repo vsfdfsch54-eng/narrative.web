@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
               email: userEmail,
               name: userName,
               interests: [],
+              onboarding_step: 'personality',
             }, {
               onConflict: 'id',
               ignoreDuplicates: false

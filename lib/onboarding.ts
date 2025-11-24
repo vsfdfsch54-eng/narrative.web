@@ -63,7 +63,27 @@ export function getInitialStep(): OnboardingStep {
 }
 
 /**
+ * Check if a step transition is valid
+ * Allows forward progression by one step, or backward by any number of steps
+ */
+export function isValidStepTransition(from: OnboardingStep, to: OnboardingStep): boolean {
+  const fromIndex = STEP_ORDER.indexOf(from)
+  const toIndex = STEP_ORDER.indexOf(to)
+  
+  if (toIndex === -1 || fromIndex === -1) return false
+  // Can go forward one step, or backward any number
+  return toIndex === fromIndex + 1 || toIndex < fromIndex
+}
+
+/**
  * Normalize onboarding step from database
+ * 
+ * NOTE:
+ * The database default for onboarding_step is "start".
+ * The UI expects initial step = "email".
+ * normalizeOnboardingStep() converts "start" → "email" intentionally.
+ * This is expected behavior and prevents inconsistencies.
+ * 
  * Converts invalid/null/undefined values to 'start', then to 'email' if needed
  */
 export function normalizeOnboardingStep(step: string | null | undefined): OnboardingStep {

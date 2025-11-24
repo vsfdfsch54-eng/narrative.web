@@ -49,13 +49,13 @@ export default function LoginPage() {
           } else {
             // Need onboarding
             if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.push("/onboarding")
+              router.push("/onboarding?step=email")
             }
           }
         } catch (err) {
           // Need onboarding
           if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-            router.push("/onboarding")
+            router.push("/onboarding?step=email")
           }
         }
       }
@@ -82,7 +82,7 @@ export default function LoginPage() {
             const userId = (result as any).data?.user?.id || user?.id
             if (!userId) {
               if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                router.push("/onboarding")
+                router.push("/onboarding?step=email")
               }
               return
             }
@@ -106,12 +106,12 @@ export default function LoginPage() {
               }
             } else {
               if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                router.push("/onboarding")
+                router.push("/onboarding?step=email")
               }
             }
           } catch (err) {
             if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.push("/onboarding")
+              router.push("/onboarding?step=email")
             }
           }
         }

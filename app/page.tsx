@@ -45,13 +45,13 @@ export default function Home() {
           } else {
             // User not found in database → go to onboarding
             if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.push("/onboarding")
+              router.push("/onboarding?step=email")
             }
           }
         } catch (error) {
           // On error, redirect to onboarding to be safe
           if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-            router.push("/onboarding")
+            router.push("/onboarding?step=email")
           }
         } finally {
           setChecking(false)
