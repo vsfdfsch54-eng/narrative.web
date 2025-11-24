@@ -53,11 +53,22 @@ export async function GET(request: NextRequest) {
     await new Promise(resolve => setTimeout(resolve, 200))
 
     // Check if user is still in waiting pool
-    const { data: waitingPoolEntry } = await supabase
+    const { data: waitingPoolEntry, error: waitingPoolError } = await supabase
       .from('waiting_pool')
-      .select('user_id')
+      .select('user_id, created_at')
       .eq('user_id', userId)
       .single()
+
+    console.log('[Connect Status] Waiting pool check:', {
+      userId,
+      found: !!waitingPoolEntry,
+      error: waitingPoolError?.message,
+      errorCode: waitingPoolError?.code,
+      entry: waitingPoolEntry ? { 
+        user_id: waitingPoolEntry.user_id, 
+        created_at: waitingPoolEntry.created_at 
+      } : null
+    })
 
     // If not in waiting pool, check if they were matched
     if (!waitingPoolEntry) {

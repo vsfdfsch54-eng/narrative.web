@@ -42,26 +42,44 @@ export default function ChatPage() {
           }
         }
         
-        // Check if user is in waiting pool (AI matching queue)
-        const waitingResponse = await fetch(`/api/connect/status?userId=${user.id}`, { 
-          method: 'GET',
-          cache: 'no-store'
-        })
-        const waitingData = await waitingResponse.json()
+        // Check if user is in waiting pool (AI matching queue) with retry logic
+        // This handles race conditions where the entry might not be immediately visible
+        let waitingData = null
+        let foundInQueue = false
         
-        if (waitingData.inQueue) {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const waitingResponse = await fetch(`/api/connect/status?userId=${user.id}`, { 
+            method: 'GET',
+            cache: 'no-store'
+          })
+          waitingData = await waitingResponse.json()
+          
+          console.log(`[ChatPage] Queue check attempt ${attempt + 1}:`, waitingData)
+          
+          if (waitingData.inQueue || waitingData.matched) {
+            foundInQueue = true
+            break // Found status, exit retry loop
+          }
+          
+          // Wait before retrying (only if not found)
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 400))
+          }
+        }
+        
+        if (waitingData?.inQueue) {
           // Already in AI matching queue, poll for match
-          console.log('[ChatPage] User is in AI matching queue, starting polling...')
+          console.log('[ChatPage] ✅ User is in AI matching queue, starting polling...')
           setLoading(false) // Stop loading, show waiting UI
           pollForMatch()
-        } else if (waitingData.matched && waitingData.match) {
+        } else if (waitingData?.matched && waitingData?.match) {
           // Already matched! Navigate immediately
-          console.log('[ChatPage] User already matched, navigating to chat')
+          console.log('[ChatPage] ✅ User already matched, navigating to chat')
           const otherUserId = waitingData.otherUserId
           router.push(`/chat/${otherUserId}?matchId=${waitingData.match.id}`)
         } else {
-          // Not in queue, check if user exists in database
-          console.log('[ChatPage] User not in queue, checking if user exists...')
+          // Not in queue after retries, check if user exists in database
+          console.log('[ChatPage] ⚠️ User not in queue after 3 attempts, checking if user exists...')
           
           // Check if user exists in users table
           const userCheckResponse = await fetch(`/api/users?userId=${user.id}`)
@@ -74,10 +92,10 @@ export default function ChatPage() {
             return
           }
           
-          // User exists but not in queue, show empty state
-          console.log('[ChatPage] User exists but not in queue, showing empty state')
-          setProfiles([])
-          setLoading(false)
+          // User exists but not in queue - this shouldn't happen if they just clicked Connect
+          // Redirect back to vibe page to try again
+          console.log('[ChatPage] ⚠️ User exists but not in queue - redirecting to vibe to reconnect')
+          router.push('/vibe')
         }
       } catch (error) {
         console.error('Error loading matches:', error)

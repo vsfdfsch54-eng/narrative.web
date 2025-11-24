@@ -210,8 +210,34 @@ export async function POST(request: NextRequest) {
 
     console.log('[Connect API] ✅ User added to waiting pool')
 
-    // Small delay for database propagation
-    await new Promise(resolve => setTimeout(resolve, 200))
+    // Verify the entry was actually created (with retry)
+    let verifyEntry = null
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await new Promise(resolve => setTimeout(resolve, 200))
+      
+      const { data: entry, error: verifyError } = await supabase
+        .from('waiting_pool')
+        .select('user_id, created_at')
+        .eq('user_id', userId)
+        .single()
+      
+      if (entry && !verifyError) {
+        verifyEntry = entry
+        console.log('[Connect API] ✅ Verified user is in waiting pool', { 
+          userId, 
+          created_at: entry.created_at 
+        })
+        break
+      }
+      
+      if (attempt === 2) {
+        console.error('[Connect API] ❌ User not found in waiting pool after 3 attempts!', verifyError)
+        return NextResponse.json(
+          { error: 'Failed to join waiting pool - entry not found after verification' },
+          { status: 500 }
+        )
+      }
+    }
 
     // Try to find immediate match
     const matchResult = await findBestMatch(userId, userEmbedding)
@@ -283,14 +309,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // No immediate match found, trigger matchmaking processor immediately and aggressively
-    console.log('[Connect API] ⏳ No immediate match, triggering matchmaking processor...')
+    // No immediate match found, trigger matchmaking processor after a delay
+    // This ensures the waiting_pool entry is fully committed before matching
+    console.log('[Connect API] ⏳ No immediate match, will trigger matchmaking processor...')
+    
+    // Wait a bit longer to ensure database entry is fully committed
+    await new Promise(resolve => setTimeout(resolve, 500))
     
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
         (request.headers.get('origin') || 'http://localhost:3000')
       
-      // Trigger matchmaking immediately (don't await to avoid blocking)
+      // Trigger matchmaking (don't await to avoid blocking response)
       fetch(`${baseUrl}/api/matchmaking/process`, {
         method: 'GET',
         cache: 'no-store',
@@ -298,13 +328,13 @@ export async function POST(request: NextRequest) {
         console.error('[Connect API] Error triggering matchmaking processor:', err)
       })
       
-      // Also trigger again after a short delay to catch any race conditions
+      // Also trigger again after another delay to catch any race conditions
       setTimeout(() => {
         fetch(`${baseUrl}/api/matchmaking/process`, {
           method: 'GET',
           cache: 'no-store',
         }).catch(() => {})
-      }, 500)
+      }, 1000)
     } catch (err) {
       console.error('[Connect API] Error triggering matchmaking processor:', err)
       // Continue anyway
