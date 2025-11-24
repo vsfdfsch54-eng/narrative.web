@@ -163,7 +163,6 @@ export default function FeedbackPage() {
   }
 
   const handleReport = (reason: string) => {
-    console.log(`Reporting ${profileName}: ${reason}`)
     setShowReportModal(false)
   }
 

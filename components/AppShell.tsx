@@ -2,7 +2,6 @@
 
 import { ReactNode } from "react"
 import { Header } from "./ui/header"
-import { FloatingDock } from "./ui/floating-dock"
 import { tokens } from "@/lib/design-tokens"
 
 interface AppShellProps {
@@ -16,7 +15,7 @@ export function AppShell({
   children,
   title,
   showHeader = true,
-  showDock = true,
+  showDock = false, // Disabled - using new NavBar instead
 }: AppShellProps) {
   const contentPaddingTop = showHeader
     ? `calc(96px + env(safe-area-inset-top))`
@@ -50,7 +49,6 @@ export function AppShell({
       >
         {children}
       </main>
-      {showDock && <FloatingDock />}
     </div>
   )
 }

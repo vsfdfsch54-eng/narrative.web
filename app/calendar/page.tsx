@@ -475,7 +475,7 @@ export default function CalendarPage() {
                       <span style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimaryOnDark }}>Events</span>
                       <button
                         type="button"
-                        onClick={() => console.log("Edit events for day", selectedDay)}
+                        onClick={() => {}}
                         style={{
                           ...tokens.typography.label,
                           color: tokens.colors.textSecondary,

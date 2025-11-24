@@ -55,11 +55,6 @@ export default function ChatPage() {
           })
           waitingData = await waitingResponse.json()
           
-          console.log(`[ChatPage] Queue check attempt ${attempt + 1}/5:`, {
-            inQueue: waitingData.inQueue,
-            matched: waitingData.matched,
-            success: waitingData.success
-          })
           
           if (waitingData.inQueue || waitingData.matched) {
             foundInQueue = true
@@ -74,17 +69,14 @@ export default function ChatPage() {
         
         if (waitingData?.inQueue) {
           // Already in AI matching queue, poll for match
-          console.log('[ChatPage] ✅ User is in AI matching queue, starting polling...')
           setLoading(false) // Stop loading, show waiting UI
           pollForMatch()
         } else if (waitingData?.matched && waitingData?.match) {
           // Already matched! Navigate immediately
-          console.log('[ChatPage] ✅ User already matched, navigating to chat')
           const otherUserId = waitingData.otherUserId
           router.push(`/chat/${otherUserId}?matchId=${waitingData.match.id}`)
         } else {
           // Not in queue after retries - check for existing matches first
-          console.log('[ChatPage] ⚠️ User not in queue after 5 attempts, checking for existing matches...')
           
           // Check for existing active matches first
           const matchesResponse = await fetch(`/api/matches?userId=${user.id}`, {
@@ -99,7 +91,6 @@ export default function ChatPage() {
               if (activeMatches.length > 0) {
                 const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
                 const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
-                console.log('[ChatPage] ✅ Found existing match, navigating to chat')
                 setLoading(false)
                 router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
                 return
@@ -113,14 +104,12 @@ export default function ChatPage() {
           
           if (!userCheckData.success || !userCheckData.data) {
             // User doesn't exist in database, redirect to onboarding
-            console.log('[ChatPage] ⚠️ User not found in database, redirecting to onboarding')
             router.push('/onboarding')
             return
           }
           
           // User exists but not in queue - show empty state instead of redirecting
           // This prevents redirect loops
-          console.log('[ChatPage] ⚠️ User exists but not in queue - showing empty state')
           setLoading(false)
           // Don't redirect - just show empty state so user can try connecting again
         }
@@ -172,26 +161,20 @@ export default function ChatPage() {
         try {
           // Stop polling after max attempts
           if (pollCount > maxPolls) {
-            console.log(`[ChatPage] Max polls reached (${maxPolls}), stopping...`)
             clearInterval(interval)
             channel.unsubscribe()
             setLoading(false)
             return
           }
           
-          console.log(`[ChatPage] Polling for AI match (attempt ${pollCount}/${maxPolls}) for user ${user.id}`)
-          
           // Every 2 polls (1 second), trigger AI matchmaking directly as backup (more aggressive)
           if (pollCount % 2 === 0) {
-            console.log(`[ChatPage] Triggering direct AI matchmaking as backup (poll ${pollCount})`)
             fetch('/api/matchmaking/process', { 
               method: 'GET',
               cache: 'no-store'
-            }).then(r => r.json()).then(data => {
-              if (data.matched > 0) {
-                console.log(`[ChatPage] ✅ Backup AI matchmaking matched ${data.matched} pair(s)`)
-              }
-            }).catch(err => console.error('[ChatPage] Error triggering matchmaking:', err))
+            }).catch(() => {
+              // Silently fail
+            })
           }
           
           // Check if user was matched (status endpoint runs AI matching automatically)
@@ -203,24 +186,14 @@ export default function ChatPage() {
           })
           
           if (!response.ok) {
-            console.error(`[ChatPage] HTTP error! status: ${response.status}`)
-            // Don't throw, just log and continue polling
+            // Don't throw, just continue polling
             return
           }
           
           const data = await response.json()
-          console.log(`[ChatPage] Poll response:`, { 
-            success: data.success, 
-            matched: data.matched, 
-            inQueue: data.inQueue,
-            hasMatch: !!data.match,
-            hasOtherUserId: !!data.otherUserId,
-            matchScore: data.matchScore
-          })
           
           if (data.success && data.matched && data.match && data.otherUserId) {
             // AI match found! Navigate immediately
-            console.log(`[ChatPage] ✅ AI match found! Navigating to chat with ${data.otherUserId} (score: ${data.matchScore})`)
             clearInterval(interval)
             channel.unsubscribe()
             setLoading(false)
@@ -229,7 +202,6 @@ export default function ChatPage() {
           }
           
           if (!data.inQueue) {
-            console.log(`[ChatPage] User no longer in queue, checking for existing matches...`)
             // No longer in queue - check for existing matches
             clearInterval(interval)
             channel.unsubscribe()
@@ -245,30 +217,21 @@ export default function ChatPage() {
                 if (activeMatches.length > 0) {
                   const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
                   const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
-                  console.log(`[ChatPage] Found existing match, navigating to ${otherUserId}`)
                   setLoading(false)
                   router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
                   return
                 }
               }
             }
-            console.log(`[ChatPage] No matches found, stopping polling`)
             setLoading(false)
-          } else {
-            // Still in queue - keep polling but don't log every time to reduce noise
-            if (pollCount % 10 === 0) {
-              console.log(`[ChatPage] Still in AI matching queue (${pollCount} polls)...`)
-            }
           }
         } catch (error) {
-          console.error('[ChatPage] Error polling for match:', error)
-          // Don't stop polling on error, just log it
+          // Don't stop polling on error
         }
       }, 500) // Poll every 500ms - GET endpoint runs AI matching automatically
 
       // Cleanup after 2 minutes
       const timeout = setTimeout(() => {
-        console.log(`[ChatPage] Timeout reached, stopping polling`)
         clearInterval(interval)
         channel.unsubscribe()
         setLoading(false)
