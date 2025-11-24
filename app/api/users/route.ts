@@ -67,6 +67,12 @@ export async function GET(request: NextRequest) {
 
         // Auto-create user record using upsert to handle duplicate email/id
         // Note: upsert returns an array, so we don't use .single()
+        console.log('[Users API GET] Attempting to upsert user:', {
+          userId,
+          email: authUser.user.email,
+          name: authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User'
+        })
+        
         const { data: upsertResult, error: createError } = await supabase
           .from('users')
           .upsert({
@@ -80,7 +86,14 @@ export async function GET(request: NextRequest) {
           })
           .select('*')
 
-        // Log upsert error details for debugging
+        // Log upsert result and error details for debugging
+        console.log('[Users API GET] Upsert result:', {
+          hasResult: !!upsertResult,
+          isArray: Array.isArray(upsertResult),
+          length: Array.isArray(upsertResult) ? upsertResult.length : 'N/A',
+          result: upsertResult
+        })
+        
         if (createError) {
           console.error('[Users API GET] Upsert error details:', {
             message: createError.message,
@@ -94,20 +107,39 @@ export async function GET(request: NextRequest) {
         if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
           userData = upsertResult[0]
           console.log('[Users API GET] ✅ User from upsert result:', { id: userData.id, email: userData.email })
+        } else if (upsertResult && !Array.isArray(upsertResult) && upsertResult) {
+          // Handle case where upsert returns a single object instead of array
+          userData = upsertResult
+          console.log('[Users API GET] ✅ User from upsert result (single object):', { id: userData.id, email: userData.email })
         } else {
           // If upsert didn't return data, try fetching with retry logic
           console.log('[Users API GET] Upsert returned no data, fetching user with retry...')
+          console.log('[Users API GET] Upsert had error?', !!createError)
+          console.log('[Users API GET] Upsert result type:', typeof upsertResult)
+          
           let fetchedUser = null
           
           // Retry up to 5 times with increasing delays
           for (let attempt = 0; attempt < 5; attempt++) {
-            await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1))) // 100ms, 200ms, 300ms, 400ms, 500ms
+            const delay = 200 * (attempt + 1) // 200ms, 400ms, 600ms, 800ms, 1000ms
+            console.log(`[Users API GET] Fetch attempt ${attempt + 1}, waiting ${delay}ms...`)
+            await new Promise(resolve => setTimeout(resolve, delay))
             
             const { data: userData, error: fetchError } = await supabase
               .from('users')
               .select('*')
               .eq('id', userId)
               .maybeSingle()
+
+            console.log(`[Users API GET] Fetch attempt ${attempt + 1} result:`, {
+              hasData: !!userData,
+              hasError: !!fetchError,
+              error: fetchError ? {
+                message: fetchError.message,
+                code: fetchError.code,
+                details: fetchError.details
+              } : null
+            })
 
             if (fetchError) {
               console.error(`[Users API GET] Fetch attempt ${attempt + 1} error:`, {
@@ -121,19 +153,35 @@ export async function GET(request: NextRequest) {
 
             if (userData) {
               fetchedUser = userData
-              console.log(`[Users API GET] ✅ User found on attempt ${attempt + 1}`)
+              console.log(`[Users API GET] ✅ User found on attempt ${attempt + 1}:`, { id: fetchedUser.id, email: fetchedUser.email })
               break
             }
           }
 
           if (!fetchedUser) {
-            console.error('[Users API GET] User not found after upsert and all fetch attempts')
-            console.error('[Users API GET] Upsert result:', upsertResult)
-            console.error('[Users API GET] Upsert error:', createError)
+            console.error('[Users API GET] ❌ User not found after upsert and all fetch attempts')
+            console.error('[Users API GET] Final upsert result:', JSON.stringify(upsertResult, null, 2))
+            console.error('[Users API GET] Final upsert error:', createError)
+            
+            // Try one more direct query to see if user exists at all
+            const { data: finalCheck, error: finalError } = await supabase
+              .from('users')
+              .select('id, email, name')
+              .eq('id', userId)
+              .maybeSingle()
+            
+            console.log('[Users API GET] Final direct check:', {
+              hasData: !!finalCheck,
+              hasError: !!finalError,
+              error: finalError?.message
+            })
+            
             return NextResponse.json({ 
               success: false, 
               error: 'User not found. Please complete onboarding to create your profile.',
-              details: 'User was not created and could not be found after multiple attempts. Please try again.'
+              details: createError 
+                ? `Upsert failed: ${createError.message}` 
+                : 'User was not created and could not be found after multiple attempts. Please try again.'
             }, { 
               status: 404,
               headers: {
