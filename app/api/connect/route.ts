@@ -179,12 +179,12 @@ export async function POST(request: NextRequest) {
       console.log('[Connect API] ✅ User verified:', { id: userRecord.id, email: userRecord.email })
     }
 
-    // Check if user has personality embedding
+    // Check if user has personality embedding (optional - will use FIFO matching if missing)
     if (!userRecord.personality_embedding) {
-      console.log('[Connect API] ⚠️  User has no personality embedding, generating...')
+      console.log('[Connect API] ⚠️  User has no personality embedding (optional - will use FIFO matching)')
       
-      // Try to generate personality profile from existing data
-      // This handles migration case
+      // Try to generate personality profile from existing data (optional)
+      // This handles migration case, but won't block if it fails
       try {
         const { data: userData } = await supabase
           .from('users')
@@ -211,7 +211,7 @@ export async function POST(request: NextRequest) {
           last_vibe: vibes?.vibe || null,
         }
 
-        // Generate personality profile
+        // Try to generate personality profile (optional - don't block if it fails)
         const personalityResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/personality/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -227,65 +227,65 @@ export async function POST(request: NextRequest) {
         const personalityData = await personalityResponse.json()
 
         if (!personalityData.success) {
-          console.error('[Connect API] ❌ Failed to generate personality profile:', personalityData.error)
-          return NextResponse.json(
-            { error: 'Personality profile required. Please complete onboarding first.' },
-            { status: 400 }
-          )
+          console.warn('[Connect API] ⚠️ Failed to generate personality profile (optional):', personalityData.error)
+          console.log('[Connect API] User will use FIFO matching instead of AI matching')
+          // Don't block - continue without personality embedding
+        } else {
+          console.log('[Connect API] ✅ Personality profile generated')
         }
-
-        console.log('[Connect API] ✅ Personality profile generated')
       } catch (error: any) {
-        console.error('[Connect API] ❌ Error generating personality profile:', error)
-        return NextResponse.json(
-          { error: 'Personality profile required. Please complete onboarding first.' },
-          { status: 400 }
-        )
+        console.warn('[Connect API] ⚠️ Error generating personality profile (optional):', error)
+        console.log('[Connect API] User will use FIFO matching instead of AI matching')
+        // Don't block - continue without personality embedding
       }
     }
 
-    // Get fresh user data with embedding
+    // Get fresh user data (embedding may or may not exist - both are fine)
     const { data: freshUserData, error: freshUserError } = await supabase
       .from('users')
       .select('personality_embedding')
       .eq('id', userId)
       .single()
 
-    if (freshUserError || !freshUserData?.personality_embedding) {
-      console.error('[Connect API] ❌ User still has no embedding after generation attempt')
+    if (freshUserError) {
+      console.error('[Connect API] ❌ Error fetching user data:', freshUserError)
       return NextResponse.json(
-        { error: 'Failed to generate personality profile' },
+        { error: 'Failed to fetch user data' },
         { status: 500 }
       )
     }
 
-    // Parse embedding
-    const embeddingString = freshUserData.personality_embedding
-    let userEmbedding: number[]
+    // Note: personality_embedding is optional - matching service will use FIFO if missing
+
+    // Parse embedding (optional - can be null)
+    let userEmbedding: number[] | null = null
     
-    if (typeof embeddingString === 'string') {
-      const cleaned = embeddingString.replace(/[\[\]]/g, '')
-      userEmbedding = cleaned.split(',').map(Number)
-    } else if (Array.isArray(embeddingString)) {
-      userEmbedding = embeddingString
+    if (freshUserData.personality_embedding) {
+      const embeddingString = freshUserData.personality_embedding
+      
+      if (typeof embeddingString === 'string') {
+        const cleaned = embeddingString.replace(/[\[\]]/g, '')
+        userEmbedding = cleaned.split(',').map(Number)
+      } else if (Array.isArray(embeddingString)) {
+        userEmbedding = embeddingString
+      } else {
+        console.warn('[Connect API] ⚠️ Invalid embedding format, will use FIFO matching')
+        userEmbedding = null
+      }
     } else {
-      console.error('[Connect API] ❌ Invalid embedding format')
-      return NextResponse.json(
-        { error: 'Invalid personality embedding format' },
-        { status: 500 }
-      )
+      console.log('[Connect API] No personality embedding - will use FIFO matching')
     }
 
     // Remove any existing entry in waiting pool for this user
     await supabase.from('waiting_pool').delete().eq('user_id', userId)
 
-    // Add user to waiting pool with embedding
+    // Add user to waiting pool (embedding is optional - null means FIFO matching)
     // Note: Supabase JS client handles vector conversion automatically when passing array
     const { error: insertError } = await supabase
       .from('waiting_pool')
       .insert({
         user_id: userId,
-        embedding: userEmbedding, // Pass array directly - Supabase converts to vector
+        embedding: userEmbedding, // Can be null - matching service will use FIFO
       })
 
     if (insertError) {
@@ -327,8 +327,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Try to find immediate match
-    const matchResult = await findBestMatch(userId, userEmbedding)
+    // Try to find immediate match (only if user has embedding)
+    let matchResult = null
+    if (userEmbedding && userEmbedding.length > 0) {
+      matchResult = await findBestMatch(userId, userEmbedding)
+    } else {
+      console.log('[Connect API] No embedding available - will use FIFO matching via matchmaking processor')
+    }
 
     // Lower threshold: match if score >= 0.1, or if only 2 users (FIFO fallback)
     const shouldMatch = matchResult && (
@@ -336,7 +341,7 @@ export async function POST(request: NextRequest) {
       matchResult.matchScore >= 0.0 // Always match if only 2 users
     )
 
-    if (shouldMatch) {
+    if (shouldMatch && matchResult) {
       // Found a good match! Create chat match
       const matchedUserId = matchResult.userId
       const matchScore = matchResult.matchScore

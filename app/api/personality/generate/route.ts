@@ -202,15 +202,43 @@ export async function POST(request: NextRequest) {
 
     console.log('[Personality Generate] Generating personality profile...')
 
-    // Generate personality profile using OpenAI
-    const { summary, embedding, traits } = await generatePersonalityProfile(
-      questionnaireAnswers,
-      interests,
-      vibe || null,
-      topic || null
-    )
-
-    console.log('[Personality Generate] ✅ Personality profile generated')
+    // Generate personality profile using OpenAI (optional - gracefully handle failures)
+    let summary: string
+    let embedding: number[]
+    let traits: Record<string, any>
+    
+    try {
+      const profile = await generatePersonalityProfile(
+        questionnaireAnswers,
+        interests,
+        vibe || null,
+        topic || null
+      )
+      summary = profile.summary
+      embedding = profile.embedding
+      traits = profile.traits
+      console.log('[Personality Generate] ✅ Personality profile generated')
+    } catch (gptError: any) {
+      console.error('[Personality Generate] ⚠️ GPT generation failed (optional):', gptError.message)
+      
+      // Check if it's a model access error
+      if (gptError.message?.includes('does not exist') || 
+          gptError.message?.includes('not have access') ||
+          gptError.message?.includes('model_not_found')) {
+        return NextResponse.json({
+          success: false,
+          error: 'GPT-4 model is not available. Personality generation is optional and you can continue without it.',
+          details: 'GPT access is not configured. You can complete onboarding and add personality matching later.'
+        }, { status: 200 }) // Return 200 so frontend knows it's optional
+      }
+      
+      // For other errors, still return gracefully
+      return NextResponse.json({
+        success: false,
+        error: 'Failed to generate personality profile. This is optional and you can continue without it.',
+        details: gptError.message || 'Unknown error'
+      }, { status: 200 }) // Return 200 so frontend knows it's optional
+    }
 
     // Update users table with personality data
     // Note: Supabase JS client handles vector conversion automatically when passing array

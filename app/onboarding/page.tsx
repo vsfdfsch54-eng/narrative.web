@@ -581,28 +581,36 @@ function OnboardingContent() {
         // Continue anyway - might be a network issue
       }
       
-      const personalityResponse = await fetch('/api/personality/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          questionnaireAnswers: personalityAnswers,
-          interests: selectedInterests,
-        })
-      })
+      // Generate personality profile (optional - don't block if it fails)
+      if (Object.keys(personalityAnswers).length > 0) {
+        console.log('[Onboarding] Generating personality profile (optional)...')
+        try {
+          const personalityResponse = await fetch('/api/personality/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              questionnaireAnswers: personalityAnswers,
+              interests: selectedInterests,
+            })
+          })
 
-      const personalityData = await personalityResponse.json()
-      
-      if (!personalityData.success) {
-        const errorMessage = personalityData.error || "Failed to generate personality profile. Please try again."
-        const errorDetails = personalityData.details ? `\n\nDetails: ${personalityData.details}` : ''
-        setError(errorMessage + errorDetails)
-        setLoading(false)
-        console.error('[Onboarding] ❌ Personality generation failed:', personalityData)
-        return
+          const personalityData = await personalityResponse.json()
+          
+          if (!personalityData.success) {
+            console.warn('[Onboarding] ⚠️ Personality generation failed (optional):', personalityData.error)
+            console.warn('[Onboarding] User can still proceed without personality profile')
+            // Don't block - personality generation is optional
+          } else {
+            console.log('[Onboarding] ✅ Personality profile generated successfully')
+          }
+        } catch (personalityError: any) {
+          console.warn('[Onboarding] ⚠️ Personality generation error (optional):', personalityError)
+          // Don't block - personality generation is optional
+        }
       }
       
-      console.log('[Onboarding] ✅ Personality profile generated successfully')
+      // Always proceed to vibe page, even if personality generation failed
       clearOnboardingData()
       setLoading(false)
       router.push('/vibe')
