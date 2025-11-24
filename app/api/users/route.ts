@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
               email: userEmail,
               name: userName,
               interests: [],
-              onboarding_step: 'start',
+              onboarding_step: 'email', // Start at email step, not 'start'
             }, {
               onConflict: 'id', // Update if user with this id exists
               ignoreDuplicates: false
@@ -252,12 +252,12 @@ export async function PUT(request: NextRequest) {
     }
 
     // If user doesn't exist, get email from auth and create user
+    // BUT: Don't auto-create during PUT if user is mid-onboarding (preserve existing step)
     let email: string | null = null
     if (!existingUser) {
       // Get user email from Supabase Auth
       const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
       if (authError || !authUser?.user?.email) {
-        console.error('[Users API] Error fetching user from auth:', authError)
         return NextResponse.json({ 
           success: false, 
           error: 'User not found in auth. Please complete signup first.' 
@@ -271,6 +271,8 @@ export async function PUT(request: NextRequest) {
       email = authUser.user.email
     } else {
       email = existingUser.email
+      // If user exists and has onboarding_step, preserve it unless explicitly updating
+      // This prevents overwriting progress during concurrent requests
     }
 
     // Now upsert with email, interests, and onboarding_step

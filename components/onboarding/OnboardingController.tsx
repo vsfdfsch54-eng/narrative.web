@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef, ReactNode } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
 import { supabase } from "@/lib/supabaseClient"
@@ -17,6 +17,7 @@ import {
   getNextOnboardingRoute, 
   getOnboardingRouteForStep,
   normalizeOnboardingStep,
+  isValidOnboardingStep,
   STEP_ORDER
 } from "@/lib/onboarding"
 
@@ -34,6 +35,7 @@ interface OnboardingState {
 
 export function OnboardingController() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, signUp, loading: authLoading } = useAuth()
   const [state, setState] = useState<OnboardingState>({
     step: 'email',
@@ -47,7 +49,6 @@ export function OnboardingController() {
     dbStepLoaded: false,
   })
   
-  const initializationRef = useRef(false)
   const hasInitializedRef = useRef(false)
 
   const renderShell = (content: ReactNode) => (
@@ -76,21 +77,28 @@ export function OnboardingController() {
     }
 
     // Prevent multiple initializations
-    if (initializationRef.current || hasInitializedRef.current) return
-    initializationRef.current = true
+    if (hasInitializedRef.current) return
     hasInitializedRef.current = true
 
     const initializeFromDB = async () => {
       try {
+        // Check URL query parameter first (for deep-linking)
+        const urlStep = searchParams.get('step')
+        let initialStep: OnboardingStep | null = null
+        if (urlStep && isValidOnboardingStep(urlStep)) {
+          initialStep = urlStep
+        }
+        
         // Fetch user from database
         const response = await fetch(`/api/users?userId=${user.id}`)
         const data = await response.json()
         
         if (!data.success || !data.data) {
-          // User doesn't exist - show email step (will be created on email submit)
+          // User doesn't exist - use URL step or default to email
+          const stepToUse = initialStep || 'email'
           setState(prev => ({
             ...prev,
-            step: 'email',
+            step: stepToUse,
             email: user.email || '',
             dbStepLoaded: true,
             loading: false,
@@ -107,10 +115,13 @@ export function OnboardingController() {
           return
         }
 
-        // Set step from database
+        // Use URL step if provided and valid, otherwise use DB step
+        const stepToUse = initialStep && isValidOnboardingStep(initialStep) ? initialStep : dbStep
+
+        // Set step from database or URL
         setState(prev => ({
           ...prev,
-          step: dbStep,
+          step: stepToUse,
           email: dbUser.email || user.email || '',
           name: dbUser.name || '',
           interests: dbUser.interests || [],
@@ -118,10 +129,12 @@ export function OnboardingController() {
           loading: false,
         }))
       } catch (error) {
-        // On error, show email step
+        // On error, use URL step or default to email
+        const urlStep = searchParams.get('step')
+        const stepToUse = urlStep && isValidOnboardingStep(urlStep) ? urlStep : 'email'
         setState(prev => ({
           ...prev,
-          step: 'email',
+          step: stepToUse,
           email: user.email || '',
           dbStepLoaded: true,
           loading: false,
@@ -130,7 +143,7 @@ export function OnboardingController() {
     }
 
     initializeFromDB()
-  }, [user, authLoading, router])
+  }, [user, authLoading]) // Removed router from dependencies
 
   // Helper to update onboarding step in database (non-blocking)
   const updateOnboardingStepInDB = useCallback(async (step: OnboardingStep): Promise<boolean> => {
@@ -153,7 +166,7 @@ export function OnboardingController() {
     }
   }, [user])
 
-  // Email step handler - optimized for speed
+  // Email step handler - wait for DB confirmation
   const handleEmailSubmit = useCallback(async (email: string) => {
     setState(prev => ({ ...prev, loading: true, error: null }))
     
@@ -180,7 +193,11 @@ export function OnboardingController() {
       const signupUserId = result.data?.user?.id
       
       if (signupUserId) {
-        // Advance immediately - don't wait for DB update
+        // Update DB step to 'name' BEFORE advancing
+        const updated = await updateOnboardingStepInDB('name')
+        
+        if (updated) {
+        // Only advance after DB confirms update
         setState(prev => ({
           ...prev,
           email,
@@ -188,10 +205,15 @@ export function OnboardingController() {
           loading: false,
         }))
         
-        // Update DB in background (non-blocking)
-        updateOnboardingStepInDB('name').catch(() => {
-          // Silently fail - user can continue
-        })
+        // Update URL to reflect current step
+        router.replace(`/onboarding?step=name`)
+        } else {
+          setState(prev => ({ 
+            ...prev, 
+            loading: false, 
+            error: 'Failed to save progress. Please try again.' 
+          }))
+        }
       } else {
         // Email confirmation required
         setState(prev => ({ 
@@ -227,13 +249,16 @@ export function OnboardingController() {
         return
       }
 
-      // Advance immediately
+      // Advance immediately after DB confirms
       setState(prev => ({
         ...prev,
         name,
         step: 'password',
         loading: false,
       }))
+      
+      // Update URL to reflect current step
+      router.replace(`/onboarding?step=password`)
     } catch (error) {
       setState(prev => ({ ...prev, loading: false, error: 'Failed to save name. Please try again.' }))
     }
@@ -263,13 +288,16 @@ export function OnboardingController() {
 
       const data = await response.json()
       if (data.success) {
-        // Advance immediately
+        // Advance immediately after DB confirms
         setState(prev => ({
           ...prev,
           password,
           step: 'interests',
           loading: false,
         }))
+        
+        // Update URL to reflect current step
+        router.replace(`/onboarding?step=interests`)
       } else {
         setState(prev => ({ ...prev, loading: false, error: 'Failed to save progress. Please try again.' }))
       }
@@ -300,13 +328,16 @@ export function OnboardingController() {
         return
       }
 
-      // Advance immediately
+      // Advance immediately after DB confirms
       setState(prev => ({
         ...prev,
         interests,
         step: 'personality',
         loading: false,
       }))
+      
+      // Update URL to reflect current step
+      router.replace(`/onboarding?step=personality`)
     } catch (error) {
       setState(prev => ({ ...prev, loading: false, error: 'Failed to save interests. Please try again.' }))
     }
@@ -393,14 +424,27 @@ export function OnboardingController() {
     }
   }, [user, router, updateOnboardingStepInDB])
 
-  // Go back handler
-  const goBack = useCallback(() => {
+  // Go back handler - update DB when going back
+  const goBack = useCallback(async () => {
     const currentIndex = STEP_ORDER.indexOf(state.step)
     if (currentIndex > 0) {
       const prevStep = STEP_ORDER[currentIndex - 1]
+      
+      // Update DB to previous step
+      if (user?.id) {
+        try {
+          await updateOnboardingStepInDB(prevStep)
+        } catch (error) {
+          // Continue anyway - UI update is more important
+        }
+      }
+      
       setState(prev => ({ ...prev, step: prevStep, error: null }))
+      
+      // Update URL to reflect current step
+      router.replace(`/onboarding?step=${prevStep}`)
     }
-  }, [state.step])
+  }, [state.step, user, updateOnboardingStepInDB])
 
   // Show loading only if auth is loading and we haven't initialized
   if (authLoading && !hasInitializedRef.current) {

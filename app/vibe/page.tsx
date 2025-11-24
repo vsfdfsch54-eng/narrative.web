@@ -49,7 +49,14 @@ export default function VibePage() {
     if (loading) return
     
     if (!user) {
-      router.push("/")
+      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        router.push("/")
+      }
+      return
+    }
+    
+    // Don't redirect if already on onboarding
+    if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
       return
     }
     
@@ -64,20 +71,26 @@ export default function VibePage() {
           
           // If not complete, redirect to onboarding
           if (dbStep !== 'complete') {
-            router.push("/onboarding")
+            if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+              router.push(`/onboarding?step=${dbStep}`)
+            }
           }
         } else {
           // User not found in database → redirect to onboarding
-          router.push("/onboarding")
+          if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+            router.push("/onboarding")
+          }
         }
       } catch (error) {
         // On error, redirect to onboarding to be safe
-        router.push("/onboarding")
+        if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+          router.push("/onboarding")
+        }
       }
     }
     
     checkOnboarding()
-  }, [user, loading, router])
+  }, [user, loading]) // Removed router from dependencies
   
   const getUserId = () => {
     if (user?.id) return user.id

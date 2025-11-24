@@ -22,6 +22,11 @@ export default function LoginPage() {
   // Redirect if user is already authenticated
   useEffect(() => {
     if (!authLoading && user && user.email_confirmed_at) {
+      // Don't redirect if already on correct page
+      if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
+        return
+      }
+      
       const checkOnboarding = async () => {
         try {
           // Fetch user from database - SINGLE SOURCE OF TRUTH
@@ -33,25 +38,35 @@ export default function LoginPage() {
             
             // Redirect based on DB step
             if (dbStep === 'complete') {
-              router.push("/vibe")
+              if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
+                router.push("/vibe")
+              }
             } else {
-              router.push("/onboarding")
+              if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+                router.push(`/onboarding?step=${dbStep}`)
+              }
             }
           } else {
             // Need onboarding
-            router.push("/onboarding")
+            if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+              router.push("/onboarding")
+            }
           }
         } catch (err) {
           // Need onboarding
-          router.push("/onboarding")
+          if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+            router.push("/onboarding")
+          }
         }
       }
       checkOnboarding()
     } else if (!authLoading && user && !user.email_confirmed_at) {
       // User is logged in but not verified
-      router.push("/verify")
+      if (typeof window !== 'undefined' && window.location.pathname !== '/verify') {
+        router.push("/verify")
+      }
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading]) // Removed router from dependencies
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,7 +81,9 @@ export default function LoginPage() {
           try {
             const userId = (result as any).data?.user?.id || user?.id
             if (!userId) {
-              router.push("/onboarding")
+              if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+                router.push("/onboarding")
+              }
               return
             }
             
@@ -79,15 +96,23 @@ export default function LoginPage() {
               
               // Redirect based on DB step
               if (dbStep === 'complete') {
-                router.push("/vibe")
+                if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
+                  router.push("/vibe")
+                }
               } else {
-                router.push("/onboarding")
+                if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+                  router.push(`/onboarding?step=${dbStep}`)
+                }
               }
             } else {
-              router.push("/onboarding")
+              if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+                router.push("/onboarding")
+              }
             }
           } catch (err) {
-            router.push("/onboarding")
+            if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+              router.push("/onboarding")
+            }
           }
         }
         

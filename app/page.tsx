@@ -16,6 +16,11 @@ export default function Home() {
   useEffect(() => {
     if (authLoading) return
     
+    // Don't redirect if already on correct page
+    if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
+      return
+    }
+    
     if (user) {
       setChecking(true)
       const checkAndRedirect = async () => {
@@ -29,17 +34,25 @@ export default function Home() {
             
             // Redirect based on DB step
             if (dbStep === 'complete') {
-              router.push("/vibe")
+              if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
+                router.push("/vibe")
+              }
             } else {
-              router.push("/onboarding")
+              if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+                router.push(`/onboarding?step=${dbStep}`)
+              }
             }
           } else {
             // User not found in database → go to onboarding
-            router.push("/onboarding")
+            if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+              router.push("/onboarding")
+            }
           }
         } catch (error) {
           // On error, redirect to onboarding to be safe
-          router.push("/onboarding")
+          if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+            router.push("/onboarding")
+          }
         } finally {
           setChecking(false)
         }
@@ -47,7 +60,7 @@ export default function Home() {
       
       checkAndRedirect()
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading]) // Removed router from dependencies
 
   // Show loading while checking auth or onboarding status
   if (authLoading || checking) {
