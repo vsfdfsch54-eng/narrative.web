@@ -219,7 +219,7 @@ export async function POST(request: NextRequest) {
       traits = profile.traits
       console.log('[Personality Generate] ✅ Personality profile generated')
     } catch (gptError: any) {
-      console.error('[Personality Generate] ❌ GPT generation failed (required):', gptError.message)
+      console.error('[Personality Generate] ⚠️ GPT generation failed (optional):', gptError.message)
       
       // Check if it's a model access error
       if (gptError.message?.includes('does not exist') || 
@@ -227,17 +227,17 @@ export async function POST(request: NextRequest) {
           gptError.message?.includes('model_not_found')) {
         return NextResponse.json({
           success: false,
-          error: 'GPT-4 model is not available. Please configure your OpenAI API key to complete onboarding.',
-          details: 'GPT access is required for personality generation. Please check your OPENAI_API_KEY in .env.local and restart your dev server.'
-        }, { status: 500 })
+          error: 'GPT-4 model is not available. Personality generation is optional and you can continue without it.',
+          details: 'GPT access is not configured. You can complete onboarding and add personality matching later when GPT is available.'
+        }, { status: 200 }) // Return 200 so frontend knows it's optional
       }
       
-      // For other errors, return error status
+      // For other errors, still return gracefully
       return NextResponse.json({
         success: false,
-        error: 'Failed to generate personality profile. Please try again.',
+        error: 'Failed to generate personality profile. This is optional and you can continue without it.',
         details: gptError.message || 'Unknown error'
-      }, { status: 500 })
+      }, { status: 200 }) // Return 200 so frontend knows it's optional
     }
 
     // Update users table with personality data

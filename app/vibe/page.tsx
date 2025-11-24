@@ -55,14 +55,14 @@ export default function VibePage() {
           if (data.success && data.data) {
             const hasName = data.data.name && data.data.name.trim() !== ''
             const hasInterests = data.data.interests && data.data.interests.length > 0
-            const hasPersonality = data.data.personality_embedding && data.data.personality_embedding.length > 0
+            // Personality is optional - skip until GPT is available
             
-            if (!hasName || !hasInterests || !hasPersonality) {
+            if (!hasName || !hasInterests) {
               // Onboarding incomplete → redirect to onboarding
-              console.log('[VibePage] ⚠️ Onboarding incomplete (missing name, interests, or personality), redirecting to /onboarding')
+              console.log('[VibePage] ⚠️ Onboarding incomplete (missing name or interests), redirecting to /onboarding')
               router.push("/onboarding")
             } else {
-              console.log('[VibePage] ✅ Onboarding complete (name, interests, and personality present), user can access vibe page')
+              console.log('[VibePage] ✅ Onboarding complete (name and interests present), user can access vibe page')
             }
           } else {
             // User not found in database → redirect to onboarding
