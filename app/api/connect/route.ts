@@ -82,42 +82,58 @@ export async function POST(request: NextRequest) {
           })
         }
 
-        // Always try to fetch the user after upsert to ensure we have the latest data
-        // This handles cases where upsert doesn't return data or returns unexpected format
-        const { data: fetchedUser, error: fetchError } = await supabase
-          .from('users')
-          .select('id, email, name, personality_embedding')
-          .eq('id', userId)
-          .maybeSingle() // Use maybeSingle to handle case where user doesn't exist
+        // First, try to use the upsert result if available
+        if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
+          userRecord = upsertResult[0]
+          console.log('[Connect API] ✅ User from upsert result:', { id: userRecord.id, email: userRecord.email })
+        } else {
+          // If upsert didn't return data, try fetching with retry logic
+          console.log('[Connect API] Upsert returned no data, fetching user with retry...')
+          let fetchedUser = null
+          
+          // Retry up to 5 times with increasing delays
+          for (let attempt = 0; attempt < 5; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1))) // 100ms, 200ms, 300ms, 400ms, 500ms
+            
+            const { data: userData, error: fetchError } = await supabase
+              .from('users')
+              .select('id, email, name, personality_embedding')
+              .eq('id', userId)
+              .maybeSingle()
 
-        if (fetchError) {
-          console.error('[Connect API] Error fetching user after upsert:', {
-            message: fetchError.message,
-            code: fetchError.code,
-            details: fetchError.details
-          })
-          return NextResponse.json(
-            { 
-              error: 'Failed to create/fetch user record', 
-              details: fetchError.message || createError?.message || 'Unknown error'
-            },
-            { status: 500 }
-          )
+            if (fetchError) {
+              console.error(`[Connect API] Fetch attempt ${attempt + 1} error:`, {
+                message: fetchError.message,
+                code: fetchError.code,
+                details: fetchError.details
+              })
+              // Continue to next attempt
+              continue
+            }
+
+            if (userData) {
+              fetchedUser = userData
+              console.log(`[Connect API] ✅ User found on attempt ${attempt + 1}`)
+              break
+            }
+          }
+
+          if (!fetchedUser) {
+            console.error('[Connect API] User not found after upsert and all fetch attempts')
+            console.error('[Connect API] Upsert result:', upsertResult)
+            console.error('[Connect API] Upsert error:', createError)
+            return NextResponse.json(
+              { 
+                error: 'Failed to create user record', 
+                details: 'User was not created and could not be found after multiple attempts. Please try again.'
+              },
+              { status: 500 }
+            )
+          }
+
+          userRecord = fetchedUser
+          console.log('[Connect API] ✅ User verified after retry:', { id: userRecord.id, email: userRecord.email })
         }
-
-        if (!fetchedUser) {
-          console.error('[Connect API] User not found after upsert and fetch')
-          return NextResponse.json(
-            { 
-              error: 'Failed to create user record', 
-              details: 'User was not created and could not be found'
-            },
-            { status: 500 }
-          )
-        }
-
-        userRecord = fetchedUser
-        console.log('[Connect API] ✅ User verified:', { id: userRecord.id, email: userRecord.email })
       } catch (error: any) {
         console.error('[Connect API] ❌ Error creating user:', error)
         return NextResponse.json(

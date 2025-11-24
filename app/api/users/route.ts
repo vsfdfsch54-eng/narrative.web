@@ -69,38 +69,56 @@ export async function GET(request: NextRequest) {
           })
         }
 
-        // Always try to fetch the user after upsert to ensure we have the latest data
-        // This handles cases where upsert doesn't return data or returns unexpected format
-        const { data: fetchedUser, error: fetchError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle() // Use maybeSingle to handle case where user doesn't exist
+        // First, try to use the upsert result if available
+        if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
+          userData = upsertResult[0]
+          console.log('[Users API GET] ✅ User from upsert result:', { id: userData.id, email: userData.email })
+        } else {
+          // If upsert didn't return data, try fetching with retry logic
+          console.log('[Users API GET] Upsert returned no data, fetching user with retry...')
+          let fetchedUser = null
+          
+          // Retry up to 5 times with increasing delays
+          for (let attempt = 0; attempt < 5; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1))) // 100ms, 200ms, 300ms, 400ms, 500ms
+            
+            const { data: userData, error: fetchError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .maybeSingle()
 
-        if (fetchError) {
-          console.error('[Users API GET] Error fetching user after upsert:', {
-            message: fetchError.message,
-            code: fetchError.code,
-            details: fetchError.details
-          })
-          return NextResponse.json({ 
-            success: false, 
-            error: 'User not found. Please complete onboarding to create your profile.',
-            details: fetchError.message || createError?.message || 'Unknown error'
-          }, { status: 404 })
+            if (fetchError) {
+              console.error(`[Users API GET] Fetch attempt ${attempt + 1} error:`, {
+                message: fetchError.message,
+                code: fetchError.code,
+                details: fetchError.details
+              })
+              // Continue to next attempt
+              continue
+            }
+
+            if (userData) {
+              fetchedUser = userData
+              console.log(`[Users API GET] ✅ User found on attempt ${attempt + 1}`)
+              break
+            }
+          }
+
+          if (!fetchedUser) {
+            console.error('[Users API GET] User not found after upsert and all fetch attempts')
+            console.error('[Users API GET] Upsert result:', upsertResult)
+            console.error('[Users API GET] Upsert error:', createError)
+            return NextResponse.json({ 
+              success: false, 
+              error: 'User not found. Please complete onboarding to create your profile.',
+              details: 'User was not created and could not be found after multiple attempts. Please try again.'
+            }, { status: 404 })
+          }
+
+          userData = fetchedUser
+          console.log('[Users API GET] ✅ User verified after retry:', { id: userData.id, email: userData.email })
         }
-
-        if (!fetchedUser) {
-          console.error('[Users API GET] User not found after upsert and fetch')
-          return NextResponse.json({ 
-            success: false, 
-            error: 'User not found. Please complete onboarding to create your profile.',
-            details: 'User was not created and could not be found'
-          }, { status: 404 })
-        }
-
-        userData = fetchedUser
-        console.log('[Users API GET] ✅ User verified:', { id: userData.id, email: userData.email })
       } catch (error: any) {
         console.error('[Users API GET] Error creating user:', error)
         return NextResponse.json({ 

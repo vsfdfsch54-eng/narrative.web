@@ -101,42 +101,58 @@ export async function POST(request: NextRequest) {
           })
         }
 
-        // Always try to fetch the user after upsert to ensure we have the latest data
-        // This handles cases where upsert doesn't return data or returns unexpected format
-        const { data: fetchedUser, error: fetchError } = await supabase
-          .from('users')
-          .select('id, email, name')
-          .eq('id', userId)
-          .maybeSingle() // Use maybeSingle to handle case where user doesn't exist
+        // First, try to use the upsert result if available
+        if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
+          user = upsertResult[0]
+          console.log('[Personality Generate] ✅ User from upsert result:', { id: user.id, email: user.email })
+        } else {
+          // If upsert didn't return data, try fetching with retry logic
+          console.log('[Personality Generate] Upsert returned no data, fetching user with retry...')
+          let fetchedUser = null
+          
+          // Retry up to 5 times with increasing delays
+          for (let attempt = 0; attempt < 5; attempt++) {
+            await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1))) // 100ms, 200ms, 300ms, 400ms, 500ms
+            
+            const { data: userData, error: fetchError } = await supabase
+              .from('users')
+              .select('id, email, name')
+              .eq('id', userId)
+              .maybeSingle()
 
-        if (fetchError) {
-          console.error('[Personality Generate] Error fetching user after upsert:', {
-            message: fetchError.message,
-            code: fetchError.code,
-            details: fetchError.details
-          })
-          return NextResponse.json(
-            { 
-              error: 'Failed to create/fetch user record', 
-              details: fetchError.message || createError?.message || 'Unknown error'
-            },
-            { status: 500 }
-          )
+            if (fetchError) {
+              console.error(`[Personality Generate] Fetch attempt ${attempt + 1} error:`, {
+                message: fetchError.message,
+                code: fetchError.code,
+                details: fetchError.details
+              })
+              // Continue to next attempt
+              continue
+            }
+
+            if (userData) {
+              fetchedUser = userData
+              console.log(`[Personality Generate] ✅ User found on attempt ${attempt + 1}`)
+              break
+            }
+          }
+
+          if (!fetchedUser) {
+            console.error('[Personality Generate] User not found after upsert and all fetch attempts')
+            console.error('[Personality Generate] Upsert result:', upsertResult)
+            console.error('[Personality Generate] Upsert error:', createError)
+            return NextResponse.json(
+              { 
+                error: 'Failed to create user record', 
+                details: 'User was not created and could not be found after multiple attempts. Please try again.'
+              },
+              { status: 500 }
+            )
+          }
+
+          user = fetchedUser
+          console.log('[Personality Generate] ✅ User verified after retry:', { id: user.id, email: user.email })
         }
-
-        if (!fetchedUser) {
-          console.error('[Personality Generate] User not found after upsert and fetch')
-          return NextResponse.json(
-            { 
-              error: 'Failed to create user record', 
-              details: 'User was not created and could not be found'
-            },
-            { status: 500 }
-          )
-        }
-
-        user = fetchedUser
-        console.log('[Personality Generate] ✅ User verified:', { id: user.id, email: user.email })
       } catch (error: any) {
         console.error('[Personality Generate] Error creating user:', error)
         return NextResponse.json(
