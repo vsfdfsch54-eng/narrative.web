@@ -71,6 +71,7 @@ function OnboardingContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [passwordMatchError, setPasswordMatchError] = useState("")
+  const [isCompletingStep, setIsCompletingStep] = useState(false) // Prevent status check during step progression
   const router = useRouter()
   const { user, signUp, loading: authLoading } = useAuth()
 
@@ -100,11 +101,18 @@ function OnboardingContent() {
   }
 
   useEffect(() => {
-    if (authLoading || !user || isRedirecting) return
+    if (authLoading || !user || isRedirecting || isCompletingStep) return
     
     // Only check onboarding status if user is verified
     if (user.email_confirmed_at) {
+      // Use a ref to track if we've already checked (prevent multiple checks)
+      let hasChecked = false
+      
       const checkComplete = async () => {
+        // Prevent multiple checks
+        if (hasChecked) return
+        hasChecked = true
+        
         try {
           const response = await fetch(`/api/users?userId=${user.id}`)
           const data = await response.json()
@@ -128,36 +136,41 @@ function OnboardingContent() {
             if (data.data.name) setName(data.data.name)
             if (data.data.interests) setSelectedInterests(data.data.interests)
             
-            // Determine which step to show based on what's missing
-            if (!hasName) {
-              console.log('[Onboarding] Missing name, showing name step')
-              setCurrentStep('name')
-            } else if (!hasInterests) {
-              console.log('[Onboarding] Missing interests, showing interests step')
-              setCurrentStep('interests')
-            } else {
-              // Has name and interests - onboarding complete, redirect to vibe
-              console.log('[Onboarding] Has name and interests, redirecting to /vibe')
-              setIsRedirecting(true)
-              clearOnboardingData()
-              router.push('/vibe')
+            // Determine which step to show based on what's missing (only on initial load)
+            // Don't override if user is actively on a step (not on email/verify step)
+            const step = currentStep // Capture current step value
+            if (step === 'email' || step === 'verify') {
+              if (!hasName) {
+                console.log('[Onboarding] Missing name, showing name step')
+                setCurrentStep('name')
+              } else if (!hasInterests) {
+                console.log('[Onboarding] Missing interests, showing interests step')
+                setCurrentStep('interests')
+              }
             }
           } else {
-            // User not found in database - start from name step
-            console.log('[Onboarding] User not found in database, starting from name step')
-            if (user.email && !email) setEmail(user.email)
-            setCurrentStep('name')
+            // User not found in database - start from name step (only if on initial step)
+            const step = currentStep // Capture current step value
+            if (step === 'email' || step === 'verify') {
+              console.log('[Onboarding] User not found in database, starting from name step')
+              if (user.email && !email) setEmail(user.email)
+              setCurrentStep('name')
+            }
           }
         } catch (err) {
           console.error('[Onboarding] Error checking onboarding:', err)
-          // On error, start from name step
-          if (user.email && !email) setEmail(user.email)
-          setCurrentStep('name')
+          // On error, start from name step (only if on initial step)
+          const step = currentStep // Capture current step value
+          if (step === 'email' || step === 'verify') {
+            if (user.email && !email) setEmail(user.email)
+            setCurrentStep('name')
+          }
         }
       }
       checkComplete()
     }
-  }, [user, authLoading, router, email, isRedirecting])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, authLoading, isCompletingStep]) // Only depend on user.id and authLoading to prevent loops
 
   useEffect(() => {
     if (authLoading || currentStep !== 'verify' || !user) return
@@ -275,7 +288,42 @@ function OnboardingContent() {
         setError("Please select at least one interest")
         return
       }
-      setCurrentStep('personality')
+      
+      // Save interests to database BEFORE moving to next step (if user is signed in)
+      if (user && user.email_confirmed_at) {
+        setLoading(true)
+        setIsCompletingStep(true) // Prevent status check from interfering
+        
+        fetch('/api/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            name: name.trim(),
+            interests: selectedInterests
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          setLoading(false)
+          setIsCompletingStep(false)
+          if (data.success) {
+            console.log('[Onboarding] ✅ Interests saved to database')
+            setCurrentStep('personality')
+          } else {
+            setError(data.error || 'Failed to save interests')
+          }
+        })
+        .catch(err => {
+          setLoading(false)
+          setIsCompletingStep(false)
+          setError('Failed to save interests. Please try again.')
+          console.error('[Onboarding] Error saving interests:', err)
+        })
+      } else {
+        // Not signed in yet, just move to next step (will save during signup)
+        setCurrentStep('personality')
+      }
     } else if (currentStep === 'personality') {
       // Validate all questions are answered
       const allAnswered = PERSONALITY_QUESTIONS.every(q => {
