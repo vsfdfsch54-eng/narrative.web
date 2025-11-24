@@ -117,7 +117,8 @@ function OnboardingContent() {
               return
             }
             
-            if (user.email) setEmail(user.email)
+            // Only set email from user if email field is empty (don't override user's manual input)
+            if (user.email && !email) setEmail(user.email)
             if (data.data.name) setName(data.data.name)
             if (data.data.interests) setSelectedInterests(data.data.interests)
             
@@ -136,7 +137,8 @@ function OnboardingContent() {
               setCurrentStep('name')
             }
           } else {
-            if (user.email) setEmail(user.email)
+            // Only set email from user if email field is empty (don't override user's manual input)
+            if (user.email && !email) setEmail(user.email)
             setCurrentStep('name')
           }
         } catch (err) {
