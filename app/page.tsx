@@ -4,62 +4,20 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 
 export default function Home() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [checkingAuth, setCheckingAuth] = useState(false)
 
-  // DO NOT auto-redirect - always show welcome page
-  // User must click "Get to Chatting" to proceed
-  // This ensures welcome page always shows, even after verification
-
-  const handleGetToChatting = async () => {
-    setCheckingAuth(true)
-    
-    // Small delay to ensure auth state is checked
-    await new Promise(resolve => setTimeout(resolve, 100))
-    
-    if (user && user.email_confirmed_at) {
-      // User is logged in AND verified → check if onboarding is complete
-      try {
-        const response = await fetch(`/api/users?userId=${user.id}`)
-        const data = await response.json()
-        
-        if (data.success && data.data) {
-          const hasName = data.data.name && data.data.name.trim() !== ''
-          const hasInterests = data.data.interests && data.data.interests.length > 0
-          const hasPersonality = data.data.personality_embedding && data.data.personality_embedding.length > 0
-          
-          if (hasName && hasInterests && hasPersonality) {
-            // Onboarding complete → go to /vibe
-            router.push("/vibe")
-          } else {
-            // Onboarding incomplete → go to /onboarding
-            router.push("/onboarding")
-          }
-        } else {
-          // User not found in database → go to onboarding
-          router.push("/onboarding")
-        }
-      } catch (error) {
-        console.error('Error checking onboarding status:', error)
-        // On error, redirect to onboarding to be safe
-        router.push("/onboarding")
-      }
-    } else if (user && !user.email_confirmed_at) {
-      // User is logged in but NOT verified → go to /verify
-      router.push("/verify")
-    } else {
-      // User not authenticated → go to login
-      router.push("/login")
+  // Auto-redirect authenticated users to vibe (homepage)
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/vibe")
     }
-    
-    setCheckingAuth(false)
-  }
+  }, [user, loading, router])
 
-  // Show loading only while auth is loading (first time check)
+  // Show loading only while auth is loading
   if (loading) {
     return (
       <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
@@ -68,18 +26,7 @@ export default function Home() {
     )
   }
 
-  // Always show welcome screen - no auto-redirects
-
-  // Show minimal loading only while checking auth for button click
-  if (checkingAuth) {
-    return (
-      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
-        <p className="text-[#f1f1f3]/60">Loading...</p>
-      </div>
-    )
-  }
-
-  // Welcome screen - always show if user is NOT authenticated
+  // Welcome screen - only show if user is NOT authenticated
   return (
     <div className="fixed inset-0 bg-[#0a0a0c] w-full h-full overflow-hidden">
       <div className="w-full h-full flex items-center justify-center px-6 py-8">
@@ -106,13 +53,12 @@ export default function Home() {
             </Button>
             
             <Button
-              onClick={handleGetToChatting}
+              asChild
               variant="outline"
               size="lg"
-              disabled={checkingAuth}
               className="w-full h-14 text-base font-semibold tracking-wide border-[#f1f1f3]/20 text-[#f1f1f3] hover:border-[#f1f1f3]/40 hover:bg-[#f1f1f3]/5 flex items-center justify-center"
             >
-              {checkingAuth ? "Loading..." : "Get to Chatting"}
+              <Link href="/login" className="w-full h-full flex items-center justify-center">Sign In</Link>
             </Button>
           </div>
         </div>

@@ -45,10 +45,8 @@ export default function VibePage() {
   useEffect(() => {
     if (!loading && !user) {
       router.push("/")
-    } else if (!loading && user && !user.email_confirmed_at) {
-      router.push("/verify")
-    } else if (!loading && user && user.email_confirmed_at) {
-      // Check if onboarding is complete
+    } else if (!loading && user) {
+      // Check if onboarding is complete (regardless of email verification)
       const checkOnboarding = async () => {
         try {
           const response = await fetch(`/api/users?userId=${user.id}`)
