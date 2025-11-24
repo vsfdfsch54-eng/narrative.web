@@ -58,8 +58,18 @@ export function OnboardingController() {
   )
 
   // Initialize: Load user from database and set step
+  // Only initialize if we have a user (skip for new signups on email step)
   useEffect(() => {
-    if (authLoading || !user || !isInitializing.current) return
+    if (authLoading || !isInitializing.current) return
+    
+    // If no user and we're on email step, that's fine - let them sign up
+    if (!user && state.step === 'email') {
+      setState(prev => ({ ...prev, userLoaded: true, loading: false }))
+      return
+    }
+    
+    // If no user and not on email step, wait
+    if (!user) return
 
     const initializeUser = async () => {
       isInitializing.current = false
@@ -142,7 +152,7 @@ export function OnboardingController() {
     }
 
     initializeUser()
-  }, [user, authLoading, router])
+  }, [user, authLoading, router, state.step])
 
   const goToStep = useCallback((step: OnboardingStep) => {
     setState(prev => ({ ...prev, step, error: null }))
@@ -205,15 +215,29 @@ export function OnboardingController() {
         return
       }
 
-      // Update step to 'name' in database
-      await updateOnboardingStep('name')
-
-      updateField('email', email)
-      goNext()
+      // Check if we got a user from signup (might not have session if email confirmation required)
+      const signupUserId = result.data?.user?.id
+      
+      if (signupUserId) {
+        // User was created, update step in database
+        try {
+          await updateOnboardingStep('name')
+        } catch (err) {
+          // If update fails, continue anyway - user will be created on next step
+        }
+        
+        updateField('email', email)
+        goNext()
+      } else {
+        // No user yet (email confirmation required) - show message and stay on email step
+        setState(prev => ({ 
+          ...prev, 
+          loading: false, 
+          error: 'Please check your email to verify your account, then return here to continue.' 
+        }))
+      }
     } catch (error: any) {
       setState(prev => ({ ...prev, loading: false, error: error.message || 'Failed to sign up' }))
-    } finally {
-      setState(prev => ({ ...prev, loading: false }))
     }
   }, [signUp, updateField, goNext, updateOnboardingStep])
 
@@ -366,8 +390,8 @@ export function OnboardingController() {
     }
   }, [router, updateOnboardingStep])
 
-  // Show loading until user is loaded from database
-  if (authLoading || !user || !state.userLoaded) {
+  // Show loading only if we're waiting for auth or initializing (and not on email step)
+  if (authLoading || (!user && state.step !== 'email' && !state.userLoaded)) {
     return renderShell(
       <div
         style={{
@@ -382,7 +406,9 @@ export function OnboardingController() {
     )
   }
 
-  if (!user) {
+  // Allow email step to show even without user (for new signups)
+  // For other steps, require user
+  if (!user && state.step !== 'email') {
     return renderShell(
       <div
         style={{
