@@ -57,18 +57,21 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ success: false, error: fetchError.message }, { status: 500 })
     }
 
-    // If user doesn't exist, get email from auth
+    // If user doesn't exist, get email from auth and create user
     let email: string | null = null
     if (!existingUser) {
+      console.log('[Users API] User not found in database, fetching from auth...')
       // Get user email from Supabase Auth
       const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
       if (authError || !authUser?.user?.email) {
+        console.error('[Users API] Error fetching user from auth:', authError)
         return NextResponse.json({ 
           success: false, 
-          error: 'User not found in auth or email missing' 
-        }, { status: 400 })
+          error: 'User not found in auth. Please complete signup first.' 
+        }, { status: 404 })
       }
       email = authUser.user.email
+      console.log('[Users API] Found user in auth, email:', email)
     } else {
       email = existingUser.email
     }

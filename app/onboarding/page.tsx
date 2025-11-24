@@ -386,29 +386,45 @@ function OnboardingContent() {
         const userId = result.data.user.id
         
         try {
-          // Save user data (name, interests)
-          const userResponse = await fetch('/api/users', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId,
-              name: name.trim(),
-              interests: selectedInterests
+          // Ensure user is created in database (with retry logic)
+          console.log('[Onboarding] Creating user in database...')
+          let userCreated = false
+          for (let attempt = 0; attempt < 5; attempt++) {
+            const userResponse = await fetch('/api/users', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId,
+                name: name.trim(),
+                interests: selectedInterests
+              })
             })
-          })
 
-          const userData = await userResponse.json()
-          
-          if (!userData.success) {
-            console.error('Error saving user data:', userData.error)
-            // Don't continue if user creation failed
+            const userData = await userResponse.json()
+            
+            if (userData.success) {
+              userCreated = true
+              console.log('[Onboarding] ✅ User created in database')
+              break
+            } else {
+              console.error(`[Onboarding] Attempt ${attempt + 1} failed:`, userData.error)
+              if (attempt < 4) {
+                await new Promise(resolve => setTimeout(resolve, 300))
+              }
+            }
+          }
+
+          if (!userCreated) {
+            console.error('[Onboarding] ❌ Failed to create user after 5 attempts')
+            setError("Failed to create user account. Please try again.")
+            setLoading(false)
             return
           }
 
           // Verify user exists before generating personality
           console.log('[Onboarding] Verifying user exists in database...')
           let userVerified = false
-          for (let attempt = 0; attempt < 3; attempt++) {
+          for (let attempt = 0; attempt < 5; attempt++) {
             const verifyResponse = await fetch(`/api/users?userId=${userId}`)
             const verifyData = await verifyResponse.json()
             if (verifyData.success && verifyData.data) {
@@ -416,13 +432,13 @@ function OnboardingContent() {
               console.log('[Onboarding] ✅ User verified in database')
               break
             }
-            // Wait a bit before retrying
             await new Promise(resolve => setTimeout(resolve, 200))
           }
 
           if (!userVerified) {
             console.error('[Onboarding] ❌ User not found in database after creation')
-            // Don't fail the entire flow, but log the error
+            setError("User account created but verification failed. Please refresh and try again.")
+            setLoading(false)
             return
           }
 
@@ -450,7 +466,9 @@ function OnboardingContent() {
           }
         } catch (userError) {
           console.error('Error calling APIs:', userError)
-          // Don't fail the entire flow
+          setError("Failed to complete setup. Please try again.")
+          setLoading(false)
+          return
         }
       }
 
@@ -527,23 +545,45 @@ function OnboardingContent() {
         return
       }
 
-      // Verify user exists in database before generating personality
-      console.log('[Onboarding] Verifying user exists in database...')
+      // Ensure user exists in database (create if needed)
+      console.log('[Onboarding] Ensuring user exists in database...')
       let userVerified = false
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const verifyResponse = await fetch(`/api/users?userId=${user.id}`)
-        const verifyData = await verifyResponse.json()
-        if (verifyData.success && verifyData.data) {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        // First check if user exists
+        const checkResponse = await fetch(`/api/users?userId=${user.id}`)
+        const checkData = await checkResponse.json()
+        
+        if (checkData.success && checkData.data) {
           userVerified = true
-          console.log('[Onboarding] ✅ User verified in database')
+          console.log('[Onboarding] ✅ User exists in database')
           break
         }
-        // Wait a bit before retrying
-        await new Promise(resolve => setTimeout(resolve, 200))
+        
+        // If user doesn't exist, try to create them
+        if (!checkData.success || checkData.error === 'User not found') {
+          console.log(`[Onboarding] User not found, creating (attempt ${attempt + 1})...`)
+          const createResponse = await fetch('/api/users', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              name: name.trim() || user.email?.split('@')[0] || 'User',
+              interests: selectedInterests
+            })
+          })
+          const createData = await createResponse.json()
+          if (createData.success) {
+            userVerified = true
+            console.log('[Onboarding] ✅ User created in database')
+            break
+          }
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 300))
       }
 
       if (!userVerified) {
-        setError("User not found in database. Please try again.")
+        setError("Failed to create user account. Please try signing up again.")
         setLoading(false)
         return
       }

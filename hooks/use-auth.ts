@@ -98,36 +98,9 @@ export function useAuth() {
         return { success: false, error: error.message }
       }
 
-      // Create user record in users table
-      if (data.user) {
-        // Use the email from the signup, not from data.user.email (which might be null if confirmation required)
-        const userEmail = data.user.email || email
-        
-        if (!userEmail) {
-          console.error('No email available for user record creation')
-          return { success: false, error: 'Email is required' }
-        }
-
-        // Use upsert to handle case where user already exists (by id or email)
-        const { error: dbError } = await supabase.from('users').upsert({
-          id: data.user.id,
-          email: userEmail,
-          name: name || email.split('@')[0],
-        }, {
-          onConflict: 'id'
-        })
-
-        if (dbError) {
-          console.error('Error creating/updating user record:', dbError)
-          // If it's a duplicate email error, the user already exists - that's okay
-          if (dbError.message.includes('duplicate key') || dbError.message.includes('unique constraint')) {
-            console.log('User record already exists, continuing...')
-          } else {
-            // Other errors - don't fail signup, user can complete onboarding later
-            console.error('Non-duplicate error creating user record:', dbError)
-          }
-        }
-      }
+      // Don't create user record here - let the API route handle it with service role key
+      // This avoids RLS policy issues and ensures proper user creation
+      console.log('[Auth] User signed up, user record will be created during onboarding')
 
       return { success: true, data }
     } catch (error: any) {
