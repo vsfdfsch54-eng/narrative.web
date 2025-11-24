@@ -11,9 +11,40 @@ type Feedback = Database['public']['Tables']['feedback']['Row']
 
 /**
  * Save a vibe for a user (server-side)
+ * Auto-creates user if they don't exist in users table
  */
 export async function saveVibe(userId: string, vibe: string): Promise<Vibe | null> {
   const supabaseServer = createServerClient()
+  
+  // Ensure user exists in users table
+  const { data: existingUser } = await supabaseServer
+    .from('users')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (!existingUser) {
+    // User doesn't exist, try to create from auth
+    try {
+      const { data: authUser } = await supabaseServer.auth.admin.getUserById(userId)
+      if (authUser?.user?.email) {
+        await supabaseServer
+          .from('users')
+          .upsert({
+            id: userId,
+            email: authUser.user.email,
+            name: authUser.user.email.split('@')[0] || 'User',
+            interests: [],
+          }, {
+            onConflict: 'id',
+          })
+      }
+    } catch (error) {
+      console.error('Error creating user for vibe:', error)
+      // Continue anyway - might fail due to permissions
+    }
+  }
+  
   const { data, error } = await supabaseServer
     .from('vibes')
     .insert({

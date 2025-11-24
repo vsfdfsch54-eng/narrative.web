@@ -25,22 +25,71 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient()
 
-    // Verify user exists
-    const { data: userRecord, error: userCheckError } = await supabase
+    // Verify user exists, or create if they exist in auth but not in users table
+    let userRecord = null
+    const { data: existingUser, error: userCheckError } = await supabase
       .from('users')
       .select('id, email, name, personality_embedding')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
-    if (userCheckError || !userRecord) {
-      console.error('[Connect API] ❌ User not found:', userId)
+    if (userCheckError && userCheckError.code !== 'PGRST116') {
+      console.error('[Connect API] Error checking user:', userCheckError)
       return NextResponse.json(
-        { error: 'User not found. Please complete onboarding first.' },
-        { status: 404 }
+        { error: 'Database error', details: userCheckError.message },
+        { status: 500 }
       )
     }
 
-    console.log('[Connect API] ✅ User verified:', { id: userRecord.id, email: userRecord.email })
+    if (!existingUser) {
+      // User doesn't exist in users table, try to create from auth
+      console.log('[Connect API] ⚠️  User not found in users table, creating from auth...')
+      
+      try {
+        // Get user from auth
+        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+        
+        if (authError || !authUser?.user?.email) {
+          console.error('[Connect API] ❌ User not found in auth:', authError)
+          return NextResponse.json(
+            { error: 'User not found. Please complete onboarding first.' },
+            { status: 404 }
+          )
+        }
+
+        // Create user record
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: userId,
+            email: authUser.user.email,
+            name: authUser.user.email.split('@')[0] || 'User',
+            interests: [],
+          })
+          .select('id, email, name, personality_embedding')
+          .single()
+
+        if (createError || !newUser) {
+          console.error('[Connect API] ❌ Failed to create user:', createError)
+          return NextResponse.json(
+            { error: 'Failed to create user record', details: createError?.message },
+            { status: 500 }
+          )
+        }
+
+        userRecord = newUser
+        console.log('[Connect API] ✅ User created from auth:', { id: userRecord.id, email: userRecord.email })
+      } catch (error: any) {
+        console.error('[Connect API] ❌ Error creating user:', error)
+        return NextResponse.json(
+          { error: 'Failed to create user record', details: error.message },
+          { status: 500 }
+        )
+      }
+    } else {
+      userRecord = existingUser
+      console.log('[Connect API] ✅ User verified:', { id: userRecord.id, email: userRecord.email })
+    }
 
     // Check if user has personality embedding
     if (!userRecord.personality_embedding) {

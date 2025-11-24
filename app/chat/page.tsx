@@ -60,8 +60,22 @@ export default function ChatPage() {
           const otherUserId = waitingData.otherUserId
           router.push(`/chat/${otherUserId}?matchId=${waitingData.match.id}`)
         } else {
-          // Not in queue, show empty state
-          console.log('[ChatPage] User not in queue, showing empty state')
+          // Not in queue, check if user exists in database
+          console.log('[ChatPage] User not in queue, checking if user exists...')
+          
+          // Check if user exists in users table
+          const userCheckResponse = await fetch(`/api/users?userId=${user.id}`)
+          const userCheckData = await userCheckResponse.json()
+          
+          if (!userCheckData.success || !userCheckData.data) {
+            // User doesn't exist in database, redirect to onboarding
+            console.log('[ChatPage] ⚠️ User not found in database, redirecting to onboarding')
+            router.push('/onboarding')
+            return
+          }
+          
+          // User exists but not in queue, show empty state
+          console.log('[ChatPage] User exists but not in queue, showing empty state')
           setProfiles([])
           setLoading(false)
         }

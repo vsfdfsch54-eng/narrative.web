@@ -168,6 +168,14 @@ export default function VibePage() {
         const errorText = await response.text()
         console.error('[VibePage] ❌ HTTP error response:', errorText)
         console.error('[VibePage] Full error details:', { status: response.status, statusText: response.statusText, body: errorText })
+        
+        // If user not found, redirect to onboarding
+        if (response.status === 404 && errorText.includes('User not found')) {
+          console.log('[VibePage] ⚠️ User not found, redirecting to onboarding')
+          router.push('/onboarding')
+          return
+        }
+        
         throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
       }
       
