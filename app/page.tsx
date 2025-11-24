@@ -17,34 +17,27 @@ export default function Home() {
     
     if (user) {
       setChecking(true)
-      // Check onboarding completion before redirecting
+      // Check onboarding step from database - single source of truth
       const checkAndRedirect = async () => {
         try {
-          console.log('[Welcome Page] User authenticated, checking onboarding status...')
           const response = await fetch(`/api/users?userId=${user.id}`)
           const data = await response.json()
           
           if (data.success && data.data) {
-            const hasName = data.data.name && data.data.name.trim() !== ''
-            const hasInterests = data.data.interests && data.data.interests.length > 0
-            // Personality is optional - skip until GPT is available
+            const onboardingStep = data.data.onboarding_step || 'start'
             
-            if (hasName && hasInterests) {
+            if (onboardingStep === 'complete') {
               // Onboarding complete → go to vibe
-              console.log('[Welcome Page] ✅ Onboarding complete (name and interests present), redirecting to /vibe')
               router.push("/vibe")
             } else {
               // Onboarding incomplete → go to onboarding
-              console.log('[Welcome Page] ⚠️ Onboarding incomplete (missing name or interests), redirecting to /onboarding')
               router.push("/onboarding")
             }
           } else {
             // User not found in database → go to onboarding
-            console.log('[Welcome Page] ⚠️ User not found in database, redirecting to /onboarding')
             router.push("/onboarding")
           }
         } catch (error) {
-          console.error('[Welcome Page] Error checking onboarding:', error)
           // On error, redirect to onboarding to be safe
           router.push("/onboarding")
         } finally {

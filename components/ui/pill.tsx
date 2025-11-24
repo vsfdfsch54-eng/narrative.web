@@ -49,18 +49,21 @@ export function Pill({
       onClick={onClick}
       className={cn("touch-manipulation", className)}
       style={{
+        minHeight: '44px',
         height,
-        padding,
+        padding: `12px 16px`,
         borderRadius: tokens.radii.pill,
         background,
         color: tokens.colors.textOnPill,
         border: 'none',
         boxShadow: shadow,
         fontSize: size === "small" ? '13px' : size === "large" ? '16px' : '15px',
-        fontWeight: 400,
+        fontWeight: 500,
         letterSpacing: '0',
         cursor: 'pointer',
         outline: 'none',
+        pointerEvents: props.disabled ? 'none' : 'auto',
+        touchAction: 'manipulation',
         ...props.style,
       }}
       {...(props as any)}

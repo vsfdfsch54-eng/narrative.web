@@ -45,8 +45,6 @@ export async function GET(request: NextRequest) {
 
     // If user doesn't exist, try to create from auth
     if (!existingUser) {
-      console.log('[Users API GET] User not found in database, creating from auth...')
-      
       try {
         // Get user from auth
         const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
@@ -68,7 +66,6 @@ export async function GET(request: NextRequest) {
         const userEmail = authUser.user.email
         const userName = authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User'
         
-        console.log('[Users API GET] Checking for existing user by email...')
         const { data: existingUserByEmail, error: emailCheckError } = await supabase
           .from('users')
           .select('*')
@@ -80,7 +77,6 @@ export async function GET(request: NextRequest) {
           if (existingUserByEmail.id === userId) {
             // Same user, same email - use existing record
             userData = existingUserByEmail
-            console.log('[Users API GET] ✅ Found existing user (id and email match):', { id: userData.id, email: userData.email })
           } else {
             // Email exists but with different id - this is a conflict
             console.warn('[Users API GET] ⚠️ Email conflict: email exists with different id', {
@@ -101,8 +97,6 @@ export async function GET(request: NextRequest) {
           }
         } else {
           // No user with this email exists - safe to create new user
-          console.log('[Users API GET] No existing user with this email, creating new user...')
-          
           const { data: upsertResult, error: createError } = await supabase
             .from('users')
             .upsert({
@@ -110,6 +104,7 @@ export async function GET(request: NextRequest) {
               email: userEmail,
               name: userName,
               interests: [],
+              onboarding_step: 'start',
             }, {
               onConflict: 'id', // Update if user with this id exists
               ignoreDuplicates: false
@@ -125,7 +120,6 @@ export async function GET(request: NextRequest) {
             
             // If duplicate email error, check by email (in case email was created between our check and upsert)
             if (createError.code === '23505' || createError.message.includes('duplicate key') || createError.message.includes('user_email_key')) {
-              console.log('[Users API GET] Duplicate email error, fetching existing user by email...')
               const { data: existingByEmail, error: fetchError } = await supabase
                 .from('users')
                 .select('*')
@@ -134,7 +128,6 @@ export async function GET(request: NextRequest) {
               
               if (existingByEmail && !fetchError) {
                 userData = existingByEmail
-                console.log('[Users API GET] ✅ Found existing user by email after error:', { id: userData.id, email: userData.email })
               } else {
                 return NextResponse.json({ 
                   success: false, 
@@ -163,10 +156,8 @@ export async function GET(request: NextRequest) {
             // Handle upsert result - it's always an array
             if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
               userData = upsertResult[0]
-              console.log('[Users API GET] ✅ User created:', { id: userData.id, email: userData.email })
             } else {
               // If no data returned, try fetching once
-              console.log('[Users API GET] Upsert returned no data, fetching user...')
               const { data: fetchedUser, error: fetchError } = await supabase
                 .from('users')
                 .select('*')
@@ -175,7 +166,6 @@ export async function GET(request: NextRequest) {
               
               if (fetchedUser && !fetchError) {
                 userData = fetchedUser
-                console.log('[Users API GET] ✅ User found after fetch:', { id: userData.id, email: userData.email })
               } else {
                 return NextResponse.json({ 
                   success: false, 
@@ -226,11 +216,11 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name, interests } = body
+    const { userId, name, interests, onboarding_step } = body
 
-    if (!userId || !name) {
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'User ID and name required' }, 
+        { success: false, error: 'User ID required' }, 
         { 
           status: 400,
           headers: {
@@ -264,7 +254,6 @@ export async function PUT(request: NextRequest) {
     // If user doesn't exist, get email from auth and create user
     let email: string | null = null
     if (!existingUser) {
-      console.log('[Users API] User not found in database, fetching from auth...')
       // Get user email from Supabase Auth
       const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
       if (authError || !authUser?.user?.email) {
@@ -280,25 +269,36 @@ export async function PUT(request: NextRequest) {
         })
       }
       email = authUser.user.email
-      console.log('[Users API] Found user in auth, email:', email)
     } else {
       email = existingUser.email
     }
 
-    // Now upsert with email and interests
+    // Now upsert with email, interests, and onboarding_step
     // Use upsert to handle both new users and existing users
     // onConflict: 'id' means update if user with this id exists
-    console.log('[Users API PUT] Upserting user:', { userId, email, name, interestsCount: interests?.length || 0 })
+    
+    // Build update object - only include fields that are provided
+    const updateData: any = {
+      id: userId,
+      email: email,
+      updated_at: new Date().toISOString()
+    }
+    
+    if (name !== undefined) {
+      updateData.name = name
+    }
+    
+    if (interests !== undefined) {
+      updateData.interests = interests || []
+    }
+    
+    if (onboarding_step !== undefined) {
+      updateData.onboarding_step = onboarding_step
+    }
     
     const { data: upsertData, error: upsertError } = await supabase
       .from('users')
-      .upsert({
-        id: userId,
-        email: email,
-        name: name,
-        interests: interests || [],
-        updated_at: new Date().toISOString()
-      }, {
+      .upsert(updateData, {
         onConflict: 'id',
         ignoreDuplicates: false // Update if exists
       })
@@ -314,7 +314,6 @@ export async function PUT(request: NextRequest) {
       // Handle duplicate email error gracefully
       if (upsertError.message.includes('duplicate key') || upsertError.message.includes('unique constraint') || upsertError.message.includes('user_email_key') || upsertError.code === '23505') {
         // Email already exists - check if it's the same user or different user
-        console.log('[Users API PUT] Duplicate email detected, checking existing user by email...')
         const { data: existingByEmail, error: emailCheckError } = await supabase
           .from('users')
           .select('*')
@@ -324,14 +323,16 @@ export async function PUT(request: NextRequest) {
         if (existingByEmail) {
           if (existingByEmail.id === userId) {
             // Same user - just update without email
-            console.log('[Users API PUT] Same user, updating by id (without email)...')
+            const updateFields: any = {
+              updated_at: new Date().toISOString()
+            }
+            if (name !== undefined) updateFields.name = name
+            if (interests !== undefined) updateFields.interests = interests || []
+            if (onboarding_step !== undefined) updateFields.onboarding_step = onboarding_step
+            
             const { data: updateData, error: updateError } = await supabase
               .from('users')
-              .update({
-                name: name,
-                interests: interests || [],
-                updated_at: new Date().toISOString()
-              })
+              .update(updateFields)
               .eq('id', userId)
               .select()
             
@@ -349,7 +350,6 @@ export async function PUT(request: NextRequest) {
             }
 
             const finalData = Array.isArray(updateData) ? updateData[0] : updateData
-            console.log('[Users API PUT] ✅ User updated:', { id: finalData?.id, email: finalData?.email })
             return NextResponse.json(
               { success: true, data: finalData },
               {
@@ -377,14 +377,16 @@ export async function PUT(request: NextRequest) {
           }
         } else {
           // Email check failed, try updating by id as fallback
-          console.log('[Users API PUT] Email check failed, updating by id as fallback...')
+          const updateFields: any = {
+            updated_at: new Date().toISOString()
+          }
+          if (name !== undefined) updateFields.name = name
+          if (interests !== undefined) updateFields.interests = interests || []
+          if (onboarding_step !== undefined) updateFields.onboarding_step = onboarding_step
+          
           const { data: updateData, error: updateError } = await supabase
             .from('users')
-            .update({
-              name: name,
-              interests: interests || [],
-              updated_at: new Date().toISOString()
-            })
+            .update(updateFields)
             .eq('id', userId)
             .select()
           
@@ -402,7 +404,6 @@ export async function PUT(request: NextRequest) {
           }
 
           const finalData = Array.isArray(updateData) ? updateData[0] : updateData
-          console.log('[Users API PUT] ✅ User updated (fallback):', { id: finalData?.id, email: finalData?.email })
           return NextResponse.json(
             { success: true, data: finalData },
             {
@@ -440,7 +441,6 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    console.log('[Users API PUT] ✅ User saved successfully:', { id: finalData.id, email: finalData.email })
     return NextResponse.json(
       { success: true, data: finalData },
       {

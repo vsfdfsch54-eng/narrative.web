@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const userId = searchParams.get('userId')
 
-  console.log('[Connect Status] Request received for userId:', userId)
-
   if (!userId) {
     return NextResponse.json(
       { error: 'Missing userId query parameter' },
@@ -62,17 +60,6 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId)
       .single()
 
-    console.log('[Connect Status] Waiting pool check:', {
-      userId,
-      found: !!waitingPoolEntry,
-      error: waitingPoolError?.message,
-      errorCode: waitingPoolError?.code,
-      entry: waitingPoolEntry ? { 
-        user_id: waitingPoolEntry.user_id, 
-        created_at: waitingPoolEntry.created_at 
-      } : null
-    })
-
     // If not in waiting pool, check if they were matched
     if (!waitingPoolEntry) {
       // Find active chat match for this user
@@ -90,8 +77,6 @@ export async function GET(request: NextRequest) {
         const match = matches[0]
         const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
 
-        console.log(`[Connect Status] ✅ User ${userId} matched with ${otherUserId}`)
-
         return NextResponse.json({
           success: true,
           matched: true,
@@ -104,7 +89,6 @@ export async function GET(request: NextRequest) {
 
     // Still in queue
     if (waitingPoolEntry) {
-      console.log(`[Connect Status] ⏳ User ${userId} still in waiting pool`)
       return NextResponse.json({
         success: true,
         matched: false,

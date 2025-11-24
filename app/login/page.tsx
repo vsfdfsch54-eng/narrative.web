@@ -22,17 +22,16 @@ export default function LoginPage() {
   useEffect(() => {
     if (!authLoading && user) {
       if (user.email_confirmed_at) {
-        // User is verified, check if they need onboarding
+        // User is verified, check onboarding step from database
         const checkOnboarding = async () => {
           try {
             const response = await fetch(`/api/users?userId=${user.id}`)
             const data = await response.json()
             
             if (data.success && data.data) {
-              const hasName = data.data.name
-              const hasInterests = data.data.interests && data.data.interests.length > 0
+              const onboardingStep = data.data.onboarding_step || 'start'
               
-              if (hasName && hasInterests) {
+              if (onboardingStep === 'complete') {
                 // Onboarding complete - redirect to /vibe
                 router.push("/vibe")
               } else {
@@ -64,36 +63,36 @@ export default function LoginPage() {
     try {
       const result = await signIn(email, password)
       if (result.success) {
-        // Check if user needs onboarding
-        if ((result as any).needsOnboarding) {
-          router.push("/onboarding")
-        } else {
-          // Check onboarding status
-          const checkOnboarding = async () => {
-            try {
-              const response = await fetch(`/api/users?userId=${(result as any).data.user.id}`)
-              const data = await response.json()
+        // Check onboarding step from database
+        const checkOnboarding = async () => {
+          try {
+            const userId = (result as any).data?.user?.id || user?.id
+            if (!userId) {
+              router.push("/onboarding")
+              return
+            }
+            
+            const response = await fetch(`/api/users?userId=${userId}`)
+            const data = await response.json()
+            
+            if (data.success && data.data) {
+              const onboardingStep = data.data.onboarding_step || 'start'
               
-              if (data.success && data.data) {
-                const hasName = data.data.name
-                const hasInterests = data.data.interests && data.data.interests.length > 0
-                
-                if (hasName && hasInterests) {
-                  // Onboarding complete - redirect to /vibe
-                  router.push("/vibe")
-                } else {
-                  router.push("/onboarding")
-                }
+              if (onboardingStep === 'complete') {
+                // Onboarding complete - redirect to /vibe
+                router.push("/vibe")
               } else {
                 router.push("/onboarding")
               }
-            } catch (err) {
+            } else {
               router.push("/onboarding")
             }
+          } catch (err) {
+            router.push("/onboarding")
           }
-          
-          checkOnboarding()
         }
+        
+        checkOnboarding()
       } else {
         setError(result.error || "Invalid credentials")
       }

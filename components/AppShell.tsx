@@ -9,31 +9,48 @@ interface AppShellProps {
   children: ReactNode
   title?: string
   showHeader?: boolean
+  showDock?: boolean
 }
 
-export function AppShell({ children, title, showHeader = true }: AppShellProps) {
+export function AppShell({
+  children,
+  title,
+  showHeader = true,
+  showDock = true,
+}: AppShellProps) {
+  const contentPaddingTop = showHeader
+    ? `calc(96px + env(safe-area-inset-top))`
+    : `calc(32px + env(safe-area-inset-top))`
+  const contentPaddingBottom = `calc(200px + env(safe-area-inset-bottom))`
+
   return (
     <div
       style={{
         minHeight: '100vh',
         background: tokens.colors.backgroundApp,
-        paddingTop: showHeader ? '0' : 'env(safe-area-inset-top)',
-        paddingBottom: '140px', // Space for floating dock
-        overflowY: 'auto',
+        color: tokens.colors.textPrimaryOnDark,
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
       }}
     >
       {showHeader && <Header title={title} />}
-      <div
+      <main
         style={{
+          flex: 1,
+          width: '100%',
           maxWidth: tokens.layout.maxWidth,
           margin: '0 auto',
           padding: `0 ${tokens.layout.paddingHorizontal}`,
-          overflowY: 'visible',
+          paddingTop: contentPaddingTop,
+          paddingBottom: contentPaddingBottom,
+          boxSizing: 'border-box',
         }}
       >
         {children}
-      </div>
-      <FloatingDock />
+      </main>
+      {showDock && <FloatingDock />}
     </div>
   )
 }

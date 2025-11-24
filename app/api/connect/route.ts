@@ -42,8 +42,6 @@ export async function POST(request: NextRequest) {
 
     if (!existingUser) {
       // User doesn't exist in users table, try to create from auth
-      console.log('[Connect API] ⚠️  User not found in users table, creating from auth...')
-      
       try {
         // Get user from auth
         const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
@@ -60,7 +58,6 @@ export async function POST(request: NextRequest) {
         const userEmail = authUser.user.email
         const userName = authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User'
         
-        console.log('[Connect API] Checking for existing user by email...')
         const { data: existingUserByEmail, error: emailCheckError } = await supabase
           .from('users')
           .select('id, email, name, personality_embedding')
@@ -72,7 +69,6 @@ export async function POST(request: NextRequest) {
           if (existingUserByEmail.id === userId) {
             // Same user, same email - use existing record
             userRecord = existingUserByEmail
-            console.log('[Connect API] ✅ Found existing user (id and email match):', { id: userRecord.id, email: userRecord.email })
           } else {
             // Email exists but with different id - use the existing user's id
             console.warn('[Connect API] ⚠️ Email conflict: email exists with different id, using existing user', {
@@ -81,12 +77,9 @@ export async function POST(request: NextRequest) {
               email: userEmail
             })
             userRecord = existingUserByEmail
-            console.log('[Connect API] ✅ Using existing user by email:', { id: userRecord.id, email: userRecord.email })
           }
         } else {
           // No user with this email exists - safe to create new user
-          console.log('[Connect API] No existing user with this email, creating new user...')
-          
           const { data: upsertResult, error: createError } = await supabase
             .from('users')
             .upsert({
@@ -109,7 +102,6 @@ export async function POST(request: NextRequest) {
             
             // If duplicate email error, check by email (in case email was created between our check and upsert)
             if (createError.code === '23505' || createError.message.includes('duplicate key') || createError.message.includes('user_email_key')) {
-              console.log('[Connect API] Duplicate email error, fetching existing user by email...')
               const { data: existingByEmail, error: fetchError } = await supabase
                 .from('users')
                 .select('id, email, name, personality_embedding')
@@ -118,7 +110,6 @@ export async function POST(request: NextRequest) {
               
               if (existingByEmail && !fetchError) {
                 userRecord = existingByEmail
-                console.log('[Connect API] ✅ Found existing user by email after error:', { id: userRecord.id, email: userRecord.email })
               } else {
                 return NextResponse.json(
                   { 
@@ -141,10 +132,8 @@ export async function POST(request: NextRequest) {
             // Handle upsert result - it's always an array
             if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
               userRecord = upsertResult[0]
-              console.log('[Connect API] ✅ User created:', { id: userRecord.id, email: userRecord.email })
             } else {
               // If no data returned, try fetching once
-              console.log('[Connect API] Upsert returned no data, fetching user...')
               const { data: fetchedUser, error: fetchError } = await supabase
                 .from('users')
                 .select('id, email, name, personality_embedding')
@@ -153,7 +142,6 @@ export async function POST(request: NextRequest) {
               
               if (fetchedUser && !fetchError) {
                 userRecord = fetchedUser
-                console.log('[Connect API] ✅ User found after fetch:', { id: userRecord.id, email: userRecord.email })
               } else {
                 return NextResponse.json(
                   { 
@@ -175,13 +163,10 @@ export async function POST(request: NextRequest) {
       }
     } else {
       userRecord = existingUser
-      console.log('[Connect API] ✅ User verified:', { id: userRecord.id, email: userRecord.email })
     }
 
     // Check if user has personality embedding (optional - will use FIFO matching if missing)
     if (!userRecord.personality_embedding) {
-      console.log('[Connect API] ⚠️  User has no personality embedding (optional - will use FIFO matching)')
-      
       // Try to generate personality profile from existing data (optional)
       // This handles migration case, but won't block if it fails
       try {
@@ -226,15 +211,9 @@ export async function POST(request: NextRequest) {
         const personalityData = await personalityResponse.json()
 
         if (!personalityData.success) {
-          console.warn('[Connect API] ⚠️ Failed to generate personality profile (optional):', personalityData.error)
-          console.log('[Connect API] User will use FIFO matching instead of AI matching')
           // Don't block - continue without personality embedding
-        } else {
-          console.log('[Connect API] ✅ Personality profile generated')
         }
       } catch (error: any) {
-        console.warn('[Connect API] ⚠️ Error generating personality profile (optional):', error)
-        console.log('[Connect API] User will use FIFO matching instead of AI matching')
         // Don't block - continue without personality embedding
       }
     }
@@ -271,9 +250,7 @@ export async function POST(request: NextRequest) {
         console.warn('[Connect API] ⚠️ Invalid embedding format, will use FIFO matching')
         userEmbedding = null
       }
-    } else {
-      console.log('[Connect API] No personality embedding - will use FIFO matching')
-    }
+      }
 
     // Remove any existing entry in waiting pool for this user
     await supabase.from('waiting_pool').delete().eq('user_id', userId)
@@ -295,8 +272,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[Connect API] ✅ User added to waiting pool')
-
     // Verify the entry was actually created (with retry and longer waits)
     let verifyEntry = null
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -311,11 +286,6 @@ export async function POST(request: NextRequest) {
       
       if (entry && !verifyError) {
         verifyEntry = entry
-        console.log('[Connect API] ✅ Verified user is in waiting pool', { 
-          userId, 
-          created_at: entry.created_at,
-          attempt: attempt + 1
-        })
         break
       }
       
@@ -323,7 +293,6 @@ export async function POST(request: NextRequest) {
         console.error('[Connect API] ❌ User not found in waiting pool after 5 attempts!', verifyError)
         // Don't fail - the entry might still be there, just return success
         // The status endpoint will handle checking
-        console.log('[Connect API] ⚠️ Continuing anyway - entry may be committed but not yet visible')
       }
     }
 
@@ -331,8 +300,6 @@ export async function POST(request: NextRequest) {
     let matchResult = null
     if (userEmbedding && userEmbedding.length > 0) {
       matchResult = await findBestMatch(userId, userEmbedding)
-    } else {
-      console.log('[Connect API] No embedding available - will use FIFO matching via matchmaking processor')
     }
 
     // Lower threshold: match if score >= 0.1, or if only 2 users (FIFO fallback)
@@ -384,13 +351,6 @@ export async function POST(request: NextRequest) {
           await supabase.from('waiting_pool').delete().eq('user_id', userId)
           await supabase.from('waiting_pool').delete().eq('user_id', matchedUserId)
 
-          console.log('[Connect API] ✅ Immediate match created!', {
-            matchId: chatMatch.id,
-            user1Id,
-            user2Id,
-            matchScore,
-          })
-
           return NextResponse.json({
             success: true,
             matched: true,
@@ -404,7 +364,6 @@ export async function POST(request: NextRequest) {
 
     // No immediate match found, trigger matchmaking processor after a delay
     // This ensures the waiting_pool entry is fully committed before matching
-    console.log('[Connect API] ⏳ No immediate match, will trigger matchmaking processor...')
     
     // Wait a bit longer to ensure database entry is fully committed
     await new Promise(resolve => setTimeout(resolve, 500))

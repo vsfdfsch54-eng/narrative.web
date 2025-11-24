@@ -50,7 +50,7 @@ export default function VibePage() {
     
     // Only check onboarding on initial load, not on every render
     // The welcome page should have already handled this, so this is just a safety check
-    if (!loading && user && user.email_confirmed_at) {
+    if (!loading && user) {
       let hasChecked = false
       
       const checkOnboarding = async () => {
@@ -63,24 +63,17 @@ export default function VibePage() {
           const data = await response.json()
           
           if (data.success && data.data) {
-            const hasName = data.data.name && data.data.name.trim() !== ''
-            const hasInterests = data.data.interests && data.data.interests.length > 0
-            // Personality is optional - skip until GPT is available
+            const onboardingStep = data.data.onboarding_step || 'start'
             
-            if (!hasName || !hasInterests) {
+            if (onboardingStep !== 'complete') {
               // Onboarding incomplete → redirect to onboarding
-              console.log('[VibePage] ⚠️ Onboarding incomplete (missing name or interests), redirecting to /onboarding')
               router.push("/onboarding")
-            } else {
-              console.log('[VibePage] ✅ Onboarding complete (name and interests present), user can access vibe page')
             }
           } else {
             // User not found in database → redirect to onboarding
-            console.log('[VibePage] ⚠️ User not found in database, redirecting to /onboarding')
             router.push("/onboarding")
           }
         } catch (error) {
-          console.error('[VibePage] Error checking onboarding status:', error)
           // On error, redirect to onboarding to be safe
           router.push("/onboarding")
         }
@@ -89,7 +82,7 @@ export default function VibePage() {
       // Only check once on mount
       checkOnboarding()
     }
-  }, [user?.id, loading]) // Only depend on user.id and loading, not router
+  }, [user?.id, loading, router]) // Added router to dependencies
   
   const getUserId = () => {
     if (user?.id) return user.id
@@ -151,10 +144,8 @@ export default function VibePage() {
 
   const handleConnect = async () => {
     const userId = getUserId()
-    console.log('[VibePage] handleConnect - userId:', userId, 'user object:', user)
     
     if (!userId) {
-      console.error('[VibePage] No userId found, redirecting to home')
       router.push("/")
       return
     }
@@ -182,7 +173,7 @@ export default function VibePage() {
             userId, 
             vibe: selectedVibe.label 
           })
-        }).catch(err => console.error('[VibePage] Error saving vibe:', err))
+        }).catch(() => {})
       }
       
       const requestBody = { 
@@ -191,10 +182,8 @@ export default function VibePage() {
         topic: selectedTopic?.label || null,
         timeframe: selectedTimeLimit || null,
       }
-      console.log('[VibePage] Calling /api/connect with:', requestBody)
-      console.log('[VibePage] User object:', { id: user?.id, email: user?.email })
       
-      // Connect using AI matching (replaces old pending-matches endpoint)
+      // Connect using AI matching
       const response = await fetch('/api/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -202,54 +191,34 @@ export default function VibePage() {
         cache: 'no-store'
       })
       
-      console.log('[VibePage] Response status:', response.status, response.statusText)
-      console.log('[VibePage] Response headers:', Object.fromEntries(response.headers.entries()))
-      
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('[VibePage] ❌ HTTP error response:', errorText)
-        console.error('[VibePage] Full error details:', { status: response.status, statusText: response.statusText, body: errorText })
         
         // If user not found, redirect to onboarding
         if (response.status === 404 && errorText.includes('User not found')) {
-          console.log('[VibePage] ⚠️ User not found, redirecting to onboarding')
           router.push('/onboarding')
           return
         }
         
-        throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
       
       const data = await response.json()
-      console.log('[VibePage] ✅ Response data:', JSON.stringify(data, null, 2))
-      
-      // Verify the response indicates success
-      if (!data.success) {
-        console.error('[VibePage] ❌ API returned success: false', data)
-      }
       
       if (data.success && data.matched && data.match && data.otherUserId) {
         // Matched immediately via AI! Navigate to chat
-        console.log('[VibePage] ✅ AI matched with:', data.otherUserId, 'Score:', data.matchScore)
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
         // In queue, AI is finding best match
-        console.log('[VibePage] ⏳ Added to AI matching queue, navigating to chat page')
         router.push("/chat")
       } else if (data.needsOnboarding) {
-        // User needs to complete personality questionnaire
-        console.log('[VibePage] ⚠️ User needs to complete onboarding')
+        // User needs to complete onboarding
         router.push("/onboarding")
       } else {
         // Unexpected response, still navigate to chat
-        console.error('[VibePage] ❌ Unexpected response from connect:', data)
         router.push("/chat")
       }
     } catch (error) {
-      console.error('[VibePage] ❌ Error connecting:', error)
-      if (error instanceof Error) {
-        console.error('[VibePage] Error stack:', error.stack)
-      }
       // Still navigate to chat page even if there's an error
       router.push("/chat")
     } finally {
@@ -302,7 +271,6 @@ export default function VibePage() {
         router.push("/chat")
       }
     } catch (error) {
-      console.error('[VibePage] Error connecting:', error)
       router.push("/chat")
     } finally {
       setSaving(false)

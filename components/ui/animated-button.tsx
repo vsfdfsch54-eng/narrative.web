@@ -51,25 +51,28 @@ export function AnimatedButton({
     <motion.button
       whileTap={{ scale: disabled ? 1 : 0.98 }}
       whileHover={disabled ? {} : { y: -1 }}
-      transition={{ 
+      transition={{
         duration: 0.14,
-        ease: [0.22, 1, 0.36, 1]
+        ease: [0.22, 1, 0.36, 1],
       }}
       disabled={disabled}
       className={cn("touch-manipulation", className)}
       style={{
         height,
+        minHeight: '44px',
         padding,
-        width: fullWidth ? '100%' : 'auto',
+        width: fullWidth ? '100%' : '100%',
         borderRadius: tokens.radii.pill,
         ...styles,
         border: 'none',
         fontSize: size === "small" ? '13px' : size === "large" ? '16px' : '15px',
-        fontWeight: 400,
+        fontWeight: 500,
         letterSpacing: '0',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.5 : 1,
         outline: 'none',
+        pointerEvents: disabled ? 'none' : 'auto',
+        touchAction: 'manipulation',
         ...propsStyle,
       }}
       {...restProps}

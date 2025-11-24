@@ -255,11 +255,7 @@ export default function CalendarPage() {
         display: 'flex', 
         flexDirection: 'column', 
         gap: tokens.spacing[12], 
-        paddingTop: tokens.spacing[16], 
-        paddingBottom: '120px',
-        background: tokens.colors.backgroundApp,
-        height: 'calc(100vh - 200px)',
-        overflow: 'hidden',
+        paddingTop: tokens.spacing[16],
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.spacing[8] }}>
           <h1 style={{ 
