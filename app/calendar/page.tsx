@@ -342,7 +342,7 @@ export default function CalendarPage() {
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
           gap: tokens.spacing[4],
-          rowGap: tokens.spacing[6],
+          rowGap: tokens.spacing[8],
         }}>
           {Array.from({ length: firstDay }).map((_, index) => (
             <div key={`empty-${index}`} />
