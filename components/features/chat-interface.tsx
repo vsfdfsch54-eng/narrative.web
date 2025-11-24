@@ -48,6 +48,11 @@ export function ChatInterface({
               key={msg.id}
               message={msg}
               isOwn={msg.senderId === currentUserId}
+              currentUserId={currentUserId}
+              onReactionToggle={async (messageId, emoji) => {
+                // Handle reaction toggle if needed
+                console.log('Reaction toggle:', messageId, emoji)
+              }}
             />
           ))
         )}

@@ -111,7 +111,7 @@ export function ChatSearch({ messages, onMessageSelect }: ChatSearchProps) {
                   autoFocus
                   style={{
                     width: '100%',
-                    padding: `${tokens.spacing[12]} ${tokens.spacing[40]} ${tokens.spacing[12]} ${tokens.spacing[40]}`,
+                    padding: `${tokens.spacing[12]} ${tokens.spacing[20]} ${tokens.spacing[12]} ${tokens.spacing[20]}`,
                     borderRadius: tokens.radii.input,
                     background: 'rgba(255,255,255,0.1)',
                     border: 'none',
