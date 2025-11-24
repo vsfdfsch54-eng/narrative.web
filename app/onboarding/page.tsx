@@ -401,6 +401,29 @@ function OnboardingContent() {
           
           if (!userData.success) {
             console.error('Error saving user data:', userData.error)
+            // Don't continue if user creation failed
+            return
+          }
+
+          // Verify user exists before generating personality
+          console.log('[Onboarding] Verifying user exists in database...')
+          let userVerified = false
+          for (let attempt = 0; attempt < 3; attempt++) {
+            const verifyResponse = await fetch(`/api/users?userId=${userId}`)
+            const verifyData = await verifyResponse.json()
+            if (verifyData.success && verifyData.data) {
+              userVerified = true
+              console.log('[Onboarding] ✅ User verified in database')
+              break
+            }
+            // Wait a bit before retrying
+            await new Promise(resolve => setTimeout(resolve, 200))
+          }
+
+          if (!userVerified) {
+            console.error('[Onboarding] ❌ User not found in database after creation')
+            // Don't fail the entire flow, but log the error
+            return
           }
 
           // Generate personality profile if we have answers
@@ -500,6 +523,27 @@ function OnboardingContent() {
       
       if (!userUpdateData.success) {
         setError(userUpdateData.error || "Failed to save user data. Please try again.")
+        setLoading(false)
+        return
+      }
+
+      // Verify user exists in database before generating personality
+      console.log('[Onboarding] Verifying user exists in database...')
+      let userVerified = false
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const verifyResponse = await fetch(`/api/users?userId=${user.id}`)
+        const verifyData = await verifyResponse.json()
+        if (verifyData.success && verifyData.data) {
+          userVerified = true
+          console.log('[Onboarding] ✅ User verified in database')
+          break
+        }
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 200))
+      }
+
+      if (!userVerified) {
+        setError("User not found in database. Please try again.")
         setLoading(false)
         return
       }
