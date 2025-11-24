@@ -57,90 +57,113 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Create user record using upsert to handle duplicate email/id
-        // Note: upsert returns an array, so we don't use .single()
+        // FIRST: Check if a user with this email already exists (to prevent duplicate email errors)
+        const userEmail = authUser.user.email
         const userName = authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User'
-        console.log('[Connect API] Attempting to upsert user:', {
-          userId,
-          email: authUser.user.email,
-          name: userName
-        })
         
-        const { data: upsertResult, error: createError } = await supabase
+        console.log('[Connect API] Checking for existing user by email...')
+        const { data: existingUserByEmail, error: emailCheckError } = await supabase
           .from('users')
-          .upsert({
-            id: userId,
-            email: authUser.user.email,
-            name: userName,
-            interests: [],
-          }, {
-            onConflict: 'id', // Update if user with this id exists
-            ignoreDuplicates: false
-          })
           .select('id, email, name, personality_embedding')
-
-        if (createError) {
-          console.error('[Connect API] ❌ Upsert error:', {
-            message: createError.message,
-            code: createError.code,
-            details: createError.details
-          })
+          .eq('email', userEmail)
+          .maybeSingle()
+        
+        if (existingUserByEmail) {
+          // User with this email already exists
+          if (existingUserByEmail.id === userId) {
+            // Same user, same email - use existing record
+            userRecord = existingUserByEmail
+            console.log('[Connect API] ✅ Found existing user (id and email match):', { id: userRecord.id, email: userRecord.email })
+          } else {
+            // Email exists but with different id - use the existing user's id
+            console.warn('[Connect API] ⚠️ Email conflict: email exists with different id, using existing user', {
+              existingId: existingUserByEmail.id,
+              requestedId: userId,
+              email: userEmail
+            })
+            userRecord = existingUserByEmail
+            console.log('[Connect API] ✅ Using existing user by email:', { id: userRecord.id, email: userRecord.email })
+          }
+        } else {
+          // No user with this email exists - safe to create new user
+          console.log('[Connect API] No existing user with this email, creating new user...')
           
-          // If upsert fails, try fetching existing user
-          if (createError.code === '23505' || createError.message.includes('duplicate key')) {
-            console.log('[Connect API] Duplicate key error, fetching existing user...')
-            const { data: existingUser, error: fetchError } = await supabase
-              .from('users')
-              .select('id, email, name, personality_embedding')
-              .eq('id', userId)
-              .maybeSingle()
+          const { data: upsertResult, error: createError } = await supabase
+            .from('users')
+            .upsert({
+              id: userId,
+              email: userEmail,
+              name: userName,
+              interests: [],
+            }, {
+              onConflict: 'id', // Update if user with this id exists
+              ignoreDuplicates: false
+            })
+            .select('id, email, name, personality_embedding')
+
+          if (createError) {
+            console.error('[Connect API] ❌ Upsert error:', {
+              message: createError.message,
+              code: createError.code,
+              details: createError.details
+            })
             
-            if (existingUser && !fetchError) {
-              userRecord = existingUser
-              console.log('[Connect API] ✅ Found existing user:', { id: userRecord.id, email: userRecord.email })
+            // If duplicate email error, check by email (in case email was created between our check and upsert)
+            if (createError.code === '23505' || createError.message.includes('duplicate key') || createError.message.includes('user_email_key')) {
+              console.log('[Connect API] Duplicate email error, fetching existing user by email...')
+              const { data: existingByEmail, error: fetchError } = await supabase
+                .from('users')
+                .select('id, email, name, personality_embedding')
+                .eq('email', userEmail)
+                .maybeSingle()
+              
+              if (existingByEmail && !fetchError) {
+                userRecord = existingByEmail
+                console.log('[Connect API] ✅ Found existing user by email after error:', { id: userRecord.id, email: userRecord.email })
+              } else {
+                return NextResponse.json(
+                  { 
+                    error: 'Failed to create user record. An account with this email may already exist.',
+                    details: createError.message
+                  },
+                  { status: 500 }
+                )
+              }
             } else {
               return NextResponse.json(
                 { 
-                  error: 'Failed to create user record. Please try again.',
+                  error: 'Failed to create user record.',
                   details: createError.message
                 },
                 { status: 500 }
               )
             }
           } else {
-            return NextResponse.json(
-              { 
-                error: 'Failed to create user record.',
-                details: createError.message
-              },
-              { status: 500 }
-            )
-          }
-        } else {
-          // Handle upsert result - it's always an array
-          if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
-            userRecord = upsertResult[0]
-            console.log('[Connect API] ✅ User created/updated:', { id: userRecord.id, email: userRecord.email })
-          } else {
-            // If no data returned, try fetching once
-            console.log('[Connect API] Upsert returned no data, fetching user...')
-            const { data: fetchedUser, error: fetchError } = await supabase
-              .from('users')
-              .select('id, email, name, personality_embedding')
-              .eq('id', userId)
-              .maybeSingle()
-            
-            if (fetchedUser && !fetchError) {
-              userRecord = fetchedUser
-              console.log('[Connect API] ✅ User found after fetch:', { id: userRecord.id, email: userRecord.email })
+            // Handle upsert result - it's always an array
+            if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
+              userRecord = upsertResult[0]
+              console.log('[Connect API] ✅ User created:', { id: userRecord.id, email: userRecord.email })
             } else {
-              return NextResponse.json(
-                { 
-                  error: 'User was created but could not be retrieved. Please try again.',
-                  details: fetchError?.message || 'Unknown error'
-                },
-                { status: 500 }
-              )
+              // If no data returned, try fetching once
+              console.log('[Connect API] Upsert returned no data, fetching user...')
+              const { data: fetchedUser, error: fetchError } = await supabase
+                .from('users')
+                .select('id, email, name, personality_embedding')
+                .eq('id', userId)
+                .maybeSingle()
+              
+              if (fetchedUser && !fetchError) {
+                userRecord = fetchedUser
+                console.log('[Connect API] ✅ User found after fetch:', { id: userRecord.id, email: userRecord.email })
+              } else {
+                return NextResponse.json(
+                  { 
+                    error: 'User was created but could not be retrieved. Please try again.',
+                    details: fetchError?.message || 'Unknown error'
+                  },
+                  { status: 500 }
+                )
+              }
             }
           }
         }

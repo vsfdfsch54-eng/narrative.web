@@ -76,93 +76,116 @@ export async function POST(request: NextRequest) {
           )
         }
 
-        // Create user record using upsert to handle duplicate email/id
-        // Note: upsert returns an array, so we don't use .single()
+        // FIRST: Check if a user with this email already exists (to prevent duplicate email errors)
+        const userEmail = authUser.user.email
         const userName = authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User'
-        console.log('[Personality Generate] Attempting to upsert user:', {
-          userId,
-          email: authUser.user.email,
-          name: userName
-        })
         
-        const { data: upsertResult, error: createError } = await supabase
+        console.log('[Personality Generate] Checking for existing user by email...')
+        const { data: existingUserByEmail, error: emailCheckError } = await supabase
           .from('users')
-          .upsert({
-            id: userId,
-            email: authUser.user.email,
-            name: userName,
-            interests: [],
-          }, {
-            onConflict: 'id', // Update if user with this id exists
-            ignoreDuplicates: false
-          })
           .select('id, email, name')
-
-        if (createError) {
-          console.error('[Personality Generate] ❌ Upsert error:', {
-            message: createError.message,
-            code: createError.code,
-            details: createError.details
-          })
+          .eq('email', userEmail)
+          .maybeSingle()
+        
+        if (existingUserByEmail) {
+          // User with this email already exists
+          if (existingUserByEmail.id === userId) {
+            // Same user, same email - use existing record
+            user = existingUserByEmail
+            console.log('[Personality Generate] ✅ Found existing user (id and email match):', { id: user.id, email: user.email })
+          } else {
+            // Email exists but with different id - use the existing user's id
+            console.warn('[Personality Generate] ⚠️ Email conflict: email exists with different id, using existing user', {
+              existingId: existingUserByEmail.id,
+              requestedId: userId,
+              email: userEmail
+            })
+            user = existingUserByEmail
+            console.log('[Personality Generate] ✅ Using existing user by email:', { id: user.id, email: user.email })
+          }
+        } else {
+          // No user with this email exists - safe to create new user
+          console.log('[Personality Generate] No existing user with this email, creating new user...')
           
-          // If upsert fails, try fetching existing user
-          if (createError.code === '23505' || createError.message.includes('duplicate key')) {
-            console.log('[Personality Generate] Duplicate key error, fetching existing user...')
-            const { data: existingUser, error: fetchError } = await supabase
-              .from('users')
-              .select('id, email, name')
-              .eq('id', userId)
-              .maybeSingle()
+          const { data: upsertResult, error: createError } = await supabase
+            .from('users')
+            .upsert({
+              id: userId,
+              email: userEmail,
+              name: userName,
+              interests: [],
+            }, {
+              onConflict: 'id', // Update if user with this id exists
+              ignoreDuplicates: false
+            })
+            .select('id, email, name')
+
+          if (createError) {
+            console.error('[Personality Generate] ❌ Upsert error:', {
+              message: createError.message,
+              code: createError.code,
+              details: createError.details
+            })
             
-            if (existingUser && !fetchError) {
-              user = existingUser
-              console.log('[Personality Generate] ✅ Found existing user:', { id: user.id, email: user.email })
+            // If duplicate email error, check by email (in case email was created between our check and upsert)
+            if (createError.code === '23505' || createError.message.includes('duplicate key') || createError.message.includes('user_email_key')) {
+              console.log('[Personality Generate] Duplicate email error, fetching existing user by email...')
+              const { data: existingByEmail, error: fetchError } = await supabase
+                .from('users')
+                .select('id, email, name')
+                .eq('email', userEmail)
+                .maybeSingle()
+              
+              if (existingByEmail && !fetchError) {
+                user = existingByEmail
+                console.log('[Personality Generate] ✅ Found existing user by email after error:', { id: user.id, email: user.email })
+              } else {
+                return NextResponse.json(
+                  { 
+                    success: false,
+                    error: 'Failed to create user record. An account with this email may already exist.',
+                    details: createError.message
+                  },
+                  { status: 500 }
+                )
+              }
             } else {
               return NextResponse.json(
                 { 
                   success: false,
-                  error: 'Failed to create user record. Please try again.',
+                  error: 'Failed to create user record.',
                   details: createError.message
                 },
                 { status: 500 }
               )
             }
           } else {
-            return NextResponse.json(
-              { 
-                success: false,
-                error: 'Failed to create user record.',
-                details: createError.message
-              },
-              { status: 500 }
-            )
-          }
-        } else {
-          // Handle upsert result - it's always an array
-          if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
-            user = upsertResult[0]
-            console.log('[Personality Generate] ✅ User created/updated:', { id: user.id, email: user.email })
-          } else {
-            // If no data returned, try fetching once
-            console.log('[Personality Generate] Upsert returned no data, fetching user...')
-            const { data: fetchedUser, error: fetchError } = await supabase
-              .from('users')
-              .select('id, email, name')
-              .eq('id', userId)
-              .maybeSingle()
-            
-            if (fetchedUser && !fetchError) {
-              user = fetchedUser
-              console.log('[Personality Generate] ✅ User found after fetch:', { id: user.id, email: user.email })
+            // Handle upsert result - it's always an array
+            if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
+              user = upsertResult[0]
+              console.log('[Personality Generate] ✅ User created:', { id: user.id, email: user.email })
             } else {
-              return NextResponse.json(
-                { 
-                  success: false,
-                  error: 'User was created but could not be retrieved. Please try again.',
-                  details: fetchError?.message || 'Unknown error'
-                },
-                { status: 500 }
-              )
+              // If no data returned, try fetching once
+              console.log('[Personality Generate] Upsert returned no data, fetching user...')
+              const { data: fetchedUser, error: fetchError } = await supabase
+                .from('users')
+                .select('id, email, name')
+                .eq('id', userId)
+                .maybeSingle()
+              
+              if (fetchedUser && !fetchError) {
+                user = fetchedUser
+                console.log('[Personality Generate] ✅ User found after fetch:', { id: user.id, email: user.email })
+              } else {
+                return NextResponse.json(
+                  { 
+                    success: false,
+                    error: 'User was created but could not be retrieved. Please try again.',
+                    details: fetchError?.message || 'Unknown error'
+                  },
+                  { status: 500 }
+                )
+              }
             }
           }
         }
