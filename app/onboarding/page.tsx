@@ -101,8 +101,14 @@ function OnboardingContent() {
   }
 
   useEffect(() => {
+    // Don't run if any of these conditions are true
     if (authLoading || !user || isRedirecting || isCompletingStep) {
-      // If redirecting or completing step, don't run status check
+      return
+    }
+    
+    // CRITICAL: Don't run status check if user is on personality step - they're actively completing it
+    if (currentStep === 'personality') {
+      console.log('[Onboarding] Skipping status check - user is on personality step')
       return
     }
     
@@ -116,9 +122,9 @@ function OnboardingContent() {
         if (hasChecked) return
         hasChecked = true
         
-        // Double-check flags before proceeding (they might have changed)
-        if (isRedirecting || isCompletingStep) {
-          console.log('[Onboarding] Skipping status check - redirecting or completing step')
+        // Triple-check flags and step before proceeding (they might have changed)
+        if (isRedirecting || isCompletingStep || currentStep === 'personality') {
+          console.log('[Onboarding] Skipping status check - redirecting, completing step, or on personality step')
           return
         }
         
@@ -184,7 +190,7 @@ function OnboardingContent() {
       checkComplete()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading, isCompletingStep, isRedirecting]) // Include isRedirecting in deps
+  }, [user?.id, authLoading, isCompletingStep, isRedirecting, currentStep]) // Include currentStep to check it
 
   useEffect(() => {
     if (authLoading || currentStep !== 'verify' || !user) return
@@ -351,6 +357,9 @@ function OnboardingContent() {
         setError("Please answer all personality questions")
         return
       }
+      // Set flags immediately to prevent useEffect from interfering
+      setIsCompletingStep(true)
+      setIsRedirecting(true)
       handleSubmit()
     }
   }
