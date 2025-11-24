@@ -183,11 +183,25 @@ export function OnboardingController() {
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
-      // Sign up user with email
-      const result = await signUp(email, '')
+      // Generate a temporary secure password for signup
+      // Supabase requires a password, but user will set their own in the password step
+      // We generate a secure random password that they'll never need to know
+      const tempPassword = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, '')
+      
+      // Sign up user with email and temporary password
+      const result = await signUp(email, tempPassword)
       
       if (result.error) {
-        setState(prev => ({ ...prev, loading: false, error: result.error || 'Failed to sign up' }))
+        // Check if it's a password validation error and provide better message
+        if (result.error.includes('password') || result.error.includes('Password') || result.error.includes('invalid')) {
+          setState(prev => ({ 
+            ...prev, 
+            loading: false, 
+            error: 'An account with this email may already exist. Please sign in instead.' 
+          }))
+        } else {
+          setState(prev => ({ ...prev, loading: false, error: result.error || 'Failed to sign up' }))
+        }
         return
       }
 
