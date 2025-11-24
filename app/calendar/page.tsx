@@ -319,15 +319,15 @@ export default function CalendarPage() {
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: tokens.spacing[8],
-          marginBottom: tokens.spacing[8],
+          gap: tokens.spacing[4],
+          marginBottom: tokens.spacing[4],
         }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
             <span 
               key={day} 
               style={{ 
                 textAlign: 'center',
-                ...tokens.typography.label,
+                fontSize: '11px',
                 color: tokens.colors.textSecondary,
                 fontWeight: 500,
               }}
@@ -341,8 +341,8 @@ export default function CalendarPage() {
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: tokens.spacing[8],
-          rowGap: tokens.spacing[10],
+          gap: tokens.spacing[4],
+          rowGap: tokens.spacing[6],
         }}>
           {Array.from({ length: firstDay }).map((_, index) => (
             <div key={`empty-${index}`} />
