@@ -719,10 +719,25 @@ function OnboardingContent() {
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value)
+                  onChange={async (e) => {
+                    const newEmail = e.target.value
+                    setEmail(newEmail)
                     if (typeof window !== 'undefined') {
-                      localStorage.setItem('onboarding_email', e.target.value)
+                      localStorage.setItem('onboarding_email', newEmail)
+                    }
+                    
+                    // If user has already signed up and changes email, sign them out
+                    // so they can sign up with the new email
+                    if (user && user.email && newEmail.trim() !== user.email.trim()) {
+                      console.log('[Onboarding] Email changed after signup, signing out to allow new signup')
+                      await supabase.auth.signOut()
+                      // Clear onboarding data to start fresh
+                      if (typeof window !== 'undefined') {
+                        localStorage.removeItem('onboarding_step')
+                        localStorage.removeItem('onboarding_name')
+                        localStorage.removeItem('onboarding_interests')
+                        localStorage.removeItem('onboarding_personality')
+                      }
                     }
                   }}
                   onKeyDown={(e) => {
@@ -731,7 +746,6 @@ function OnboardingContent() {
                     }
                   }}
                   disabled={loading}
-                  readOnly={!!(user && user.email_confirmed_at)}
                   style={{
                     width: '100%',
                     height: '40px',
@@ -744,8 +758,8 @@ function OnboardingContent() {
                     fontSize: '13px',
                     fontWeight: 400,
                     letterSpacing: '0',
-                    cursor: (loading || (!!user && user.email_confirmed_at)) ? 'not-allowed' : 'text',
-                    opacity: (loading || (!!user && user.email_confirmed_at)) ? 0.7 : 1,
+                    cursor: loading ? 'not-allowed' : 'text',
+                    opacity: loading ? 0.7 : 1,
                   }}
                   autoFocus
                 />
