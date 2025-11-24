@@ -45,9 +45,19 @@ export default function VibePage() {
   useEffect(() => {
     if (!loading && !user) {
       router.push("/")
-    } else if (!loading && user) {
-      // Quick safety check - if onboarding incomplete, redirect (welcome page should have caught this)
+      return
+    }
+    
+    // Only check onboarding on initial load, not on every render
+    // The welcome page should have already handled this, so this is just a safety check
+    if (!loading && user && user.email_confirmed_at) {
+      let hasChecked = false
+      
       const checkOnboarding = async () => {
+        // Prevent multiple checks
+        if (hasChecked) return
+        hasChecked = true
+        
         try {
           const response = await fetch(`/api/users?userId=${user.id}`)
           const data = await response.json()
@@ -76,9 +86,10 @@ export default function VibePage() {
         }
       }
       
+      // Only check once on mount
       checkOnboarding()
     }
-  }, [user, loading, router])
+  }, [user?.id, loading]) // Only depend on user.id and loading, not router
   
   const getUserId = () => {
     if (user?.id) return user.id

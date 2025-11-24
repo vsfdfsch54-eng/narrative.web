@@ -47,23 +47,28 @@ export default function ChatPage() {
         let waitingData = null
         let foundInQueue = false
         
-        for (let attempt = 0; attempt < 3; attempt++) {
+        // Increase retries and wait time to handle slower database commits
+        for (let attempt = 0; attempt < 5; attempt++) {
           const waitingResponse = await fetch(`/api/connect/status?userId=${user.id}`, { 
             method: 'GET',
             cache: 'no-store'
           })
           waitingData = await waitingResponse.json()
           
-          console.log(`[ChatPage] Queue check attempt ${attempt + 1}:`, waitingData)
+          console.log(`[ChatPage] Queue check attempt ${attempt + 1}/5:`, {
+            inQueue: waitingData.inQueue,
+            matched: waitingData.matched,
+            success: waitingData.success
+          })
           
           if (waitingData.inQueue || waitingData.matched) {
             foundInQueue = true
             break // Found status, exit retry loop
           }
           
-          // Wait before retrying (only if not found)
-          if (attempt < 2) {
-            await new Promise(resolve => setTimeout(resolve, 400))
+          // Wait longer before retrying (only if not found)
+          if (attempt < 4) {
+            await new Promise(resolve => setTimeout(resolve, 600)) // Increased from 400ms to 600ms
           }
         }
         
@@ -78,10 +83,31 @@ export default function ChatPage() {
           const otherUserId = waitingData.otherUserId
           router.push(`/chat/${otherUserId}?matchId=${waitingData.match.id}`)
         } else {
-          // Not in queue after retries, check if user exists in database
-          console.log('[ChatPage] ⚠️ User not in queue after 3 attempts, checking if user exists...')
+          // Not in queue after retries - check for existing matches first
+          console.log('[ChatPage] ⚠️ User not in queue after 5 attempts, checking for existing matches...')
           
-          // Check if user exists in users table
+          // Check for existing active matches first
+          const matchesResponse = await fetch(`/api/matches?userId=${user.id}`, {
+            cache: 'no-store'
+          })
+          
+          if (matchesResponse.ok) {
+            const matchesData = await matchesResponse.json()
+            if (matchesData.success && matchesData.data && matchesData.data.length > 0) {
+              const matches = Array.isArray(matchesData.data) ? matchesData.data : [matchesData.data]
+              const activeMatches = matches.filter((m: any) => m.status === 'active')
+              if (activeMatches.length > 0) {
+                const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
+                const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
+                console.log('[ChatPage] ✅ Found existing match, navigating to chat')
+                setLoading(false)
+                router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
+                return
+              }
+            }
+          }
+          
+          // No matches found - check if user exists in database
           const userCheckResponse = await fetch(`/api/users?userId=${user.id}`)
           const userCheckData = await userCheckResponse.json()
           
@@ -92,10 +118,11 @@ export default function ChatPage() {
             return
           }
           
-          // User exists but not in queue - this shouldn't happen if they just clicked Connect
-          // Redirect back to vibe page to try again
-          console.log('[ChatPage] ⚠️ User exists but not in queue - redirecting to vibe to reconnect')
-          router.push('/vibe')
+          // User exists but not in queue - show empty state instead of redirecting
+          // This prevents redirect loops
+          console.log('[ChatPage] ⚠️ User exists but not in queue - showing empty state')
+          setLoading(false)
+          // Don't redirect - just show empty state so user can try connecting again
         }
       } catch (error) {
         console.error('Error loading matches:', error)
