@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ClientPageTransition } from "@/components/ui/transitions"
 import { initSentry } from "@/lib/sentry"
+import NavBar from "@/components/ui/navbar"
 
 // Initialize Sentry in production (server-side only)
 if (typeof window === 'undefined') {
@@ -86,6 +87,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} bg-[#0a0a0c] min-h-screen`}>
         <ClientPageTransition>{children}</ClientPageTransition>
+        <NavBar />
       </body>
     </html>
   )

@@ -1,87 +1,59 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
-import { useAuth } from "@/hooks/use-auth"
-import { Button } from "./button"
+import { motion } from "framer-motion";
+import { Home, MessageCircle, Calendar, User } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-const publicNavItems = [
-  { href: "/login", label: "Login" },
-]
+export default function NavBar() {
+  const pathname = usePathname();
+  const router = useRouter();
 
-const authenticatedNavItems = [
-  { href: "/vibe", label: "Vibe" },
-  { href: "/topic", label: "Topic" },
-  { href: "/connect", label: "Connect" },
-  { href: "/chat", label: "Chat" },
-  { href: "/calendar", label: "Calendar" },
-  { href: "/profile", label: "Profile" },
-]
+  const items = [
+    { label: "Home", icon: Home, href: "/vibe" },
+    { label: "Chat", icon: MessageCircle, href: "/conversations" },
+    { label: "Calendar", icon: Calendar, href: "/calendar" },
+    { label: "Profile", icon: User, href: "/profile" },
+  ];
 
-export function Navbar() {
-  const pathname = usePathname()
-  const { isAuthenticated, logout, loading } = useAuth()
-  const navItems = isAuthenticated ? authenticatedNavItems : publicNavItems
+  // Don't show on onboarding pages
+  if (pathname?.startsWith("/onboarding")) {
+    return null;
+  }
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border/40 glass-effect">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <Link
-            href="/"
-            className="flex items-center space-x-2 transition-opacity hover:opacity-80"
-          >
-            <span className="text-xl font-light tracking-tight gradient-text">
-              Narrative
-            </span>
-          </Link>
-          
-          <div className="flex items-center space-x-1">
-            {!loading && navItems.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "relative px-4 py-2 text-sm font-medium transition-all duration-200 rounded-lg",
-                    isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
+    <div className="fixed bottom-4 left-0 right-0 flex justify-center z-50 pointer-events-none" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}>
+      <div className="pointer-events-auto flex items-center gap-4 px-6 py-3 rounded-3xl bg-black/60 backdrop-blur-xl shadow-2xl border border-white/5">
+        {items.map((item) => {
+          const selected = pathname === item.href;
+          const Icon = item.icon;
+
+          return (
+            <motion.button
+              key={item.href}
+              onClick={() => router.push(item.href)}
+              whileTap={{ scale: 0.92 }}
+              className={cn(
+                "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all",
+                selected
+                  ? "bg-white text-black shadow-md"
+                  : "bg-white/10 text-white hover:bg-white/20"
+              )}
+            >
+              <Icon size={18} />
+              {selected && (
+                <motion.span
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
                 >
                   {item.label}
-                  {isActive && (
-                    <motion.div
-                      layoutId="navbar-indicator"
-                      className="absolute inset-0 rounded-lg bg-accent/20"
-                      initial={false}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                </Link>
-              )
-            })}
-            {isAuthenticated && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={logout}
-                className="ml-2"
-              >
-                Logout
-              </Button>
-            )}
-          </div>
-        </div>
+                </motion.span>
+              )}
+            </motion.button>
+          );
+        })}
       </div>
-    </nav>
-  )
+    </div>
+  );
 }
-
