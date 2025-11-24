@@ -2,18 +2,25 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ClientPageTransition } from "@/components/ui/transitions"
+import { initSentry } from "@/lib/sentry"
+
+// Initialize Sentry in production (server-side only)
+if (typeof window === 'undefined') {
+  initSentry()
+}
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Narrative - Social Connection App",
   description: "Connect through shared stories and experiences",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({

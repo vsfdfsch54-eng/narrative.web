@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/hooks/use-auth"
+import { tokens } from "@/lib/design-tokens"
 import Link from "next/link"
 
 export default function LoginPage() {
@@ -136,11 +137,19 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              <Card className="p-4 glass-effect border-[#f1f1f3]/10 bg-[#1A1A1A]/30 shadow-2xl flex-shrink-0">
+              <Card variant="surface1" className="p-4 flex-shrink-0">
                 <CardContent className="p-0">
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
-                      <div className="p-3 rounded-2xl border border-[#f1f1f3]/15 bg-[#f1f1f3]/5 text-xs text-[#f1f1f3]/80">
+                      <div style={{
+                        padding: tokens.spacing[12],
+                        borderRadius: tokens.radii.input,
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: 'none',
+                        boxShadow: tokens.shadows.pillUnselected,
+                        color: '#FCA5A5',
+                        fontSize: '12px',
+                      }}>
                         {error}
                       </div>
                     )}
@@ -157,7 +166,6 @@ export default function LoginPage() {
                           onChange={(e) => setEmail(e.target.value)}
                           required
                           disabled={loading}
-                          className="bg-[#1A1A1A]/40 border-[#f1f1f3]/10 text-sm h-12 text-[#f1f1f3]"
                         />
                       </div>
                       <div className="space-y-1">
@@ -171,7 +179,6 @@ export default function LoginPage() {
                           onChange={(e) => setPassword(e.target.value)}
                           required
                           disabled={loading}
-                          className="bg-[#1A1A1A]/40 border-[#f1f1f3]/10 text-sm h-12 text-[#f1f1f3]"
                         />
                       </div>
                     </div>

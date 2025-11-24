@@ -1,26 +1,28 @@
 "use client"
 
 import { ReactNode } from "react"
-import { TopNav } from "./TopNav"
-import { BottomDockNav } from "./BottomDockNav"
+import { Header } from "./ui/header"
+import { FloatingDock } from "./ui/floating-dock"
 import { tokens } from "@/lib/design-tokens"
 
 interface AppShellProps {
   children: ReactNode
+  title?: string
+  showHeader?: boolean
 }
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, title, showHeader = true }: AppShellProps) {
   return (
     <div
       style={{
         minHeight: '100vh',
         background: tokens.colors.backgroundApp,
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: '120px',
+        paddingTop: showHeader ? '0' : 'env(safe-area-inset-top)',
+        paddingBottom: '140px', // Space for floating dock
         overflowY: 'auto',
       }}
     >
-      <TopNav />
+      {showHeader && <Header title={title} />}
       <div
         style={{
           maxWidth: tokens.layout.maxWidth,
@@ -31,7 +33,7 @@ export function AppShell({ children }: AppShellProps) {
       >
         {children}
       </div>
-      <BottomDockNav />
+      <FloatingDock />
     </div>
   )
 }

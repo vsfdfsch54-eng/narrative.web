@@ -422,12 +422,15 @@ export async function POST(request: NextRequest) {
       })
       
       // Also trigger again after another delay to catch any race conditions
-      setTimeout(() => {
+      // Note: Using Promise chain instead of setTimeout for better serverless compatibility
+      Promise.resolve().then(() => 
+        new Promise(resolve => setTimeout(resolve, 1000))
+      ).then(() => {
         fetch(`${baseUrl}/api/matchmaking/process`, {
           method: 'GET',
           cache: 'no-store',
         }).catch(() => {})
-      }, 1000)
+      }).catch(() => {})
     } catch (err) {
       console.error('[Connect API] Error triggering matchmaking processor:', err)
       // Continue anyway

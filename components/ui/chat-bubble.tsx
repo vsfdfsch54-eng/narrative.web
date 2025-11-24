@@ -54,7 +54,7 @@ export function ChatBubble({ message, isOwn, currentUserId, onReactionToggle }: 
           maxWidth: '75%',
           borderRadius: tokens.radii.pill,
           padding: `${tokens.spacing[10]} ${tokens.spacing[14]}`,
-          background: isOwn ? tokens.colors.pillUnselected : tokens.colors.pillUnselected,
+          background: isOwn ? tokens.colors.chatBubbleOwn : tokens.colors.chatBubbleOther,
           boxShadow: tokens.shadows.pillUnselected,
           border: 'none',
         }}
@@ -71,7 +71,7 @@ export function ChatBubble({ message, isOwn, currentUserId, onReactionToggle }: 
         ) : (
           <p style={{
             ...tokens.typography.body,
-            color: tokens.colors.textOnPill,
+            color: isOwn ? tokens.colors.textOnPill : tokens.colors.textPrimaryOnDark,
             margin: 0,
             marginBottom: tokens.spacing[8],
           }}>

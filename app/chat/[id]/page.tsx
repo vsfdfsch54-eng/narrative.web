@@ -480,7 +480,7 @@ export default function ChatDetailPage() {
           justifyContent: 'space-between',
           marginBottom: tokens.spacing[20],
           paddingBottom: tokens.spacing[16],
-          borderBottom: `1px solid rgba(255,255,255,0.08)`,
+          // No border - using spacing only
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], flex: 1, minWidth: 0 }}>
             <motion.button
@@ -561,7 +561,8 @@ export default function ChatDetailPage() {
                 padding: `8px ${tokens.spacing[14]}`,
                 borderRadius: tokens.radii.pill,
                 background: 'transparent',
-                border: `1px solid rgba(255,255,255,0.12)`,
+                border: 'none',
+                boxShadow: tokens.shadows.pillUnselected,
                 color: tokens.colors.textPrimaryOnDark,
                 fontSize: '13px',
                 fontWeight: 500,
@@ -630,7 +631,7 @@ export default function ChatDetailPage() {
         {/* Input Area */}
         <div style={{
           paddingTop: tokens.spacing[16],
-          borderTop: `1px solid rgba(255,255,255,0.08)`,
+          // No border - using spacing only
           marginTop: tokens.spacing[16],
         }}>
           <form onSubmit={handleSendMessage} style={{

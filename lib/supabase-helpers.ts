@@ -182,64 +182,8 @@ export async function findOrCreateMatch(userId: string): Promise<ChatMatch | nul
     return existingMatches[randomIndex]
   }
 
-  // Check for pending matches
-  const { data: pendingMatches, error: pendingError } = await supabaseServer
-    .from('chat_matches')
-    .select('*')
-    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-    .eq('status', 'pending')
-    .order('created_at', { ascending: true })
-    .limit(1)
-
-  if (!pendingError && pendingMatches && pendingMatches.length > 0) {
-    return pendingMatches[0]
-  }
-
-  // Try to find a user in the queue
-  const { data: queueUsers, error: queueError } = await supabaseServer
-    .from('match_queue')
-    .select('user_id')
-    .neq('user_id', userId)
-    .order('created_at', { ascending: true })
-    .limit(1)
-
-  if (!queueError && queueUsers && queueUsers.length > 0) {
-    // Found a user in queue, create match and remove both from queue
-    const otherUserId = queueUsers[0].user_id
-    
-    // Remove both users from queue
-    await supabaseServer.from('match_queue').delete().eq('user_id', userId)
-    await supabaseServer.from('match_queue').delete().eq('user_id', otherUserId)
-    
-    // Create match
-    const { data: newMatchData, error: matchError } = await supabaseServer
-      .from('chat_matches')
-      .insert({
-        user1_id: userId,
-        user2_id: otherUserId,
-        status: 'active',
-        relationship_tier: 'community',
-      })
-      .select()
-
-    if (matchError) {
-      console.error('Error creating match:', matchError)
-      // Add user back to queue if match creation failed
-      await supabaseServer.from('match_queue').upsert({ user_id: userId })
-      return null
-    }
-
-    // Handle array response
-    const newMatch = Array.isArray(newMatchData) ? newMatchData[0] : newMatchData
-    return newMatch || null
-  } else {
-    // No one in queue, add current user to queue
-    await supabaseServer
-      .from('match_queue')
-      .upsert({ user_id: userId }, { onConflict: 'user_id' })
-    
-    return null // User is now in queue
-  }
+  // Legacy match_queue code removed - use /api/connect instead
+  return null
 }
 
 /**

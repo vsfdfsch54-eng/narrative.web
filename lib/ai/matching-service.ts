@@ -219,14 +219,15 @@ export async function findBestMatch(
     current.matchScore > best.matchScore ? current : best
   )
   
-  // Lower threshold: 0.1 instead of 0.3, or match immediately if only 2 users
+  // Lower threshold: 0.1 instead of 0.3, or match immediately if only 2 users total
+  // waitingUsers.length === 1 means 1 other user (excluding current), so 2 total users
   const threshold = waitingUsers.length === 1 ? 0.0 : 0.1
   
   if (bestMatch.matchScore < threshold) {
     console.log(`[Matching Service] Best match score too low: ${bestMatch.matchScore} (threshold: ${threshold})`)
-    // If only 2 users, match them anyway (FIFO fallback)
+    // If only 2 users total (1 candidate), match them anyway (FIFO fallback)
     if (waitingUsers.length === 1) {
-      console.log('[Matching Service] Only 2 users, matching anyway (FIFO fallback)')
+      console.log('[Matching Service] Only 2 users total, matching anyway (FIFO fallback)')
       return bestMatch
     }
     return null

@@ -793,8 +793,9 @@ function OnboardingContent() {
               <div style={{
                 padding: tokens.spacing[16],
                 borderRadius: tokens.radii.input,
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: 'none',
+                boxShadow: tokens.shadows.pillUnselected,
                 color: '#FCA5A5',
                 ...tokens.typography.label,
               }}>
@@ -870,18 +871,19 @@ function OnboardingContent() {
                   disabled={loading}
                   style={{
                     width: '100%',
-                    height: '40px',
-                    padding: `10px ${tokens.spacing[14]}`,
+                    height: '44px',
+                    padding: `0 ${tokens.spacing[16]}`,
                     borderRadius: tokens.radii.input,
-                    background: tokens.colors.pillUnselected,
+                    background: tokens.colors.surface1,
                     border: 'none',
                     color: tokens.colors.textOnPill,
                     boxShadow: tokens.shadows.pillUnselected,
-                    fontSize: '13px',
+                    fontSize: '16px',
                     fontWeight: 400,
                     letterSpacing: '0',
                     cursor: loading ? 'not-allowed' : 'text',
                     opacity: loading ? 0.7 : 1,
+                    outline: 'none',
                   }}
                   autoFocus
                 />
@@ -976,8 +978,9 @@ function OnboardingContent() {
               <div style={{
                 padding: tokens.spacing[16],
                 borderRadius: tokens.radii.input,
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: 'none',
+                boxShadow: tokens.shadows.pillUnselected,
                 color: '#FCA5A5',
                 ...tokens.typography.label,
               }}>
@@ -1010,16 +1013,17 @@ function OnboardingContent() {
                   disabled={loading}
                   style={{
                     width: '100%',
-                    height: '40px',
-                    padding: `10px ${tokens.spacing[14]}`,
+                    height: '44px',
+                    padding: `0 ${tokens.spacing[16]}`,
                     borderRadius: tokens.radii.input,
-                    background: tokens.colors.pillUnselected,
+                    background: tokens.colors.surface1,
                     border: 'none',
                     color: tokens.colors.textOnPill,
                     boxShadow: tokens.shadows.pillUnselected,
-                    fontSize: '13px',
+                    fontSize: '16px',
                     fontWeight: 400,
                     letterSpacing: '0',
+                    outline: 'none',
                   }}
                   autoFocus
                 />
@@ -1106,8 +1110,9 @@ function OnboardingContent() {
               <div style={{
                 padding: tokens.spacing[16],
                 borderRadius: tokens.radii.input,
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: 'none',
+                boxShadow: tokens.shadows.pillUnselected,
                 color: '#FCA5A5',
                 ...tokens.typography.label,
               }}>
@@ -1135,16 +1140,17 @@ function OnboardingContent() {
                   disabled={loading}
                   style={{
                     width: '100%',
-                    height: '40px',
-                    padding: `10px ${tokens.spacing[14]}`,
+                    height: '44px',
+                    padding: `0 ${tokens.spacing[16]}`,
                     borderRadius: tokens.radii.input,
-                    background: tokens.colors.pillUnselected,
+                    background: tokens.colors.surface1,
                     border: 'none',
                     color: tokens.colors.textOnPill,
                     boxShadow: tokens.shadows.pillUnselected,
-                    fontSize: '13px',
+                    fontSize: '16px',
                     fontWeight: 400,
                     letterSpacing: '0',
+                    outline: 'none',
                   }}
                   autoFocus
                 />
@@ -1279,8 +1285,9 @@ function OnboardingContent() {
               <div style={{
                 padding: tokens.spacing[16],
                 borderRadius: tokens.radii.input,
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: 'none',
+                boxShadow: tokens.shadows.pillUnselected,
                 color: '#FCA5A5',
                 ...tokens.typography.label,
               }}>
@@ -1427,8 +1434,9 @@ function OnboardingContent() {
               <div style={{
                 padding: tokens.spacing[16],
                 borderRadius: tokens.radii.input,
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: 'none',
+                boxShadow: tokens.shadows.pillUnselected,
                 color: '#FCA5A5',
                 ...tokens.typography.label,
               }}>

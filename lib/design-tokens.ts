@@ -5,13 +5,24 @@
 
 export const tokens = {
   colors: {
+    // Backgrounds - Pure dark theme
     backgroundApp: '#0B0B0D',
-    pillUnselected: '#E5E5E7',
-    pillSelected: '#D8D8DB',
+    backgroundSecondary: '#0C0C0E',
+    // Surfaces - Eggshell white floating elements
+    surface1: '#F8F8F9',
+    surface2: '#F3F3F4',
+    // Legacy pill colors (for backward compatibility)
+    pillUnselected: '#F8F8F9',
+    pillSelected: '#F3F3F4',
+    // Text colors
     textOnPill: '#000000',
     textPrimaryOnDark: '#FFFFFF',
     textSecondary: 'rgba(255,255,255,0.60)',
     textMuted: 'rgba(0,0,0,0.45)',
+    // Chat bubble colors
+    chatBubbleOwn: '#F8F8F9',
+    chatBubbleOther: '#1A1A1A',
+    // Accent colors
     accentBlue: '#4A6CF6',
     accentGreen: '#38B57A',
     accentOrange: '#E69A3B',

@@ -12,8 +12,7 @@
     --text-primary: #0B0B0B;
     --text-secondary: #6A6A6A;
     --text-muted: #9E9E9E;
-    --border: rgba(0, 0, 0, 0.08);
-    --border-strong: rgba(0, 0, 0, 0.12);
+    /* Borders removed - using shadows only */
     --chip-bg: #FFFFFF;
     --chip-text: #0B0B0B;
     --chip-selected-bg: #3B82F6;
@@ -35,7 +34,7 @@
     --accent-foreground: 0 0% 100%;
     --destructive: 0 70% 35%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 92%;
+    /* Border removed */
     --input: 0 0% 92%;
     --ring: 0 0% 20%;
     --radius: 0.75rem; /* 12px */
@@ -44,11 +43,12 @@
 
 @layer base {
   * {
-    @apply border-border;
     scrollbar-width: none;
     -ms-overflow-style: none;
     -webkit-tap-highlight-color: transparent;
     -webkit-touch-callout: none;
+    border: none !important;
+    outline: none !important;
   }
   
   *::-webkit-scrollbar {

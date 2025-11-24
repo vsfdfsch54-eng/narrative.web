@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { cn } from "@/lib/utils"
 import { ChevronDown, Compass, Mic, Newspaper, CircleDot } from "lucide-react"
 import { AppShell } from "@/components/AppShell"
-import { Button } from "@/components/ui/button"
+import { AnimatedButton } from "@/components/ui/animated-button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
 import { tokens } from "@/lib/design-tokens"
 
@@ -322,32 +322,24 @@ export default function VibePage() {
   return (
     <AppShell>
       <div style={{ 
-        height: '100vh',
-        overflowY: 'hidden',
+        minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        paddingTop: tokens.spacing[20],
+        paddingTop: tokens.spacing[32],
         paddingBottom: '140px',
         position: 'relative',
+        overflowY: 'auto',
+        overflowX: 'hidden',
       }}>
-        <div style={{ textAlign: 'center', marginBottom: tokens.spacing[20] }}>
+        <div style={{ textAlign: 'center', marginBottom: tokens.spacing[28] }}>
           <h1 style={{ 
             ...tokens.typography.title,
             color: tokens.colors.textPrimaryOnDark,
             margin: 0,
-            marginBottom: tokens.spacing[8],
           }}>
             Select Your Vibe
           </h1>
-          <p style={{ 
-            ...tokens.typography.body,
-            color: tokens.colors.textSecondary,
-            margin: 0,
-            fontSize: '14px',
-          }}>
-            Choose your energy and topic to connect
-          </p>
         </div>
 
         <div style={{ 
@@ -378,12 +370,12 @@ export default function VibePage() {
           </div>
         </div>
 
-        <div style={{ width: '100%', marginBottom: tokens.spacing[20] }}>
+        <div style={{ width: '100%', marginBottom: tokens.spacing[28] }}>
           <h2 style={{ 
             ...tokens.typography.heading,
             color: tokens.colors.textPrimaryOnDark,
             margin: 0,
-            marginBottom: tokens.spacing[12],
+            marginBottom: tokens.spacing[20],
             textAlign: 'center',
             fontSize: '16px',
           }}>
@@ -573,55 +565,22 @@ export default function VibePage() {
           padding: '0 20px',
         }}>
           {canConnect ? (
-            <motion.button
-              animate={{
-                scale: 1,
-                backgroundColor: tokens.colors.pillUnselected,
-              }}
-              whileTap={{ scale: 0.98 }}
+            <AnimatedButton
               onClick={handleConnect}
               disabled={saving}
-              style={{
-                width: '48%',
-                height: '50px',
-                borderRadius: tokens.radii.button,
-                border: 'none',
-                boxShadow: tokens.shadows.pillUnselected,
-                fontSize: '15px',
-                fontWeight: 400,
-                letterSpacing: '0',
-                color: tokens.colors.textOnPill,
-                cursor: saving ? 'not-allowed' : 'pointer',
-                opacity: saving ? 0.5 : 1,
-                transition: 'transform 140ms ease, background 180ms ease',
-              }}
+              size="large"
+              fullWidth
             >
               {saving ? "Connecting..." : "Connect"}
-            </motion.button>
+            </AnimatedButton>
           ) : (
-            <motion.button
-              animate={{
-                scale: 1,
-                backgroundColor: tokens.colors.pillUnselected,
-              }}
-              whileTap={{ scale: 0.98 }}
+            <AnimatedButton
               onClick={handleSkip}
-              style={{
-                width: '48%',
-                height: '50px',
-                borderRadius: tokens.radii.button,
-                border: 'none',
-                boxShadow: tokens.shadows.pillUnselected,
-                fontSize: '15px',
-                fontWeight: 400,
-                letterSpacing: '0',
-                color: tokens.colors.textOnPill,
-                cursor: 'pointer',
-                transition: 'transform 140ms ease, background 180ms ease',
-              }}
+              size="large"
+              fullWidth
             >
               Skip and Chat
-            </motion.button>
+            </AnimatedButton>
           )}
         </div>
       </div>

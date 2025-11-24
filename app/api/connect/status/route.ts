@@ -39,12 +39,15 @@ export async function GET(request: NextRequest) {
       })
       
       // Also trigger after a short delay to ensure processing
-      setTimeout(() => {
+      // Note: setTimeout in serverless may not execute - using Promise-based delay instead
+      Promise.resolve().then(() => 
+        new Promise(resolve => setTimeout(resolve, 300))
+      ).then(() => {
         fetch(`${baseUrl}/api/matchmaking/process`, {
           method: 'GET',
           cache: 'no-store',
         }).catch(() => {})
-      }, 300)
+      }).catch(() => {})
     } catch (err) {
       // Ignore errors
     }

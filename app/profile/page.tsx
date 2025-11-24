@@ -270,7 +270,7 @@ export default function ProfilePage() {
                   maxWidth: '300px',
                   width: '100%',
                   outline: 'none',
-                  borderBottom: `2px solid ${tokens.colors.textSecondary}`,
+                  boxShadow: tokens.shadows.pillUnselected,
                 }}
                 autoFocus
                 onBlur={handleSaveName}
@@ -326,7 +326,7 @@ export default function ProfilePage() {
               ...tokens.typography.body,
               resize: 'none',
               outline: 'none',
-              borderBottom: `1px solid rgba(255,255,255,0.08)`,
+              boxShadow: tokens.shadows.pillUnselected,
             }}
             rows={3}
           />
@@ -339,7 +339,7 @@ export default function ProfilePage() {
             flexDirection: 'column', 
             gap: tokens.spacing[20],
             paddingTop: tokens.spacing[28],
-            borderTop: `1px solid rgba(255,255,255,0.08)`,
+            // No border - using spacing only
           }}>
             <h2 style={{ 
               ...tokens.typography.heading,

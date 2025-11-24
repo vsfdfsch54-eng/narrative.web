@@ -4,6 +4,8 @@ export const runtime = "nodejs"
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
 import { findBestMatch } from '@/lib/ai/matching-service'
+import { createRequestContext } from '@/lib/request-context'
+import { logWithContext } from '@/lib/logger'
 
 /**
  * AI MATCHMAKING PROCESSOR
@@ -12,23 +14,33 @@ import { findBestMatch } from '@/lib/ai/matching-service'
  * GET /api/matchmaking/process
  * Processes users in waiting_pool and finds best AI matches
  */
-async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>) {
+async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>, ctx?: ReturnType<typeof createRequestContext>) {
+  const context = ctx || createRequestContext()
+  
   try {
-    console.log('[AI Matchmaking] 🔍 Starting AI matching process...')
+    logWithContext('info', 'MATCH_PROCESS_START', context)
 
-    // Clean stale entries (older than 10 minutes - more lenient)
-    const tenMinutesAgo = new Date(Date.now() - 1000 * 60 * 10).toISOString()
-    
-    const { error: cleanupError } = await supabase
-      .from('waiting_pool')
-      .delete()
-      .lt('created_at', tenMinutesAgo)
-
-    if (cleanupError) {
-      console.error('[AI Matchmaking] Error cleaning stale entries:', cleanupError)
-    } else {
-      console.log('[AI Matchmaking] ✅ Cleaned stale waiting pool entries')
+    // Acquire advisory lock to prevent race conditions
+    const { error: lockError } = await supabase.rpc('acquire_matching_lock')
+    if (lockError) {
+      logWithContext('warn', 'MATCH_LOCK_ACQUIRE_FAILED', context, { error: lockError.message })
+      // Continue anyway - lock may not exist yet (graceful degradation)
     }
+
+    try {
+      // Clean stale entries (older than 10 minutes - more lenient)
+      const tenMinutesAgo = new Date(Date.now() - 1000 * 60 * 10).toISOString()
+      
+      const { error: cleanupError } = await supabase
+        .from('waiting_pool')
+        .delete()
+        .lt('created_at', tenMinutesAgo)
+
+      if (cleanupError) {
+        logWithContext('error', 'MATCH_CLEANUP_ERROR', context, { error: cleanupError.message })
+      } else {
+        logWithContext('info', 'MATCH_CLEANUP_SUCCESS', context)
+      }
 
     // Get all users in waiting pool
     const { data: waitingUsers, error: fetchError } = await supabase
@@ -127,7 +139,7 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>)
           .from('waiting_pool')
           .select('user_id')
           .eq('user_id', matchedUserId)
-          .single()
+          .maybeSingle()
 
         if (!matchedUserInPool) {
           console.log(`[AI Matchmaking] Matched user ${matchedUserId} no longer in waiting pool`)
@@ -195,22 +207,34 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>)
       }
     }
 
-    console.log(`[AI Matchmaking] ✅ Completed: ${matchedCount} match(es) created`)
-    return { matched: matchedCount, waiting: waitingUsers.length - (matchedCount * 2) }
+      logWithContext('info', 'MATCH_PROCESS_COMPLETE', context, { 
+        matched: matchedCount, 
+        waiting: waitingUsers.length - (matchedCount * 2) 
+      })
+      return { matched: matchedCount, waiting: waitingUsers.length - (matchedCount * 2) }
+    } finally {
+      // Always release the lock
+      try {
+        await supabase.rpc('release_matching_lock')
+      } catch {
+        // Ignore errors releasing lock
+      }
+    }
   } catch (error: any) {
-    console.error('[AI Matchmaking] Fatal error:', error)
+    logWithContext('error', 'MATCH_PROCESS_FATAL_ERROR', context, { error: error.message })
     return { matched: 0, error: error.message }
   }
 }
 
 // GET - Process AI matching
 export async function GET(request: NextRequest) {
+  const ctx = createRequestContext()
   try {
     const supabase = createServerClient()
-    const result = await runAIMatchmaking(supabase)
+    const result = await runAIMatchmaking(supabase, ctx)
     return NextResponse.json(result)
   } catch (error: any) {
-    console.error('[AI Matchmaking] Route error:', error)
+    logWithContext('error', 'MATCH_ROUTE_ERROR', ctx, { error: error.message })
     return NextResponse.json(
       { matched: 0, error: error.message || 'Internal server error' },
       { status: 500 }

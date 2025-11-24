@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createMatch, getNextMatch, updateMatchStatus, findOrCreateMatch } from '@/lib/supabase-helpers'
+import { createMatch, getNextMatch, updateMatchStatus } from '@/lib/supabase-helpers'
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,25 +49,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    let result
-    
-    if (action === 'find') {
-      // Find or create a new match
-      result = await findOrCreateMatch(userId)
-      
-      if (!result) {
-        // User is in queue, waiting for match
-        return NextResponse.json({ 
-          success: true, 
-          data: null, 
-          inQueue: true,
-          message: 'Waiting for another user...' 
-        })
-      }
-    } else {
-      // Get existing match
-      result = await getNextMatch(userId)
-    }
+    // Legacy 'find' action removed - use /api/connect instead
+    // This endpoint now only returns existing matches
+    const result = await getNextMatch(userId)
 
     return NextResponse.json({ success: true, data: result, inQueue: false })
   } catch (error) {

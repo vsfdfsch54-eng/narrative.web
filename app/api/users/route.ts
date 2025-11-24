@@ -3,7 +3,6 @@ export const runtime = "nodejs"
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
-import { autoMatchUser } from '@/lib/supabase-helpers'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)

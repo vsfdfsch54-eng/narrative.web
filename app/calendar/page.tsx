@@ -251,7 +251,15 @@ export default function CalendarPage() {
 
   return (
     <AppShell>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.layout.sectionSpacing, paddingTop: tokens.layout.topTitleSpacing, paddingBottom: '120px' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: tokens.layout.sectionSpacing, 
+        paddingTop: tokens.layout.topTitleSpacing, 
+        paddingBottom: '120px',
+        background: tokens.colors.backgroundApp,
+        minHeight: '100vh',
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.sectionSpacing }}>
           <h1 style={{ 
             ...tokens.typography.heading,
@@ -357,7 +365,7 @@ export default function CalendarPage() {
                   width: '43px',
                   height: '43px',
                   borderRadius: '50%',
-                  background: tokens.colors.pillUnselected,
+                  background: isSelected ? tokens.colors.surface2 : tokens.colors.surface1,
                   border: 'none',
                   color: tokens.colors.textOnPill,
                   display: 'flex',
@@ -367,8 +375,8 @@ export default function CalendarPage() {
                   position: 'relative',
                   overflow: 'visible',
                   cursor: 'pointer',
-                  outline: isSelected ? '2px solid #000000' : 'none',
-                  outlineOffset: '2px',
+                  boxShadow: isSelected ? tokens.shadows.pillSelected : tokens.shadows.pillUnselected,
+                  outline: 'none',
                 }}
               >
                 <span style={{ 
