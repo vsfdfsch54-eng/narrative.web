@@ -728,7 +728,8 @@ function OnboardingContent() {
                       handleNext()
                     }
                   }}
-                  disabled={loading || !!user}
+                  disabled={loading}
+                  readOnly={!!user && user.email_confirmed_at}
                   style={{
                     width: '100%',
                     height: '40px',
@@ -741,6 +742,8 @@ function OnboardingContent() {
                     fontSize: '13px',
                     fontWeight: 400,
                     letterSpacing: '0',
+                    cursor: (loading || (!!user && user.email_confirmed_at)) ? 'not-allowed' : 'text',
+                    opacity: (loading || (!!user && user.email_confirmed_at)) ? 0.7 : 1,
                   }}
                   autoFocus
                 />
