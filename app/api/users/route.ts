@@ -107,10 +107,10 @@ export async function GET(request: NextRequest) {
         if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
           userData = upsertResult[0]
           console.log('[Users API GET] ✅ User from upsert result:', { id: userData.id, email: userData.email })
-        } else if (upsertResult && !Array.isArray(upsertResult) && upsertResult) {
+        } else if (upsertResult && !Array.isArray(upsertResult) && typeof upsertResult === 'object') {
           // Handle case where upsert returns a single object instead of array
-          userData = upsertResult
-          console.log('[Users API GET] ✅ User from upsert result (single object):', { id: userData.id, email: userData.email })
+          userData = upsertResult as any
+          console.log('[Users API GET] ✅ User from upsert result (single object):', { id: (userData as any).id, email: (userData as any).email })
         } else {
           // If upsert didn't return data, try fetching with retry logic
           console.log('[Users API GET] Upsert returned no data, fetching user with retry...')
