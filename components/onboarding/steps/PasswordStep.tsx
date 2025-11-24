@@ -129,7 +129,7 @@ export function PasswordStep({ password, onPasswordChange, onSubmit, loading, er
         {(passwordError || error) && (
           <p style={{
             ...tokens.typography.label,
-            color: tokens.colors.error,
+            color: '#EF4444',
             margin: 0,
             textAlign: 'center',
           }}>

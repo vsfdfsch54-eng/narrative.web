@@ -169,7 +169,7 @@ export function PersonalityStep({
       {error && (
         <p style={{
           ...tokens.typography.label,
-          color: tokens.colors.error,
+          color: '#EF4444',
           margin: 0,
           textAlign: 'center',
         }}>
