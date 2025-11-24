@@ -15,21 +15,70 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabase = createServerClient()
-    const { data, error } = await supabase
+    let userData = null
+    
+    // First, check if user exists in database
+    const { data: existingUser, error: fetchError } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .maybeSingle()
 
-    if (error) {
-      return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      return NextResponse.json({ success: false, error: fetchError.message }, { status: 500 })
     }
 
-    if (!data) {
-      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
+    // If user doesn't exist, try to create from auth
+    if (!existingUser) {
+      console.log('[Users API GET] User not found in database, creating from auth...')
+      
+      try {
+        // Get user from auth
+        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+        
+        if (authError || !authUser?.user?.email) {
+          console.error('[Users API GET] User not found in auth:', authError)
+          return NextResponse.json({ 
+            success: false, 
+            error: 'User not found. Please complete signup first.' 
+          }, { status: 404 })
+        }
+
+        // Auto-create user record
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: userId,
+            email: authUser.user.email,
+            name: authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User',
+            interests: [],
+          })
+          .select('*')
+          .single()
+
+        if (createError || !newUser) {
+          console.error('[Users API GET] Failed to create user:', createError)
+          // If creation fails, still return 404 but with helpful message
+          return NextResponse.json({ 
+            success: false, 
+            error: 'User not found. Please complete onboarding to create your profile.' 
+          }, { status: 404 })
+        }
+
+        userData = newUser
+        console.log('[Users API GET] ✅ User auto-created from auth')
+      } catch (error: any) {
+        console.error('[Users API GET] Error creating user:', error)
+        return NextResponse.json({ 
+          success: false, 
+          error: 'User not found. Please complete onboarding first.' 
+        }, { status: 404 })
+      }
+    } else {
+      userData = existingUser
     }
 
-    return NextResponse.json({ success: true, data })
+    return NextResponse.json({ success: true, data: userData })
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }

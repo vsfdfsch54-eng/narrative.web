@@ -47,19 +47,66 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerClient()
 
-    // Verify user exists
-    const { data: user, error: userError } = await supabase
+    // Verify user exists, or create if they exist in auth
+    let user = null
+    const { data: existingUser, error: userCheckError } = await supabase
       .from('users')
       .select('id, email, name')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
 
-    if (userError || !user) {
-      console.error('[Personality Generate] User not found:', userId)
+    if (userCheckError && userCheckError.code !== 'PGRST116') {
+      console.error('[Personality Generate] Error checking user:', userCheckError)
       return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
+        { error: 'Database error', details: userCheckError.message },
+        { status: 500 }
       )
+    }
+
+    if (!existingUser) {
+      // User doesn't exist, try to create from auth
+      console.log('[Personality Generate] User not found in database, creating from auth...')
+      try {
+        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+        if (authError || !authUser?.user?.email) {
+          console.error('[Personality Generate] User not found in auth:', authError)
+          return NextResponse.json(
+            { error: 'User not found. Please complete onboarding first.' },
+            { status: 404 }
+          )
+        }
+
+        // Create user record
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: userId,
+            email: authUser.user.email,
+            name: authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User',
+            interests: [],
+          })
+          .select('id, email, name')
+          .single()
+
+        if (createError || !newUser) {
+          console.error('[Personality Generate] Failed to create user:', createError)
+          return NextResponse.json(
+            { error: 'Failed to create user record', details: createError?.message },
+            { status: 500 }
+          )
+        }
+
+        user = newUser
+        console.log('[Personality Generate] ✅ User auto-created from auth')
+      } catch (error: any) {
+        console.error('[Personality Generate] Error creating user:', error)
+        return NextResponse.json(
+          { error: 'Failed to create user record', details: error.message },
+          { status: 500 }
+        )
+      }
+    } else {
+      user = existingUser
     }
 
     console.log('[Personality Generate] Generating personality profile...')
