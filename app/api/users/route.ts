@@ -44,29 +44,61 @@ export async function GET(request: NextRequest) {
           }, { status: 404 })
         }
 
-        // Auto-create user record
+        // Auto-create user record using upsert to handle duplicate email/id
         const { data: newUser, error: createError } = await supabase
           .from('users')
-          .insert({
+          .upsert({
             id: userId,
             email: authUser.user.email,
             name: authUser.user.user_metadata?.name || authUser.user.email.split('@')[0] || 'User',
             interests: [],
+          }, {
+            onConflict: 'id', // Update if user with this id exists
+            ignoreDuplicates: false
           })
           .select('*')
           .single()
 
-        if (createError || !newUser) {
-          console.error('[Users API GET] Failed to create user:', createError)
-          // If creation fails, still return 404 but with helpful message
+        if (createError) {
+          // Handle duplicate email error gracefully
+          if (createError.message.includes('duplicate key') || 
+              createError.message.includes('unique constraint') || 
+              createError.code === '23505') {
+            // User already exists, fetch it instead
+            console.log('[Users API GET] User already exists, fetching...')
+            const { data: existingUser, error: fetchError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .single()
+            
+            if (fetchError || !existingUser) {
+              console.error('[Users API GET] Failed to fetch existing user:', fetchError)
+              return NextResponse.json({ 
+                success: false, 
+                error: 'User not found. Please complete onboarding to create your profile.' 
+              }, { status: 404 })
+            }
+            
+            userData = existingUser
+            console.log('[Users API GET] ✅ User already exists, using existing record')
+          } else {
+            console.error('[Users API GET] Failed to create user:', createError)
+            return NextResponse.json({ 
+              success: false, 
+              error: 'User not found. Please complete onboarding to create your profile.' 
+            }, { status: 404 })
+          }
+        } else if (newUser) {
+          userData = newUser
+          console.log('[Users API GET] ✅ User auto-created from auth')
+        } else {
+          console.error('[Users API GET] No user returned from upsert')
           return NextResponse.json({ 
             success: false, 
             error: 'User not found. Please complete onboarding to create your profile.' 
           }, { status: 404 })
         }
-
-        userData = newUser
-        console.log('[Users API GET] ✅ User auto-created from auth')
       } catch (error: any) {
         console.error('[Users API GET] Error creating user:', error)
         return NextResponse.json({ 
