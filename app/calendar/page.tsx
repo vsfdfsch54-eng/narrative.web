@@ -254,11 +254,12 @@ export default function CalendarPage() {
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
-        gap: tokens.layout.sectionSpacing, 
-        paddingTop: tokens.layout.topTitleSpacing, 
+        gap: tokens.spacing[16], 
+        paddingTop: tokens.spacing[20], 
         paddingBottom: '120px',
         background: tokens.colors.backgroundApp,
-        minHeight: '100vh',
+        maxHeight: 'calc(100vh - 200px)',
+        overflow: 'hidden',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: tokens.layout.sectionSpacing }}>
           <h1 style={{ 
@@ -318,8 +319,8 @@ export default function CalendarPage() {
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: tokens.spacing[16],
-          marginBottom: tokens.spacing[16],
+          gap: tokens.spacing[8],
+          marginBottom: tokens.spacing[8],
         }}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
             <span 
@@ -340,7 +341,8 @@ export default function CalendarPage() {
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: tokens.spacing[16],
+          gap: tokens.spacing[8],
+          rowGap: tokens.spacing[10],
         }}>
           {Array.from({ length: firstDay }).map((_, index) => (
             <div key={`empty-${index}`} />
@@ -362,8 +364,8 @@ export default function CalendarPage() {
                 whileTap={{ scale: 0.96 }}
                 onClick={() => handleDaySelect(day)}
                 style={{
-                  width: '43px',
-                  height: '43px',
+                  width: '38px',
+                  height: '38px',
                   borderRadius: '50%',
                   background: isSelected ? tokens.colors.surface2 : tokens.colors.surface1,
                   border: 'none',
@@ -377,6 +379,7 @@ export default function CalendarPage() {
                   cursor: 'pointer',
                   boxShadow: isSelected ? tokens.shadows.pillSelected : tokens.shadows.pillUnselected,
                   outline: 'none',
+                  fontSize: '13px',
                 }}
               >
                 <span style={{ 

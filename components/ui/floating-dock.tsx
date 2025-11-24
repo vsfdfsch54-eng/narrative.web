@@ -69,6 +69,7 @@ export function FloatingDock() {
           gap: tokens.spacing[20],
           backdropFilter: 'blur(10px)',
           WebkitBackdropFilter: 'blur(10px)',
+          border: `1px solid rgba(255, 255, 255, 0.1)`, // Subtle border for visibility
         }}
       >
         {navItems.map((item) => {
@@ -93,7 +94,7 @@ export function FloatingDock() {
                 height: '44px',
                 borderRadius: tokens.radii.circle,
                 background: item.isActive ? tokens.colors.surface2 : 'transparent',
-                color: item.isActive ? tokens.colors.textOnPill : tokens.colors.textSecondary,
+                color: item.isActive ? tokens.colors.textOnPill : tokens.colors.textPrimaryOnDark,
                 border: 'none',
                 display: 'flex',
                 alignItems: 'center',
@@ -101,12 +102,15 @@ export function FloatingDock() {
                 cursor: 'pointer',
                 outline: 'none',
                 boxShadow: item.isActive ? tokens.shadows.pillUnselected : 'none',
+                opacity: item.isActive ? 1 : 0.8,
               }}
             >
               <Icon
                 style={{
                   width: '20px',
                   height: '20px',
+                  color: item.isActive ? tokens.colors.textOnPill : tokens.colors.textPrimaryOnDark,
+                  strokeWidth: item.isActive ? 2.5 : 2,
                 }}
               />
             </motion.button>
