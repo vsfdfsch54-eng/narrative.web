@@ -123,7 +123,9 @@ function OnboardingContent() {
         hasChecked = true
         
         // Triple-check flags and step before proceeding (they might have changed)
-        if (isRedirecting || isCompletingStep || currentStep === 'personality') {
+        // Capture currentStep before async operations to avoid type narrowing issues
+        const step = currentStep as Step
+        if (isRedirecting || isCompletingStep || step === 'personality') {
           console.log('[Onboarding] Skipping status check - redirecting, completing step, or on personality step')
           return
         }
