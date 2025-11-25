@@ -63,7 +63,7 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
           margin: 0,
           textAlign: 'center',
         }}>
-          We&apos;ll use this to create your account
+          We&apos;ll use this to create your account (you&apos;ll set a password next)
         </p>
       </div>
 
@@ -104,7 +104,7 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
           disabled={!isValid || loading}
           style={{ width: '100%' }}
         >
-          {loading ? 'Creating account...' : 'Continue'}
+          {loading ? 'Saving...' : 'Continue'}
         </AnimatedButton>
 
         {onBack && (

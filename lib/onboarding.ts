@@ -12,8 +12,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = ['start', 'email', 'name', 'pa
 
 /**
  * Step order for progression (excludes 'start' and 'complete')
+ * Email and password are collected first, then account is created
  */
-export const STEP_ORDER: OnboardingStep[] = ['email', 'name', 'password', 'interests', 'personality']
+export const STEP_ORDER: OnboardingStep[] = ['email', 'password', 'name', 'interests', 'personality']
 
 /**
  * Get the next step in the onboarding flow

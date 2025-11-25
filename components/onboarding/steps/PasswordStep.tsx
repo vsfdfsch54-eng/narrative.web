@@ -40,15 +40,14 @@ export function PasswordStep({ password, onPasswordChange, onSubmit, loading, er
   const handleSubmit = async () => {
     if (!validatePassword()) return
     if (!localPassword.trim()) {
-      // Skip password if empty (optional)
-      await onSubmit("")
+      setPasswordError("Password is required")
       return
     }
     onPasswordChange(localPassword)
     await onSubmit(localPassword)
   }
 
-  const isValid = !localPassword || (localPassword.length >= 6 && (!confirmPassword || localPassword === confirmPassword))
+  const isValid = localPassword.length >= 6 && (!confirmPassword || localPassword === confirmPassword)
 
   return (
     <div style={{
@@ -64,7 +63,7 @@ export function PasswordStep({ password, onPasswordChange, onSubmit, loading, er
           marginBottom: tokens.spacing[8],
           textAlign: 'center',
         }}>
-          Create a password
+          Create your password
         </h1>
         <p style={{
           ...tokens.typography.body,
@@ -72,7 +71,7 @@ export function PasswordStep({ password, onPasswordChange, onSubmit, loading, er
           margin: 0,
           textAlign: 'center',
         }}>
-          Choose a secure password (optional)
+          Choose a secure password for your account
         </p>
       </div>
 
@@ -101,30 +100,28 @@ export function PasswordStep({ password, onPasswordChange, onSubmit, loading, er
           />
         </div>
 
-        {localPassword && (
-          <div>
-            <label style={{
-              ...tokens.typography.label,
-              color: tokens.colors.textSecondary,
-              textTransform: 'uppercase',
-              letterSpacing: '0.1em',
-              marginBottom: tokens.spacing[8],
-              display: 'block',
-            }}>
-              Confirm Password
-            </label>
-            <Input
-              type="password"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value)
-                validatePassword()
-              }}
-              disabled={loading}
-            />
-          </div>
-        )}
+        <div>
+          <label style={{
+            ...tokens.typography.label,
+            color: tokens.colors.textSecondary,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            marginBottom: tokens.spacing[8],
+            display: 'block',
+          }}>
+            Confirm Password
+          </label>
+          <Input
+            type="password"
+            placeholder="••••••••"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value)
+              validatePassword()
+            }}
+            disabled={loading}
+          />
+        </div>
 
         {(passwordError || error) && (
           <p style={{
@@ -154,7 +151,7 @@ export function PasswordStep({ password, onPasswordChange, onSubmit, loading, er
           disabled={loading}
           style={{ flex: 1 }}
         >
-          {loading ? 'Saving...' : localPassword ? 'Continue' : 'Skip'}
+          {loading ? 'Creating account...' : 'Continue'}
         </AnimatedButton>
       </div>
     </div>

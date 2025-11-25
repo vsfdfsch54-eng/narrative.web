@@ -193,26 +193,92 @@ export function OnboardingController() {
     }
   }, [user])
 
-  // Email step handler - wait for DB confirmation
+  // Email step handler - just collect email, don't create account yet
   const handleEmailSubmit = useCallback(async (email: string) => {
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
-      // Generate temporary password
-      const tempPassword = crypto.randomUUID() + crypto.randomUUID().replace(/-/g, '')
+      // Just store email and advance to password step
+      // Account will be created after password is entered
+      setState(prev => ({
+        ...prev,
+        email,
+        step: 'password',
+        loading: false,
+      }))
       
-      // Sign up user
-      const result = await signUp(email, tempPassword)
+      // Update URL to reflect current step
+      router.replace(`/onboarding?step=password`)
+    } catch (error: any) {
+      setState(prev => ({ ...prev, loading: false, error: error.message || 'Failed to save email' }))
+    }
+  }, [])
+
+  // Name step handler
+  const handleNameSubmit = useCallback(async (name: string) => {
+    setState(prev => ({ ...prev, loading: true, error: null }))
+    
+    try {
+      // Save name and update step
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          name,
+          onboarding_step: 'interests',
+        }),
+      })
+
+      const data = await response.json()
+      if (!data.success) {
+        setState(prev => ({ ...prev, loading: false, error: 'Failed to save name. Please try again.' }))
+        return
+      }
+
+      // Advance immediately after DB confirms
+      setState(prev => ({
+        ...prev,
+        name,
+        step: 'interests',
+        loading: false,
+      }))
+      
+      // Update URL to reflect current step
+      router.replace(`/onboarding?step=interests`)
+    } catch (error) {
+      setState(prev => ({ ...prev, loading: false, error: 'Failed to save name. Please try again.' }))
+    }
+  }, [user])
+
+  // Password step handler - create account with email + password
+  const handlePasswordSubmit = useCallback(async (password: string) => {
+    setState(prev => ({ ...prev, loading: true, error: null }))
+    
+    if (!password || password.length < 6) {
+      setState(prev => ({ 
+        ...prev, 
+        loading: false, 
+        error: 'Password must be at least 6 characters' 
+      }))
+      return
+    }
+    
+    try {
+      // Now create account with email + password
+      const result = await signUp(state.email, password)
       
       if (result.error) {
-        if (result.error.includes('password') || result.error.includes('Password') || result.error.includes('invalid')) {
+        if (result.error.includes('already registered') || 
+            result.error.includes('already exists') ||
+            result.error.includes('User already registered')) {
           setState(prev => ({ 
             ...prev, 
             loading: false, 
-            error: 'An account with this email may already exist. Please sign in instead.' 
+            error: 'An account with this email already exists. Please sign in instead.' 
           }))
         } else {
-          setState(prev => ({ ...prev, loading: false, error: result.error || 'Failed to sign up' }))
+          setState(prev => ({ ...prev, loading: false, error: result.error || 'Failed to create account' }))
         }
         return
       }
@@ -224,16 +290,16 @@ export function OnboardingController() {
         const updated = await updateOnboardingStepInDB('name')
         
         if (updated) {
-        // Only advance after DB confirms update
-        setState(prev => ({
-          ...prev,
-          email,
-          step: 'name',
-          loading: false,
-        }))
-        
-        // Update URL to reflect current step
-        router.replace(`/onboarding?step=name`)
+          // Only advance after DB confirms update
+          setState(prev => ({
+            ...prev,
+            password,
+            step: 'name',
+            loading: false,
+          }))
+          
+          // Update URL to reflect current step
+          router.replace(`/onboarding?step=name`)
         } else {
           setState(prev => ({ 
             ...prev, 
@@ -250,88 +316,9 @@ export function OnboardingController() {
         }))
       }
     } catch (error: any) {
-      setState(prev => ({ ...prev, loading: false, error: error.message || 'Failed to sign up' }))
+      setState(prev => ({ ...prev, loading: false, error: error.message || 'Failed to create account' }))
     }
-  }, [signUp, updateOnboardingStepInDB])
-
-  // Name step handler
-  const handleNameSubmit = useCallback(async (name: string) => {
-    setState(prev => ({ ...prev, loading: true, error: null }))
-    
-    try {
-      // Save name and update step
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          name,
-          onboarding_step: 'password',
-        }),
-      })
-
-      const data = await response.json()
-      if (!data.success) {
-        setState(prev => ({ ...prev, loading: false, error: 'Failed to save name. Please try again.' }))
-        return
-      }
-
-      // Advance immediately after DB confirms
-      setState(prev => ({
-        ...prev,
-        name,
-        step: 'password',
-        loading: false,
-      }))
-      
-      // Update URL to reflect current step
-      router.replace(`/onboarding?step=password`)
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false, error: 'Failed to save name. Please try again.' }))
-    }
-  }, [user])
-
-  // Password step handler
-  const handlePasswordSubmit = useCallback(async (password: string) => {
-    setState(prev => ({ ...prev, loading: true, error: null }))
-    
-    try {
-      // Update password in background (non-blocking)
-      if (password && user) {
-        supabase.auth.updateUser({ password }).catch(() => {
-          // Continue anyway
-        })
-      }
-
-      // Update step in DB
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          onboarding_step: 'interests',
-        }),
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        // Advance immediately after DB confirms
-        setState(prev => ({
-          ...prev,
-          password,
-          step: 'interests',
-          loading: false,
-        }))
-        
-        // Update URL to reflect current step
-        router.replace(`/onboarding?step=interests`)
-      } else {
-        setState(prev => ({ ...prev, loading: false, error: 'Failed to save progress. Please try again.' }))
-      }
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false, error: 'Failed to save progress. Please try again.' }))
-    }
-  }, [user])
+  }, [state.email, signUp, updateOnboardingStepInDB])
 
   // Interests step handler
   const handleInterestsSubmit = useCallback(async (interests: string[]) => {
