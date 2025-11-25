@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { tokens } from "@/lib/design-tokens"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
 
 interface EmailStepProps {
   email: string
@@ -18,6 +20,8 @@ interface EmailStepProps {
 
 export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBack }: EmailStepProps) {
   const [localEmail, setLocalEmail] = useState(email)
+  const router = useRouter()
+  const { signOut } = useAuth()
 
   const handleSubmit = async () => {
     if (!localEmail.trim() || !localEmail.includes('@')) {
@@ -25,6 +29,14 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
     }
     onEmailChange(localEmail)
     await onSubmit(localEmail)
+  }
+
+  const handleBackToWelcome = async (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    // Sign out first to prevent redirect bounce
+    await signOut()
+    // Then navigate to welcome page
+    router.push('/')
   }
 
   const isValid = localEmail.trim() !== '' && localEmail.includes('@') && localEmail.includes('.')
@@ -106,18 +118,20 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
           </AnimatedButton>
         )}
 
-        <Link
+        <a
           href="/"
+          onClick={handleBackToWelcome}
           style={{
             textAlign: 'center',
             ...tokens.typography.label,
             color: tokens.colors.textSecondary,
             marginTop: tokens.spacing[8],
             textDecoration: 'underline',
+            cursor: 'pointer',
           }}
         >
           ← Back to Welcome
-        </Link>
+        </a>
 
         <p style={{
           textAlign: 'center',
