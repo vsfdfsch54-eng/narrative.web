@@ -124,7 +124,7 @@ export function OnboardingController() {
             ? initialStep
             : dbStep
 
-        // Set step from database or URL
+        // Set step from database or URL - clear any previous errors
         setState(prev => ({
           ...prev,
           step: stepToUse,
@@ -133,9 +133,10 @@ export function OnboardingController() {
           interests: dbUser.interests || [],
           dbStepLoaded: true,
           loading: false,
+          error: null, // Clear any previous errors
         }))
       } catch (error) {
-        // On error, use URL step or default to email
+        // On error, use URL step or default to email - clear any previous errors
         const urlStep = searchParams.get('step')
         const stepToUse = urlStep && isValidOnboardingStep(urlStep) ? urlStep : 'email'
         setState(prev => ({
@@ -144,6 +145,7 @@ export function OnboardingController() {
           email: user.email || '',
           dbStepLoaded: true,
           loading: false,
+          error: null, // Clear any previous errors
         }))
       }
     }
@@ -153,7 +155,10 @@ export function OnboardingController() {
 
   // Helper to update onboarding step in database (non-blocking)
   const updateOnboardingStepInDB = useCallback(async (step: OnboardingStep): Promise<boolean> => {
-    if (!user?.id) return false
+    if (!user?.id) {
+      console.error('[Onboarding] Cannot update step: user ID is missing')
+      return false
+    }
 
     try {
       const response = await fetch('/api/users', {
@@ -165,9 +170,25 @@ export function OnboardingController() {
         }),
       })
 
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('[Onboarding] Failed to update step:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText
+        })
+        return false
+      }
+
       const data = await response.json()
-      return data.success === true
-    } catch (error) {
+      if (!data.success) {
+        console.error('[Onboarding] API returned error:', data.error || 'Unknown error')
+        return false
+      }
+      
+      return true
+    } catch (error: any) {
+      console.error('[Onboarding] Exception updating step:', error.message || error)
       return false
     }
   }, [user])
