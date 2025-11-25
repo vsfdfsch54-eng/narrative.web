@@ -1,19 +1,15 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
+import type { CSSProperties } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { HeroPill } from "@/components/ui/hero-pill"
 import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS, SPORTS_TOPICS } from "@/lib/constants"
 import { Vibe, Topic } from "@/lib/types"
 import { useAuth } from "@/hooks/use-auth"
-import { cn } from "@/lib/utils"
-import { VibeIcons } from "@/components/ui/vibe-icons"
-import { TopicIcons } from "@/components/ui/topic-icons"
-import { ChevronDown, Compass, Mic, Newspaper, CircleDot } from "lucide-react"
+import { VibeColors } from "@/components/ui/vibe-icons"
+import { Compass, Mic, Newspaper, CircleDot } from "lucide-react"
 import { AppShell } from "@/components/AppShell"
 import { AnimatedButton } from "@/components/ui/animated-button"
-import { SegmentedControl } from "@/components/ui/segmented-control"
 import { tokens } from "@/lib/design-tokens"
 import { normalizeOnboardingStep } from "@/lib/onboarding"
 
@@ -26,14 +22,110 @@ const TOPIC_CATEGORIES = [
 
 const TIME_LIMITS = [5, 15, 30]
 
+// Clean, minimal page container
+const pageContainerStyle: CSSProperties = {
+  width: '100%',
+  maxWidth: tokens.layout.maxWidth,
+  margin: '0 auto',
+  padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
+  paddingBottom: '160px', // Space for navbar
+  display: 'flex',
+  flexDirection: 'column',
+  gap: tokens.spacing[32],
+}
+
+// Simple section header
+const sectionHeaderStyle: CSSProperties = {
+  marginBottom: tokens.spacing[20],
+}
+
+const sectionTitleStyle: CSSProperties = {
+  fontSize: '20px',
+  fontWeight: 600,
+  letterSpacing: '-0.01em',
+  color: tokens.colors.textPrimaryOnDark,
+  margin: '0 0 8px 0',
+}
+
+const sectionDescriptionStyle: CSSProperties = {
+  fontSize: '14px',
+  lineHeight: 1.5,
+  color: tokens.colors.textSecondary,
+  margin: 0,
+}
+
+// Clean option button style
+const createOptionStyle = (selected: boolean): CSSProperties => ({
+  width: '100%',
+  padding: '16px 20px',
+  borderRadius: '16px',
+  border: selected ? '2px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
+  background: selected ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+  color: tokens.colors.textPrimaryOnDark,
+  textAlign: 'left',
+  cursor: 'pointer',
+  transition: 'all 0.15s ease',
+  display: 'flex',
+  alignItems: 'center',
+  gap: tokens.spacing[12],
+})
+
+// Simple grid for options
+const optionsGridStyle: CSSProperties = {
+  display: 'grid',
+  gap: tokens.spacing[12],
+  gridTemplateColumns: '1fr',
+}
+
+// Category chip style
+const createCategoryChipStyle = (selected: boolean): CSSProperties => ({
+  padding: '10px 18px',
+  borderRadius: '20px',
+  border: selected ? '1.5px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.15)',
+  background: selected ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
+  color: tokens.colors.textPrimaryOnDark,
+  fontSize: '14px',
+  fontWeight: selected ? 500 : 400,
+  cursor: 'pointer',
+  transition: 'all 0.15s ease',
+  display: 'flex',
+  alignItems: 'center',
+  gap: tokens.spacing[8],
+})
+
+const categoryRowStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: tokens.spacing[10],
+  marginBottom: tokens.spacing[20],
+}
+
+// Simple icon container
+const iconStyle: CSSProperties = {
+  width: '40px',
+  height: '40px',
+  borderRadius: '12px',
+  background: 'rgba(255,255,255,0.06)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '20px',
+  flexShrink: 0,
+}
+
+const smallIconStyle: CSSProperties = {
+  ...iconStyle,
+  width: '36px',
+  height: '36px',
+  fontSize: '18px',
+}
+
 export default function VibePage() {
   const [selectedVibe, setSelectedVibe] = useState<Vibe | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string>("general")
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
   const [selectedTimeLimit, setSelectedTimeLimit] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
-  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const [topics, setTopics] = useState<{ [key: string]: Topic[] }>({
     news: NEWS_TOPICS,
     'pop-culture': POP_CULTURE_TOPICS,
@@ -90,7 +182,7 @@ export default function VibePage() {
     }
     
     checkOnboarding()
-  }, [user, loading]) // Removed router from dependencies
+  }, [user, loading])
   
   const getUserId = () => {
     if (user?.id) return user.id
@@ -99,7 +191,7 @@ export default function VibePage() {
 
   const currentCategory = TOPIC_CATEGORIES.find((cat) => cat.id === selectedCategory)
   const currentTopics = topics[selectedCategory] || currentCategory?.topics || []
-  const canConnect = selectedVibe || selectedTopic
+  const canConnect = Boolean(selectedVibe || selectedTopic)
 
   useEffect(() => {
     const loadTopics = async () => {
@@ -132,24 +224,6 @@ export default function VibePage() {
     loadTopics()
   }, [selectedCategory])
   
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsCategoryDropdownOpen(false)
-      }
-    }
-
-    if (isCategoryDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside as EventListener)
-      document.addEventListener("touchstart", handleClickOutside as EventListener)
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside as EventListener)
-      document.removeEventListener("touchstart", handleClickOutside as EventListener)
-    }
-  }, [isCategoryDropdownOpen])
-
   const handleConnect = async () => {
     const userId = getUserId()
     
@@ -204,7 +278,7 @@ export default function VibePage() {
         
         // If user not found, redirect to onboarding
         if (response.status === 404 && errorText.includes('User not found')) {
-          router.push('/onboarding')
+          router.push('/onboarding?step=email')
           return
         }
         
@@ -221,7 +295,7 @@ export default function VibePage() {
         router.push("/chat")
       } else if (data.needsOnboarding) {
         // User needs to complete onboarding
-        router.push("/onboarding")
+        router.push("/onboarding?step=email")
       } else {
         // Unexpected response, still navigate to chat
         router.push("/chat")
@@ -263,7 +337,7 @@ export default function VibePage() {
       if (!response.ok) {
         const errorText = await response.text()
         if (response.status === 404 && errorText.includes('User not found')) {
-          router.push('/onboarding')
+          router.push('/onboarding?step=email')
           return
         }
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -297,281 +371,168 @@ export default function VibePage() {
 
   return (
     <AppShell>
-      <div style={{ 
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        paddingTop: tokens.spacing[32],
-        paddingBottom: '140px',
-        position: 'relative',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: tokens.spacing[28] }}>
+      <div style={pageContainerStyle}>
+        {/* Header */}
+        <div>
           <h1 style={{ 
-            ...tokens.typography.title,
+            fontSize: '28px', 
+            fontWeight: 600, 
+            letterSpacing: '-0.02em',
             color: tokens.colors.textPrimaryOnDark,
-            margin: 0,
+            margin: '0 0 12px 0',
           }}>
-            Select Your Vibe
+            Find your conversation
           </h1>
+          <p style={sectionDescriptionStyle}>
+            Choose your vibe, pick a topic, or set a timer. We&apos;ll match you with someone who&apos;s on the same wavelength.
+          </p>
         </div>
 
-        <div style={{ 
-          width: '100%',
-          marginBottom: tokens.spacing[20],
-        }}>
-          <div style={{ 
-            display: 'flex',
-            overflowX: 'auto',
-            whiteSpace: 'nowrap',
-            gap: '12px',
-            padding: '0 20px',
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-          }}>
+        {/* Step 1: Vibe Selection */}
+        <div>
+          <div style={sectionHeaderStyle}>
+            <h2 style={sectionTitleStyle}>Choose your vibe</h2>
+            <p style={sectionDescriptionStyle}>
+              Set the tone for your conversation
+            </p>
+          </div>
+
+          <div style={optionsGridStyle}>
             {VIBES.map((vibe) => {
               const isSelected = selectedVibe?.id === vibe.id
-              const icon = VibeIcons[vibe.id] || null
               return (
-                <div key={vibe.id} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedVibe(isSelected ? null : vibe)}
-                    className="group"
-                  >
-                    <HeroPill
-                      icon={icon}
-                      text={vibe.label}
-                      className={cn(
-                        "mb-0",
-                        isSelected && "[&>p]:bg-accent [&>p]:text-accent-foreground"
-                      )}
-                      animate={false}
-                    />
-                  </button>
-                </div>
+                <button
+                  key={vibe.id}
+                  type="button"
+                  onClick={() => setSelectedVibe(isSelected ? null : vibe)}
+                  style={createOptionStyle(isSelected)}
+                >
+                  <span style={iconStyle}>{vibe.icon}</span>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 500 }}>{vibe.label}</span>
+                    <span style={{ fontSize: '13px', color: tokens.colors.textSecondary }}>
+                      {vibe.description}
+                    </span>
+                  </div>
+                </button>
               )
             })}
           </div>
         </div>
 
-        <div style={{ width: '100%', marginBottom: tokens.spacing[28] }}>
-          <h2 style={{ 
-            ...tokens.typography.heading,
-            color: tokens.colors.textPrimaryOnDark,
-            margin: 0,
-            marginBottom: tokens.spacing[20],
-            textAlign: 'center',
-            fontSize: '16px',
-          }}>
-            Choose a Topic
-          </h2>
-          
-          <div className="relative mb-4" ref={dropdownRef} style={{ marginBottom: tokens.spacing[12] }}>
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-              style={{
-                width: '100%',
-                padding: '8px 14px',
-                borderRadius: tokens.radii.input,
-                background: tokens.colors.pillUnselected,
-                border: 'none',
-                color: tokens.colors.textOnPill,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: tokens.shadows.pillUnselected,
-                fontSize: '15px',
-                fontWeight: 400,
-                letterSpacing: '0',
-                cursor: 'pointer',
-              }}
-            >
-              <div className="flex items-center gap-2">
-                {(() => {
-                  const CategoryIcon = TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.icon || Compass
-                  return <CategoryIcon className="w-4 h-4" style={{ color: tokens.colors.accentBlue }} />
-                })()}
-                <span>{TOPIC_CATEGORIES.find(c => c.id === selectedCategory)?.label || "General"}</span>
-              </div>
-              <ChevronDown 
-                className={cn(
-                  "w-4 h-4 transition-transform duration-150 ease-in-out",
-                  isCategoryDropdownOpen && "rotate-180"
-                )}
-                style={{ color: tokens.colors.textMuted }}
-              />
-            </motion.button>
-            
-            {isCategoryDropdownOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.15 }}
-                className="absolute top-full left-0 right-0 mt-2 z-50"
-              >
-                <div style={{ 
-                  background: tokens.colors.pillUnselected, 
-                  border: 'none', 
-                  borderRadius: tokens.radii.pill, 
-                  overflow: 'hidden',
-                  boxShadow: tokens.shadows.pillUnselected,
-                }}>
-                  {TOPIC_CATEGORIES.map((category) => {
-                    const CategoryIcon = category.icon
-                    return (
-                      <button
-                        key={category.id}
-                        onClick={() => {
-                          setSelectedCategory(category.id)
-                          setIsCategoryDropdownOpen(false)
-                        }}
-                        style={{
-                          width: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '10px',
-                          padding: '8px 14px',
-                          background: selectedCategory === category.id ? tokens.colors.pillSelected : 'transparent',
-                          border: 'none',
-                          color: tokens.colors.textOnPill,
-                          fontSize: '15px',
-                          fontWeight: 400,
-                          letterSpacing: '0',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (selectedCategory !== category.id) {
-                            e.currentTarget.style.background = tokens.colors.pillSelected
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (selectedCategory !== category.id) {
-                            e.currentTarget.style.background = 'transparent'
-                          }
-                        }}
-                      >
-                        <CategoryIcon className="w-4 h-4" style={{ color: tokens.colors.accentBlue }} />
-                        {category.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </motion.div>
+        {/* Step 2: Topic Selection */}
+        <div>
+          <div style={sectionHeaderStyle}>
+            <h2 style={sectionTitleStyle}>Pick a topic</h2>
+            <p style={sectionDescriptionStyle}>
+              What do you want to talk about?
+            </p>
+          </div>
+
+          <div style={categoryRowStyle}>
+            {TOPIC_CATEGORIES.map((category) => {
+              const Icon = category.icon
+              const selected = selectedCategory === category.id
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(category.id)}
+                  style={createCategoryChipStyle(selected)}
+                >
+                  <Icon size={16} />
+                  {category.label}
+                </button>
+              )
+            })}
+          </div>
+
+          <div style={optionsGridStyle}>
+            {loadingTopics && (
+              <p style={{ color: tokens.colors.textSecondary, margin: 0, textAlign: 'center', padding: tokens.spacing[20] }}>
+                Loading topics…
+              </p>
             )}
-          </div>
-          
-          <div style={{ 
-            display: 'flex',
-            overflowX: 'auto',
-            whiteSpace: 'nowrap',
-            gap: '12px',
-            padding: '0 20px',
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-          }}>
-            {currentTopics.map((topic) => {
+            {!loadingTopics && currentTopics.length === 0 && (
+              <p style={{ color: tokens.colors.textSecondary, margin: 0, textAlign: 'center', padding: tokens.spacing[20] }}>
+                No topics available for this category yet.
+              </p>
+            )}
+            {!loadingTopics && currentTopics.map((topic) => {
               const isSelected = selectedTopic?.id === topic.id
-              const icon = TopicIcons[topic.id] || null
               return (
-                <div key={topic.id} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTopic(isSelected ? null : topic)}
-                    className="group"
-                  >
-                    <HeroPill
-                      icon={icon}
-                      text={topic.label}
-                      className={cn(
-                        "mb-0",
-                        isSelected && "[&>p]:bg-accent [&>p]:text-accent-foreground"
-                      )}
-                      animate={false}
-                    />
-                  </button>
-                </div>
+                <button
+                  key={topic.id}
+                  type="button"
+                  onClick={() => setSelectedTopic(isSelected ? null : topic)}
+                  style={createOptionStyle(isSelected)}
+                >
+                  <span style={smallIconStyle}>{topic.icon || '💬'}</span>
+                  <div style={{ flex: 1 }}>
+                    <span style={{ fontSize: '16px', fontWeight: 500 }}>{topic.label}</span>
+                  </div>
+                </button>
               )
             })}
           </div>
         </div>
 
-        <div style={{ 
-          width: '100%',
-          marginBottom: tokens.spacing[20],
-        }}>
-          <div style={{ 
-            display: 'flex',
-            overflowX: 'auto',
-            whiteSpace: 'nowrap',
-            gap: '12px',
-            padding: '0 20px',
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-            justifyContent: 'center',
-          }}>
+        {/* Step 3: Timer Selection */}
+        <div>
+          <div style={sectionHeaderStyle}>
+            <h2 style={sectionTitleStyle}>Set a timer</h2>
+            <p style={sectionDescriptionStyle}>
+              How long do you want to chat? You can always extend later.
+            </p>
+          </div>
+
+          <div style={optionsGridStyle}>
             {TIME_LIMITS.map((limit) => {
               const isSelected = selectedTimeLimit === limit
               return (
-                <div key={limit} style={{ flexShrink: 0, scrollSnapAlign: 'start' }}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTimeLimit(isSelected ? null : limit)}
-                    className="group"
-                  >
-                    <HeroPill
-                      text={`${limit} min`}
-                      className={cn(
-                        "mb-0",
-                        isSelected && "[&>p]:bg-accent [&>p]:text-accent-foreground"
-                      )}
-                      animate={false}
-                    />
-                  </button>
-                </div>
+                <button
+                  key={limit}
+                  type="button"
+                  onClick={() => setSelectedTimeLimit(isSelected ? null : limit)}
+                  style={createOptionStyle(isSelected)}
+                >
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <span style={{ fontSize: '16px', fontWeight: 500 }}>{limit} minutes</span>
+                  </div>
+                </button>
               )
             })}
+            <button
+              type="button"
+              onClick={() => setSelectedTimeLimit(null)}
+              style={createOptionStyle(selectedTimeLimit === null)}
+            >
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <span style={{ fontSize: '16px', fontWeight: 500 }}>I&apos;m flexible</span>
+              </div>
+            </button>
           </div>
         </div>
 
-        <div style={{ 
-          marginTop: '20px',
-          marginBottom: '100px',
-          display: 'flex',
-          gap: '14px',
-          justifyContent: 'center',
-          width: '100%',
-          padding: '0 20px',
-        }}>
-          {canConnect ? (
-            <AnimatedButton
-              onClick={handleConnect}
-              disabled={saving}
-              size="large"
-              fullWidth
-            >
-              {saving ? "Connecting..." : "Connect"}
-            </AnimatedButton>
-          ) : (
-            <AnimatedButton
-              onClick={handleSkip}
-              size="large"
-              fullWidth
-            >
-              Skip and Chat
-            </AnimatedButton>
-          )}
+        {/* CTA Buttons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12], marginTop: tokens.spacing[8] }}>
+          <AnimatedButton
+            onClick={handleConnect}
+            disabled={!canConnect || saving}
+            size="large"
+            fullWidth
+          >
+            {saving ? "Finding someone..." : canConnect ? "Connect now" : "Select a vibe or topic to connect"}
+          </AnimatedButton>
+          <AnimatedButton
+            variant="ghost"
+            onClick={handleSkip}
+            size="large"
+            fullWidth
+            disabled={saving}
+          >
+            Skip for now
+          </AnimatedButton>
         </div>
       </div>
     </AppShell>
