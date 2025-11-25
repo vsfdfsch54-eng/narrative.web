@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
+import { AnimatedButton } from "@/components/ui/animated-button"
 import { useAuth } from "@/hooks/use-auth"
 import { tokens } from "@/lib/design-tokens"
 import Link from "next/link"
-import { getOnboardingRouteForStep, normalizeOnboardingStep } from "@/lib/onboarding"
+import { normalizeOnboardingStep } from "@/lib/onboarding"
+import { AppShell } from "@/components/AppShell"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -66,7 +65,7 @@ export default function LoginPage() {
         router.push("/verify")
       }
     }
-  }, [user, authLoading]) // Removed router from dependencies
+  }, [user, authLoading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,114 +129,168 @@ export default function LoginPage() {
   // Show loading while checking auth state
   if (authLoading) {
     return (
-      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
-        <p className="text-[#f1f1f3]/60">Loading...</p>
-      </div>
+      <AppShell>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+        </div>
+      </AppShell>
     )
   }
 
   // If user is authenticated, show loading while redirecting
   if (user && user.email_confirmed_at) {
     return (
-      <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
-        <p className="text-[#f1f1f3]/60">Loading...</p>
-      </div>
+      <AppShell>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+        </div>
+      </AppShell>
     )
   }
 
+  const isValid = email.trim() !== '' && email.includes('@') && email.includes('.') && password.length > 0
+
   return (
-    <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0">
-      <div className="phone-frame-container">
-        <div className="phone-frame">
-          <div className="phone-screen">
-            <div className="phone-content p-4 gap-4 overflow-hidden flex flex-col">
-              <div className="text-center space-y-1.5 flex-shrink-0">
-                <h1 className="text-2xl font-black tracking-tight text-[#f1f1f3]">
-                  Welcome back
-                </h1>
-                <p className="text-xs text-[#f1f1f3]/60">
-                  Sign in to continue the conversation
-                </p>
+    <AppShell>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 'calc(100vh - 140px)',
+        padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
+        paddingBottom: '160px',
+      }}>
+        <div style={{
+          width: '100%',
+          maxWidth: tokens.layout.maxWidth,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: tokens.spacing[20],
+        }}>
+          <div>
+            <h1 style={{
+              ...tokens.typography.title,
+              color: tokens.colors.textPrimaryOnDark,
+              margin: 0,
+              marginBottom: tokens.spacing[8],
+              textAlign: 'center',
+            }}>
+              Welcome back
+            </h1>
+            <p style={{
+              ...tokens.typography.body,
+              color: tokens.colors.textSecondary,
+              margin: 0,
+              textAlign: 'center',
+            }}>
+              Sign in to continue the conversation
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+            {error && (
+              <div style={{
+                padding: tokens.spacing[12],
+                borderRadius: tokens.radii.input,
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#FCA5A5',
+                fontSize: '13px',
+                textAlign: 'center',
+              }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+              <div>
+                <label style={{
+                  ...tokens.typography.label,
+                  color: tokens.colors.textSecondary,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  marginBottom: tokens.spacing[8],
+                  display: 'block',
+                }}>
+                  Email
+                </label>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                  autoFocus
+                />
               </div>
 
-              <Card variant="surface1" className="p-4 flex-shrink-0">
-                <CardContent className="p-0">
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && (
-                      <div style={{
-                        padding: tokens.spacing[12],
-                        borderRadius: tokens.radii.input,
-                        background: 'rgba(239, 68, 68, 0.15)',
-                        border: 'none',
-                        boxShadow: tokens.shadows.pillUnselected,
-                        color: '#FCA5A5',
-                        fontSize: '12px',
-                      }}>
-                        {error}
-                      </div>
-                    )}
-
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <label className="text-[11px] uppercase tracking-[0.2em] text-[#f1f1f3]/60">
-                          Email
-                        </label>
-                        <Input
-                          type="email"
-                          placeholder="you@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                          disabled={loading}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[11px] uppercase tracking-[0.2em] text-[#f1f1f3]/60">
-                          Password
-                        </label>
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Button
-                        type="submit"
-                        variant="primary"
-                        className="w-full h-12 text-sm font-semibold tracking-wide bg-[#f1f1f3] text-[#0a0a0c] border border-[#f1f1f3]/70 shadow-[0_12px_35px_rgba(0,0,0,0.45)]"
-                        size="lg"
-                        disabled={loading}
-                      >
-                        {loading ? "Signing in..." : "Sign In"}
-                      </Button>
-
-                      <div className="text-center text-[11px] text-[#f1f1f3]/60 space-y-2">
-                        <div>
-                          Don&apos;t have an account?{" "}
-                          <Link href="/onboarding" className="text-[#f1f1f3] underline-offset-4 hover:underline">
-                            Create account
-                          </Link>
-                        </div>
-                        <div>
-                          <Link href="/auth/reset-password" className="text-[#f1f1f3]/60 underline-offset-4 hover:underline">
-                            Forgot password?
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
+              <div>
+                <label style={{
+                  ...tokens.typography.label,
+                  color: tokens.colors.textSecondary,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  marginBottom: tokens.spacing[8],
+                  display: 'block',
+                }}>
+                  Password
+                </label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
             </div>
-          </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+              <AnimatedButton
+                type="submit"
+                disabled={!isValid || loading}
+                style={{ width: '100%' }}
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </AnimatedButton>
+
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: tokens.spacing[8],
+                textAlign: 'center',
+              }}>
+                <p style={{
+                  ...tokens.typography.label,
+                  color: tokens.colors.textSecondary,
+                  margin: 0,
+                }}>
+                  Don&apos;t have an account?{" "}
+                  <Link href="/onboarding" style={{ 
+                    color: tokens.colors.textPrimaryOnDark, 
+                    textDecoration: 'underline' 
+                  }}>
+                    Create account
+                  </Link>
+                </p>
+                <Link 
+                  href="/auth/reset-password" 
+                  style={{ 
+                    ...tokens.typography.label,
+                    color: tokens.colors.textSecondary,
+                    textDecoration: 'underline',
+                  }}
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
-    </div>
+    </AppShell>
   )
 }

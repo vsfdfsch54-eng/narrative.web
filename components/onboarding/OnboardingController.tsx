@@ -482,8 +482,9 @@ export function OnboardingController() {
     )
   }
 
-  // For steps other than email, require user
-  if (!user && state.step !== 'email') {
+  // For steps other than email and password, require user
+  // (Account is created during password step, so password doesn't need user yet)
+  if (!user && state.step !== 'email' && state.step !== 'password') {
     return renderShell(
       <div
         style={{
