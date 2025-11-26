@@ -128,7 +128,7 @@ export function OnboardingController() {
     setEmail(email)
     // Navigate immediately - non-blocking
     navigateToStep('password')
-  }
+    }
 
   // Password step handler - create account here
   const handlePasswordSubmit = async (password: string): Promise<void> => {
@@ -137,8 +137,8 @@ export function OnboardingController() {
     // Create account immediately (this is where account creation happens)
     if (!user && state.email) {
       try {
-        const result = await signUp(state.email, password)
-        if (result.error) {
+      const result = await signUp(state.email, password)
+      if (result.error) {
           if (result.error.includes('already registered') || result.error.includes('already exists')) {
             // User exists - they should login, but continue anyway
             console.warn('[OnboardingController] User already exists, continuing anyway')
@@ -196,7 +196,7 @@ export function OnboardingController() {
     // Save in background (non-blocking)
     saveProgress('confirmation').catch((error) => {
       console.error('[OnboardingController] Save progress error:', error)
-    })
+      })
   }
 
   // Confirmation step handler - complete onboarding
@@ -243,9 +243,10 @@ export function OnboardingController() {
     )
   }
 
-  // For steps other than email, password, and name, require user
-  // (password step creates account, name step may not have user hydrated yet)
-  if (!user && state.step !== 'email' && state.step !== 'password' && state.step !== 'name') {
+  // For steps other than email, password, name, and questions, require user
+  // (password step creates account, user may not be hydrated until later steps)
+  // Only interests and confirmation require user (for saving to database)
+  if (!user && state.step !== 'email' && state.step !== 'password' && state.step !== 'name' && state.step !== 'questions') {
     return (
       <AppShell title="Onboarding" showDock={false}>
       <div
