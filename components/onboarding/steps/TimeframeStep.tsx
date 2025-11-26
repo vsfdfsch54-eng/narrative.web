@@ -29,8 +29,11 @@ export function TimeframeStep({ selectedTimeframe, onTimeframeChange, onSubmit, 
     onTimeframeChange(newTimeframe)
   }
 
-  const handleSubmit = async () => {
-    await onSubmit(localTimeframe)
+  const handleSubmit = () => {
+    // Call onSubmit but don't await - navigation happens immediately
+    onSubmit(localTimeframe).catch((error) => {
+      console.error('[TimeframeStep] Submit error:', error)
+    })
   }
 
   return (

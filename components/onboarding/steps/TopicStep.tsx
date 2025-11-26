@@ -40,9 +40,12 @@ export function TopicStep({ selectedTopic, onTopicChange, onSubmit, loading, err
     onTopicChange(newTopic)
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!localTopic) return
-    await onSubmit(localTopic)
+    // Call onSubmit but don't await - navigation happens immediately
+    onSubmit(localTopic).catch((error) => {
+      console.error('[TopicStep] Submit error:', error)
+    })
   }
 
   return (

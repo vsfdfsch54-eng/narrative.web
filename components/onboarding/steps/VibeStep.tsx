@@ -29,9 +29,12 @@ export function VibeStep({ selectedVibe, onVibeChange, onSubmit, loading, error,
     onVibeChange(newVibe)
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!localVibe) return
-    await onSubmit(localVibe)
+    // Call onSubmit but don't await - navigation happens immediately
+    onSubmit(localVibe).catch((error) => {
+      console.error('[VibeStep] Submit error:', error)
+    })
   }
 
   return (

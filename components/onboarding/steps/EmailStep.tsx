@@ -32,25 +32,29 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
     setIsSubmitting(true)
     onEmailChange(localEmail)
     
-    // Call onSubmit - navigation should happen immediately
-    onSubmit(localEmail)
-      .then(() => {
-        // Navigation initiated - use window.location as fallback if router is slow
-        setTimeout(() => {
-          if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
-            const params = new URLSearchParams(window.location.search)
-            if (params.get('step') !== 'name') {
-              // Router didn't navigate, force it
-              window.location.href = '/onboarding?step=name'
-            }
-          }
-          setIsSubmitting(false)
-        }, 500)
-      })
-      .catch((error) => {
-        console.error('[EmailStep] Submit error:', error)
-        setIsSubmitting(false)
-      })
+    // Call onSubmit - navigation should happen immediately (non-blocking)
+    onSubmit(localEmail).catch((error) => {
+      console.error('[EmailStep] Submit error:', error)
+      setIsSubmitting(false)
+    })
+    
+    // Safety timeout: ALWAYS reset isSubmitting after 500ms
+    // This prevents UI freeze even if navigation is delayed
+    setTimeout(() => {
+      setIsSubmitting(false)
+    }, 500)
+    
+    // Fallback navigation check after 100ms
+    // If router.replace() didn't work, use window.location.href
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
+        const params = new URLSearchParams(window.location.search)
+        if (params.get('step') !== 'name') {
+          // Router didn't navigate, force it with window.location
+          window.location.href = '/onboarding?step=name'
+        }
+      }
+    }, 100)
   }
 
   const handleBackToWelcome = async (e: React.MouseEvent<HTMLAnchorElement>) => {

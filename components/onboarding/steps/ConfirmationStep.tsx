@@ -23,6 +23,13 @@ export function ConfirmationStep({ name, vibe, topic, timeframe, onSubmit, loadi
   const selectedVibe = VIBES.find(v => v.id === vibe)
   const selectedTopic = ALL_TOPICS.find(t => t.id === topic)
 
+  const handleSubmit = () => {
+    // Call onSubmit but don't await - navigation happens immediately
+    onSubmit().catch((error) => {
+      console.error('[ConfirmationStep] Submit error:', error)
+    })
+  }
+
   return (
     <div style={{
       display: 'flex',
@@ -258,7 +265,7 @@ export function ConfirmationStep({ name, vibe, topic, timeframe, onSubmit, loadi
           </AnimatedButton>
         )}
         <AnimatedButton
-          onClick={onSubmit}
+          onClick={handleSubmit}
           disabled={loading}
           style={{ flex: 1 }}
         >

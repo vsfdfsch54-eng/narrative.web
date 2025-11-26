@@ -89,82 +89,61 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }
   }, [user, authLoading])
 
-  // Save progress to database
+  // Save progress to database - ALWAYS non-blocking
+  // This function NEVER blocks navigation - saves happen in background
   const saveProgress = useCallback(async (step?: OnboardingStep): Promise<boolean> => {
-    // If no user ID, we can't save yet - but don't block navigation
-    // The user will be created when they authenticate
+    // Update local state immediately (synchronous)
+    if (step) {
+      setState(prev => ({ ...prev, step, error: null }))
+    }
+
+    // If no user ID, queue save for later - don't block
     if (!user?.id) {
       console.warn('[OnboardingContext] Cannot save: user ID is missing, will retry after auth')
-      // Still update local state
-      if (step) {
-        setState(prev => ({ ...prev, step, error: null }))
-      }
-      return true // Return true to allow navigation, save will happen later
+      return true // Always return true to allow navigation
     }
 
-    setState(prev => ({ ...prev, loading: true, error: null }))
+    // Save in background - don't set loading state (non-blocking)
+    // Use setTimeout to ensure this doesn't block the current execution
+    setTimeout(async () => {
+      try {
+        const stepToSave = step || state.step
+        const isComplete = stepToSave === 'complete'
 
-    try {
-      const stepToSave = step || state.step
-      const isComplete = stepToSave === 'complete'
+        const response = await fetch('/api/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            name: state.name || undefined,
+            vibe: state.vibe || undefined,
+            topic: state.topic || undefined,
+            timeframe: state.timeframe || undefined,
+            onboarding_step: stepToSave,
+            onboarding_completed: isComplete,
+            email: state.email || undefined,
+          }),
+        })
 
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          name: state.name || undefined,
-          vibe: state.vibe || undefined,
-          topic: state.topic || undefined,
-          timeframe: state.timeframe || undefined,
-          onboarding_step: stepToSave,
-          onboarding_completed: isComplete,
-          email: state.email || undefined,
-        }),
-      })
+        const data = await response.json()
 
-      const data = await response.json()
-
-      if (!data.success) {
-        // Log error but don't block navigation for non-critical errors
-        const errorMsg = data.error || 'Failed to save progress'
-        console.error('[OnboardingContext] Save failed:', errorMsg)
-        
-        // Only show error for critical failures, not for missing user (which is expected)
-        if (!errorMsg.includes('not found') && !errorMsg.includes('missing')) {
-          setState(prev => ({ ...prev, loading: false, error: errorMsg }))
-          return false
+        if (!data.success) {
+          // Log error but don't show to user (non-critical)
+          const errorMsg = data.error || 'Failed to save progress'
+          console.error('[OnboardingContext] Background save failed:', errorMsg)
+          // Don't update state.error - this is background, user shouldn't see it
+        } else {
+          // Success - silently update state
+          setState(prev => ({ ...prev, error: null }))
         }
-        
-        // For missing user errors, just update state and continue
-        setState(prev => ({ ...prev, loading: false, error: null }))
-        if (step) {
-          setState(prev => ({ ...prev, step, error: null }))
-        }
-        return true // Allow navigation even if save failed
+      } catch (error: any) {
+        // Silently fail - this is background save
+        console.error('[OnboardingContext] Background save error:', error)
       }
+    }, 0)
 
-      // Update local state if step was provided
-      if (step) {
-        setState(prev => ({ ...prev, step, loading: false, error: null }))
-      } else {
-        setState(prev => ({ ...prev, loading: false, error: null }))
-      }
-
-      return true
-    } catch (error: any) {
-      console.error('[OnboardingContext] Save error:', error)
-      // Don't block navigation on network errors - allow user to continue
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: null, // Don't show error to user, just log it
-      }))
-      if (step) {
-        setState(prev => ({ ...prev, step, error: null }))
-      }
-      return true // Allow navigation even on error
-    }
+    // Always return true immediately - never block navigation
+    return true
   }, [user, state.step, state.name, state.vibe, state.topic, state.timeframe, state.email])
 
   // Initialize on mount
@@ -189,9 +168,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
             const currentStepIndex = STEP_ORDER.indexOf(state.step)
             const dbStepIndex = STEP_ORDER.indexOf(dbStep)
             
-            // If current step is ahead of saved step, save it
+            // If current step is ahead of saved step, save it in background
             if (currentStepIndex > dbStepIndex) {
-              await saveProgress(state.step)
+              // Save in background - don't await
+              saveProgress(state.step).catch((error) => {
+                console.log('[OnboardingContext] Background save retry failed:', error)
+              })
             }
           }
         } catch (error) {
@@ -204,7 +186,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       const timeout = setTimeout(retrySave, 1000)
       return () => clearTimeout(timeout)
     }
-  }, [user?.id, state.initialized, state.step, state.loading])
+  }, [user?.id, state.initialized, state.step, state.loading, saveProgress])
 
   const setStep = useCallback((step: OnboardingStep) => {
     setState(prev => ({ ...prev, step, error: null }))

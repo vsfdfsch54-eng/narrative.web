@@ -41,7 +41,7 @@ export function OnboardingController() {
   const hasInitializedRef = useRef(false)
   const hasRedirectedRef = useRef(false)
 
-  // Redirect if onboarding is complete
+  // Redirect if onboarding is complete - ALWAYS redirect to /chat
   useEffect(() => {
     if (authLoading || !user || !state.initialized) return
     if (hasRedirectedRef.current) return
@@ -50,6 +50,12 @@ export function OnboardingController() {
     if (state.step === 'complete') {
       hasRedirectedRef.current = true
       router.replace('/chat')
+      // Fallback navigation
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
+          window.location.href = '/chat'
+        }
+      }, 100)
       return
     }
 
@@ -64,6 +70,12 @@ export function OnboardingController() {
           if (dbStep === 'complete' || data.data.onboarding_completed) {
             hasRedirectedRef.current = true
             router.replace('/chat')
+            // Fallback navigation
+            setTimeout(() => {
+              if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
+                window.location.href = '/chat'
+              }
+            }, 100)
           }
         }
       } catch (error) {
@@ -91,99 +103,115 @@ export function OnboardingController() {
     hasInitializedRef.current = true
   }, [authLoading, state.initialized, state.step, searchParams, setStep])
 
-  // Email step handler - just advance to name step
-  // Account creation will happen when name is submitted (if needed)
-  const handleEmailSubmit = async (email: string): Promise<void> => {
-    setEmail(email)
-    // Update step in context first
-    setStep('name')
-    // Then navigate - use both router and window.location for reliability
-    router.replace(`/onboarding?step=name`)
-    // Fallback: if router doesn't work, use window.location
+  // Helper function for reliable navigation with fallback
+  const navigateToStep = (step: OnboardingStep) => {
+    const route = `/onboarding?step=${step}`
+    // Update step in context FIRST (synchronous)
+    setStep(step)
+    // Then navigate - router.replace() is non-blocking
+    router.replace(route)
+    // Fallback: if router doesn't navigate within 100ms, use window.location
     setTimeout(() => {
       if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
         const params = new URLSearchParams(window.location.search)
-        if (params.get('step') !== 'name') {
-          window.location.href = '/onboarding?step=name'
+        if (params.get('step') !== step) {
+          window.location.href = route
         }
       }
     }, 100)
   }
 
-  // Name step handler - create account here if needed
+  // Email step handler - just advance to name step
+  // Account creation will happen when name is submitted (if needed)
+  const handleEmailSubmit = async (email: string): Promise<void> => {
+    setEmail(email)
+    // Navigate immediately - non-blocking
+    navigateToStep('name')
+  }
+
+  // Name step handler - create account here if needed (background, non-blocking)
   const handleNameSubmit = async (name: string) => {
     setName(name)
     
-    // If user doesn't exist, create account now
+    // Navigate immediately - don't wait for account creation
+    navigateToStep('vibe')
+    
+    // Create account in background (non-blocking)
     if (!user && state.email) {
-      try {
-        // Generate a secure random password
-        const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12) + 'A1!'
-        
-        const result = await signUp(state.email, tempPassword)
-        
-        if (result.error) {
-          if (result.error.includes('already registered') || result.error.includes('already exists')) {
-            // User exists - they should login, but continue anyway
-            console.warn('[OnboardingController] User already exists, continuing anyway')
-          } else {
-            // Other error - log but continue
+      // Run account creation in background - don't await
+      signUp(state.email, Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12) + 'A1!')
+        .then((result) => {
+          if (result.error && !result.error.includes('already registered') && !result.error.includes('already exists')) {
             console.error('[OnboardingController] Signup error:', result.error)
           }
-        }
-        
-        // Wait briefly for auth to propagate
-        await new Promise(resolve => setTimeout(resolve, 500))
-      } catch (error) {
-        console.error('[OnboardingController] Account creation error:', error)
-        // Continue anyway - user might already exist
-      }
+        })
+        .catch((error) => {
+          console.error('[OnboardingController] Account creation error:', error)
+        })
     }
     
-    // Save name and advance (non-blocking - will retry if user not ready)
-    const saved = await saveProgress('vibe')
-    // Always advance - saveProgress now allows navigation even if save fails
-    router.replace(`/onboarding?step=vibe`)
+    // Save progress in background (non-blocking)
+    saveProgress('vibe').catch((error) => {
+      console.error('[OnboardingController] Save progress error:', error)
+    })
   }
 
-  // Vibe step handler
+  // Vibe step handler - instant navigation, background save
   const handleVibeSubmit = async (vibe: string) => {
     setVibe(vibe)
-    await saveProgress('topic')
-    // Always advance - saveProgress now allows navigation even if save fails
-    router.replace(`/onboarding?step=topic`)
+    // Navigate immediately
+    navigateToStep('topic')
+    // Save in background (non-blocking)
+    saveProgress('topic').catch((error) => {
+      console.error('[OnboardingController] Save progress error:', error)
+    })
   }
 
-  // Topic step handler
+  // Topic step handler - instant navigation, background save
   const handleTopicSubmit = async (topic: string) => {
     setTopic(topic)
-    await saveProgress('timeframe')
-    // Always advance
-    router.replace(`/onboarding?step=timeframe`)
+    // Navigate immediately
+    navigateToStep('timeframe')
+    // Save in background (non-blocking)
+    saveProgress('timeframe').catch((error) => {
+      console.error('[OnboardingController] Save progress error:', error)
+    })
   }
 
-  // Timeframe step handler
+  // Timeframe step handler - instant navigation, background save
   const handleTimeframeSubmit = async (timeframe: number | null) => {
     setTimeframe(timeframe)
-    await saveProgress('confirmation')
-    // Always advance
-    router.replace(`/onboarding?step=confirmation`)
+    // Navigate immediately
+    navigateToStep('confirmation')
+    // Save in background (non-blocking)
+    saveProgress('confirmation').catch((error) => {
+      console.error('[OnboardingController] Save progress error:', error)
+    })
   }
 
   // Confirmation step handler - complete onboarding
   const handleConfirmationSubmit = async () => {
-    await saveProgress('complete')
-    // Always advance to chat
+    // Save completion in background
+    saveProgress('complete').catch((error) => {
+      console.error('[OnboardingController] Save progress error:', error)
+    })
+    
+    // Navigate to chat immediately
     router.replace('/chat')
+    // Fallback navigation
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
+        window.location.href = '/chat'
+      }
+    }, 100)
   }
 
-  // Go back handler
+  // Go back handler - with fallback navigation
   const goBack = async () => {
     const currentIndex = STEP_ORDER.indexOf(state.step)
     if (currentIndex > 0) {
       const prevStep = STEP_ORDER[currentIndex - 1]
-      setStep(prevStep)
-      router.replace(`/onboarding?step=${prevStep}`)
+      navigateToStep(prevStep)
     }
   }
 
@@ -320,8 +348,8 @@ export function OnboardingController() {
                   name={state.name}
                   onNameChange={setName}
                   onSubmit={handleNameSubmit}
-                  loading={state.loading}
-                  error={state.error}
+                  loading={false}
+                  error={null}
                   onBack={canGoBack ? goBack : undefined}
                 />
               )}
@@ -331,8 +359,8 @@ export function OnboardingController() {
                   selectedVibe={state.vibe}
                   onVibeChange={setVibe}
                   onSubmit={handleVibeSubmit}
-                  loading={state.loading}
-                  error={state.error}
+                  loading={false}
+                  error={null}
                   onBack={canGoBack ? goBack : undefined}
                 />
               )}
@@ -342,8 +370,8 @@ export function OnboardingController() {
                   selectedTopic={state.topic}
                   onTopicChange={setTopic}
                   onSubmit={handleTopicSubmit}
-                  loading={state.loading}
-                  error={state.error}
+                  loading={false}
+                  error={null}
                   onBack={canGoBack ? goBack : undefined}
                 />
               )}
@@ -353,8 +381,8 @@ export function OnboardingController() {
                   selectedTimeframe={state.timeframe}
                   onTimeframeChange={setTimeframe}
                   onSubmit={handleTimeframeSubmit}
-                  loading={state.loading}
-                  error={state.error}
+                  loading={false}
+                  error={null}
                   onBack={canGoBack ? goBack : undefined}
                 />
               )}
@@ -366,8 +394,8 @@ export function OnboardingController() {
                   topic={state.topic}
                   timeframe={state.timeframe}
                   onSubmit={handleConfirmationSubmit}
-                  loading={state.loading}
-                  error={state.error}
+                  loading={false}
+                  error={null}
                   onBack={canGoBack ? goBack : undefined}
                 />
               )}

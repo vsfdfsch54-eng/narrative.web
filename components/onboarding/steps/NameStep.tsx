@@ -19,10 +19,13 @@ interface NameStepProps {
 export function NameStep({ name, onNameChange, onSubmit, loading, error, onBack }: NameStepProps) {
   const [localName, setLocalName] = useState(name)
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!localName.trim()) return
     onNameChange(localName)
-    await onSubmit(localName)
+    // Call onSubmit but don't await - navigation happens immediately
+    onSubmit(localName).catch((error) => {
+      console.error('[NameStep] Submit error:', error)
+    })
   }
 
   return (
