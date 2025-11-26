@@ -16,8 +16,8 @@ export default function NavBar() {
     { label: "Profile", icon: User, href: "/profile" },
   ];
 
-  // Only show on specific pages: chat, calendar, and profile
-  const allowedPaths = ['/conversations', '/chat', '/calendar', '/profile']
+  // Only show on specific pages: vibe, chat, calendar, and profile
+  const allowedPaths = ['/vibe', '/conversations', '/chat', '/calendar', '/profile']
   const isAllowedPath = pathname && (
     allowedPaths.some(path => pathname === path || pathname.startsWith(path + '/'))
   )

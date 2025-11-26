@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { OnboardingProvider } from "@/context/OnboardingContext"
 import { OnboardingController } from "@/components/onboarding/OnboardingController"
-import { normalizeOnboardingStep } from "@/lib/onboarding"
-import { getAppUserRecord } from "@/lib/user-helpers"
+import { checkOnboardingStatus } from "@/lib/user-helpers"
 
 function OnboardingContent() {
   return (
@@ -42,15 +41,26 @@ export default function OnboardingPage() {
       
       try {
         // Add retry logic with delays to handle save propagation
-        let record = null
-        let completed = false
+        let result = null
+        let apiError = false
         
         for (let attempt = 0; attempt < 3; attempt++) {
-          record = await getAppUserRecord(user.id)
-          const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-          completed = step === 'complete' || record?.onboarding_completed === true
+          result = await checkOnboardingStatus(user.id)
           
-          if (completed) {
+          // If API error, retry once more
+          if (result.apiError) {
+            console.warn(`[OnboardingPage] ⚠️ API error (attempt ${attempt + 1}/3)`)
+            if (attempt < 2) {
+              await new Promise(resolve => setTimeout(resolve, 400))
+              continue
+            }
+            // Last attempt failed - mark as API error
+            apiError = true
+            break
+          }
+          
+          // If completed, redirect to vibe
+          if (result.completed) {
             console.log('[OnboardingPage] Onboarding is complete, redirecting to /vibe')
             router.replace("/vibe")
             return
@@ -62,8 +72,15 @@ export default function OnboardingPage() {
           }
         }
 
+        // If API error, allow access (don't redirect - prevents loops)
+        if (apiError || (result && result.apiError)) {
+          console.warn('[OnboardingPage] ⚠️ API error - allowing access to prevent redirect loop')
+          setCheckingOnboarding(false)
+          return
+        }
+
         // Still incomplete after retries → allow access (OnboardingController will handle step routing)
-        console.log('[OnboardingPage] Onboarding incomplete, allowing access. Step:', normalizeOnboardingStep(record?.onboarding_step ?? null))
+        console.log('[OnboardingPage] Onboarding incomplete, allowing access. Step:', result?.step || 'email')
         setCheckingOnboarding(false)
       } catch (error) {
         console.error('[OnboardingPage] Error checking onboarding:', error)

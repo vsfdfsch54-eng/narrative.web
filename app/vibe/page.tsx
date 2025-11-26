@@ -11,8 +11,7 @@ import { Compass, Mic, Newspaper, CircleDot } from "lucide-react"
 import { AppShell } from "@/components/AppShell"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { tokens } from "@/lib/design-tokens"
-import { normalizeOnboardingStep } from "@/lib/onboarding"
-import { getAppUserRecord } from "@/lib/user-helpers"
+import { checkOnboardingStatus } from "@/lib/user-helpers"
 
 const TOPIC_CATEGORIES = [
   { id: "general", label: "General", topics: GENERAL_TOPICS, icon: Compass },
@@ -157,16 +156,26 @@ export default function VibePage() {
       try {
         // Retry logic: sometimes the save from onboarding completion hasn't propagated yet
         // Check up to 3 times with small delays
-        let record = null
-        let completed = false
+        let result = null
+        let apiError = false
         
         for (let attempt = 0; attempt < 3; attempt++) {
-          record = await getAppUserRecord(user.id)
-          const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-          completed = step === 'complete' || record?.onboarding_completed === true
+          result = await checkOnboardingStatus(user.id)
           
-          if (completed) {
-            // Onboarding is complete → allow access
+          // If API error, retry once more
+          if (result.apiError) {
+            console.warn(`[VibePage] ⚠️ API error (attempt ${attempt + 1}/3)`)
+            if (attempt < 2) {
+              await new Promise(resolve => setTimeout(resolve, 300))
+              continue
+            }
+            // Last attempt failed - mark as API error
+            apiError = true
+            break
+          }
+          
+          // If completed, we're done
+          if (result.completed) {
             break
           }
           
@@ -176,18 +185,26 @@ export default function VibePage() {
           }
         }
 
-        if (!completed) {
-          // Still incomplete after retries → redirect to onboarding
-          const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-          router.replace(`/onboarding?step=${step}`)
+        // NEVER redirect on API errors - causes redirect loops
+        if (apiError || (result && result.apiError)) {
+          console.warn('[VibePage] ⚠️ API error - allowing access to prevent redirect loop')
+          // Allow access - don't redirect on API errors
+          return
+        }
+
+        // Only redirect if we have a valid result and onboarding is actually incomplete
+        if (result && !result.completed) {
+          console.log('[VibePage] Onboarding incomplete, redirecting to:', result.step)
+          router.replace(`/onboarding?step=${result.step}`)
           return
         }
 
         // Complete onboarding → allow access to vibe page
-        // No redirect needed, just render the page
       } catch (error) {
         console.error('[VibePage] Error checking onboarding:', error)
-        router.replace("/onboarding?step=email")
+        // Don't redirect on errors - allow user to stay on page
+        // Redirecting on errors causes loops when API is having issues
+        console.warn('[VibePage] ⚠️ Error in checkOnboarding - allowing access to prevent redirect loop')
       }
     }
 

@@ -7,8 +7,7 @@ import { Save, Users, Edit2, Bell, Check, X, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
-import { normalizeOnboardingStep } from "@/lib/onboarding"
-import { getAppUserRecord } from "@/lib/user-helpers"
+import { checkOnboardingStatus } from "@/lib/user-helpers"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -45,9 +44,14 @@ export default function ProfilePage() {
       if (!user) return
       
       try {
-        const record = await getAppUserRecord(user.id)
-        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-        const completed = step === 'complete' || record?.onboarding_completed === true
+        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+
+        // NEVER redirect on API errors - causes redirect loops
+        if (apiError) {
+          console.warn('[ProfilePage] ⚠️ API error checking onboarding - allowing access to prevent loop')
+          // Allow access - don't redirect on API errors
+          return
+        }
 
         if (!completed) {
           // Incomplete onboarding → redirect to onboarding
@@ -59,7 +63,8 @@ export default function ProfilePage() {
         // No redirect needed, just render the page
       } catch (error) {
         console.error('[ProfilePage] Error checking onboarding:', error)
-        router.replace("/onboarding?step=email")
+        // On error, allow access - don't redirect to prevent loops
+        console.warn('[ProfilePage] ⚠️ Error in checkOnboarding - allowing access to prevent loop')
       }
     }
 

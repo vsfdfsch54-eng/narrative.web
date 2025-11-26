@@ -6,8 +6,7 @@ import { motion } from "framer-motion"
 import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
-import { normalizeOnboardingStep } from "@/lib/onboarding"
-import { getAppUserRecord } from "@/lib/user-helpers"
+import { checkOnboardingStatus } from "@/lib/user-helpers"
 
 export default function ConversationsPage() {
   const router = useRouter()
@@ -39,9 +38,14 @@ export default function ConversationsPage() {
       if (!user) return
       
       try {
-        const record = await getAppUserRecord(user.id)
-        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-        const completed = step === 'complete' || record?.onboarding_completed === true
+        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+
+        // NEVER redirect on API errors - causes redirect loops
+        if (apiError) {
+          console.warn('[ConversationsPage] ⚠️ API error checking onboarding - allowing access to prevent loop')
+          // Allow access - don't redirect on API errors
+          return
+        }
 
         if (!completed) {
           // Incomplete onboarding → redirect to onboarding
@@ -53,7 +57,8 @@ export default function ConversationsPage() {
         // No redirect needed, just render the page
       } catch (error) {
         console.error('[ConversationsPage] Error checking onboarding:', error)
-        router.replace("/onboarding?step=email")
+        // On error, allow access - don't redirect to prevent loops
+        console.warn('[ConversationsPage] ⚠️ Error in checkOnboarding - allowing access to prevent loop')
       }
     }
 

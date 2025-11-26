@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { normalizeOnboardingStep } from "@/lib/onboarding"
-import { getAppUserRecord } from "@/lib/user-helpers"
+import { checkOnboardingStatus } from "@/lib/user-helpers"
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
@@ -32,9 +31,14 @@ export default function Home() {
       setCheckingOnboarding(true)
       
       try {
-        const record = await getAppUserRecord(user.id)
-        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-        const completed = step === 'complete' || record?.onboarding_completed === true
+        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+
+        // NEVER redirect on API errors - causes redirect loops
+        if (apiError) {
+          console.warn('[Home] ⚠️ API error checking onboarding - redirecting to /vibe to prevent loop')
+          router.replace("/vibe")
+          return
+        }
 
         if (!completed) {
           // Incomplete onboarding → redirect to onboarding
@@ -46,8 +50,8 @@ export default function Home() {
         router.replace("/vibe")
       } catch (error) {
         console.error('[Home] Error checking onboarding:', error)
-        // On error, redirect to onboarding to be safe
-        router.replace("/onboarding?step=email")
+        // On error, redirect to /vibe (not onboarding) to prevent loops
+        router.replace("/vibe")
       } finally {
         setCheckingOnboarding(false)
       }

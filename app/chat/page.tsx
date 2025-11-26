@@ -10,8 +10,7 @@ import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabaseClient"
-import { normalizeOnboardingStep } from "@/lib/onboarding"
-import { getAppUserRecord } from "@/lib/user-helpers"
+import { checkOnboardingStatus } from "@/lib/user-helpers"
 
 export default function ChatPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -38,9 +37,14 @@ export default function ChatPage() {
       if (!user) return
       
       try {
-        const record = await getAppUserRecord(user.id)
-        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-        const completed = step === 'complete' || record?.onboarding_completed === true
+        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+
+        // NEVER redirect on API errors - causes redirect loops
+        if (apiError) {
+          console.warn('[ChatPage] ⚠️ API error checking onboarding - allowing access to prevent loop')
+          // Allow access - don't redirect on API errors
+          return
+        }
 
         if (!completed) {
           // Incomplete onboarding → redirect to onboarding
@@ -52,7 +56,8 @@ export default function ChatPage() {
         // No redirect needed, just render the page
       } catch (error) {
         console.error('[ChatPage] Error checking onboarding:', error)
-        router.replace("/onboarding?step=email")
+        // On error, allow access - don't redirect to prevent loops
+        console.warn('[ChatPage] ⚠️ Error in checkOnboarding - allowing access to prevent loop')
       }
     }
 

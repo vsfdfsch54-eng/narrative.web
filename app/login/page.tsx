@@ -7,8 +7,7 @@ import { AnimatedButton } from "@/components/ui/animated-button"
 import { useAuth } from "@/hooks/use-auth"
 import { tokens } from "@/lib/design-tokens"
 import Link from "next/link"
-import { normalizeOnboardingStep } from "@/lib/onboarding"
-import { getAppUserRecord } from "@/lib/user-helpers"
+import { checkOnboardingStatus } from "@/lib/user-helpers"
 import { AppShell } from "@/components/AppShell"
 
 export default function LoginPage() {
@@ -36,9 +35,14 @@ export default function LoginPage() {
       if (!user) return
       
       try {
-        const record = await getAppUserRecord(user.id)
-        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-        const completed = step === 'complete' || record?.onboarding_completed === true
+        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+
+        // NEVER redirect on API errors - causes redirect loops
+        if (apiError) {
+          console.warn('[LoginPage] ⚠️ API error checking onboarding - redirecting to /vibe to prevent loop')
+          router.replace("/vibe")
+          return
+        }
 
         if (!completed) {
           // Incomplete onboarding → redirect to onboarding
@@ -50,7 +54,8 @@ export default function LoginPage() {
         router.replace("/vibe")
       } catch (error) {
         console.error('[LoginPage] Error checking onboarding:', error)
-        router.replace("/onboarding?step=email")
+        // On error, redirect to /vibe (not onboarding) to prevent loops
+        router.replace("/vibe")
       }
     }
 
@@ -74,9 +79,14 @@ export default function LoginPage() {
         }
 
         try {
-          const record = await getAppUserRecord(userId)
-          const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-          const completed = step === 'complete' || record?.onboarding_completed === true
+          const { completed, step, apiError } = await checkOnboardingStatus(userId)
+
+          // NEVER redirect on API errors - causes redirect loops
+          if (apiError) {
+            console.warn('[LoginPage] ⚠️ API error after signin - redirecting to /vibe to prevent loop')
+            router.replace("/vibe")
+            return
+          }
 
           if (!completed) {
             router.replace(`/onboarding?step=${step}`)
@@ -84,7 +94,9 @@ export default function LoginPage() {
             router.replace("/vibe")
           }
         } catch (err) {
-          router.replace("/onboarding?step=email")
+          console.error('[LoginPage] Error checking onboarding after signin:', err)
+          // On error, redirect to /vibe (not onboarding) to prevent loops
+          router.replace("/vibe")
         }
       } else {
         setError(result.error || "Invalid credentials")
