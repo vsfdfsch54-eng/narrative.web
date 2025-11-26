@@ -287,7 +287,32 @@ export function OnboardingController() {
       const signupUserId = result.data?.user?.id
       
       if (signupUserId) {
-        // Update DB step to 'name' BEFORE advancing
+        // FIRST: Ensure user record exists in database by calling GET /api/users
+        // This will auto-create the user record if it doesn't exist
+        try {
+          const userResponse = await fetch(`/api/users?userId=${signupUserId}`)
+          const userData = await userResponse.json()
+          
+          if (!userData.success) {
+            console.error('[Onboarding] Failed to create/fetch user record:', userData.error)
+            setState(prev => ({ 
+              ...prev, 
+              loading: false, 
+              error: 'Account created but failed to initialize. Please try signing in.' 
+            }))
+            return
+          }
+        } catch (createError: any) {
+          console.error('[Onboarding] Exception creating user record:', createError)
+          setState(prev => ({ 
+            ...prev, 
+            loading: false, 
+            error: 'Account created but failed to initialize. Please try signing in.' 
+          }))
+          return
+        }
+        
+        // NOW update DB step to 'name' AFTER ensuring user exists
         // Pass signupUserId directly since user from useAuth might not be updated yet
         const updated = await updateOnboardingStepInDB('name', signupUserId)
         
