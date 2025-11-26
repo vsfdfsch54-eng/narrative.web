@@ -38,13 +38,6 @@ export default function OnboardingPage() {
     async function checkOnboarding() {
       if (!user) return
       
-      // If we're in the process of completing, don't check - let the completion handler navigate
-      if (isCompleting) {
-        console.log('[OnboardingPage] Completion in progress, skipping check')
-        setCheckingOnboarding(false)
-        return
-      }
-      
       setCheckingOnboarding(true)
       
       try {
