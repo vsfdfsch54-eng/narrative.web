@@ -243,28 +243,9 @@ export function OnboardingController() {
     )
   }
 
-  // For steps other than email, password, name, and questions, require user
-  // (password step creates account, user may not be hydrated until later steps)
-  // Only interests and confirmation require user (for saving to database)
-  if (!user && state.step !== 'email' && state.step !== 'password' && state.step !== 'name' && state.step !== 'questions') {
-    return (
-      <AppShell title="Onboarding" showDock={false}>
-      <div
-        style={{
-          minHeight: '50vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-        }}
-      >
-        <p style={{ color: tokens.colors.textPrimaryOnDark, ...tokens.typography.heading }}>
-          Please sign in to continue
-        </p>
-      </div>
-      </AppShell>
-    )
-  }
+  // Don't require user for any onboarding steps
+  // The saveProgress function handles missing users gracefully by allowing navigation
+  // and retrying saves in the background when the user becomes available
 
   const currentStepIndex = STEP_ORDER.indexOf(state.step)
   const canGoBack = currentStepIndex > 0
