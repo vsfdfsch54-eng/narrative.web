@@ -6,70 +6,120 @@
 export interface OnboardingQuestion {
   id: string
   question: string
-  placeholder?: string
-  maxLength?: number
+  options: {
+    value: string
+    label: string
+    emoji?: string
+  }[]
 }
 
 export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   {
     id: 'ideal_afternoon',
     question: "What's your ideal way to spend a free afternoon?",
-    placeholder: "e.g., Reading at a coffee shop, hiking with friends, working on a project...",
-    maxLength: 200,
+    options: [
+      { value: 'reading', label: 'Reading or learning something new', emoji: '📚' },
+      { value: 'social', label: 'Hanging out with friends', emoji: '👥' },
+      { value: 'active', label: 'Being active or outdoors', emoji: '🏃' },
+      { value: 'creative', label: 'Working on a creative project', emoji: '🎨' },
+      { value: 'relax', label: 'Relaxing and unwinding', emoji: '😌' },
+    ],
   },
   {
     id: 'energizing_topics',
     question: "What topics energize you most in conversation?",
-    placeholder: "e.g., Technology, philosophy, sports, art, science...",
-    maxLength: 200,
+    options: [
+      { value: 'tech', label: 'Technology and innovation', emoji: '💻' },
+      { value: 'philosophy', label: 'Philosophy and deep thinking', emoji: '🤔' },
+      { value: 'sports', label: 'Sports and competition', emoji: '⚽' },
+      { value: 'arts', label: 'Arts and culture', emoji: '🎭' },
+      { value: 'science', label: 'Science and discovery', emoji: '🔬' },
+      { value: 'business', label: 'Business and entrepreneurship', emoji: '💼' },
+    ],
   },
   {
     id: 'connecting_preference',
     question: "How do you prefer to connect with new people?",
-    placeholder: "e.g., One-on-one deep conversations, group discussions, shared activities...",
-    maxLength: 200,
+    options: [
+      { value: 'one-on-one', label: 'One-on-one deep conversations', emoji: '💬' },
+      { value: 'group', label: 'Group discussions', emoji: '👥' },
+      { value: 'activities', label: 'Shared activities or experiences', emoji: '🎯' },
+      { value: 'casual', label: 'Casual and light-hearted chats', emoji: '😊' },
+    ],
   },
   {
     id: 'current_curiosity',
     question: "What's something you're curious about right now?",
-    placeholder: "e.g., Learning a new skill, understanding a concept, exploring a hobby...",
-    maxLength: 200,
+    options: [
+      { value: 'skills', label: 'Learning a new skill', emoji: '🎓' },
+      { value: 'concepts', label: 'Understanding complex concepts', emoji: '🧠' },
+      { value: 'hobbies', label: 'Exploring new hobbies', emoji: '🎨' },
+      { value: 'people', label: 'Understanding people and relationships', emoji: '👤' },
+      { value: 'world', label: 'Current events and world issues', emoji: '🌍' },
+    ],
   },
   {
     id: 'communication_style',
     question: "What's your communication style?",
-    placeholder: "e.g., Direct and to the point, thoughtful and reflective, expressive and animated...",
-    maxLength: 200,
+    options: [
+      { value: 'direct', label: 'Direct and to the point', emoji: '🎯' },
+      { value: 'thoughtful', label: 'Thoughtful and reflective', emoji: '🤔' },
+      { value: 'expressive', label: 'Expressive and animated', emoji: '💫' },
+      { value: 'listener', label: 'I prefer listening and asking questions', emoji: '👂' },
+    ],
   },
   {
     id: 'meaningful_conversation',
     question: "What makes a conversation meaningful to you?",
-    placeholder: "e.g., When I learn something new, when there's genuine connection, when ideas are challenged...",
-    maxLength: 200,
+    options: [
+      { value: 'learning', label: 'When I learn something new', emoji: '💡' },
+      { value: 'connection', label: 'When there\'s genuine connection', emoji: '💝' },
+      { value: 'challenge', label: 'When ideas are challenged', emoji: '⚔️' },
+      { value: 'support', label: 'When I feel heard and supported', emoji: '🤗' },
+    ],
   },
   {
     id: 'handling_disagreements',
     question: "How do you handle disagreements in discussions?",
-    placeholder: "e.g., I enjoy debating different perspectives, I prefer finding common ground...",
-    maxLength: 200,
+    options: [
+      { value: 'debate', label: 'I enjoy debating different perspectives', emoji: '🗣️' },
+      { value: 'common-ground', label: 'I prefer finding common ground', emoji: '🤝' },
+      { value: 'listen', label: 'I listen and try to understand', emoji: '👂' },
+      { value: 'avoid', label: 'I try to avoid conflict', emoji: '🕊️' },
+    ],
   },
   {
     id: 'endless_topic',
     question: "What's a topic you could talk about for hours?",
-    placeholder: "e.g., Music theory, space exploration, psychology, cooking...",
-    maxLength: 200,
+    options: [
+      { value: 'music', label: 'Music and sound', emoji: '🎵' },
+      { value: 'space', label: 'Space and the universe', emoji: '🚀' },
+      { value: 'psychology', label: 'Psychology and human behavior', emoji: '🧠' },
+      { value: 'cooking', label: 'Food and cooking', emoji: '🍳' },
+      { value: 'history', label: 'History and stories', emoji: '📜' },
+      { value: 'future', label: 'The future and possibilities', emoji: '🔮' },
+    ],
   },
   {
     id: 'learning_approach',
     question: "What's your approach to learning new things?",
-    placeholder: "e.g., I dive deep into research, I learn by doing, I prefer structured courses...",
-    maxLength: 200,
+    options: [
+      { value: 'deep-research', label: 'I dive deep into research', emoji: '🔍' },
+      { value: 'hands-on', label: 'I learn by doing', emoji: '✋' },
+      { value: 'structured', label: 'I prefer structured courses', emoji: '📋' },
+      { value: 'conversation', label: 'I learn through conversation', emoji: '💬' },
+    ],
   },
   {
     id: 'relationship_values',
     question: "What do you value most in relationships?",
-    placeholder: "e.g., Honesty, humor, intellectual stimulation, emotional support...",
-    maxLength: 200,
+    options: [
+      { value: 'honesty', label: 'Honesty and transparency', emoji: '💎' },
+      { value: 'humor', label: 'Humor and fun', emoji: '😄' },
+      { value: 'intellectual', label: 'Intellectual stimulation', emoji: '🧠' },
+      { value: 'emotional', label: 'Emotional support', emoji: '💗' },
+      { value: 'growth', label: 'Mutual growth', emoji: '🌱' },
+    ],
   },
 ]
 
@@ -98,7 +148,7 @@ export function validateAllQuestionsAnswered(answers: Record<string, string>): {
   const missing: string[] = []
 
   for (const questionId of questionIds) {
-    if (!answers[questionId] || !answers[questionId].trim()) {
+    if (!answers[questionId]) {
       missing.push(questionId)
     }
   }

@@ -51,10 +51,10 @@ export function QuestionsStep({ answers, onAnswerChange, onSubmit, loading, erro
 
   const handleSubmit = () => {
     // Validate all questions are answered
-    const allAnswered = ONBOARDING_QUESTIONS.every(q => localAnswers[q.id]?.trim())
+    const allAnswered = ONBOARDING_QUESTIONS.every(q => localAnswers[q.id])
     if (!allAnswered) {
       // Find first unanswered question
-      const firstUnanswered = ONBOARDING_QUESTIONS.findIndex(q => !localAnswers[q.id]?.trim())
+      const firstUnanswered = ONBOARDING_QUESTIONS.findIndex(q => !localAnswers[q.id])
       if (firstUnanswered !== -1) {
         setCurrentQuestionIndex(firstUnanswered)
       }
@@ -66,7 +66,7 @@ export function QuestionsStep({ answers, onAnswerChange, onSubmit, loading, erro
     })
   }
 
-  const canGoNext = currentAnswer.trim().length > 0
+  const canGoNext = currentAnswer.length > 0
   const progress = ((currentQuestionIndex + 1) / ONBOARDING_QUESTIONS.length) * 100
 
   return (
@@ -117,40 +117,52 @@ export function QuestionsStep({ answers, onAnswerChange, onSubmit, loading, erro
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
-        <div>
-          <Input
-            type="text"
-            placeholder={currentQuestion.placeholder || "Your answer..."}
-            value={currentAnswer}
-            onChange={(e) => {
-              const value = currentQuestion.maxLength 
-                ? e.target.value.slice(0, currentQuestion.maxLength)
-                : e.target.value
-              handleAnswerChange(value)
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && canGoNext && !loading) {
-                handleNext()
-              }
-            }}
-            disabled={loading}
-            autoFocus
-            style={{
-              minHeight: '60px',
-            }}
-          />
-          {currentQuestion.maxLength && (
-            <p style={{
-              ...tokens.typography.label,
-              color: tokens.colors.textSecondary,
-              margin: 0,
-              marginTop: tokens.spacing[8],
-              textAlign: 'right',
-              fontSize: '12px',
-            }}>
-              {currentAnswer.length} / {currentQuestion.maxLength}
-            </p>
-          )}
+        <div style={{
+          display: 'grid',
+          gap: tokens.spacing[12],
+          gridTemplateColumns: '1fr',
+        }}>
+          {currentQuestion.options.map((option) => {
+            const isSelected = currentAnswer === option.value
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleAnswerChange(option.value)}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  padding: '16px 20px',
+                  borderRadius: '16px',
+                  border: isSelected ? '2px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                  background: isSelected ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                  color: tokens.colors.textPrimaryOnDark,
+                  textAlign: 'left',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: tokens.spacing[12],
+                  opacity: loading ? 0.5 : 1,
+                }}
+              >
+                {option.emoji && (
+                  <span style={{
+                    fontSize: '24px',
+                    flexShrink: 0,
+                  }}>
+                    {option.emoji}
+                  </span>
+                )}
+                <span style={{
+                  fontSize: '16px',
+                  fontWeight: isSelected ? 500 : 400,
+                }}>
+                  {option.label}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
         {error && (
