@@ -46,14 +46,30 @@ export async function GET(request: NextRequest) {
     // If user doesn't exist, try to create from auth
     if (!existingUser) {
       try {
-        // Get user from auth
-        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+        // Get user from auth - wrap in try-catch to handle any unexpected errors
+        let authUser = null
+        let authError = null
+        
+        try {
+          const result = await supabase.auth.admin.getUserById(userId)
+          authUser = result.data
+          authError = result.error
+        } catch (adminError: any) {
+          console.error('[Users API GET] ❌ Error calling auth.admin.getUserById:', adminError)
+          authError = adminError
+        }
         
         if (authError || !authUser?.user?.email) {
-          console.error('[Users API GET] User not found in auth:', authError)
+          console.error('[Users API GET] User not found in auth:', {
+            error: authError,
+            hasUser: !!authUser?.user,
+            hasEmail: !!authUser?.user?.email,
+            userId
+          })
           return NextResponse.json({ 
             success: false, 
-            error: 'User not found. Please complete signup first.' 
+            error: 'User not found. Please complete signup first.',
+            details: authError?.message || 'Auth lookup failed'
           }, { 
             status: 404,
             headers: {
@@ -215,11 +231,23 @@ export async function GET(request: NextRequest) {
           }
         }
       } catch (error: any) {
-        console.error('[Users API GET] Error creating user:', error)
+        console.error('[Users API GET] ❌ Error in user creation block:', {
+          error: error?.message,
+          stack: error?.stack,
+          name: error?.name,
+          userId
+        })
+        // Return more detailed error for debugging
         return NextResponse.json({ 
           success: false, 
-          error: 'User not found. Please complete onboarding first.' 
-        }, { status: 404 })
+          error: 'Failed to create or retrieve user. Please try again.',
+          details: error?.message || 'Unknown error'
+        }, { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
       }
     } else {
       userData = existingUser
@@ -248,7 +276,12 @@ export async function GET(request: NextRequest) {
       }
     )
   } catch (error: any) {
-    console.error('[Users API GET] ❌ Unhandled error:', error)
+    console.error('[Users API GET] ❌ Unhandled error:', {
+      error: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+      userId: request.url ? new URL(request.url).searchParams.get('userId') : 'unknown'
+    })
     return NextResponse.json(
       { 
         success: false, 
