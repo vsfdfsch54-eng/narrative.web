@@ -25,8 +25,11 @@ export async function GET(request: NextRequest) {
 
     // Trigger matchmaking processor aggressively before checking status
     try {
+      // Construct base URL from request (works in all environments)
+      // Priority: NEXT_PUBLIC_APP_URL > origin header > host header > localhost fallback
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-        (request.headers.get('origin') || 'http://localhost:3000')
+        (request.headers.get('origin') || 
+         (request.headers.get('host') ? `https://${request.headers.get('host')}` : 'http://localhost:3000'))
       
       // Trigger immediately
       fetch(`${baseUrl}/api/matchmaking/process`, {

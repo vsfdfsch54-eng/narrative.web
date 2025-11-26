@@ -49,9 +49,9 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
     setTimeout(() => {
       if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
         const params = new URLSearchParams(window.location.search)
-        if (params.get('step') !== 'name') {
+        if (params.get('step') !== 'password') {
           // Router didn't navigate, force it with window.location
-          window.location.href = '/onboarding?step=name'
+          window.location.href = '/onboarding?step=password'
         }
       }
     }, 100)
@@ -132,17 +132,6 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
         >
           {isSubmitting ? 'Continuing...' : 'Continue'}
         </AnimatedButton>
-
-        {onBack && (
-          <AnimatedButton
-            variant="ghost"
-            onClick={onBack}
-            disabled={isSubmitting}
-            style={{ width: '100%' }}
-          >
-            Back
-          </AnimatedButton>
-        )}
 
         <a
           href="/"

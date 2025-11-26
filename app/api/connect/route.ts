@@ -196,7 +196,11 @@ export async function POST(request: NextRequest) {
         }
 
         // Try to generate personality profile (optional - don't block if it fails)
-        const personalityResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/personality/generate`, {
+        // Use request origin to construct URL dynamically (works in all environments)
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+          (request.headers.get('origin') || 
+           (request.headers.get('host') ? `https://${request.headers.get('host')}` : 'http://localhost:3000'))
+        const personalityResponse = await fetch(`${baseUrl}/api/personality/generate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -369,8 +373,11 @@ export async function POST(request: NextRequest) {
     await new Promise(resolve => setTimeout(resolve, 500))
     
     try {
+      // Construct base URL from request (works in all environments)
+      // Priority: NEXT_PUBLIC_APP_URL > origin header > host header > localhost fallback
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-        (request.headers.get('origin') || 'http://localhost:3000')
+        (request.headers.get('origin') || 
+         (request.headers.get('host') ? `https://${request.headers.get('host')}` : 'http://localhost:3000'))
       
       // Trigger matchmaking (don't await to avoid blocking response)
       fetch(`${baseUrl}/api/matchmaking/process`, {
