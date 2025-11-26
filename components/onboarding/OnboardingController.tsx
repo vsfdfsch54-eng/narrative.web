@@ -285,16 +285,56 @@ export function OnboardingController() {
       }
 
       const signupUserId = result.data?.user?.id
+      const signupUserEmail = result.data?.user?.email || state.email
       
       if (signupUserId) {
-        // FIRST: Ensure user record exists in database by calling GET /api/users
-        // This will auto-create the user record if it doesn't exist
-        try {
-          const userResponse = await fetch(`/api/users?userId=${signupUserId}`)
-          const userData = await userResponse.json()
-          
-          if (!userData.success) {
-            console.error('[Onboarding] Failed to create/fetch user record:', userData.error)
+        // Create user record directly using PUT with onboarding_step
+        // This will create the user if it doesn't exist, or update if it does
+        // We'll retry once with a small delay if it fails (in case auth hasn't propagated yet)
+        let createAttempts = 0
+        const maxAttempts = 2
+        
+        while (createAttempts < maxAttempts) {
+          try {
+            const createResponse = await fetch('/api/users', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: signupUserId,
+                onboarding_step: 'name',
+              }),
+            })
+            
+            const createData = await createResponse.json()
+            
+            if (createData.success) {
+              // User record created/updated successfully
+              break
+            } else {
+              // If it's an auth error and we haven't retried, wait and retry
+              if (createData.error?.includes('not found in auth') && createAttempts === 0) {
+                createAttempts++
+                await new Promise(resolve => setTimeout(resolve, 500)) // Wait 500ms
+                continue
+              }
+              
+              // Otherwise, it's a real error
+              console.error('[Onboarding] Failed to create user record:', createData.error)
+              setState(prev => ({ 
+                ...prev, 
+                loading: false, 
+                error: 'Account created but failed to initialize. Please try signing in.' 
+              }))
+              return
+            }
+          } catch (createError: any) {
+            if (createAttempts === 0) {
+              createAttempts++
+              await new Promise(resolve => setTimeout(resolve, 500)) // Wait 500ms and retry
+              continue
+            }
+            
+            console.error('[Onboarding] Exception creating user record:', createError)
             setState(prev => ({ 
               ...prev, 
               loading: false, 
@@ -302,17 +342,11 @@ export function OnboardingController() {
             }))
             return
           }
-        } catch (createError: any) {
-          console.error('[Onboarding] Exception creating user record:', createError)
-          setState(prev => ({ 
-            ...prev, 
-            loading: false, 
-            error: 'Account created but failed to initialize. Please try signing in.' 
-          }))
-          return
+          
+          createAttempts++
         }
         
-        // NOW update DB step to 'name' AFTER ensuring user exists
+        // User record should now exist, update step
         // Pass signupUserId directly since user from useAuth might not be updated yet
         const updated = await updateOnboardingStepInDB('name', signupUserId)
         
