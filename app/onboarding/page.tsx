@@ -40,18 +40,41 @@ export default function OnboardingPage() {
       setCheckingOnboarding(true)
       
       try {
-        // Add retry logic with delays to handle save propagation
+        // Check if onboarding was just completed (prevents redirect loops)
+        let justCompleted = false
+        try {
+          if (typeof window !== 'undefined') {
+            const completedFlag = localStorage.getItem('onboarding_just_completed')
+            const completedTimestamp = parseInt(localStorage.getItem('onboarding_completed_timestamp') || '0', 10)
+            const timeSinceCompletion = Date.now() - completedTimestamp
+            
+            // If flag exists and was set within last 30 seconds, trust it
+            if (completedFlag === 'true' && timeSinceCompletion < 30000) {
+              console.log('[OnboardingPage] ✅ Onboarding just completed (flag set), redirecting to /vibe')
+              justCompleted = true
+              // Clear the flag
+              localStorage.removeItem('onboarding_just_completed')
+              localStorage.removeItem('onboarding_completed_timestamp')
+              router.replace("/vibe")
+              return
+            }
+          }
+        } catch (e) {
+          console.warn('[OnboardingPage] Could not check completion flag:', e)
+        }
+        
+        // Add retry logic with delays to handle save propagation (increased for mobile)
         let result = null
         let apiError = false
         
-        for (let attempt = 0; attempt < 3; attempt++) {
+        for (let attempt = 0; attempt < 5; attempt++) { // Increased from 3 to 5
           result = await checkOnboardingStatus(user.id)
           
           // If API error, retry once more
           if (result.apiError) {
-            console.warn(`[OnboardingPage] ⚠️ API error (attempt ${attempt + 1}/3)`)
-            if (attempt < 2) {
-              await new Promise(resolve => setTimeout(resolve, 400))
+            console.warn(`[OnboardingPage] ⚠️ API error (attempt ${attempt + 1}/5)`)
+            if (attempt < 4) {
+              await new Promise(resolve => setTimeout(resolve, 500)) // Increased delay
               continue
             }
             // Last attempt failed - mark as API error
@@ -66,9 +89,9 @@ export default function OnboardingPage() {
             return
           }
           
-          // If not complete and not last attempt, wait and retry
-          if (attempt < 2) {
-            await new Promise(resolve => setTimeout(resolve, 400))
+          // If not complete and not last attempt, wait longer and retry (mobile networks are slower)
+          if (attempt < 4) {
+            await new Promise(resolve => setTimeout(resolve, 500)) // Increased from 400ms to 500ms
           }
         }
 

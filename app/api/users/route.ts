@@ -444,8 +444,22 @@ async function saveOnboardingProgress(
       updateData.onboarding_step = data.onboarding_step
     }
     
+    // Only include onboarding_completed if column exists (handle schema cache issues)
+    // If the column doesn't exist, we'll set it via onboarding_step = 'complete' instead
+    // Handle onboarding_completed - if column doesn't exist, use onboarding_step = 'complete' instead
     if (data.onboarding_completed !== undefined) {
-      updateData.onboarding_completed = data.onboarding_completed
+      // If completing onboarding, always set onboarding_step to 'complete'
+      if (data.onboarding_completed === true || data.onboarding_step === 'complete') {
+        updateData.onboarding_step = 'complete'
+        // Try to include onboarding_completed, but it may not exist in schema cache
+        updateData.onboarding_completed = data.onboarding_completed
+      } else {
+        updateData.onboarding_completed = data.onboarding_completed
+      }
+    } else if (data.onboarding_step === 'complete') {
+      // If step is 'complete' but onboarding_completed not provided, set it
+      updateData.onboarding_step = 'complete'
+      updateData.onboarding_completed = true
     }
 
     // Use upsert to handle both new users and existing users
@@ -463,6 +477,41 @@ async function saveOnboardingProgress(
         code: upsertError.code,
         details: upsertError.details
       })
+      
+      // If error is about missing column (schema cache issue), try without onboarding_completed
+      const isColumnError = upsertError.message?.includes('onboarding_completed') || 
+                            upsertError.message?.includes('schema cache') ||
+                            (upsertError.message?.includes('column') && upsertError.message?.includes('users')) ||
+                            upsertError.message?.includes('Could not find')
+      
+      if (isColumnError) {
+        console.warn('[saveOnboardingProgress] ⚠️ Column error detected (schema cache issue), retrying without onboarding_completed')
+        console.warn('[saveOnboardingProgress] Error details:', upsertError.message)
+        
+        // Remove onboarding_completed and try again
+        const { onboarding_completed, ...updateDataWithoutCompleted } = updateData
+        // Ensure onboarding_step is set correctly - this is the fallback
+        if (data.onboarding_completed === true || data.onboarding_step === 'complete') {
+          updateDataWithoutCompleted.onboarding_step = 'complete'
+          console.log('[saveOnboardingProgress] Using onboarding_step = "complete" as fallback')
+        }
+        
+        const { data: retryData, error: retryError } = await supabase
+          .from('users')
+          .upsert(updateDataWithoutCompleted, {
+            onConflict: 'id',
+            ignoreDuplicates: false
+          })
+          .select()
+        
+        if (retryError) {
+          console.error('[saveOnboardingProgress] ❌ Retry also failed:', retryError.message)
+          return { success: false, error: retryError.message }
+        }
+        
+        console.log('[saveOnboardingProgress] ✅ Retry succeeded without onboarding_completed column')
+        return { success: true, data: Array.isArray(retryData) ? retryData[0] : retryData }
+      }
       
       // Handle duplicate email error
       if (upsertError.code === '23505' || upsertError.message.includes('duplicate key') || upsertError.message.includes('user_email_key')) {

@@ -153,20 +153,47 @@ export default function VibePage() {
     async function checkOnboarding() {
       if (!user) return
       
+      // CRITICAL: Check if onboarding was just completed (prevents redirect loops on mobile)
+      let justCompleted = false
+      try {
+        if (typeof window !== 'undefined') {
+          const completedFlag = localStorage.getItem('onboarding_just_completed')
+          const completedTimestamp = parseInt(localStorage.getItem('onboarding_completed_timestamp') || '0', 10)
+          const timeSinceCompletion = Date.now() - completedTimestamp
+          
+          // If flag exists and was set within last 30 seconds, trust it
+          if (completedFlag === 'true' && timeSinceCompletion < 30000) {
+            console.log('[VibePage] ✅ Onboarding just completed (flag set), allowing access')
+            justCompleted = true
+            // Clear the flag after using it
+            localStorage.removeItem('onboarding_just_completed')
+            localStorage.removeItem('onboarding_completed_timestamp')
+          }
+        }
+      } catch (e) {
+        console.warn('[VibePage] Could not check completion flag:', e)
+      }
+      
+      // If just completed, skip the check and allow access immediately
+      if (justCompleted) {
+        console.log('[VibePage] Allowing access - onboarding just completed')
+        return
+      }
+      
       try {
         // Retry logic: sometimes the save from onboarding completion hasn't propagated yet
-        // Check up to 3 times with small delays
+        // Increased retries and delays for mobile networks
         let result = null
         let apiError = false
         
-        for (let attempt = 0; attempt < 3; attempt++) {
+        for (let attempt = 0; attempt < 5; attempt++) { // Increased from 3 to 5
           result = await checkOnboardingStatus(user.id)
           
           // If API error, retry once more
           if (result.apiError) {
-            console.warn(`[VibePage] ⚠️ API error (attempt ${attempt + 1}/3)`)
-            if (attempt < 2) {
-              await new Promise(resolve => setTimeout(resolve, 300))
+            console.warn(`[VibePage] ⚠️ API error (attempt ${attempt + 1}/5)`)
+            if (attempt < 4) {
+              await new Promise(resolve => setTimeout(resolve, 500)) // Increased delay
               continue
             }
             // Last attempt failed - mark as API error
@@ -179,9 +206,9 @@ export default function VibePage() {
             break
           }
           
-          // If not complete and not last attempt, wait a bit and retry
-          if (attempt < 2) {
-            await new Promise(resolve => setTimeout(resolve, 300))
+          // If not complete and not last attempt, wait longer and retry (mobile networks are slower)
+          if (attempt < 4) {
+            await new Promise(resolve => setTimeout(resolve, 500)) // Increased from 300ms to 500ms
           }
         }
 

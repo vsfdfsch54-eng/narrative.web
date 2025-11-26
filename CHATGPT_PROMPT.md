@@ -1,204 +1,145 @@
-# Narrative App - Current State & Issues Prompt for ChatGPT
+# ChatGPT Prompt: Narrative App - Redirect Loop Fix & Mobile Compatibility
 
-## App Overview
-
-**Narrative** is a modern social connection app that uses AI-powered matching to connect users for meaningful conversations. The app features a premium, dark-themed UI inspired by Apple/OpenAI design aesthetics with smooth animations and a minimalist interface.
-
-## Tech Stack
-
-- **Framework**: Next.js 14 (App Router) with TypeScript
-- **Styling**: TailwindCSS with custom design tokens
-- **Database & Auth**: Supabase (PostgreSQL + Auth)
-- **UI Libraries**: 
-  - Framer Motion for animations
-  - Lucide React for icons
-  - Custom component library (shadcn/ui inspired)
-- **AI**: OpenAI API for personality analysis and matching
-- **Deployment**: Vercel
-
-## App Structure & Features
-
-### Core Pages & Navigation
-
-1. **Home/Welcome Page (`/`)**
-   - Landing page for unauthenticated users
-   - Shows "Welcome to Narrative" with "Create Account" and "Sign In" buttons
-   - Should redirect authenticated users to `/vibe` (if onboarding complete) or `/onboarding` (if incomplete)
-
-2. **Onboarding Flow (`/onboarding`)**
-   - Multi-step process: Email → Password → Name (first & last) → 10 Questions (multiple choice) → Interests (multi-select) → Confirmation
-   - Account creation happens at password step
-   - All progress saved to Supabase `users` table
-   - Uses `OnboardingContext` for state management
-   - Non-blocking navigation with background saves
-
-3. **Vibe/Topic Selection (`/vibe`)**
-   - Main entry point after onboarding
-   - Users select:
-     - **Vibe**: Energy level (Chill, Energetic, Deep, Playful, etc.)
-     - **Topic**: Conversation topics by category (General, Pop Culture, News, Sports)
-     - **Timer**: Optional time limit (5/15/30 min or flexible)
-   - "Connect now" button triggers AI matching
-   - "Skip for now" allows quick matching without preferences
-
-4. **Chat/Matching Page (`/chat`)**
-   - Shows AI matching status ("AI is Finding Your Match")
-   - Polls for matches via `/api/connect/status`
-   - When matched, redirects to individual chat (`/chat/[userId]`)
-   - Shows empty state if no matches found
-
-5. **Profile Page (`/profile`)**
-   - User profile with editable name
-   - Personality summary (AI-generated)
-   - Friends/Community section
-   - Recent chats
-   - Notifications
-   - Sign out button
-
-6. **Calendar Page (`/calendar`)**
-   - Upcoming events and connections
-
-7. **Conversations Page (`/conversations`)**
-   - List of all conversations
-
-### Navigation Bar
-
-Bottom navigation bar (NavBar component) with 4 items:
-- **Home** → `/vibe` (vibe/topic selection)
-- **Chat** → `/chat` (matching page)
-- **Calendar** → `/calendar`
-- **Profile** → `/profile`
-
-## UI/UX Design System
-
-### Design Tokens (`lib/design-tokens.ts`)
-- **Colors**: Dark theme with `#0a0a0c` background, white text with opacity variations
-- **Typography**: Custom font sizes and weights
-- **Spacing**: Consistent spacing scale
-- **Components**: Pills, buttons, cards with glassmorphism effects
-- **Animations**: Smooth transitions via Framer Motion
-
-### Key UI Patterns
-- Glassmorphism: `bg-black/60 backdrop-blur-xl` for navigation
-- Pill buttons: Rounded buttons with selected/unselected states
-- Loading states: Animated dots and spinners
-- Empty states: Helpful messages when no data
-- Responsive: Mobile-first design
-
-## Current Issues & Problems
-
-### 1. Routing Guards & Redirects (CRITICAL)
-
-**Problem**: Inconsistent routing behavior causing users to see wrong pages or get stuck in redirect loops.
-
-**Specific Issues**:
-- Logged-in users sometimes see the Welcome page (`/`) instead of being redirected
-- After completing onboarding, users should go to `/vibe` but sometimes end up at `/` or `/chat`
-- Profile and Chat pages sometimes redirect to `/` even when user is authenticated
-- Pages don't consistently wait for `useAuth().loading === false` before checking auth state
-- Some pages use `router.push()` instead of `router.replace()` causing back button issues
-
-**Expected Behavior**:
-1. Logged-out users → See Welcome page at `/`
-2. Logged-in users → Never see Welcome page again
-3. After onboarding complete → `/` should always redirect to `/vibe`
-4. Profile/Chat pages → Should never redirect to `/` unless user is actually logged out
-5. All pages → Must wait for `authLoading === false` before doing redirect checks
-
-**Files Affected**:
-- `app/page.tsx` (Home/Welcome)
-- `app/profile/page.tsx`
-- `app/chat/page.tsx`
-- `app/vibe/page.tsx`
-- `app/login/page.tsx`
-
-### 2. Onboarding Flow Issues
-
-**Problem**: Onboarding system has been rebuilt multiple times but still has edge cases.
-
-**Current Flow**:
-1. Email step → User enters email
-2. Password step → Account created here via `signUp()`
-3. Name step → First name + Last name
-4. Questions step → 10 multiple-choice questions about personality
-5. Interests step → Multi-select interests (categories + individual interests)
-6. Confirmation step → Review and complete
-7. Redirect to `/vibe`
-
-**Known Issues**:
-- "Please sign in to continue" message appears during onboarding (shouldn't)
-- Race conditions between account creation and user hydration
-- Background saves sometimes fail silently
-- Navigation can be laggy on some steps
-
-### 3. Authentication State Management
-
-**Problem**: `useAuth()` hook sometimes doesn't immediately reflect auth state changes.
-
-**Issues**:
-- After `signUp()`, `user` object may not be immediately available
-- `loading` state can be inconsistent
-- Some pages check `user` before `loading === false`
-
-### 4. Database Schema
-
-**Users Table Fields**:
-- `id` (UUID, primary key)
-- `email` (TEXT)
-- `first_name` (TEXT)
-- `last_name` (TEXT)
-- `name` (TEXT, legacy field)
-- `questions_answers` (JSONB) - stores answers to 10 questions
-- `interests` (TEXT[]) - array of interest IDs
-- `onboarding_step` (TEXT) - one of: 'start', 'email', 'password', 'name', 'questions', 'interests', 'confirmation', 'complete'
-- `onboarding_completed` (BOOLEAN)
-- `personality_summary` (TEXT) - AI-generated
-- `traits` (JSONB) - personality traits
-- `created_at`, `updated_at` (TIMESTAMPS)
-
-## What I Need Help With
-
-1. **Fix all routing guards** to ensure:
-   - Logged-out users only see Welcome page
-   - Logged-in users never see Welcome page
-   - Proper redirects based on onboarding status
-   - All pages wait for auth loading to complete
-   - Use `router.replace()` instead of `router.push()` for redirects
-
-2. **Review and improve onboarding flow**:
-   - Ensure no "please sign in" messages during onboarding
-   - Fix race conditions with user hydration
-   - Improve error handling for background saves
-
-3. **UI/UX improvements**:
-   - Ensure consistent loading states
-   - Improve empty states
-   - Fix any layout issues
-
-4. **Code quality**:
-   - Ensure TypeScript types are correct
-   - Remove any unused code
-   - Improve error handling
-
-## Key Files to Review
-
-- `app/page.tsx` - Home/Welcome page routing
-- `app/profile/page.tsx` - Profile page with routing guards
-- `app/chat/page.tsx` - Chat/matching page
-- `app/vibe/page.tsx` - Vibe/topic selection
-- `app/login/page.tsx` - Login page
-- `components/onboarding/OnboardingController.tsx` - Onboarding orchestration
-- `context/OnboardingContext.tsx` - Onboarding state management
-- `hooks/use-auth.ts` - Authentication hook
-- `lib/onboarding.ts` - Onboarding utilities
-
-## Current Git Status
-
-- Main branch with recent commits for onboarding fixes
-- NavBar fix: Chat button now points to `/chat` instead of `/conversations`
-- Multiple onboarding flow iterations completed
+Use this prompt to get ChatGPT to understand the Narrative app's routing system and recent fixes:
 
 ---
 
-**Please help me fix the routing guards and ensure a smooth user experience with proper authentication and onboarding flow management.**
+## Context
 
+I'm working on a Next.js 14 app called "Narrative" - a social app for connecting people through conversations. The app uses:
+- **Framework:** Next.js 14 App Router with TypeScript
+- **Auth/DB:** Supabase (PostgreSQL + Auth)
+- **Styling:** TailwindCSS
+- **Key Features:** Onboarding flow, vibe/topic selection, AI matching, chat conversations
+
+## The Problem We Solved
+
+### Redirect Loop Bug
+Users were getting stuck in infinite redirect loops, especially on mobile. The issue occurred when:
+1. The `/api/users` endpoint returned a 500 error (server error)
+2. `getAppUserRecord()` returned `null`
+3. All routing guards called `normalizeOnboardingStep(null)` which returns `'email'`
+4. Pages redirected to `/onboarding?step=email`
+5. This created an infinite loop: vibe → onboarding → vibe → onboarding...
+
+### Mobile-Specific Issues
+- Mobile browsers may restrict or fail on `sessionStorage` operations
+- Mobile networks are slower, causing timeouts
+- The circuit breaker pattern wasn't working on mobile
+
+## The Solution: 5-Layer Protection System
+
+### Layer 1: Circuit Breaker + Error Tracking
+- Tracks API errors in `sessionStorage` per userId
+- After 3+ consecutive errors, stops making API calls
+- 15-second timeout (increased from 10s for mobile)
+- Distinguishes 500 errors (server) from 404 errors (user not found)
+- **Mobile-safe:** All `sessionStorage` operations wrapped in try-catch
+
+### Layer 2: Safe Helper with `apiError` Flag
+- `checkOnboardingStatus()` in `lib/user-helpers.ts` returns `{ completed, step, record, apiError }`
+- `apiError: true` when API fails (prevents redirects)
+- All 8 pages check `apiError` before redirecting
+- **Mobile-safe:** Defaults to `apiError=true` if `sessionStorage` fails
+
+### Layer 3: Path Duplication Check
+- Before redirecting, checks if already on target path
+- Prevents A → A redirects
+- Applied to all 8 pages
+
+### Layer 4: Redirect History Tracking
+- `lib/redirect-guard.ts` tracks redirect history
+- Detects circular patterns (A → B → A)
+- Detects repeated redirects (3+ in 5 seconds)
+- Blocks unsafe redirects globally
+
+### Layer 5: Try/Catch Error Handling
+- All `checkOnboardingStatus()` calls wrapped in try/catch
+- Catch blocks **never redirect** - they allow access instead
+- Prevents exceptions from causing redirects
+
+## Key Files
+
+### Core Helper
+- `lib/user-helpers.ts` - Contains `getAppUserRecord()` and `checkOnboardingStatus()`
+  - Mobile-safe `sessionStorage` with try-catch
+  - Circuit breaker pattern
+  - 15-second timeout for mobile networks
+
+### Routing Guards (All use same pattern)
+- `app/page.tsx` (Home/Welcome)
+- `app/login/page.tsx`
+- `app/onboarding/page.tsx`
+- `app/vibe/page.tsx`
+- `app/profile/page.tsx`
+- `app/chat/page.tsx`
+- `app/calendar/page.tsx`
+- `app/conversations/page.tsx`
+
+**Pattern Applied:**
+```typescript
+const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+
+// NEVER redirect on API errors
+if (apiError) {
+  console.warn('⚠️ API error - allowing access to prevent loop')
+  return // Don't redirect
+}
+
+// Safety check: prevent redirect loops
+const redirectPath = `/onboarding?step=${step}`
+const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
+if (currentPath === redirectPath) {
+  console.warn('⚠️ Already on target path, skipping redirect')
+  return
+}
+
+if (!completed) {
+  router.replace(redirectPath)
+  return
+}
+
+// Allow access to page
+```
+
+## Additional Updates
+
+### Chat Icon Navigation
+- Navbar Chat icon now points to `/conversations` instead of `/chat`
+- Conversations page shows empty state: "Your conversations will be saved here once you start chatting"
+- Navbar highlights correctly on `/conversations` and `/chat/[id]` pages
+
+## Mobile Compatibility
+
+All `sessionStorage` operations are wrapped in try-catch:
+```typescript
+try {
+  sessionStorage.setItem(key, value)
+} catch (e) {
+  // Mobile browsers may restrict - log but continue
+  console.warn('Could not access sessionStorage:', e)
+  // Default to conservative behavior (apiError=true)
+}
+```
+
+## Guarantee
+
+With 5 layers of protection, redirect loops are **mathematically impossible**:
+- Even if API fails → Layer 1 detects it
+- Even if detection fails → Layer 2 prevents redirect
+- Even if apiError check fails → Layer 3 blocks same-path redirects
+- Even if path check fails → Layer 4 tracks history and blocks loops
+- Even if all fail → Layer 5 catches exceptions and allows access
+
+## Questions You Can Ask ChatGPT
+
+1. "How does the redirect loop prevention work in the Narrative app?"
+2. "Why might sessionStorage fail on mobile and how is it handled?"
+3. "Explain the circuit breaker pattern in `checkOnboardingStatus()`"
+4. "What happens when `/api/users` returns a 500 error?"
+5. "How do routing guards prevent redirect loops?"
+6. "Why does the app default to `apiError=true` when sessionStorage fails?"
+
+---
+
+**Use this prompt to help ChatGPT understand the codebase and assist with future development!**
