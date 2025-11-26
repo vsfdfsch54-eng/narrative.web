@@ -155,7 +155,7 @@ export function PasswordStep({ password, onPasswordChange, onSubmit, loading, er
         )}
         <AnimatedButton
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={!isValid || loading}
           style={{ flex: 1 }}
         >
           {loading ? 'Creating account...' : 'Continue'}
