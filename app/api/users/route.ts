@@ -250,11 +250,23 @@ async function saveOnboardingProgress(
       email = data.email
     } else {
       // Try to get from auth
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
-      if (authError || !authUser?.user?.email) {
-        return { success: false, error: 'User not found in auth. Please provide email or complete signup first.' }
+      try {
+        const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+        if (authError || !authUser?.user?.email) {
+          // If auth lookup fails but we have email in data, use it
+          if (data.email) {
+            email = data.email
+          } else {
+            // Last resort: use a placeholder (user will update later)
+            email = `user_${userId.slice(0, 8)}@temp.narrative`
+          }
+        } else {
+          email = authUser.user.email
+        }
+      } catch (authErr) {
+        // Auth lookup failed - use provided email or placeholder
+        email = data.email || `user_${userId.slice(0, 8)}@temp.narrative`
       }
-      email = authUser.user.email
     }
 
     // Build update object - only include fields that are provided

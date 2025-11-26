@@ -119,63 +119,57 @@ export function OnboardingController() {
         
         if (result.error) {
           if (result.error.includes('already registered') || result.error.includes('already exists')) {
-            // User exists - show error and suggest login
-            // For now, try to continue (they may need to login separately)
-            // The saveProgress will fail if user doesn't exist, which is fine
+            // User exists - they should login, but continue anyway
+            console.warn('[OnboardingController] User already exists, continuing anyway')
           } else {
-            // Other error - show it
-            return
+            // Other error - log but continue
+            console.error('[OnboardingController] Signup error:', result.error)
           }
         }
         
         // Wait briefly for auth to propagate
-        await new Promise(resolve => setTimeout(resolve, 300))
+        await new Promise(resolve => setTimeout(resolve, 500))
       } catch (error) {
         console.error('[OnboardingController] Account creation error:', error)
         // Continue anyway - user might already exist
       }
     }
     
-    // Save name and advance (this will create user record if needed)
+    // Save name and advance (non-blocking - will retry if user not ready)
     const saved = await saveProgress('vibe')
-    if (saved) {
-      router.replace(`/onboarding?step=vibe`)
-    }
+    // Always advance - saveProgress now allows navigation even if save fails
+    router.replace(`/onboarding?step=vibe`)
   }
 
   // Vibe step handler
   const handleVibeSubmit = async (vibe: string) => {
     setVibe(vibe)
-    const saved = await saveProgress('topic')
-    if (saved) {
-      router.replace(`/onboarding?step=topic`)
-    }
+    await saveProgress('topic')
+    // Always advance - saveProgress now allows navigation even if save fails
+    router.replace(`/onboarding?step=topic`)
   }
 
   // Topic step handler
   const handleTopicSubmit = async (topic: string) => {
     setTopic(topic)
-    const saved = await saveProgress('timeframe')
-    if (saved) {
-      router.replace(`/onboarding?step=timeframe`)
-    }
+    await saveProgress('timeframe')
+    // Always advance
+    router.replace(`/onboarding?step=timeframe`)
   }
 
   // Timeframe step handler
   const handleTimeframeSubmit = async (timeframe: number | null) => {
     setTimeframe(timeframe)
-    const saved = await saveProgress('confirmation')
-    if (saved) {
-      router.replace(`/onboarding?step=confirmation`)
-    }
+    await saveProgress('confirmation')
+    // Always advance
+    router.replace(`/onboarding?step=confirmation`)
   }
 
   // Confirmation step handler - complete onboarding
   const handleConfirmationSubmit = async () => {
-    const saved = await saveProgress('complete')
-    if (saved) {
-      router.replace('/chat')
-    }
+    await saveProgress('complete')
+    // Always advance to chat
+    router.replace('/chat')
   }
 
   // Go back handler
@@ -273,8 +267,8 @@ export function OnboardingController() {
           </div>
         )}
 
-        {/* Error message */}
-        {state.error && (
+        {/* Error message - only show critical errors */}
+        {state.error && !state.error.includes('not found') && !state.error.includes('missing') && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}

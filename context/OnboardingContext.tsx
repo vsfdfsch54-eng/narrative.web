@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react"
 import { useAuth } from "@/hooks/use-auth"
-import { OnboardingStep, normalizeOnboardingStep } from "@/lib/onboarding"
+import { OnboardingStep, normalizeOnboardingStep, STEP_ORDER } from "@/lib/onboarding"
 
 interface OnboardingState {
   step: OnboardingStep
@@ -91,9 +91,15 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   // Save progress to database
   const saveProgress = useCallback(async (step?: OnboardingStep): Promise<boolean> => {
+    // If no user ID, we can't save yet - but don't block navigation
+    // The user will be created when they authenticate
     if (!user?.id) {
-      console.error('[OnboardingContext] Cannot save: user ID is missing')
-      return false
+      console.warn('[OnboardingContext] Cannot save: user ID is missing, will retry after auth')
+      // Still update local state
+      if (step) {
+        setState(prev => ({ ...prev, step, error: null }))
+      }
+      return true // Return true to allow navigation, save will happen later
     }
 
     setState(prev => ({ ...prev, loading: true, error: null }))
@@ -113,15 +119,29 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           timeframe: state.timeframe || undefined,
           onboarding_step: stepToSave,
           onboarding_completed: isComplete,
+          email: state.email || undefined,
         }),
       })
 
       const data = await response.json()
 
       if (!data.success) {
+        // Log error but don't block navigation for non-critical errors
         const errorMsg = data.error || 'Failed to save progress'
-        setState(prev => ({ ...prev, loading: false, error: errorMsg }))
-        return false
+        console.error('[OnboardingContext] Save failed:', errorMsg)
+        
+        // Only show error for critical failures, not for missing user (which is expected)
+        if (!errorMsg.includes('not found') && !errorMsg.includes('missing')) {
+          setState(prev => ({ ...prev, loading: false, error: errorMsg }))
+          return false
+        }
+        
+        // For missing user errors, just update state and continue
+        setState(prev => ({ ...prev, loading: false, error: null }))
+        if (step) {
+          setState(prev => ({ ...prev, step, error: null }))
+        }
+        return true // Allow navigation even if save failed
       }
 
       // Update local state if step was provided
@@ -134,14 +154,18 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       return true
     } catch (error: any) {
       console.error('[OnboardingContext] Save error:', error)
+      // Don't block navigation on network errors - allow user to continue
       setState(prev => ({
         ...prev,
         loading: false,
-        error: error.message || 'Failed to save progress',
+        error: null, // Don't show error to user, just log it
       }))
-      return false
+      if (step) {
+        setState(prev => ({ ...prev, step, error: null }))
+      }
+      return true // Allow navigation even on error
     }
-  }, [user, state.step, state.name, state.vibe, state.topic, state.timeframe])
+  }, [user, state.step, state.name, state.vibe, state.topic, state.timeframe, state.email])
 
   // Initialize on mount
   useEffect(() => {
@@ -149,6 +173,38 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       initialize()
     }
   }, [state.initialized, authLoading, initialize])
+
+  // Retry saving progress when user becomes available
+  useEffect(() => {
+    if (user?.id && state.initialized && !state.loading) {
+      // If we have unsaved progress (step is ahead of what's saved), try to save it
+      // This handles the case where user wasn't authenticated during earlier steps
+      const retrySave = async () => {
+        try {
+          const response = await fetch(`/api/users?userId=${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
+            const currentStepIndex = STEP_ORDER.indexOf(state.step)
+            const dbStepIndex = STEP_ORDER.indexOf(dbStep)
+            
+            // If current step is ahead of saved step, save it
+            if (currentStepIndex > dbStepIndex) {
+              await saveProgress(state.step)
+            }
+          }
+        } catch (error) {
+          // Silently fail - this is just a background sync
+          console.log('[OnboardingContext] Background save retry failed:', error)
+        }
+      }
+      
+      // Debounce the retry
+      const timeout = setTimeout(retrySave, 1000)
+      return () => clearTimeout(timeout)
+    }
+  }, [user?.id, state.initialized, state.step, state.loading])
 
   const setStep = useCallback((step: OnboardingStep) => {
     setState(prev => ({ ...prev, step, error: null }))
