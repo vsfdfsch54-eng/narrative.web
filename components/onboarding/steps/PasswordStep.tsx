@@ -100,28 +100,28 @@ export function PasswordStep({ password, onPasswordChange, onSubmit, loading, er
           />
         </div>
 
-        <div>
-          <label style={{
-            ...tokens.typography.label,
-            color: tokens.colors.textSecondary,
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-            marginBottom: tokens.spacing[8],
-            display: 'block',
-          }}>
-            Confirm Password
-          </label>
-          <Input
-            type="password"
-            placeholder="••••••••"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value)
-              validatePassword()
-            }}
-            disabled={loading}
-          />
-        </div>
+          <div>
+            <label style={{
+              ...tokens.typography.label,
+              color: tokens.colors.textSecondary,
+              textTransform: 'uppercase',
+              letterSpacing: '0.1em',
+              marginBottom: tokens.spacing[8],
+              display: 'block',
+            }}>
+              Confirm Password
+            </label>
+            <Input
+              type="password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value)
+                validatePassword()
+              }}
+              disabled={loading}
+            />
+          </div>
 
         {(passwordError || error) && (
           <p style={{

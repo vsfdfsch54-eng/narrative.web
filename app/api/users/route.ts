@@ -213,10 +213,143 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Centralized function to save onboarding progress
+ * This is the single source of truth for all onboarding data writes
+ */
+async function saveOnboardingProgress(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string,
+  data: {
+    name?: string
+    vibe?: string | null
+    topic?: string | null
+    timeframe?: number | null
+    onboarding_step?: string
+    onboarding_completed?: boolean
+    email?: string
+  }
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    // First, check if user exists
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      return { success: false, error: fetchError.message }
+    }
+
+    // Get email from existing user, provided data, or auth
+    let email: string | null = null
+    if (existingUser) {
+      email = existingUser.email
+    } else if (data.email) {
+      email = data.email
+    } else {
+      // Try to get from auth
+      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+      if (authError || !authUser?.user?.email) {
+        return { success: false, error: 'User not found in auth. Please provide email or complete signup first.' }
+      }
+      email = authUser.user.email
+    }
+
+    // Build update object - only include fields that are provided
+    const updateData: any = {
+      id: userId,
+      email: email,
+      updated_at: new Date().toISOString()
+    }
+
+    if (data.name !== undefined) {
+      updateData.name = data.name
+    }
+
+    if (data.vibe !== undefined) {
+      updateData.vibe = data.vibe
+    }
+
+    if (data.topic !== undefined) {
+      updateData.topic = data.topic
+    }
+
+    if (data.timeframe !== undefined) {
+      updateData.timeframe = data.timeframe
+    }
+
+    if (data.onboarding_step !== undefined) {
+      updateData.onboarding_step = data.onboarding_step
+    }
+
+    if (data.onboarding_completed !== undefined) {
+      updateData.onboarding_completed = data.onboarding_completed
+    }
+
+    // Use upsert to handle both new users and existing users
+    const { data: upsertData, error: upsertError } = await supabase
+      .from('users')
+      .upsert(updateData, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      })
+      .select()
+
+    if (upsertError) {
+      console.error('[saveOnboardingProgress] ❌ Upsert error:', {
+        message: upsertError.message,
+        code: upsertError.code,
+        details: upsertError.details
+      })
+
+      // Handle duplicate email error
+      if (upsertError.code === '23505' || upsertError.message.includes('duplicate key') || upsertError.message.includes('user_email_key')) {
+        // Try updating without email
+        const updateFields: any = {
+          updated_at: new Date().toISOString()
+        }
+        if (data.name !== undefined) updateFields.name = data.name
+        if (data.vibe !== undefined) updateFields.vibe = data.vibe
+        if (data.topic !== undefined) updateFields.topic = data.topic
+        if (data.timeframe !== undefined) updateFields.timeframe = data.timeframe
+        if (data.onboarding_step !== undefined) updateFields.onboarding_step = data.onboarding_step
+        if (data.onboarding_completed !== undefined) updateFields.onboarding_completed = data.onboarding_completed
+
+        const { data: updateData, error: updateError } = await supabase
+          .from('users')
+          .update(updateFields)
+          .eq('id', userId)
+          .select()
+
+        if (updateError) {
+          return { success: false, error: updateError.message }
+        }
+
+        const finalData = Array.isArray(updateData) ? updateData[0] : updateData
+        return { success: true, data: finalData }
+      }
+
+      return { success: false, error: upsertError.message }
+    }
+
+    const finalData = Array.isArray(upsertData) ? upsertData[0] : upsertData
+    if (!finalData) {
+      return { success: false, error: 'Failed to save user data. Please try again.' }
+    }
+
+    return { success: true, data: finalData }
+  } catch (error: any) {
+    console.error('[saveOnboardingProgress] Exception:', error)
+    return { success: false, error: error.message || 'Unknown error' }
+  }
+}
+
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name, interests, onboarding_step } = body
+    const { userId, name, interests, onboarding_step, email: providedEmail, vibe, topic, timeframe, onboarding_completed } = body
 
     if (!userId) {
       return NextResponse.json(
@@ -232,210 +365,42 @@ export async function PUT(request: NextRequest) {
 
     const supabase = createServerClient()
     
-    // First, check if user exists
-    const { data: existingUser, error: fetchError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle()
+    // Use centralized saveOnboardingProgress function
+    const result = await saveOnboardingProgress(supabase, userId, {
+      name,
+      vibe,
+      topic,
+      timeframe,
+      onboarding_step,
+      onboarding_completed,
+      email: providedEmail,
+    })
 
-    if (fetchError) {
-      return NextResponse.json(
-        { success: false, error: fetchError.message }, 
-        { 
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      )
-    }
+    // Also handle interests if provided (for backward compatibility)
+    if (interests !== undefined && result.success) {
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
 
-    // If user doesn't exist, get email from auth and create user
-    // BUT: Don't auto-create during PUT if user is mid-onboarding (preserve existing step)
-    let email: string | null = null
-    if (!existingUser) {
-      // Get user email from Supabase Auth
-      const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
-      if (authError || !authUser?.user?.email) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'User not found in auth. Please complete signup first.' 
-        }, { 
-          status: 404,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        })
-      }
-      email = authUser.user.email
-    } else {
-      email = existingUser.email
-      // If user exists and has onboarding_step, preserve it unless explicitly updating
-      // This prevents overwriting progress during concurrent requests
-    }
-
-    // Now upsert with email, interests, and onboarding_step
-    // Use upsert to handle both new users and existing users
-    // onConflict: 'id' means update if user with this id exists
-    
-    // Build update object - only include fields that are provided
-    const updateData: any = {
-      id: userId,
-      email: email,
-      updated_at: new Date().toISOString()
-    }
-    
-    if (name !== undefined) {
-      updateData.name = name
-    }
-    
-    if (interests !== undefined) {
-      updateData.interests = interests || []
-    }
-    
-    if (onboarding_step !== undefined) {
-      updateData.onboarding_step = onboarding_step
-    }
-    
-    const { data: upsertData, error: upsertError } = await supabase
-      .from('users')
-      .upsert(updateData, {
-        onConflict: 'id',
-        ignoreDuplicates: false // Update if exists
-      })
-      .select()
-
-    if (upsertError) {
-      console.error('[Users API PUT] ❌ Upsert error:', {
-        message: upsertError.message,
-        code: upsertError.code,
-        details: upsertError.details
-      })
-      
-      // Handle duplicate email error gracefully
-      if (upsertError.message.includes('duplicate key') || upsertError.message.includes('unique constraint') || upsertError.message.includes('user_email_key') || upsertError.code === '23505') {
-        // Email already exists - check if it's the same user or different user
-        const { data: existingByEmail, error: emailCheckError } = await supabase
+      if (existingUser) {
+        const { error: updateError } = await supabase
           .from('users')
-          .select('*')
-          .eq('email', email)
-          .maybeSingle()
-        
-        if (existingByEmail) {
-          if (existingByEmail.id === userId) {
-            // Same user - just update without email
-            const updateFields: any = {
-              updated_at: new Date().toISOString()
-            }
-            if (name !== undefined) updateFields.name = name
-            if (interests !== undefined) updateFields.interests = interests || []
-            if (onboarding_step !== undefined) updateFields.onboarding_step = onboarding_step
-            
-            const { data: updateData, error: updateError } = await supabase
-              .from('users')
-              .update(updateFields)
-              .eq('id', userId)
-              .select()
-            
-            if (updateError) {
-              console.error('[Users API PUT] ❌ Update error:', updateError.message)
-              return NextResponse.json(
-                { success: false, error: updateError.message }, 
-                { 
-                  status: 500,
-                  headers: {
-                    'Content-Type': 'application/json',
-                  }
-                }
-              )
-            }
+          .update({ interests: interests || [] })
+          .eq('id', userId)
 
-            const finalData = Array.isArray(updateData) ? updateData[0] : updateData
-            return NextResponse.json(
-              { success: true, data: finalData },
-              {
-                headers: {
-                  'Content-Type': 'application/json',
-                }
-              }
-            )
-          } else {
-            // Different user with same email - conflict
-            console.error('[Users API PUT] ❌ Email conflict: email belongs to different user', {
-              existingId: existingByEmail.id,
-              requestedId: userId,
-              email: email
-            })
-            return NextResponse.json(
-              { success: false, error: 'An account with this email already exists. Please use a different email.' }, 
-              { 
-                status: 409, // Conflict
-                headers: {
-                  'Content-Type': 'application/json',
-                }
-              }
-            )
-          }
-        } else {
-          // Email check failed, try updating by id as fallback
-          const updateFields: any = {
-            updated_at: new Date().toISOString()
-          }
-          if (name !== undefined) updateFields.name = name
-          if (interests !== undefined) updateFields.interests = interests || []
-          if (onboarding_step !== undefined) updateFields.onboarding_step = onboarding_step
-          
-          const { data: updateData, error: updateError } = await supabase
-            .from('users')
-            .update(updateFields)
-            .eq('id', userId)
-            .select()
-          
-          if (updateError) {
-            console.error('[Users API PUT] ❌ Update error:', updateError.message)
-            return NextResponse.json(
-              { success: false, error: updateError.message }, 
-              { 
-                status: 500,
-                headers: {
-                  'Content-Type': 'application/json',
-                }
-              }
-            )
-          }
-
-          const finalData = Array.isArray(updateData) ? updateData[0] : updateData
-          return NextResponse.json(
-            { success: true, data: finalData },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-              }
-            }
-          )
+        if (updateError) {
+          console.error('[Users API PUT] Error updating interests:', updateError.message)
         }
       }
-      
-      return NextResponse.json(
-        { success: false, error: upsertError.message }, 
-        { 
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-          }
-        }
-      )
     }
 
-    // Handle array response from upsert
-    const finalData = Array.isArray(upsertData) ? upsertData[0] : upsertData
-    if (!finalData) {
-      console.error('[Users API PUT] ❌ Upsert returned no data')
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, error: 'Failed to save user data. Please try again.' }, 
-        { 
-          status: 500,
+        { success: false, error: result.error || 'Failed to save progress' },
+        {
+          status: result.error?.includes('not found') ? 404 : 500,
           headers: {
             'Content-Type': 'application/json',
           }
@@ -444,7 +409,7 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, data: finalData },
+      { success: true, data: result.data },
       {
         headers: {
           'Content-Type': 'application/json',

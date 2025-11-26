@@ -1,695 +1,376 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef, ReactNode } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
-import { supabase } from "@/lib/supabaseClient"
+import { useOnboarding } from "@/context/OnboardingContext"
 import { tokens } from "@/lib/design-tokens"
 import { EmailStep } from "./steps/EmailStep"
 import { NameStep } from "./steps/NameStep"
-import { PasswordStep } from "./steps/PasswordStep"
-import { InterestsStep } from "./steps/InterestsStep"
-import { PersonalityStep } from "./steps/PersonalityStep"
+import { VibeStep } from "./steps/VibeStep"
+import { TopicStep } from "./steps/TopicStep"
+import { TimeframeStep } from "./steps/TimeframeStep"
+import { ConfirmationStep } from "./steps/ConfirmationStep"
 import { AppShell } from "@/components/AppShell"
 import { 
   OnboardingStep, 
-  getNextOnboardingRoute, 
+  getNextOnboardingRoute,
   getOnboardingRouteForStep,
   normalizeOnboardingStep,
   isValidOnboardingStep,
-  isValidStepTransition,
   STEP_ORDER
 } from "@/lib/onboarding"
-
-interface OnboardingState {
-  step: OnboardingStep
-  email: string
-  name: string
-  password: string
-  interests: string[]
-  personalityAnswers: Record<string, string | string[]>
-  loading: boolean
-  error: string | null
-  dbStepLoaded: boolean
-}
 
 export function OnboardingController() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, signUp, loading: authLoading } = useAuth()
-  const [state, setState] = useState<OnboardingState>({
-    step: 'email',
-    email: '',
-    name: '',
-    password: '',
-    interests: [],
-    personalityAnswers: {},
-    loading: false,
-    error: null,
-    dbStepLoaded: false,
-  })
-  
+  const {
+    state,
+    setStep,
+    setEmail,
+    setName,
+    setVibe,
+    setTopic,
+    setTimeframe,
+    saveProgress,
+    initialize,
+  } = useOnboarding()
+
   const hasInitializedRef = useRef(false)
+  const hasRedirectedRef = useRef(false)
 
-  const renderShell = (content: ReactNode) => (
-    <AppShell title="Onboarding" showDock={false}>
-      {content}
-    </AppShell>
-  )
-
-  // Initialize - only run once when user becomes available
+  // Redirect if onboarding is complete
   useEffect(() => {
-    // Wait for auth to finish
-    if (authLoading) return
-    
-    // If no user, show email step immediately (no DB call needed)
-    if (!user) {
-      if (!hasInitializedRef.current) {
-        setState(prev => ({
-          ...prev,
-          step: 'email',
-          dbStepLoaded: true,
-          loading: false,
-        }))
-        hasInitializedRef.current = true
-      }
+    if (authLoading || !user || !state.initialized) return
+    if (hasRedirectedRef.current) return
+
+    // Check if user is already completed
+    if (state.step === 'complete') {
+      hasRedirectedRef.current = true
+      router.replace('/chat')
       return
     }
 
-    // Prevent multiple initializations
-    if (hasInitializedRef.current) return
-    hasInitializedRef.current = true
-
-    const initializeFromDB = async () => {
+    // Check database for completion status
+    const checkCompletion = async () => {
       try {
-        // Check URL query parameter first (for deep-linking)
-        const urlStep = searchParams.get('step')
-        let initialStep: OnboardingStep | null = null
-        if (urlStep && isValidOnboardingStep(urlStep)) {
-          initialStep = urlStep
-        }
-        
-        // Fetch user from database
         const response = await fetch(`/api/users?userId=${user.id}`)
         const data = await response.json()
         
-        if (!data.success || !data.data) {
-          // User doesn't exist - use URL step or default to email
-          const stepToUse = initialStep || 'email'
-          setState(prev => ({
-            ...prev,
-            step: stepToUse,
-            email: user.email || '',
-            dbStepLoaded: true,
-            loading: false,
-          }))
-          return
+        if (data.success && data.data) {
+          const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
+          if (dbStep === 'complete' || data.data.onboarding_completed) {
+            hasRedirectedRef.current = true
+            router.replace('/chat')
+          }
         }
-
-        const dbUser = data.data
-        const dbStep = normalizeOnboardingStep(dbUser.onboarding_step)
-
-        // If complete, redirect immediately
-        if (dbStep === 'complete') {
-          router.push(getOnboardingRouteForStep('complete'))
-          return
-        }
-
-        // Use URL step if provided and valid, and transition is legal, otherwise use DB step
-        const stepToUse =
-          initialStep &&
-          isValidOnboardingStep(initialStep) &&
-          isValidStepTransition(dbStep, initialStep)
-            ? initialStep
-            : dbStep
-
-        // Set step from database or URL - clear any previous errors
-        setState(prev => ({
-          ...prev,
-          step: stepToUse,
-          email: dbUser.email || user.email || '',
-          name: dbUser.name || '',
-          interests: dbUser.interests || [],
-          dbStepLoaded: true,
-          loading: false,
-          error: null, // Clear any previous errors
-        }))
       } catch (error) {
-        // On error, use URL step or default to email - clear any previous errors
-        const urlStep = searchParams.get('step')
-        const stepToUse = urlStep && isValidOnboardingStep(urlStep) ? urlStep : 'email'
-        setState(prev => ({ 
-          ...prev, 
-          step: stepToUse,
-          email: user.email || '',
-          dbStepLoaded: true,
-          loading: false, 
-          error: null, // Clear any previous errors
-        }))
+        console.error('[OnboardingController] Error checking completion:', error)
       }
     }
 
-    initializeFromDB()
-  }, [user, authLoading]) // Removed router from dependencies
+    checkCompletion()
+  }, [user, authLoading, state.initialized, state.step, router])
 
-  // Helper to update onboarding step in database (non-blocking)
-  const updateOnboardingStepInDB = useCallback(async (step: OnboardingStep, userId?: string): Promise<boolean> => {
-    const userIdToUse = userId || user?.id
-    if (!userIdToUse) {
-      console.error('[Onboarding] Cannot update step: user ID is missing')
-      return false
+  // Initialize from URL or database
+  useEffect(() => {
+    if (authLoading || !state.initialized) return
+    if (hasInitializedRef.current) return
+
+    // Check URL parameter first
+    const urlStep = searchParams.get('step')
+    if (urlStep && isValidOnboardingStep(urlStep)) {
+      const normalizedStep = normalizeOnboardingStep(urlStep)
+      if (normalizedStep !== state.step) {
+        setStep(normalizedStep)
+      }
     }
 
-    try {
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userIdToUse,
-          onboarding_step: step,
-        }),
-      })
+    hasInitializedRef.current = true
+  }, [authLoading, state.initialized, state.step, searchParams, setStep])
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('[Onboarding] Failed to update step:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorText
-        })
-        return false
-      }
-
-      const data = await response.json()
-      if (!data.success) {
-        console.error('[Onboarding] API returned error:', data.error || 'Unknown error')
-        return false
-      }
-      
-      return true
-    } catch (error: any) {
-      console.error('[Onboarding] Exception updating step:', error.message || error)
-      return false
-    }
-  }, [user])
-
-  // Email step handler - just collect email, don't create account yet
-  const handleEmailSubmit = useCallback(async (email: string) => {
-    setState(prev => ({ ...prev, loading: true, error: null }))
+  // Email step handler - create account with email
+  // For passwordless flow, we'll use OTP (email magic link)
+  // For now, we'll generate a temporary password and sign up
+  const handleEmailSubmit = async (email: string) => {
+    setEmail(email)
     
-    try {
-      // Just store email and advance to password step
-      // Account will be created after password is entered
-      setState(prev => ({
-        ...prev,
-        email,
-        step: 'password',
-        loading: false,
-      }))
+    // If user doesn't exist, create account
+    if (!user) {
+      // Generate a secure random password
+      const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12) + 'A1!'
       
-      // Update URL to reflect current step
-      router.replace(`/onboarding?step=password`)
-    } catch (error: any) {
-      setState(prev => ({ ...prev, loading: false, error: error.message || 'Failed to save email' }))
-    }
-  }, [])
-
-  // Name step handler
-  const handleNameSubmit = useCallback(async (name: string) => {
-    setState(prev => ({ ...prev, loading: true, error: null }))
-    
-    try {
-      // Save name and update step
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          name,
-          onboarding_step: 'interests',
-        }),
-      })
-
-      const data = await response.json()
-      if (!data.success) {
-        setState(prev => ({ ...prev, loading: false, error: 'Failed to save name. Please try again.' }))
+      const result = await signUp(email, tempPassword)
+      
+      if (result.error) {
+        if (result.error.includes('already registered') || result.error.includes('already exists')) {
+          // User exists - they should sign in instead
+          // For now, just advance (they'll be redirected if not authenticated)
+          router.replace(`/onboarding?step=name`)
+          return
+        }
+        // Show error
         return
       }
 
-      // Advance immediately after DB confirms
-      setState(prev => ({
-        ...prev,
-        name,
-        step: 'interests',
-        loading: false,
-      }))
-      
-      // Update URL to reflect current step
-      router.replace(`/onboarding?step=interests`)
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false, error: 'Failed to save name. Please try again.' }))
-    }
-  }, [user])
-
-  // Password step handler - create account with email + password
-  const handlePasswordSubmit = useCallback(async (password: string) => {
-    setState(prev => ({ ...prev, loading: true, error: null }))
-    
-    if (!password || password.length < 6) {
-      setState(prev => ({ 
-        ...prev, 
-        loading: false, 
-        error: 'Password must be at least 6 characters' 
-      }))
+      // Account created - user will be authenticated
+      // Wait a moment for auth to propagate, then continue
+      setTimeout(() => {
+        router.replace(`/onboarding?step=name`)
+      }, 500)
       return
     }
+
+    // User already authenticated, just advance
+    router.replace(`/onboarding?step=name`)
+  }
+
+  // Name step handler
+  const handleNameSubmit = async (name: string) => {
+    setName(name)
     
-    try {
-      // Now create account with email + password
-      const result = await signUp(state.email, password)
-          
-      if (result.error) {
-        if (result.error.includes('already registered') || 
-            result.error.includes('already exists') ||
-            result.error.includes('User already registered')) {
-          setState(prev => ({ 
-            ...prev, 
-            loading: false, 
-            error: 'An account with this email already exists. Please sign in instead.' 
-          }))
-        } else {
-          setState(prev => ({ ...prev, loading: false, error: result.error || 'Failed to create account' }))
-        }
-        return
-      }
-
-      const signupUserId = result.data?.user?.id
-      const signupUserEmail = result.data?.user?.email || state.email
-      
-      if (signupUserId) {
-        // Create user record directly using PUT with onboarding_step
-        // This will create the user if it doesn't exist, or update if it does
-        // We'll retry once with a small delay if it fails (in case auth hasn't propagated yet)
-        let createAttempts = 0
-        const maxAttempts = 2
-        
-        while (createAttempts < maxAttempts) {
-          try {
-            const createResponse = await fetch('/api/users', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                userId: signupUserId,
-                onboarding_step: 'name',
-              }),
-            })
-            
-            const createData = await createResponse.json()
-            
-            if (createData.success) {
-              // User record created/updated successfully
-              break
-            } else {
-              // If it's an auth error and we haven't retried, wait and retry
-              if (createData.error?.includes('not found in auth') && createAttempts === 0) {
-                createAttempts++
-                await new Promise(resolve => setTimeout(resolve, 500)) // Wait 500ms
-                continue
-              }
-              
-              // Otherwise, it's a real error
-              console.error('[Onboarding] Failed to create user record:', createData.error)
-              setState(prev => ({ 
-                ...prev, 
-                loading: false, 
-                error: 'Account created but failed to initialize. Please try signing in.' 
-              }))
-              return
-            }
-          } catch (createError: any) {
-            if (createAttempts === 0) {
-              createAttempts++
-              await new Promise(resolve => setTimeout(resolve, 500)) // Wait 500ms and retry
-              continue
-            }
-            
-            console.error('[Onboarding] Exception creating user record:', createError)
-            setState(prev => ({ 
-              ...prev, 
-              loading: false, 
-              error: 'Account created but failed to initialize. Please try signing in.' 
-            }))
-            return
-          }
-          
-          createAttempts++
-        }
-        
-        // User record should now exist, update step
-        // Pass signupUserId directly since user from useAuth might not be updated yet
-        const updated = await updateOnboardingStepInDB('name', signupUserId)
-        
-        if (updated) {
-          // Only advance after DB confirms update
-          setState(prev => ({
-            ...prev,
-            password,
-            step: 'name',
-            loading: false,
-          }))
-          
-          // Update URL to reflect current step
-          router.replace(`/onboarding?step=name`)
-        } else {
-          setState(prev => ({ 
-            ...prev, 
-            loading: false, 
-            error: 'Failed to save progress. Please try again.' 
-          }))
-        }
-      } else {
-        // Email confirmation required
-        setState(prev => ({ 
-          ...prev, 
-          loading: false, 
-          error: 'Please check your email to verify your account, then return here to continue.' 
-        }))
-      }
-    } catch (error: any) {
-      setState(prev => ({ ...prev, loading: false, error: error.message || 'Failed to create account' }))
+    // Save name and advance
+    const saved = await saveProgress('vibe')
+    if (saved) {
+      router.replace(`/onboarding?step=vibe`)
     }
-  }, [state.email, signUp, updateOnboardingStepInDB, router])
+  }
 
-  // Interests step handler
-  const handleInterestsSubmit = useCallback(async (interests: string[]) => {
-    setState(prev => ({ ...prev, loading: true, error: null }))
-    
-    try {
-      // Save interests and update step
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          interests,
-          onboarding_step: 'personality',
-        }),
-      })
-
-      const data = await response.json()
-      if (!data.success) {
-        setState(prev => ({ ...prev, loading: false, error: 'Failed to save interests. Please try again.' }))
-        return
-      }
-
-      // Advance immediately after DB confirms
-      setState(prev => ({
-        ...prev,
-        interests,
-        step: 'personality',
-        loading: false,
-      }))
-      
-      // Update URL to reflect current step
-      router.replace(`/onboarding?step=personality`)
-    } catch (error) {
-      setState(prev => ({ ...prev, loading: false, error: 'Failed to save interests. Please try again.' }))
+  // Vibe step handler
+  const handleVibeSubmit = async (vibe: string) => {
+    setVibe(vibe)
+    const saved = await saveProgress('topic')
+    if (saved) {
+      router.replace(`/onboarding?step=topic`)
     }
-  }, [user])
+  }
 
-  // Personality step handler
-  const handlePersonalitySubmit = useCallback(async (answers: Record<string, string | string[]>) => {
-    setState(prev => ({ ...prev, loading: true, error: null, personalityAnswers: answers }))
-    
-    try {
-      // Update step to complete first (most important)
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          onboarding_step: 'complete',
-        }),
-      })
-
-      const data = await response.json()
-      
-      // Redirect immediately if step update succeeds
-      if (data.success) {
-        router.push(getNextOnboardingRoute('complete'))
-        return
-      }
-
-      // Try personality generation in background (non-blocking)
-      if (user?.id) {
-        fetch('/api/personality/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            questionnaireAnswers: answers,
-            interests: state.interests,
-            vibe: null,
-            topic: null,
-          }),
-        }).catch(() => {
-          // Continue anyway
-        })
-      }
-
-      // Redirect even if personality generation fails
-      router.push(getNextOnboardingRoute('complete'))
-    } catch (error) {
-      // Try to update step anyway
-      updateOnboardingStepInDB('complete').catch((error) => {
-        console.error('[Onboarding] Failed to update step to complete (fallback):', error)
-      })
-      router.push(getNextOnboardingRoute('complete'))
+  // Topic step handler
+  const handleTopicSubmit = async (topic: string) => {
+    setTopic(topic)
+    const saved = await saveProgress('timeframe')
+    if (saved) {
+      router.replace(`/onboarding?step=timeframe`)
     }
-  }, [user, state.interests, router, updateOnboardingStepInDB])
+  }
 
-  // Skip personality handler
-  const handleSkipPersonality = useCallback(async () => {
-    setState(prev => ({ ...prev, loading: true }))
-    
-    try {
-      // Update step to complete
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
-          onboarding_step: 'complete',
-        }),
-      })
-
-      const data = await response.json()
-      
-      // Redirect immediately
-      if (data.success) {
-        router.push(getNextOnboardingRoute('complete'))
-      } else {
-        // Try anyway
-        updateOnboardingStepInDB('complete').catch((error) => {
-          console.error('[Onboarding] Failed to update step to complete (fallback):', error)
-        })
-      router.push(getNextOnboardingRoute('complete'))
-      }
-    } catch (error) {
-      // Redirect anyway
-      updateOnboardingStepInDB('complete').catch((error) => {
-        console.error('[Onboarding] Failed to update step to complete (fallback):', error)
-      })
-      router.push(getNextOnboardingRoute('complete'))
+  // Timeframe step handler
+  const handleTimeframeSubmit = async (timeframe: number | null) => {
+    setTimeframe(timeframe)
+    const saved = await saveProgress('confirmation')
+    if (saved) {
+      router.replace(`/onboarding?step=confirmation`)
     }
-  }, [user, router, updateOnboardingStepInDB])
+  }
 
-  // Go back handler - update DB when going back
-  const goBack = useCallback(async () => {
+  // Confirmation step handler - complete onboarding
+  const handleConfirmationSubmit = async () => {
+    const saved = await saveProgress('complete')
+    if (saved) {
+      router.replace('/chat')
+    }
+  }
+
+  // Go back handler
+  const goBack = async () => {
     const currentIndex = STEP_ORDER.indexOf(state.step)
     if (currentIndex > 0) {
       const prevStep = STEP_ORDER[currentIndex - 1]
-      
-      // Update DB to previous step
-      if (user?.id) {
-        try {
-          await updateOnboardingStepInDB(prevStep)
-        } catch (error) {
-          // Continue anyway - UI update is more important
-        }
-      }
-      
-      setState(prev => ({ ...prev, step: prevStep, error: null }))
-      
-      // Update URL to reflect current step
+      setStep(prevStep)
       router.replace(`/onboarding?step=${prevStep}`)
     }
-  }, [state.step, user, updateOnboardingStepInDB])
+  }
 
   // Show loading only if auth is loading and we haven't initialized
-  if (authLoading && !hasInitializedRef.current) {
-    return renderShell(
-      <div
-        style={{
-          minHeight: '50vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
-      </div>
+  if (authLoading || !state.initialized) {
+    return (
+      <AppShell title="Onboarding" showDock={false}>
+        <div
+          style={{
+            minHeight: '50vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+        </div>
+      </AppShell>
     )
   }
 
-  // For steps other than email and password, require user
-  // (Account is created during password step, so password doesn't need user yet)
-  if (!user && state.step !== 'email' && state.step !== 'password') {
-    return renderShell(
-      <div
-        style={{
-          minHeight: '50vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-        }}
-      >
-        <p style={{ color: tokens.colors.textPrimaryOnDark, ...tokens.typography.heading }}>
-          Please sign in to continue
-        </p>
-      </div>
+  // For steps other than email, require user
+  if (!user && state.step !== 'email') {
+    return (
+      <AppShell title="Onboarding" showDock={false}>
+        <div
+          style={{
+            minHeight: '50vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+          }}
+        >
+          <p style={{ color: tokens.colors.textPrimaryOnDark, ...tokens.typography.heading }}>
+            Please sign in to continue
+          </p>
+        </div>
+      </AppShell>
     )
   }
 
   const currentStepIndex = STEP_ORDER.indexOf(state.step)
   const canGoBack = currentStepIndex > 0
 
-  return renderShell(
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: tokens.spacing[20],
-      }}
-    >
-      {/* Progress indicators */}
-      {state.step !== 'complete' && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: tokens.spacing[8],
-          }}
-        >
-          {STEP_ORDER.map((step, index) => (
-            <span
-              key={step}
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background:
-                  index <= currentStepIndex
-                    ? tokens.colors.surface1
-                    : tokens.colors.backgroundSecondary,
-                opacity: index <= currentStepIndex ? 1 : 0.3,
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Error message */}
-      {state.error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            padding: tokens.spacing[16],
-            borderRadius: tokens.radii.input,
-            background: 'rgba(239, 68, 68, 0.1)',
-            color: '#EF4444',
-            ...tokens.typography.label,
-            textAlign: 'center',
-            pointerEvents: 'auto',
-          }}
-        >
-          {state.error}
-        </motion.div>
-      )}
-
-      {/* Step content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={state.step}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          style={{ pointerEvents: 'none', width: '100%' }}
-        >
-          <div style={{ pointerEvents: 'auto', width: '100%' }}>
-            {state.step === 'email' && (
-              <EmailStep
-                email={state.email}
-                onEmailChange={(email) => setState(prev => ({ ...prev, email }))}
-                onSubmit={handleEmailSubmit}
-                loading={state.loading}
-                error={state.error}
-                onBack={() => router.push('/')}
+  return (
+    <AppShell title="Onboarding" showDock={false}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: tokens.spacing[20],
+          width: '100%',
+          minHeight: 'calc(100vh - 120px)',
+          padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {/* Progress indicators */}
+        {state.step !== 'complete' && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: tokens.spacing[8],
+              marginBottom: tokens.spacing[8],
+            }}
+          >
+            {STEP_ORDER.map((step, index) => (
+              <span
+                key={step}
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background:
+                    index <= currentStepIndex
+                      ? tokens.colors.surface1
+                      : tokens.colors.backgroundSecondary,
+                  opacity: index <= currentStepIndex ? 1 : 0.3,
+                }}
               />
-            )}
-
-            {state.step === 'name' && (
-              <NameStep
-                name={state.name}
-                onNameChange={(name) => setState(prev => ({ ...prev, name }))}
-                onSubmit={handleNameSubmit}
-                loading={state.loading}
-                error={state.error}
-                onBack={canGoBack ? goBack : undefined}
-              />
-            )}
-
-            {state.step === 'password' && (
-              <PasswordStep
-                password={state.password}
-                onPasswordChange={(password) => setState(prev => ({ ...prev, password }))}
-                onSubmit={handlePasswordSubmit}
-                loading={state.loading}
-                error={state.error}
-                onBack={canGoBack ? goBack : undefined}
-              />
-            )}
-
-            {state.step === 'interests' && (
-              <InterestsStep
-                selectedInterests={state.interests}
-                onInterestsChange={(interests) => setState(prev => ({ ...prev, interests }))}
-                onSubmit={handleInterestsSubmit}
-                loading={state.loading}
-                error={state.error}
-                onBack={canGoBack ? goBack : undefined}
-              />
-            )}
-
-            {state.step === 'personality' && (
-              <PersonalityStep
-                answers={state.personalityAnswers}
-                onAnswersChange={(answers) => setState(prev => ({ ...prev, personalityAnswers: answers }))}
-                onSubmit={handlePersonalitySubmit}
-                onSkip={handleSkipPersonality}
-                loading={state.loading}
-                error={state.error}
-                onBack={canGoBack ? goBack : undefined}
-              />
-            )}
+            ))}
           </div>
-        </motion.div>
-      </AnimatePresence>
-    </div>
+        )}
+
+        {/* Error message */}
+        {state.error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{
+              padding: tokens.spacing[16],
+              borderRadius: tokens.radii.input,
+              background: 'rgba(239, 68, 68, 0.1)',
+              color: '#EF4444',
+              ...tokens.typography.label,
+              textAlign: 'center',
+              pointerEvents: 'auto',
+              maxWidth: '600px',
+              width: '100%',
+            }}
+          >
+            {state.error}
+          </motion.div>
+        )}
+
+        {/* Step content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={state.step}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            style={{ pointerEvents: 'none', width: '100%', display: 'flex', justifyContent: 'center' }}
+          >
+            <div style={{ pointerEvents: 'auto', width: '100%', maxWidth: '600px' }}>
+              {state.step === 'email' && (
+                <EmailStep
+                  email={state.email || user?.email || ''}
+                  onEmailChange={setEmail}
+                  onSubmit={handleEmailSubmit}
+                  loading={state.loading}
+                  error={state.error}
+                  onBack={() => router.push('/')}
+                />
+              )}
+
+              {state.step === 'name' && (
+                <NameStep
+                  name={state.name}
+                  onNameChange={setName}
+                  onSubmit={handleNameSubmit}
+                  loading={state.loading}
+                  error={state.error}
+                  onBack={canGoBack ? goBack : undefined}
+                />
+              )}
+
+              {state.step === 'vibe' && (
+                <VibeStep
+                  selectedVibe={state.vibe}
+                  onVibeChange={setVibe}
+                  onSubmit={handleVibeSubmit}
+                  loading={state.loading}
+                  error={state.error}
+                  onBack={canGoBack ? goBack : undefined}
+                />
+              )}
+
+              {state.step === 'topic' && (
+                <TopicStep
+                  selectedTopic={state.topic}
+                  onTopicChange={setTopic}
+                  onSubmit={handleTopicSubmit}
+                  loading={state.loading}
+                  error={state.error}
+                  onBack={canGoBack ? goBack : undefined}
+                />
+              )}
+
+              {state.step === 'timeframe' && (
+                <TimeframeStep
+                  selectedTimeframe={state.timeframe}
+                  onTimeframeChange={setTimeframe}
+                  onSubmit={handleTimeframeSubmit}
+                  loading={state.loading}
+                  error={state.error}
+                  onBack={canGoBack ? goBack : undefined}
+                />
+              )}
+
+              {state.step === 'confirmation' && (
+                <ConfirmationStep
+                  name={state.name}
+                  vibe={state.vibe}
+                  topic={state.topic}
+                  timeframe={state.timeframe}
+                  onSubmit={handleConfirmationSubmit}
+                  loading={state.loading}
+                  error={state.error}
+                  onBack={canGoBack ? goBack : undefined}
+                />
+              )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    </AppShell>
   )
 }

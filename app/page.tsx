@@ -33,19 +33,19 @@ export default function Home() {
             const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
             
             // Redirect based on DB step
-            if (dbStep === 'complete') {
-              if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
-                router.push("/vibe")
+            if (dbStep === 'complete' || data.data.onboarding_completed) {
+              if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
+                router.replace("/chat")
               }
             } else {
               if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                router.push(`/onboarding?step=${dbStep}`)
+                router.replace(`/onboarding?step=${dbStep}`)
               }
             }
           } else {
             // User not found in database → go to onboarding
             if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.push("/onboarding?step=email")
+              router.replace("/onboarding?step=email")
             }
           }
         } catch (error) {

@@ -18,6 +18,36 @@ export default function ChatPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
 
+  // Check onboarding status
+  useEffect(() => {
+    if (authLoading || !user) return
+    
+    const checkOnboarding = async () => {
+      try {
+        const response = await fetch(`/api/users?userId=${user.id}`)
+        const data = await response.json()
+        
+        if (data.success && data.data) {
+          const dbStep = data.data.onboarding_step
+          if (dbStep !== 'complete' && !data.data.onboarding_completed) {
+            router.replace(`/onboarding?step=${dbStep || 'email'}`)
+            return
+          }
+        } else {
+          // User not found, redirect to onboarding
+          router.replace('/onboarding?step=email')
+          return
+        }
+      } catch (error) {
+        console.error('[ChatPage] Error checking onboarding:', error)
+        router.replace('/onboarding?step=email')
+        return
+      }
+    }
+    
+    checkOnboarding()
+  }, [user, authLoading, router])
+
   useEffect(() => {
     if (!user?.id) return
 

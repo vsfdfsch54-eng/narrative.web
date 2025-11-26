@@ -162,15 +162,15 @@ export default function VibePage() {
           const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
           
           // If not complete, redirect to onboarding
-          if (dbStep !== 'complete') {
+          if (dbStep !== 'complete' && !data.data.onboarding_completed) {
             if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.push(`/onboarding?step=${dbStep}`)
+              router.replace(`/onboarding?step=${dbStep}`)
             }
             }
           } else {
             // User not found in database → redirect to onboarding
           if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-            router.push("/onboarding?step=email")
+            router.replace("/onboarding?step=email")
           }
           }
         } catch (error) {

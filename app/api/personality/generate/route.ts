@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
           .maybeSingle()
         
         if (existingUserByEmail) {
-          user = existingUserByEmail
+            user = existingUserByEmail
         } else {
           // Create new user
           const { data: upsertResult, error: createError } = await supabase

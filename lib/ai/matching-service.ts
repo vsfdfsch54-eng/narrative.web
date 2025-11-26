@@ -162,19 +162,19 @@ export async function findBestMatch(
         .eq('id', candidate.user_id)
         .single()
       
-      const candidateTraits = candidateData?.traits || null
+        const candidateTraits = candidateData?.traits || null
+        
+        // Parse candidate embedding if needed
+        let candidateEmbedding: number[]
+        if (typeof candidate.embedding === 'string') {
+          const cleaned = candidate.embedding.replace(/[\[\]]/g, '')
+          candidateEmbedding = cleaned.split(',').map(Number)
+        } else if (Array.isArray(candidate.embedding)) {
+          candidateEmbedding = candidate.embedding
+        } else {
+          candidateEmbedding = []
+        }
       
-      // Parse candidate embedding if needed
-      let candidateEmbedding: number[]
-      if (typeof candidate.embedding === 'string') {
-        const cleaned = candidate.embedding.replace(/[\[\]]/g, '')
-        candidateEmbedding = cleaned.split(',').map(Number)
-      } else if (Array.isArray(candidate.embedding)) {
-        candidateEmbedding = candidate.embedding
-      } else {
-        candidateEmbedding = []
-      }
-    
       // Calculate compatibility score
       const score = calculateCompatibilityScore(
         userEmbedding,

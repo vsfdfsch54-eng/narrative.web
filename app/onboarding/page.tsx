@@ -1,10 +1,15 @@
 "use client"
 
 import { Suspense } from "react"
+import { OnboardingProvider } from "@/context/OnboardingContext"
 import { OnboardingController } from "@/components/onboarding/OnboardingController"
 
 function OnboardingContent() {
-  return <OnboardingController />
+  return (
+    <OnboardingProvider>
+      <OnboardingController />
+    </OnboardingProvider>
+  )
 }
 
 export default function OnboardingPage() {

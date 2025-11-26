@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
         console.warn('[Connect API] ⚠️ Invalid embedding format, will use FIFO matching')
         userEmbedding = null
       }
-      }
+    }
 
     // Remove any existing entry in waiting pool for this user
     await supabase.from('waiting_pool').delete().eq('user_id', userId)

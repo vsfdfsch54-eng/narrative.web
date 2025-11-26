@@ -3,18 +3,26 @@
  * Single source of truth for onboarding step management
  * 
  * The ONLY source of truth for onboarding progress is: users.onboarding_step (TEXT)
- * Allowed values EXACTLY: ['start','email','name','password','interests','personality','complete']
+ * Allowed values EXACTLY: ['start','email','name','vibe','topic','timeframe','confirmation','complete']
+ * 
+ * Flow:
+ * 1. Authentication (email/OTP) - 'email'
+ * 2. Name page - 'name'
+ * 3. Vibe selection - 'vibe'
+ * 4. Topic selection - 'topic'
+ * 5. Timeframe selection - 'timeframe'
+ * 6. Final confirmation page - 'confirmation'
+ * 7. Redirect to main app (/chat) - 'complete'
  */
 
-export type OnboardingStep = 'start' | 'email' | 'name' | 'password' | 'interests' | 'personality' | 'complete'
+export type OnboardingStep = 'start' | 'email' | 'name' | 'vibe' | 'topic' | 'timeframe' | 'confirmation' | 'complete'
 
-export const ONBOARDING_STEPS: OnboardingStep[] = ['start', 'email', 'name', 'password', 'interests', 'personality', 'complete']
+export const ONBOARDING_STEPS: OnboardingStep[] = ['start', 'email', 'name', 'vibe', 'topic', 'timeframe', 'confirmation', 'complete']
 
 /**
  * Step order for progression (excludes 'start' and 'complete')
- * Email and password are collected first, then account is created
  */
-export const STEP_ORDER: OnboardingStep[] = ['email', 'password', 'name', 'interests', 'personality']
+export const STEP_ORDER: OnboardingStep[] = ['email', 'name', 'vibe', 'topic', 'timeframe', 'confirmation']
 
 /**
  * Get the next step in the onboarding flow
@@ -33,7 +41,7 @@ export function getNextStep(currentStep: OnboardingStep): OnboardingStep {
  */
 export function getNextOnboardingRoute(step: OnboardingStep): string {
   if (step === 'complete') {
-    return '/vibe'
+    return '/chat'
   }
   return '/onboarding'
 }
@@ -43,7 +51,7 @@ export function getNextOnboardingRoute(step: OnboardingStep): string {
  */
 export function getOnboardingRouteForStep(step: OnboardingStep): string {
   if (step === 'complete') {
-    return '/vibe'
+    return '/chat'
   }
   return '/onboarding'
 }
