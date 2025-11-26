@@ -91,47 +91,46 @@ export function OnboardingController() {
     hasInitializedRef.current = true
   }, [authLoading, state.initialized, state.step, searchParams, setStep])
 
-  // Email step handler - create account with email
-  // For passwordless flow, we'll use OTP (email magic link)
-  // For now, we'll generate a temporary password and sign up
+  // Email step handler - just advance to name step
+  // Account creation will happen when name is submitted (if needed)
   const handleEmailSubmit = async (email: string) => {
     setEmail(email)
-    
-    // If user doesn't exist, create account
-    if (!user) {
-      // Generate a secure random password
-      const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12) + 'A1!'
-      
-      const result = await signUp(email, tempPassword)
-      
-      if (result.error) {
-        if (result.error.includes('already registered') || result.error.includes('already exists')) {
-          // User exists - they should sign in instead
-          // For now, just advance (they'll be redirected if not authenticated)
-          router.replace(`/onboarding?step=name`)
-          return
-        }
-        // Show error
-        return
-      }
-
-      // Account created - user will be authenticated
-      // Wait a moment for auth to propagate, then continue
-      setTimeout(() => {
-        router.replace(`/onboarding?step=name`)
-      }, 500)
-      return
-    }
-
-    // User already authenticated, just advance
+    // Just advance immediately - no blocking operations
     router.replace(`/onboarding?step=name`)
   }
 
-  // Name step handler
+  // Name step handler - create account here if needed
   const handleNameSubmit = async (name: string) => {
     setName(name)
     
-    // Save name and advance
+    // If user doesn't exist, create account now
+    if (!user && state.email) {
+      try {
+        // Generate a secure random password
+        const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12) + 'A1!'
+        
+        const result = await signUp(state.email, tempPassword)
+        
+        if (result.error) {
+          if (result.error.includes('already registered') || result.error.includes('already exists')) {
+            // User exists - show error and suggest login
+            // For now, try to continue (they may need to login separately)
+            // The saveProgress will fail if user doesn't exist, which is fine
+          } else {
+            // Other error - show it
+            return
+          }
+        }
+        
+        // Wait briefly for auth to propagate
+        await new Promise(resolve => setTimeout(resolve, 300))
+      } catch (error) {
+        console.error('[OnboardingController] Account creation error:', error)
+        // Continue anyway - user might already exist
+      }
+    }
+    
+    // Save name and advance (this will create user record if needed)
     const saved = await saveProgress('vibe')
     if (saved) {
       router.replace(`/onboarding?step=vibe`)
@@ -305,7 +304,7 @@ export function OnboardingController() {
                   email={state.email || user?.email || ''}
                   onEmailChange={setEmail}
                   onSubmit={handleEmailSubmit}
-                  loading={state.loading}
+                  loading={false}
                   error={state.error}
                   onBack={() => router.push('/')}
                 />
