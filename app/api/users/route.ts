@@ -228,7 +228,7 @@ async function saveOnboardingProgress(
     onboarding_step?: string
     onboarding_completed?: boolean
     email?: string
-  }
+        }
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
     // First, check if user exists
@@ -320,9 +320,9 @@ async function saveOnboardingProgress(
       // Handle duplicate email error
       if (upsertError.code === '23505' || upsertError.message.includes('duplicate key') || upsertError.message.includes('user_email_key')) {
         // Try updating without email
-        const updateFields: any = {
-          updated_at: new Date().toISOString()
-        }
+            const updateFields: any = {
+              updated_at: new Date().toISOString()
+            }
         if (data.firstName !== undefined || data.lastName !== undefined) {
           const firstName = data.firstName || ''
           const lastName = data.lastName || ''
