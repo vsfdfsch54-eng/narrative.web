@@ -164,6 +164,7 @@ export function OnboardingController() {
     navigateToStep('name')
     
     // Save progress in background (non-blocking)
+    // No additional data to save at this step (email/password already handled)
     saveProgress('name').catch((error) => {
       console.error('[OnboardingController] Save progress error:', error)
     })
@@ -175,8 +176,9 @@ export function OnboardingController() {
     setLastName(lastName)
     // Navigate immediately
     navigateToStep('questions')
-    // Save in background (non-blocking)
-    saveProgress('questions').catch((error) => {
+    // Save in background with explicit values (non-blocking)
+    // Pass names explicitly to avoid stale closure issues
+    saveProgress('questions', { firstName, lastName }).catch((error) => {
       console.error('[OnboardingController] Save progress error:', error)
     })
   }
@@ -186,8 +188,9 @@ export function OnboardingController() {
     setQuestionsAnswers(answers)
     // Navigate immediately
     navigateToStep('interests')
-    // Save in background (non-blocking)
-    saveProgress('interests').catch((error) => {
+    // Save in background with explicit values (non-blocking)
+    // Pass answers explicitly to avoid stale closure issues
+    saveProgress('interests', { questionsAnswers: answers }).catch((error) => {
       console.error('[OnboardingController] Save progress error:', error)
     })
   }
@@ -197,10 +200,11 @@ export function OnboardingController() {
     setInterests(interests)
     // Navigate immediately
     navigateToStep('confirmation')
-    // Save in background (non-blocking)
-    saveProgress('confirmation').catch((error) => {
+    // Save in background with explicit values (non-blocking)
+    // Pass interests explicitly to avoid stale closure issues
+    saveProgress('confirmation', { interests }).catch((error) => {
       console.error('[OnboardingController] Save progress error:', error)
-      })
+    })
   }
 
   // Confirmation step handler - complete onboarding
@@ -227,10 +231,21 @@ export function OnboardingController() {
       }
       
       // Save synchronously for completion step - MUST wait for this
+      // Get current state values to ensure we're using the latest
+      const currentFirstName = state.firstName || undefined
+      const currentLastName = state.lastName || undefined
+      const currentQuestionsAnswers = Object.keys(state.questionsAnswers).length > 0 ? state.questionsAnswers : undefined
+      const currentInterests = state.interests.length > 0 ? state.interests : undefined
+      const currentEmail = state.email || undefined
+      
       console.log('[OnboardingController] Saving completion to database...', {
         userId: user.id,
         step: 'complete',
-        completed: true
+        completed: true,
+        firstName: currentFirstName,
+        lastName: currentLastName,
+        hasQuestions: !!currentQuestionsAnswers,
+        interestsCount: currentInterests?.length || 0,
       })
       
       const response = await fetch('/api/users', {
@@ -238,13 +253,13 @@ export function OnboardingController() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          firstName: state.firstName || undefined,
-          lastName: state.lastName || undefined,
-          questionsAnswers: Object.keys(state.questionsAnswers).length > 0 ? state.questionsAnswers : undefined,
-          interests: state.interests.length > 0 ? state.interests : undefined,
+          firstName: currentFirstName,
+          lastName: currentLastName,
+          questionsAnswers: currentQuestionsAnswers,
+          interests: currentInterests,
           onboarding_step: 'complete',
           onboarding_completed: true,
-          email: state.email || undefined,
+          email: currentEmail,
         }),
       })
       

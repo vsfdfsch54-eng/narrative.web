@@ -27,7 +27,16 @@ interface OnboardingContextType {
   setQuestionsAnswers: (answers: Record<string, string>) => void
   setQuestionAnswer: (questionId: string, answer: string) => void
   setInterests: (interests: string[]) => void
-  saveProgress: (step?: OnboardingStep) => Promise<boolean>
+  saveProgress: (
+    step?: OnboardingStep,
+    options?: {
+      firstName?: string
+      lastName?: string
+      questionsAnswers?: Record<string, string>
+      interests?: string[]
+      email?: string
+    }
+  ) => Promise<boolean>
   initialize: () => Promise<void>
 }
 
@@ -95,7 +104,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
   // Save progress to database - ALWAYS non-blocking
   // This function NEVER blocks navigation - saves happen in background
-  const saveProgress = useCallback(async (step?: OnboardingStep): Promise<boolean> => {
+  const saveProgress = useCallback(async (
+    step?: OnboardingStep,
+    options?: {
+      firstName?: string
+      lastName?: string
+      questionsAnswers?: Record<string, string>
+      interests?: string[]
+      email?: string
+    }
+  ): Promise<boolean> => {
     // Update local state immediately (synchronous)
     if (step) {
       setState(prev => ({ ...prev, step, error: null }))
@@ -106,6 +124,14 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       console.warn('[OnboardingContext] Cannot save: user ID is missing, will retry after auth')
       return true // Always return true to allow navigation
     }
+
+    // Use provided values or fall back to current state
+    // This prevents stale closure issues when setTimeout executes
+    const firstName = options?.firstName !== undefined ? options.firstName : state.firstName
+    const lastName = options?.lastName !== undefined ? options.lastName : state.lastName
+    const questionsAnswers = options?.questionsAnswers !== undefined ? options.questionsAnswers : state.questionsAnswers
+    const interests = options?.interests !== undefined ? options.interests : state.interests
+    const email = options?.email !== undefined ? options.email : state.email
 
     // Save in background - don't set loading state (non-blocking)
     // Use setTimeout to ensure this doesn't block the current execution
@@ -119,13 +145,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: user.id,
-            firstName: state.firstName || undefined,
-            lastName: state.lastName || undefined,
-            questionsAnswers: Object.keys(state.questionsAnswers).length > 0 ? state.questionsAnswers : undefined,
-            interests: state.interests.length > 0 ? state.interests : undefined,
+            firstName: firstName || undefined,
+            lastName: lastName || undefined,
+            questionsAnswers: Object.keys(questionsAnswers).length > 0 ? questionsAnswers : undefined,
+            interests: interests.length > 0 ? interests : undefined,
             onboarding_step: stepToSave,
             onboarding_completed: isComplete,
-            email: state.email || undefined,
+            email: email || undefined,
           }),
         })
 
