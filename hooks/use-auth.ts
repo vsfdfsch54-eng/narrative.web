@@ -105,7 +105,25 @@ export function useAuth() {
       })
 
       if (error) {
-        return { success: false, error: error.message }
+        // Provide user-friendly error messages
+        let errorMessage = error.message
+        
+        // Handle common Supabase auth errors
+        if (error.message.includes('Invalid login credentials') || 
+            error.message.includes('invalid_credentials') ||
+            error.message.includes('Invalid credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.'
+        } else if (error.message.includes('Email not confirmed') ||
+                   error.message.includes('email_not_confirmed')) {
+          errorMessage = 'Please verify your email address before signing in. Check your inbox for a confirmation email.'
+        } else if (error.message.includes('User not found') ||
+                   error.message.includes('user_not_found')) {
+          errorMessage = 'No account found with this email. Please sign up first.'
+        } else if (error.message.includes('Too many requests')) {
+          errorMessage = 'Too many login attempts. Please wait a moment and try again.'
+        }
+        
+        return { success: false, error: errorMessage }
       }
 
       // Check if user has a profile
@@ -124,7 +142,9 @@ export function useAuth() {
 
       return { success: true, data }
     } catch (error: any) {
-      return { success: false, error: error.message || "Failed to sign in" }
+      // Handle unexpected errors
+      const errorMessage = error?.message || "Failed to sign in. Please try again."
+      return { success: false, error: errorMessage }
     }
   }
 
