@@ -5,10 +5,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const userId = searchParams.get('userId')
+  // Parse URL safely - mobile browsers might format URLs differently
+  let searchParams: URLSearchParams
+  let userId: string | null = null
+  
+  try {
+    const url = new URL(request.url)
+    searchParams = url.searchParams
+    userId = searchParams.get('userId')
+  } catch (urlError: any) {
+    console.error('[Users API GET] ❌ URL parsing error:', urlError)
+    return NextResponse.json(
+      { success: false, error: 'Invalid request URL' }, 
+      { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
+  }
 
-  if (!userId) {
+  // Validate userId - must be present and valid UUID format
+  if (!userId || userId.trim() === '') {
     return NextResponse.json(
       { success: false, error: 'User ID required' }, 
       { 
@@ -20,8 +39,43 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  // Basic UUID validation (Supabase uses UUIDs)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!uuidRegex.test(userId)) {
+    console.warn('[Users API GET] ⚠️ Invalid userId format:', userId)
+    return NextResponse.json(
+      { success: false, error: 'Invalid user ID format' }, 
+      { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    )
+  }
+
   try {
-    const supabase = createServerClient()
+    // Create Supabase client - wrap in try-catch in case env vars are missing
+    let supabase
+    try {
+      supabase = createServerClient()
+    } catch (clientError: any) {
+      console.error('[Users API GET] ❌ Failed to create Supabase client:', clientError)
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Server configuration error',
+          details: clientError?.message || 'Failed to initialize database connection'
+        }, 
+        { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+    }
+    
     let userData = null
     
     // First, check if user exists in database
