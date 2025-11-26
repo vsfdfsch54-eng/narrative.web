@@ -43,7 +43,7 @@ export function OnboardingController() {
   const hasInitializedRef = useRef(false)
   const hasRedirectedRef = useRef(false)
 
-  // Redirect if onboarding is complete - ALWAYS redirect to /chat
+  // Redirect if onboarding is complete - ALWAYS redirect to /vibe
   useEffect(() => {
     if (authLoading || !user || !state.initialized) return
     if (hasRedirectedRef.current) return
@@ -51,11 +51,11 @@ export function OnboardingController() {
     // Check if user is already completed
     if (state.step === 'complete') {
       hasRedirectedRef.current = true
-      router.replace('/chat')
+      router.replace('/vibe')
       // Fallback navigation
       setTimeout(() => {
-        if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
-          window.location.href = '/chat'
+        if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
+          window.location.href = '/vibe'
         }
       }, 100)
       return
@@ -71,11 +71,11 @@ export function OnboardingController() {
           const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
           if (dbStep === 'complete' || data.data.onboarding_completed) {
             hasRedirectedRef.current = true
-            router.replace('/chat')
+            router.replace('/vibe')
             // Fallback navigation
             setTimeout(() => {
-              if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
-                window.location.href = '/chat'
+              if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
+                window.location.href = '/vibe'
               }
             }, 100)
           }
@@ -142,7 +142,7 @@ export function OnboardingController() {
           if (result.error.includes('already registered') || result.error.includes('already exists')) {
             // User exists - they should login, but continue anyway
             console.warn('[OnboardingController] User already exists, continuing anyway')
-          } else {
+        } else {
             // Other error - log but continue
             console.error('[OnboardingController] Signup error:', result.error)
           }
@@ -154,8 +154,8 @@ export function OnboardingController() {
         console.error('[OnboardingController] Account creation error:', error)
         // Continue anyway - user might already exist
       }
-    }
-    
+        }
+        
     // Navigate to name step
     navigateToStep('name')
     
@@ -207,11 +207,11 @@ export function OnboardingController() {
         })
     
     // Navigate to chat immediately
-    router.replace('/chat')
+    router.replace('/vibe')
     // Fallback navigation
     setTimeout(() => {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
-        window.location.href = '/chat'
+      if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
+        window.location.href = '/vibe'
     }
     }, 100)
   }

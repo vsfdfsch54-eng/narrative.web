@@ -5,59 +5,59 @@ import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { getOnboardingRouteForStep, normalizeOnboardingStep } from "@/lib/onboarding"
+import { normalizeOnboardingStep } from "@/lib/onboarding"
+import { getAppUserRecord } from "@/lib/user-helpers"
 
 export default function Home() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
-  const [checking, setChecking] = useState(false)
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true)
 
-  // Redirect authenticated users based on onboarding_step from DB
-  // Only redirect if user is actually on the home page (/)
   useEffect(() => {
-    if (authLoading) return
-    
-    // Only redirect if we're on the home page
-    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+    // Wait for auth to finish loading
+    if (authLoading) {
       return
     }
-    
-    if (user) {
-      setChecking(true)
-      const checkAndRedirect = async () => {
-        try {
-          // Fetch user from database - SINGLE SOURCE OF TRUTH
-          const response = await fetch(`/api/users?userId=${user.id}`)
-          const data = await response.json()
-          
-          if (data.success && data.data) {
-            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
-            
-            // Redirect based on DB step
-            if (dbStep === 'complete' || data.data.onboarding_completed) {
-              // Redirect to vibe page (where users select vibe and topic)
-              router.replace("/vibe")
-            } else {
-              router.replace(`/onboarding?step=${dbStep || 'email'}`)
-            }
-          } else {
-            // User not found in database → go to onboarding
-            router.replace("/onboarding?step=email")
-          }
-        } catch (error) {
-          // On error, redirect to onboarding to be safe
-          router.replace("/onboarding?step=email")
-        } finally {
-          setChecking(false)
-        }
-      }
-      
-      checkAndRedirect()
+
+    // USER LOGGED OUT → Show welcome page
+    if (!user) {
+      setCheckingOnboarding(false)
+      return
     }
-  }, [user, authLoading, router])
+
+    // USER LOGGED IN → Check onboarding and redirect
+    async function checkAndRedirect() {
+      if (!user) return
+      
+      setCheckingOnboarding(true)
+      
+      try {
+        const record = await getAppUserRecord(user.id)
+        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+        const completed = step === 'complete' || record?.onboarding_completed === true
+
+        if (!completed) {
+          // Incomplete onboarding → redirect to onboarding
+          router.replace(`/onboarding?step=${step}`)
+          return
+        }
+
+        // Complete onboarding → redirect to /vibe (never show welcome again)
+        router.replace("/vibe")
+      } catch (error) {
+        console.error('[Home] Error checking onboarding:', error)
+        // On error, redirect to onboarding to be safe
+        router.replace("/onboarding?step=email")
+      } finally {
+        setCheckingOnboarding(false)
+      }
+    }
+
+    checkAndRedirect()
+  }, [authLoading, user, router])
 
   // Show loading while checking auth or onboarding status
-  if (authLoading || checking) {
+  if (authLoading || checkingOnboarding) {
     return (
       <div className="fixed inset-0 bg-[#0a0a0c] flex items-center justify-center">
         <p className="text-[#f1f1f3]/60">Loading...</p>
@@ -66,6 +66,7 @@ export default function Home() {
   }
 
   // Welcome screen - only show if user is NOT authenticated
+  // Logged-in users should never see this (they get redirected above)
   return (
     <div className="fixed inset-0 bg-[#0a0a0c] w-full h-full overflow-hidden">
       <div className="w-full h-full flex items-center justify-center px-6 py-8">

@@ -93,11 +93,11 @@ export function isValidStepTransition(from: OnboardingStep, to: OnboardingStep):
  * normalizeOnboardingStep() converts "start" → "email" intentionally.
  * This is expected behavior and prevents inconsistencies.
  * 
- * Converts invalid/null/undefined values to 'start', then to 'email' if needed
+ * Converts invalid/null/undefined values to 'email' (not 'start')
  */
 export function normalizeOnboardingStep(step: string | null | undefined): OnboardingStep {
   if (!step || !isValidOnboardingStep(step)) {
-    return 'start'
+    return 'email'
   }
   // Convert 'start' to 'email' for new users
   if (step === 'start') {

@@ -12,6 +12,7 @@ import { AppShell } from "@/components/AppShell"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { tokens } from "@/lib/design-tokens"
 import { normalizeOnboardingStep } from "@/lib/onboarding"
+import { getAppUserRecord } from "@/lib/user-helpers"
 
 const TOPIC_CATEGORIES = [
   { id: "general", label: "General", topics: GENERAL_TOPICS, icon: Compass },
@@ -136,53 +137,44 @@ export default function VibePage() {
   const router = useRouter()
   const { user, loading } = useAuth()
   
-  // Check onboarding_step from DB on mount - redirect if not complete
+  // Routing guard: Check auth and onboarding status
   useEffect(() => {
-    if (loading) return
-    
+    // Wait for auth to finish loading
+    if (loading) {
+      return
+    }
+
+    // USER LOGGED OUT → Redirect to welcome page
     if (!user) {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-      router.push("/")
-      }
+      router.replace("/")
       return
     }
-    
-    // Don't redirect if already on onboarding
-    if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
-      return
-    }
+
+    // USER LOGGED IN → Check onboarding status
+    async function checkOnboarding() {
+      if (!user) return
       
-      const checkOnboarding = async () => {
-        try {
-        // Fetch user from database - SINGLE SOURCE OF TRUTH
-          const response = await fetch(`/api/users?userId=${user.id}`)
-          const data = await response.json()
-          
-          if (data.success && data.data) {
-          const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
-          
-          // If not complete, redirect to onboarding
-          if (dbStep !== 'complete' && !data.data.onboarding_completed) {
-            if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.replace(`/onboarding?step=${dbStep}`)
-            }
-            }
-          } else {
-            // User not found in database → redirect to onboarding
-          if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-            router.replace("/onboarding?step=email")
-          }
-          }
-        } catch (error) {
-          // On error, redirect to onboarding to be safe
-        if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-          router.push("/onboarding?step=email")
+      try {
+        const record = await getAppUserRecord(user.id)
+        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+        const completed = step === 'complete' || record?.onboarding_completed === true
+
+        if (!completed) {
+          // Incomplete onboarding → redirect to onboarding
+          router.replace(`/onboarding?step=${step}`)
+          return
         }
+
+        // Complete onboarding → allow access to vibe page
+        // No redirect needed, just render the page
+      } catch (error) {
+        console.error('[VibePage] Error checking onboarding:', error)
+        router.replace("/onboarding?step=email")
       }
     }
-    
+
     checkOnboarding()
-  }, [user, loading])
+  }, [user, loading, router])
   
   const getUserId = () => {
     if (user?.id) return user.id
@@ -359,7 +351,8 @@ export default function VibePage() {
     }
   }
 
-  if (loading || !user || (user && !user.email_confirmed_at)) {
+  // Show loading while checking auth or onboarding
+  if (loading || !user) {
     return (
       <AppShell>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>

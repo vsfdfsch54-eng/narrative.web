@@ -6,10 +6,12 @@ import { motion } from "framer-motion"
 import { ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
+import { normalizeOnboardingStep } from "@/lib/onboarding"
+import { getAppUserRecord } from "@/lib/user-helpers"
 
 export default function ConversationsPage() {
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const [conversations, setConversations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -19,15 +21,47 @@ export default function ConversationsPage() {
     return null
   }
   
-  // Redirect to landing if not authenticated
+  // Routing guard: Check auth and onboarding status
   useEffect(() => {
-    if (!loading && !user) {
-      router.push("/")
+    // Wait for auth to finish loading
+    if (loading) {
+      return
     }
+
+    // USER LOGGED OUT → Redirect to welcome page
+    if (!user) {
+      router.replace("/")
+      return
+    }
+
+    // USER LOGGED IN → Check onboarding status
+    async function checkOnboarding() {
+      if (!user) return
+      
+      try {
+        const record = await getAppUserRecord(user.id)
+        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+        const completed = step === 'complete' || record?.onboarding_completed === true
+
+        if (!completed) {
+          // Incomplete onboarding → redirect to onboarding
+          router.replace(`/onboarding?step=${step}`)
+          return
+        }
+
+        // Complete onboarding → allow access to conversations page
+        // No redirect needed, just render the page
+      } catch (error) {
+        console.error('[ConversationsPage] Error checking onboarding:', error)
+        router.replace("/onboarding?step=email")
+      }
+    }
+
+    checkOnboarding()
   }, [user, loading, router])
 
   useEffect(() => {
-    if (!user || loading) return
+    if (!user || authLoading || loading) return
     
     const loadConversations = async () => {
       const userId = getUserId()
@@ -88,7 +122,7 @@ export default function ConversationsPage() {
     }
     
     loadConversations()
-  }, [user, loading])
+  }, [user, authLoading, loading])
 
   return (
     <div className="fixed inset-0 bg-[#0a0a0c] overflow-hidden w-full h-full m-0 p-0 sm:flex sm:items-center sm:justify-center sm:p-4 sm:p-6">

@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
 import { normalizeOnboardingStep } from "@/lib/onboarding"
+import { getAppUserRecord } from "@/lib/user-helpers"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -26,40 +27,42 @@ export default function ProfilePage() {
   const [personalityTraits, setPersonalityTraits] = useState<any>(null)
   const [loadingPersonality, setLoadingPersonality] = useState(true)
 
-  // Check authentication and onboarding status
+  // Routing guard: Check auth and onboarding status
   useEffect(() => {
-    if (authLoading) return
-    
-    if (!user) {
-      router.push("/")
+    // Wait for auth to finish loading
+    if (authLoading) {
       return
     }
-    
-    // Check onboarding status
-    const checkOnboarding = async () => {
+
+    // USER LOGGED OUT → Redirect to welcome page
+    if (!user) {
+      router.replace("/")
+      return
+    }
+
+    // USER LOGGED IN → Check onboarding status
+    async function checkOnboarding() {
+      if (!user) return
+      
       try {
-        const response = await fetch(`/api/users?userId=${user.id}`)
-        const data = await response.json()
-        
-        if (data.success && data.data) {
-          const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
-          // If onboarding not complete, redirect to onboarding
-          if (dbStep !== 'complete' && !data.data.onboarding_completed) {
-            router.replace(`/onboarding?step=${dbStep || 'email'}`)
-            return
-          }
-        } else {
-          // User not found in database, redirect to onboarding
-          router.replace('/onboarding?step=email')
+        const record = await getAppUserRecord(user.id)
+        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+        const completed = step === 'complete' || record?.onboarding_completed === true
+
+        if (!completed) {
+          // Incomplete onboarding → redirect to onboarding
+          router.replace(`/onboarding?step=${step}`)
           return
         }
+
+        // Complete onboarding → allow access to profile page
+        // No redirect needed, just render the page
       } catch (error) {
         console.error('[ProfilePage] Error checking onboarding:', error)
-        router.replace('/onboarding?step=email')
-        return
+        router.replace("/onboarding?step=email")
       }
     }
-    
+
     checkOnboarding()
   }, [user, authLoading, router])
 

@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { tokens } from "@/lib/design-tokens"
 import Link from "next/link"
 import { normalizeOnboardingStep } from "@/lib/onboarding"
+import { getAppUserRecord } from "@/lib/user-helpers"
 import { AppShell } from "@/components/AppShell"
 
 export default function LoginPage() {
@@ -20,52 +21,41 @@ export default function LoginPage() {
 
   // Redirect if user is already authenticated
   useEffect(() => {
-    if (!authLoading && user && user.email_confirmed_at) {
-      // Don't redirect if already on correct page
-      if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
-        return
-      }
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return
+    }
+
+    // USER LOGGED OUT → Show login page
+    if (!user) {
+      return
+    }
+
+    // USER LOGGED IN → Check onboarding and redirect
+    async function checkAndRedirect() {
+      if (!user) return
       
-        const checkOnboarding = async () => {
-          try {
-          // Fetch user from database - SINGLE SOURCE OF TRUTH
-            const response = await fetch(`/api/users?userId=${user.id}`)
-            const data = await response.json()
-            
-            if (data.success && data.data) {
-            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
-              
-            // Redirect based on DB step
-              if (dbStep === 'complete' || data.data.onboarding_completed) {
-                if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
-                  router.replace("/chat")
-                }
-              } else {
-                if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                  router.replace(`/onboarding?step=${dbStep}`)
-                }
-              }
-            } else {
-              // User not found, need onboarding
-              if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                router.replace("/onboarding?step=email")
-              }
-            }
-          } catch (err) {
-            // On error, redirect to onboarding
-            if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.replace("/onboarding?step=email")
-          }
-          }
+      try {
+        const record = await getAppUserRecord(user.id)
+        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+        const completed = step === 'complete' || record?.onboarding_completed === true
+
+        if (!completed) {
+          // Incomplete onboarding → redirect to onboarding
+          router.replace(`/onboarding?step=${step}`)
+          return
         }
-        checkOnboarding()
-    } else if (!authLoading && user && !user.email_confirmed_at) {
-      // User is logged in but not verified
-      if (typeof window !== 'undefined' && window.location.pathname !== '/verify') {
-        router.push("/verify")
+
+        // Complete onboarding → redirect to /vibe
+        router.replace("/vibe")
+      } catch (error) {
+        console.error('[LoginPage] Error checking onboarding:', error)
+        router.replace("/onboarding?step=email")
       }
     }
-  }, [user, authLoading])
+
+    checkAndRedirect()
+  }, [user, authLoading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,46 +66,26 @@ export default function LoginPage() {
       const result = await signIn(email, password)
       if (result.success) {
         // After successful login, check onboarding step from DB
-        const checkOnboarding = async () => {
-          try {
-            const userId = (result as any).data?.user?.id || user?.id
-            if (!userId) {
-              if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                router.push("/onboarding?step=email")
-              }
-              return
-            }
-            
-            // Fetch user from database - SINGLE SOURCE OF TRUTH
-            const response = await fetch(`/api/users?userId=${userId}`)
-            const data = await response.json()
-            
-            if (data.success && data.data) {
-              const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
-              
-              // Redirect based on DB step
-              if (dbStep === 'complete') {
-                if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
-                router.push("/vibe")
-                }
-              } else {
-                if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                  router.push(`/onboarding?step=${dbStep}`)
-                }
-              }
-            } else {
-              if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                router.push("/onboarding?step=email")
-              }
-            }
-          } catch (err) {
-            if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.push("/onboarding?step=email")
-            }
-          }
+        // After successful login, check onboarding and redirect
+        const userId = (result as any).data?.user?.id || user?.id
+        if (!userId) {
+          router.replace("/onboarding?step=email")
+          return
         }
-        
-        checkOnboarding()
+
+        try {
+          const record = await getAppUserRecord(userId)
+          const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+          const completed = step === 'complete' || record?.onboarding_completed === true
+
+          if (!completed) {
+            router.replace(`/onboarding?step=${step}`)
+          } else {
+            router.replace("/vibe")
+          }
+        } catch (err) {
+          router.replace("/onboarding?step=email")
+        }
       } else {
         setError(result.error || "Invalid credentials")
       }
@@ -138,12 +108,13 @@ export default function LoginPage() {
   }
 
   // If user is authenticated, show loading while redirecting
-  if (user && user.email_confirmed_at) {
+  // (The useEffect above will handle the redirect)
+  if (user && !authLoading) {
     return (
       <AppShell>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
           <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
-      </div>
+        </div>
       </AppShell>
     )
   }

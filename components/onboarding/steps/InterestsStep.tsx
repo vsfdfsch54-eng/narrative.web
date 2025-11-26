@@ -78,7 +78,7 @@ export function InterestsStep({
               ? "bg-white/12 border-2 border-white/40 text-white font-medium"
               : "bg-white/5 border border-white/15 text-white/90 font-normal",
             loading && "opacity-50 cursor-not-allowed"
-          )}
+            )}
         >
           <span className="truncate">All</span>
         </button>
@@ -94,7 +94,7 @@ export function InterestsStep({
                 ? "bg-white/12 border-2 border-white/40 text-white font-medium"
                 : "bg-white/5 border border-white/15 text-white/90 font-normal",
               loading && "opacity-50 cursor-not-allowed"
-            )}
+              )}
           >
             <span className="truncate">{category}</span>
           </button>
@@ -106,10 +106,10 @@ export function InterestsStep({
         {displayedInterests.map(interest => {
           const isSelected = localInterests.includes(interest.id)
           return (
-            <button
-              key={interest.id}
-              type="button"
-              onClick={() => toggleInterest(interest.id)}
+          <button
+            key={interest.id}
+            type="button"
+            onClick={() => toggleInterest(interest.id)}
               disabled={loading}
               className={cn(
                 "px-4 py-2 rounded-xl transition-all flex items-center gap-2",
@@ -123,7 +123,7 @@ export function InterestsStep({
                 <span className="text-lg flex-shrink-0">{interest.emoji}</span>
               )}
               <span className="truncate text-sm">{interest.label}</span>
-            </button>
+          </button>
           )
         })}
       </div>

@@ -7,6 +7,9 @@ import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { Button } from "@/components/ui/button"
 import { tokens } from "@/lib/design-tokens"
+import { normalizeOnboardingStep } from "@/lib/onboarding"
+import { getAppUserRecord } from "@/lib/user-helpers"
+import { useRouter } from "next/navigation"
 
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -52,6 +55,7 @@ function generateDays(year: number, month: number) {
 }
 
 export default function CalendarPage() {
+  const router = useRouter()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [panelOpen, setPanelOpen] = useState(false)
@@ -75,10 +79,44 @@ export default function CalendarPage() {
     return null
   }
   
+  // Routing guard: Check auth and onboarding status
   useEffect(() => {
-    if (!authLoading && !user) {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return
     }
-  }, [user, authLoading])
+
+    // USER LOGGED OUT → Redirect to welcome page
+    if (!user) {
+      router.replace("/")
+      return
+    }
+
+    // USER LOGGED IN → Check onboarding status
+    async function checkOnboarding() {
+      if (!user) return
+      
+      try {
+        const record = await getAppUserRecord(user.id)
+        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+        const completed = step === 'complete' || record?.onboarding_completed === true
+
+        if (!completed) {
+          // Incomplete onboarding → redirect to onboarding
+          router.replace(`/onboarding?step=${step}`)
+          return
+        }
+
+        // Complete onboarding → allow access to calendar page
+        // No redirect needed, just render the page
+      } catch (error) {
+        console.error('[CalendarPage] Error checking onboarding:', error)
+        router.replace("/onboarding?step=email")
+      }
+    }
+
+    checkOnboarding()
+  }, [user, authLoading, router])
 
   const { firstDay, totalDays } = useMemo(
     () => generateDays(currentDate.getFullYear(), currentDate.getMonth()),
@@ -210,7 +248,8 @@ export default function CalendarPage() {
     }
   }
 
-  if (authLoading || loadingEvents) {
+  // Show loading while checking auth or loading events
+  if (authLoading || !user || loadingEvents) {
     return (
       <AppShell>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>

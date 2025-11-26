@@ -10,6 +10,8 @@ import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabaseClient"
+import { normalizeOnboardingStep } from "@/lib/onboarding"
+import { getAppUserRecord } from "@/lib/user-helpers"
 
 export default function ChatPage() {
   const [profiles, setProfiles] = useState<Profile[]>([])
@@ -18,33 +20,42 @@ export default function ChatPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
 
-  // Check onboarding status
+  // Routing guard: Check auth and onboarding status
   useEffect(() => {
-    if (authLoading || !user) return
-    
-    const checkOnboarding = async () => {
+    // Wait for auth to finish loading
+    if (authLoading) {
+      return
+    }
+
+    // USER LOGGED OUT → Redirect to welcome page
+    if (!user) {
+      router.replace("/")
+      return
+    }
+
+    // USER LOGGED IN → Check onboarding status
+    async function checkOnboarding() {
+      if (!user) return
+      
       try {
-        const response = await fetch(`/api/users?userId=${user.id}`)
-        const data = await response.json()
-        
-        if (data.success && data.data) {
-          const dbStep = data.data.onboarding_step
-          if (dbStep !== 'complete' && !data.data.onboarding_completed) {
-            router.replace(`/onboarding?step=${dbStep || 'email'}`)
-            return
-          }
-        } else {
-          // User not found, redirect to onboarding
-          router.replace('/onboarding?step=email')
+        const record = await getAppUserRecord(user.id)
+        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+        const completed = step === 'complete' || record?.onboarding_completed === true
+
+        if (!completed) {
+          // Incomplete onboarding → redirect to onboarding
+          router.replace(`/onboarding?step=${step}`)
           return
         }
+
+        // Complete onboarding → allow access to chat page
+        // No redirect needed, just render the page
       } catch (error) {
         console.error('[ChatPage] Error checking onboarding:', error)
-        router.replace('/onboarding?step=email')
-        return
+        router.replace("/onboarding?step=email")
       }
     }
-    
+
     checkOnboarding()
   }, [user, authLoading, router])
 
