@@ -3,26 +3,26 @@
  * Single source of truth for onboarding step management
  * 
  * The ONLY source of truth for onboarding progress is: users.onboarding_step (TEXT)
- * Allowed values EXACTLY: ['start','email','name','vibe','topic','timeframe','confirmation','complete']
+ * Allowed values EXACTLY: ['start','email','password','name','questions','interests','confirmation','complete']
  * 
  * Flow:
- * 1. Authentication (email/OTP) - 'email'
- * 2. Name page - 'name'
- * 3. Vibe selection - 'vibe'
- * 4. Topic selection - 'topic'
- * 5. Timeframe selection - 'timeframe'
+ * 1. Email - 'email'
+ * 2. Password - 'password' (account created here)
+ * 3. Name (first & last) - 'name'
+ * 4. Questions (10 questions) - 'questions'
+ * 5. Interests - 'interests'
  * 6. Final confirmation page - 'confirmation'
  * 7. Redirect to main app (/chat) - 'complete'
  */
 
-export type OnboardingStep = 'start' | 'email' | 'name' | 'vibe' | 'topic' | 'timeframe' | 'confirmation' | 'complete'
+export type OnboardingStep = 'start' | 'email' | 'password' | 'name' | 'questions' | 'interests' | 'confirmation' | 'complete'
 
-export const ONBOARDING_STEPS: OnboardingStep[] = ['start', 'email', 'name', 'vibe', 'topic', 'timeframe', 'confirmation', 'complete']
+export const ONBOARDING_STEPS: OnboardingStep[] = ['start', 'email', 'password', 'name', 'questions', 'interests', 'confirmation', 'complete']
 
 /**
  * Step order for progression (excludes 'start' and 'complete')
  */
-export const STEP_ORDER: OnboardingStep[] = ['email', 'name', 'vibe', 'topic', 'timeframe', 'confirmation']
+export const STEP_ORDER: OnboardingStep[] = ['email', 'password', 'name', 'questions', 'interests', 'confirmation']
 
 /**
  * Get the next step in the onboarding flow

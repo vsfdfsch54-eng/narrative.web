@@ -221,10 +221,10 @@ async function saveOnboardingProgress(
   supabase: ReturnType<typeof createServerClient>,
   userId: string,
   data: {
-    name?: string
-    vibe?: string | null
-    topic?: string | null
-    timeframe?: number | null
+    firstName?: string
+    lastName?: string
+    questionsAnswers?: Record<string, string>
+    interests?: string[]
     onboarding_step?: string
     onboarding_completed?: boolean
     email?: string
@@ -248,7 +248,7 @@ async function saveOnboardingProgress(
       email = existingUser.email
     } else if (data.email) {
       email = data.email
-    } else {
+      } else {
       // Try to get from auth
       try {
         const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
@@ -259,8 +259,8 @@ async function saveOnboardingProgress(
           } else {
             // Last resort: use a placeholder (user will update later)
             email = `user_${userId.slice(0, 8)}@temp.narrative`
-          }
-        } else {
+      }
+    } else {
           email = authUser.user.email
         }
       } catch (authErr) {
@@ -268,34 +268,35 @@ async function saveOnboardingProgress(
         email = data.email || `user_${userId.slice(0, 8)}@temp.narrative`
       }
     }
-
+    
     // Build update object - only include fields that are provided
     const updateData: any = {
       id: userId,
       email: email,
       updated_at: new Date().toISOString()
     }
-
-    if (data.name !== undefined) {
-      updateData.name = data.name
+    
+    // Set name from firstName and lastName
+    if (data.firstName !== undefined || data.lastName !== undefined) {
+      const firstName = data.firstName || ''
+      const lastName = data.lastName || ''
+      updateData.name = `${firstName} ${lastName}`.trim() || undefined
+      updateData.first_name = data.firstName
+      updateData.last_name = data.lastName
+    }
+    
+    if (data.questionsAnswers !== undefined) {
+      updateData.questions_answers = data.questionsAnswers
     }
 
-    if (data.vibe !== undefined) {
-      updateData.vibe = data.vibe
+    if (data.interests !== undefined) {
+      updateData.interests = data.interests
     }
-
-    if (data.topic !== undefined) {
-      updateData.topic = data.topic
-    }
-
-    if (data.timeframe !== undefined) {
-      updateData.timeframe = data.timeframe
-    }
-
+    
     if (data.onboarding_step !== undefined) {
       updateData.onboarding_step = data.onboarding_step
     }
-
+    
     if (data.onboarding_completed !== undefined) {
       updateData.onboarding_completed = data.onboarding_completed
     }
@@ -315,31 +316,36 @@ async function saveOnboardingProgress(
         code: upsertError.code,
         details: upsertError.details
       })
-
+      
       // Handle duplicate email error
       if (upsertError.code === '23505' || upsertError.message.includes('duplicate key') || upsertError.message.includes('user_email_key')) {
         // Try updating without email
         const updateFields: any = {
           updated_at: new Date().toISOString()
         }
-        if (data.name !== undefined) updateFields.name = data.name
-        if (data.vibe !== undefined) updateFields.vibe = data.vibe
-        if (data.topic !== undefined) updateFields.topic = data.topic
-        if (data.timeframe !== undefined) updateFields.timeframe = data.timeframe
+        if (data.firstName !== undefined || data.lastName !== undefined) {
+          const firstName = data.firstName || ''
+          const lastName = data.lastName || ''
+          updateFields.name = `${firstName} ${lastName}`.trim() || undefined
+          updateFields.first_name = data.firstName
+          updateFields.last_name = data.lastName
+        }
+        if (data.questionsAnswers !== undefined) updateFields.questions_answers = data.questionsAnswers
+        if (data.interests !== undefined) updateFields.interests = data.interests
         if (data.onboarding_step !== undefined) updateFields.onboarding_step = data.onboarding_step
         if (data.onboarding_completed !== undefined) updateFields.onboarding_completed = data.onboarding_completed
-
-        const { data: updateData, error: updateError } = await supabase
-          .from('users')
-          .update(updateFields)
-          .eq('id', userId)
-          .select()
-
-        if (updateError) {
+            
+            const { data: updateData, error: updateError } = await supabase
+              .from('users')
+              .update(updateFields)
+              .eq('id', userId)
+              .select()
+            
+            if (updateError) {
           return { success: false, error: updateError.message }
-        }
+            }
 
-        const finalData = Array.isArray(updateData) ? updateData[0] : updateData
+            const finalData = Array.isArray(updateData) ? updateData[0] : updateData
         return { success: true, data: finalData }
       }
 
@@ -349,19 +355,19 @@ async function saveOnboardingProgress(
     const finalData = Array.isArray(upsertData) ? upsertData[0] : upsertData
     if (!finalData) {
       return { success: false, error: 'Failed to save user data. Please try again.' }
-    }
+              }
 
     return { success: true, data: finalData }
   } catch (error: any) {
     console.error('[saveOnboardingProgress] Exception:', error)
     return { success: false, error: error.message || 'Unknown error' }
-  }
+              }
 }
 
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, name, interests, onboarding_step, email: providedEmail, vibe, topic, timeframe, onboarding_completed } = body
+    const { userId, firstName, lastName, questionsAnswers, interests, onboarding_step, email: providedEmail, onboarding_completed } = body
 
     if (!userId) {
       return NextResponse.json(
@@ -379,39 +385,19 @@ export async function PUT(request: NextRequest) {
     
     // Use centralized saveOnboardingProgress function
     const result = await saveOnboardingProgress(supabase, userId, {
-      name,
-      vibe,
-      topic,
-      timeframe,
+      firstName,
+      lastName,
+      questionsAnswers,
+      interests,
       onboarding_step,
       onboarding_completed,
       email: providedEmail,
     })
 
-    // Also handle interests if provided (for backward compatibility)
-    if (interests !== undefined && result.success) {
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle()
-
-      if (existingUser) {
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ interests: interests || [] })
-          .eq('id', userId)
-
-        if (updateError) {
-          console.error('[Users API PUT] Error updating interests:', updateError.message)
-        }
-      }
-    }
-
     if (!result.success) {
       return NextResponse.json(
         { success: false, error: result.error || 'Failed to save progress' },
-        {
+        { 
           status: result.error?.includes('not found') ? 404 : 500,
           headers: {
             'Content-Type': 'application/json',

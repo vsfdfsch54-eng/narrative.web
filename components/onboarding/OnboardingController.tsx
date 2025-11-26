@@ -7,15 +7,15 @@ import { useAuth } from "@/hooks/use-auth"
 import { useOnboarding } from "@/context/OnboardingContext"
 import { tokens } from "@/lib/design-tokens"
 import { EmailStep } from "./steps/EmailStep"
+import { PasswordStep } from "./steps/PasswordStep"
 import { NameStep } from "./steps/NameStep"
-import { VibeStep } from "./steps/VibeStep"
-import { TopicStep } from "./steps/TopicStep"
-import { TimeframeStep } from "./steps/TimeframeStep"
+import { QuestionsStep } from "./steps/QuestionsStep"
+import { InterestsStep } from "./steps/InterestsStep"
 import { ConfirmationStep } from "./steps/ConfirmationStep"
 import { AppShell } from "@/components/AppShell"
 import { 
   OnboardingStep, 
-  getNextOnboardingRoute,
+  getNextOnboardingRoute, 
   getOnboardingRouteForStep,
   normalizeOnboardingStep,
   isValidOnboardingStep,
@@ -30,14 +30,16 @@ export function OnboardingController() {
     state,
     setStep,
     setEmail,
-    setName,
-    setVibe,
-    setTopic,
-    setTimeframe,
+    setPassword,
+    setFirstName,
+    setLastName,
+    setQuestionAnswer,
+    setQuestionsAnswers,
+    setInterests,
     saveProgress,
     initialize,
   } = useOnboarding()
-
+  
   const hasInitializedRef = useRef(false)
   const hasRedirectedRef = useRef(false)
 
@@ -45,7 +47,7 @@ export function OnboardingController() {
   useEffect(() => {
     if (authLoading || !user || !state.initialized) return
     if (hasRedirectedRef.current) return
-
+    
     // Check if user is already completed
     if (state.step === 'complete') {
       hasRedirectedRef.current = true
@@ -119,68 +121,76 @@ export function OnboardingController() {
         }
       }
     }, 100)
-  }
+      }
 
-  // Email step handler - just advance to name step
-  // Account creation will happen when name is submitted (if needed)
+  // Email step handler - advance to password step
   const handleEmailSubmit = async (email: string): Promise<void> => {
     setEmail(email)
     // Navigate immediately - non-blocking
-    navigateToStep('name')
+    navigateToStep('password')
   }
 
-  // Name step handler - create account here if needed (background, non-blocking)
-  const handleNameSubmit = async (name: string) => {
-    setName(name)
+  // Password step handler - create account here
+  const handlePasswordSubmit = async (password: string): Promise<void> => {
+    setPassword(password)
     
-    // Navigate immediately - don't wait for account creation
-    navigateToStep('vibe')
-    
-    // Create account in background (non-blocking)
+    // Create account immediately (this is where account creation happens)
     if (!user && state.email) {
-      // Run account creation in background - don't await
-      signUp(state.email, Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12) + 'A1!')
-        .then((result) => {
-          if (result.error && !result.error.includes('already registered') && !result.error.includes('already exists')) {
+      try {
+        const result = await signUp(state.email, password)
+        if (result.error) {
+          if (result.error.includes('already registered') || result.error.includes('already exists')) {
+            // User exists - they should login, but continue anyway
+            console.warn('[OnboardingController] User already exists, continuing anyway')
+          } else {
+            // Other error - log but continue
             console.error('[OnboardingController] Signup error:', result.error)
           }
-        })
-        .catch((error) => {
-          console.error('[OnboardingController] Account creation error:', error)
-        })
+        }
+        
+        // Wait briefly for auth to propagate
+        await new Promise(resolve => setTimeout(resolve, 300))
+      } catch (error) {
+        console.error('[OnboardingController] Account creation error:', error)
+        // Continue anyway - user might already exist
+      }
     }
     
+    // Navigate to name step
+    navigateToStep('name')
+    
     // Save progress in background (non-blocking)
-    saveProgress('vibe').catch((error) => {
+    saveProgress('name').catch((error) => {
       console.error('[OnboardingController] Save progress error:', error)
     })
   }
 
-  // Vibe step handler - instant navigation, background save
-  const handleVibeSubmit = async (vibe: string) => {
-    setVibe(vibe)
+  // Name step handler - instant navigation, background save
+  const handleNameSubmit = async (firstName: string, lastName: string) => {
+    setFirstName(firstName)
+    setLastName(lastName)
     // Navigate immediately
-    navigateToStep('topic')
+    navigateToStep('questions')
     // Save in background (non-blocking)
-    saveProgress('topic').catch((error) => {
+    saveProgress('questions').catch((error) => {
       console.error('[OnboardingController] Save progress error:', error)
     })
   }
 
-  // Topic step handler - instant navigation, background save
-  const handleTopicSubmit = async (topic: string) => {
-    setTopic(topic)
+  // Questions step handler - instant navigation, background save
+  const handleQuestionsSubmit = async (answers: Record<string, string>) => {
+    setQuestionsAnswers(answers)
     // Navigate immediately
-    navigateToStep('timeframe')
+    navigateToStep('interests')
     // Save in background (non-blocking)
-    saveProgress('timeframe').catch((error) => {
+    saveProgress('interests').catch((error) => {
       console.error('[OnboardingController] Save progress error:', error)
     })
   }
 
-  // Timeframe step handler - instant navigation, background save
-  const handleTimeframeSubmit = async (timeframe: number | null) => {
-    setTimeframe(timeframe)
+  // Interests step handler - instant navigation, background save
+  const handleInterestsSubmit = async (interests: string[]) => {
+    setInterests(interests)
     // Navigate immediately
     navigateToStep('confirmation')
     // Save in background (non-blocking)
@@ -194,7 +204,7 @@ export function OnboardingController() {
     // Save completion in background
     saveProgress('complete').catch((error) => {
       console.error('[OnboardingController] Save progress error:', error)
-    })
+        })
     
     // Navigate to chat immediately
     router.replace('/chat')
@@ -202,7 +212,7 @@ export function OnboardingController() {
     setTimeout(() => {
       if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
         window.location.href = '/chat'
-      }
+    }
     }, 100)
   }
 
@@ -219,37 +229,38 @@ export function OnboardingController() {
   if (authLoading || !state.initialized) {
     return (
       <AppShell title="Onboarding" showDock={false}>
-        <div
-          style={{
-            minHeight: '50vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
-        </div>
+      <div
+        style={{
+          minHeight: '50vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+      </div>
       </AppShell>
     )
   }
 
-  // For steps other than email, require user
-  if (!user && state.step !== 'email') {
+  // For steps other than email and password, require user
+  // (password step is where account creation happens, so user may not exist yet)
+  if (!user && state.step !== 'email' && state.step !== 'password') {
     return (
       <AppShell title="Onboarding" showDock={false}>
-        <div
-          style={{
-            minHeight: '50vh',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-          }}
-        >
-          <p style={{ color: tokens.colors.textPrimaryOnDark, ...tokens.typography.heading }}>
-            Please sign in to continue
-          </p>
-        </div>
+      <div
+        style={{
+          minHeight: '50vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+        }}
+      >
+        <p style={{ color: tokens.colors.textPrimaryOnDark, ...tokens.typography.heading }}>
+          Please sign in to continue
+        </p>
+      </div>
       </AppShell>
     )
   }
@@ -259,150 +270,151 @@ export function OnboardingController() {
 
   return (
     <AppShell title="Onboarding" showDock={false}>
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: tokens.spacing[20],
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: tokens.spacing[20],
           width: '100%',
           minHeight: 'calc(100vh - 120px)',
           padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
           alignItems: 'center',
           justifyContent: 'center',
-        }}
-      >
-        {/* Progress indicators */}
-        {state.step !== 'complete' && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: tokens.spacing[8],
+      }}
+    >
+      {/* Progress indicators */}
+      {state.step !== 'complete' && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: tokens.spacing[8],
               marginBottom: tokens.spacing[8],
-            }}
-          >
-            {STEP_ORDER.map((step, index) => (
-              <span
-                key={step}
-                style={{
+          }}
+        >
+          {STEP_ORDER.map((step, index) => (
+            <span
+              key={step}
+              style={{
                   width: '6px',
                   height: '6px',
-                  borderRadius: '50%',
-                  background:
-                    index <= currentStepIndex
-                      ? tokens.colors.surface1
-                      : tokens.colors.backgroundSecondary,
-                  opacity: index <= currentStepIndex ? 1 : 0.3,
-                }}
-              />
-            ))}
-          </div>
-        )}
+                borderRadius: '50%',
+                background:
+                  index <= currentStepIndex
+                    ? tokens.colors.surface1
+                    : tokens.colors.backgroundSecondary,
+                opacity: index <= currentStepIndex ? 1 : 0.3,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
         {/* Error message - only show critical errors */}
         {state.error && !state.error.includes('not found') && !state.error.includes('missing') && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              padding: tokens.spacing[16],
-              borderRadius: tokens.radii.input,
-              background: 'rgba(239, 68, 68, 0.1)',
-              color: '#EF4444',
-              ...tokens.typography.label,
-              textAlign: 'center',
-              pointerEvents: 'auto',
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            padding: tokens.spacing[16],
+            borderRadius: tokens.radii.input,
+            background: 'rgba(239, 68, 68, 0.1)',
+            color: '#EF4444',
+            ...tokens.typography.label,
+            textAlign: 'center',
+            pointerEvents: 'auto',
               maxWidth: '600px',
               width: '100%',
-            }}
-          >
-            {state.error}
-          </motion.div>
-        )}
+          }}
+        >
+          {state.error}
+        </motion.div>
+      )}
 
-        {/* Step content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={state.step}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      {/* Step content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={state.step}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
             style={{ pointerEvents: 'none', width: '100%', display: 'flex', justifyContent: 'center' }}
-          >
+        >
             <div style={{ pointerEvents: 'auto', width: '100%', maxWidth: '600px' }}>
-              {state.step === 'email' && (
-                <EmailStep
-                  email={state.email || user?.email || ''}
-                  onEmailChange={setEmail}
-                  onSubmit={handleEmailSubmit}
-                  loading={false}
-                  error={null}
-                  onBack={() => router.push('/')}
-                />
-              )}
+            {state.step === 'email' && (
+              <EmailStep
+                email={state.email || user?.email || ''}
+                onEmailChange={setEmail}
+                onSubmit={handleEmailSubmit}
+                loading={false}
+                error={null}
+                onBack={() => router.push('/')}
+              />
+            )}
 
-              {state.step === 'name' && (
-                <NameStep
-                  name={state.name}
-                  onNameChange={setName}
-                  onSubmit={handleNameSubmit}
-                  loading={false}
-                  error={null}
-                  onBack={canGoBack ? goBack : undefined}
-                />
-              )}
+            {state.step === 'password' && (
+              <PasswordStep
+                password={state.password}
+                onPasswordChange={setPassword}
+                onSubmit={handlePasswordSubmit}
+                loading={false}
+                error={null}
+                onBack={canGoBack ? goBack : undefined}
+              />
+            )}
 
-              {state.step === 'vibe' && (
-                <VibeStep
-                  selectedVibe={state.vibe}
-                  onVibeChange={setVibe}
-                  onSubmit={handleVibeSubmit}
-                  loading={false}
-                  error={null}
-                  onBack={canGoBack ? goBack : undefined}
-                />
-              )}
+            {state.step === 'name' && (
+              <NameStep
+                firstName={state.firstName}
+                lastName={state.lastName}
+                onFirstNameChange={setFirstName}
+                onLastNameChange={setLastName}
+                onSubmit={handleNameSubmit}
+                loading={false}
+                error={null}
+                onBack={canGoBack ? goBack : undefined}
+              />
+            )}
 
-              {state.step === 'topic' && (
-                <TopicStep
-                  selectedTopic={state.topic}
-                  onTopicChange={setTopic}
-                  onSubmit={handleTopicSubmit}
-                  loading={false}
-                  error={null}
-                  onBack={canGoBack ? goBack : undefined}
-                />
-              )}
+            {state.step === 'questions' && (
+              <QuestionsStep
+                answers={state.questionsAnswers}
+                onAnswerChange={setQuestionAnswer}
+                onSubmit={handleQuestionsSubmit}
+                loading={false}
+                error={null}
+                onBack={canGoBack ? goBack : undefined}
+              />
+            )}
 
-              {state.step === 'timeframe' && (
-                <TimeframeStep
-                  selectedTimeframe={state.timeframe}
-                  onTimeframeChange={setTimeframe}
-                  onSubmit={handleTimeframeSubmit}
-                  loading={false}
-                  error={null}
-                  onBack={canGoBack ? goBack : undefined}
-                />
-              )}
+            {state.step === 'interests' && (
+              <InterestsStep
+                selectedInterests={state.interests}
+                onInterestsChange={setInterests}
+                onSubmit={handleInterestsSubmit}
+                loading={false}
+                error={null}
+                onBack={canGoBack ? goBack : undefined}
+              />
+            )}
 
-              {state.step === 'confirmation' && (
-                <ConfirmationStep
-                  name={state.name}
-                  vibe={state.vibe}
-                  topic={state.topic}
-                  timeframe={state.timeframe}
-                  onSubmit={handleConfirmationSubmit}
-                  loading={false}
-                  error={null}
-                  onBack={canGoBack ? goBack : undefined}
-                />
-              )}
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+            {state.step === 'confirmation' && (
+              <ConfirmationStep
+                firstName={state.firstName}
+                lastName={state.lastName}
+                interests={state.interests}
+                onSubmit={handleConfirmationSubmit}
+                loading={false}
+                error={null}
+                onBack={canGoBack ? goBack : undefined}
+              />
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
     </AppShell>
   )
 }

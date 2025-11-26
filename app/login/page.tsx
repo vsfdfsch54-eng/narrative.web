@@ -28,14 +28,14 @@ export default function LoginPage() {
       
         const checkOnboarding = async () => {
           try {
-            // Fetch user from database - SINGLE SOURCE OF TRUTH
+          // Fetch user from database - SINGLE SOURCE OF TRUTH
             const response = await fetch(`/api/users?userId=${user.id}`)
             const data = await response.json()
             
             if (data.success && data.data) {
-              const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
+            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
               
-              // Redirect based on DB step
+            // Redirect based on DB step
               if (dbStep === 'complete' || data.data.onboarding_completed) {
                 if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
                   router.replace("/chat")
@@ -55,7 +55,7 @@ export default function LoginPage() {
             // On error, redirect to onboarding
             if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
               router.replace("/onboarding?step=email")
-            }
+          }
           }
         }
         checkOnboarding()

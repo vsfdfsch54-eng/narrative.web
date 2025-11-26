@@ -2,26 +2,22 @@
 
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { tokens } from "@/lib/design-tokens"
-import { VIBES } from "@/lib/constants"
-import { NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS, SPORTS_TOPICS } from "@/lib/constants"
-import { ChevronLeft, Check } from "lucide-react"
-
-const ALL_TOPICS = [...NEWS_TOPICS, ...POP_CULTURE_TOPICS, ...GENERAL_TOPICS, ...SPORTS_TOPICS]
+import { INTERESTS, getInterestById } from "@/lib/interests"
+import { ChevronLeft } from "lucide-react"
 
 interface ConfirmationStepProps {
-  name: string
-  vibe: string | null
-  topic: string | null
-  timeframe: number | null
+  firstName: string
+  lastName: string
+  interests: string[]
   onSubmit: () => Promise<void>
   loading: boolean
   error: string | null
   onBack?: () => void
 }
 
-export function ConfirmationStep({ name, vibe, topic, timeframe, onSubmit, loading, error, onBack }: ConfirmationStepProps) {
-  const selectedVibe = VIBES.find(v => v.id === vibe)
-  const selectedTopic = ALL_TOPICS.find(t => t.id === topic)
+export function ConfirmationStep({ firstName, lastName, interests, onSubmit, loading, error, onBack }: ConfirmationStepProps) {
+  const fullName = `${firstName} ${lastName}`.trim()
+  const selectedInterests = interests.map(id => getInterestById(id)).filter((interest): interest is NonNullable<typeof interest> => interest !== undefined)
 
   const handleSubmit = () => {
     // Call onSubmit but don't await - navigation happens immediately
@@ -96,147 +92,41 @@ export function ConfirmationStep({ name, vibe, topic, timeframe, onSubmit, loadi
               color: tokens.colors.textPrimaryOnDark,
               margin: 0,
             }}>
-              {name}
+              {fullName || 'Not set'}
             </p>
           </div>
         </div>
 
-        {selectedVibe && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.06)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+        {selectedInterests.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[8] }}>
+            <p style={{
+              ...tokens.typography.label,
+              color: tokens.colors.textSecondary,
+              margin: 0,
+              marginBottom: '4px',
             }}>
-              <span style={{ fontSize: '20px' }}>{selectedVibe.icon}</span>
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{
-                ...tokens.typography.label,
-                color: tokens.colors.textSecondary,
-                margin: 0,
-                marginBottom: '4px',
-              }}>
-                Vibe
-              </p>
-              <p style={{
-                fontSize: '16px',
-                fontWeight: 500,
-                color: tokens.colors.textPrimaryOnDark,
-                margin: 0,
-              }}>
-                {selectedVibe.label}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {selectedTopic && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+              Interests
+            </p>
             <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.06)',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+              flexWrap: 'wrap',
+              gap: tokens.spacing[8],
             }}>
-              <span style={{ fontSize: '20px' }}>{selectedTopic.icon || '💬'}</span>
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{
-                ...tokens.typography.label,
-                color: tokens.colors.textSecondary,
-                margin: 0,
-                marginBottom: '4px',
-              }}>
-                Topic
-              </p>
-              <p style={{
-                fontSize: '16px',
-                fontWeight: 500,
-                color: tokens.colors.textPrimaryOnDark,
-                margin: 0,
-              }}>
-                {selectedTopic.label}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {timeframe !== null && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.06)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <span style={{ fontSize: '20px' }}>⏱️</span>
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{
-                ...tokens.typography.label,
-                color: tokens.colors.textSecondary,
-                margin: 0,
-                marginBottom: '4px',
-              }}>
-                Timeframe
-              </p>
-              <p style={{
-                fontSize: '16px',
-                fontWeight: 500,
-                color: tokens.colors.textPrimaryOnDark,
-                margin: 0,
-              }}>
-                {timeframe} minutes
-              </p>
-            </div>
-          </div>
-        )}
-
-        {timeframe === null && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.06)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <span style={{ fontSize: '20px' }}>⏱️</span>
-            </div>
-            <div style={{ flex: 1 }}>
-              <p style={{
-                ...tokens.typography.label,
-                color: tokens.colors.textSecondary,
-                margin: 0,
-                marginBottom: '4px',
-              }}>
-                Timeframe
-              </p>
-              <p style={{
-                fontSize: '16px',
-                fontWeight: 500,
-                color: tokens.colors.textPrimaryOnDark,
-                margin: 0,
-              }}>
-                Flexible
-              </p>
+              {selectedInterests.map(interest => (
+                <span
+                  key={interest.id}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '20px',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    fontSize: '14px',
+                    color: tokens.colors.textPrimaryOnDark,
+                  }}
+                >
+                  {interest.emoji} {interest.label}
+                </span>
+              ))}
             </div>
           </div>
         )}

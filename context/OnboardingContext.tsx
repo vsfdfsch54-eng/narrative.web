@@ -7,10 +7,11 @@ import { OnboardingStep, normalizeOnboardingStep, STEP_ORDER } from "@/lib/onboa
 interface OnboardingState {
   step: OnboardingStep
   email: string
-  name: string
-  vibe: string | null
-  topic: string | null
-  timeframe: number | null
+  password: string
+  firstName: string
+  lastName: string
+  questionsAnswers: Record<string, string>
+  interests: string[]
   loading: boolean
   error: string | null
   initialized: boolean
@@ -20,10 +21,12 @@ interface OnboardingContextType {
   state: OnboardingState
   setStep: (step: OnboardingStep) => void
   setEmail: (email: string) => void
-  setName: (name: string) => void
-  setVibe: (vibe: string | null) => void
-  setTopic: (topic: string | null) => void
-  setTimeframe: (timeframe: number | null) => void
+  setPassword: (password: string) => void
+  setFirstName: (firstName: string) => void
+  setLastName: (lastName: string) => void
+  setQuestionsAnswers: (answers: Record<string, string>) => void
+  setQuestionAnswer: (questionId: string, answer: string) => void
+  setInterests: (interests: string[]) => void
   saveProgress: (step?: OnboardingStep) => Promise<boolean>
   initialize: () => Promise<void>
 }
@@ -35,10 +38,11 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OnboardingState>({
     step: 'email',
     email: '',
-    name: '',
-    vibe: null,
-    topic: null,
-    timeframe: null,
+    password: '',
+    firstName: '',
+    lastName: '',
+    questionsAnswers: {},
+    interests: [],
     loading: false,
     error: null,
     initialized: false,
@@ -63,10 +67,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           ...prev,
           step: dbStep,
           email: dbUser.email || '',
-          name: dbUser.name || '',
-          vibe: dbUser.vibe || null,
-          topic: dbUser.topic || null,
-          timeframe: dbUser.timeframe || null,
+          firstName: dbUser.first_name || '',
+          lastName: dbUser.last_name || '',
+          questionsAnswers: (dbUser.questions_answers as Record<string, string>) || {},
+          interests: dbUser.interests || [],
           initialized: true,
           error: null,
         }))
@@ -115,10 +119,10 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: user.id,
-            name: state.name || undefined,
-            vibe: state.vibe || undefined,
-            topic: state.topic || undefined,
-            timeframe: state.timeframe || undefined,
+            firstName: state.firstName || undefined,
+            lastName: state.lastName || undefined,
+            questionsAnswers: Object.keys(state.questionsAnswers).length > 0 ? state.questionsAnswers : undefined,
+            interests: state.interests.length > 0 ? state.interests : undefined,
             onboarding_step: stepToSave,
             onboarding_completed: isComplete,
             email: state.email || undefined,
@@ -144,7 +148,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
     // Always return true immediately - never block navigation
     return true
-  }, [user, state.step, state.name, state.vibe, state.topic, state.timeframe, state.email])
+  }, [user, state.step, state.firstName, state.lastName, state.questionsAnswers, state.interests, state.email])
 
   // Initialize on mount
   useEffect(() => {
@@ -196,20 +200,32 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, email, error: null }))
   }, [])
 
-  const setName = useCallback((name: string) => {
-    setState(prev => ({ ...prev, name, error: null }))
+  const setPassword = useCallback((password: string) => {
+    setState(prev => ({ ...prev, password, error: null }))
   }, [])
 
-  const setVibe = useCallback((vibe: string | null) => {
-    setState(prev => ({ ...prev, vibe, error: null }))
+  const setFirstName = useCallback((firstName: string) => {
+    setState(prev => ({ ...prev, firstName, error: null }))
   }, [])
 
-  const setTopic = useCallback((topic: string | null) => {
-    setState(prev => ({ ...prev, topic, error: null }))
+  const setLastName = useCallback((lastName: string) => {
+    setState(prev => ({ ...prev, lastName, error: null }))
   }, [])
 
-  const setTimeframe = useCallback((timeframe: number | null) => {
-    setState(prev => ({ ...prev, timeframe, error: null }))
+  const setQuestionsAnswers = useCallback((answers: Record<string, string>) => {
+    setState(prev => ({ ...prev, questionsAnswers: answers, error: null }))
+  }, [])
+
+  const setQuestionAnswer = useCallback((questionId: string, answer: string) => {
+    setState(prev => ({
+      ...prev,
+      questionsAnswers: { ...prev.questionsAnswers, [questionId]: answer },
+      error: null,
+    }))
+  }, [])
+
+  const setInterests = useCallback((interests: string[]) => {
+    setState(prev => ({ ...prev, interests, error: null }))
   }, [])
 
   return (
@@ -218,10 +234,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         state,
         setStep,
         setEmail,
-        setName,
-        setVibe,
-        setTopic,
-        setTimeframe,
+        setPassword,
+        setFirstName,
+        setLastName,
+        setQuestionsAnswers,
+        setQuestionAnswer,
+        setInterests,
         saveProgress,
         initialize,
       }}

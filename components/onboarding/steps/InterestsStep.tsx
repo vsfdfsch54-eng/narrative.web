@@ -45,11 +45,14 @@ export function InterestsStep({
     onInterestsChange(newInterests)
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (localInterests.length === 0) {
       return // Require at least one interest
     }
-    await onSubmit(localInterests)
+    // Call onSubmit but don't await - navigation happens immediately
+    onSubmit(localInterests).catch((error) => {
+      console.error('[InterestsStep] Submit error:', error)
+    })
   }
 
   return (

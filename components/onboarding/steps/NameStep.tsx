@@ -8,22 +8,26 @@ import { tokens } from "@/lib/design-tokens"
 import { ChevronLeft } from "lucide-react"
 
 interface NameStepProps {
-  name: string
-  onNameChange: (name: string) => void
-  onSubmit: (name: string) => Promise<void>
+  firstName: string
+  lastName: string
+  onFirstNameChange: (firstName: string) => void
+  onLastNameChange: (lastName: string) => void
+  onSubmit: (firstName: string, lastName: string) => Promise<void>
   loading: boolean
   error: string | null
   onBack?: () => void
 }
 
-export function NameStep({ name, onNameChange, onSubmit, loading, error, onBack }: NameStepProps) {
-  const [localName, setLocalName] = useState(name)
+export function NameStep({ firstName, lastName, onFirstNameChange, onLastNameChange, onSubmit, loading, error, onBack }: NameStepProps) {
+  const [localFirstName, setLocalFirstName] = useState(firstName)
+  const [localLastName, setLocalLastName] = useState(lastName)
 
   const handleSubmit = () => {
-    if (!localName.trim()) return
-    onNameChange(localName)
+    if (!localFirstName.trim() || !localLastName.trim()) return
+    onFirstNameChange(localFirstName)
+    onLastNameChange(localLastName)
     // Call onSubmit but don't await - navigation happens immediately
-    onSubmit(localName).catch((error) => {
+    onSubmit(localFirstName, localLastName).catch((error) => {
       console.error('[NameStep] Submit error:', error)
     })
   }
@@ -64,23 +68,48 @@ export function NameStep({ name, onNameChange, onSubmit, loading, error, onBack 
             marginBottom: tokens.spacing[8],
             display: 'block',
           }}>
-            Name
+            First Name
           </label>
           <Input
             type="text"
-            placeholder="Your name"
-            value={localName}
+            placeholder="First name"
+            value={localFirstName}
             onChange={(e) => {
-              const newName = e.target.value
-              setLocalName(newName)
+              setLocalFirstName(e.target.value)
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && localName.trim() && !loading) {
+              if (e.key === 'Enter' && localFirstName.trim() && localLastName.trim() && !loading) {
                 handleSubmit()
               }
             }}
             disabled={loading}
             autoFocus
+          />
+        </div>
+        <div>
+          <label style={{
+            ...tokens.typography.label,
+            color: tokens.colors.textSecondary,
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+            marginBottom: tokens.spacing[8],
+            display: 'block',
+          }}>
+            Last Name
+          </label>
+          <Input
+            type="text"
+            placeholder="Last name"
+            value={localLastName}
+            onChange={(e) => {
+              setLocalLastName(e.target.value)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && localFirstName.trim() && localLastName.trim() && !loading) {
+                handleSubmit()
+              }
+            }}
+            disabled={loading}
           />
         </div>
       </div>
@@ -98,7 +127,7 @@ export function NameStep({ name, onNameChange, onSubmit, loading, error, onBack 
         )}
         <AnimatedButton
           onClick={handleSubmit}
-          disabled={!localName.trim() || loading}
+          disabled={!localFirstName.trim() || !localLastName.trim() || loading}
           style={{ flex: 1 }}
         >
           {loading ? 'Saving...' : 'Continue'}

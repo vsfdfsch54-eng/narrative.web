@@ -37,14 +37,21 @@ export function PasswordStep({ password, onPasswordChange, onSubmit, loading, er
     return true
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!validatePassword()) return
     if (!localPassword.trim()) {
       setPasswordError("Password is required")
       return
     }
+    if (localPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match")
+      return
+    }
     onPasswordChange(localPassword)
-    await onSubmit(localPassword)
+    // Call onSubmit but don't await - navigation happens immediately
+    onSubmit(localPassword).catch((error) => {
+      console.error('[PasswordStep] Submit error:', error)
+    })
   }
 
   const isValid = localPassword.length >= 6 && (!confirmPassword || localPassword === confirmPassword)
