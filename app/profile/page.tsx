@@ -55,7 +55,14 @@ export default function ProfilePage() {
 
         if (!completed) {
           // Incomplete onboarding → redirect to onboarding
-          router.replace(`/onboarding?step=${step}`)
+          // Safety check: prevent redirect loops
+          const redirectPath = `/onboarding?step=${step}`
+          const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
+          if (currentPath === redirectPath) {
+            console.warn('[ProfilePage] ⚠️ Already on target path, skipping redirect to prevent loop')
+            return
+          }
+          router.replace(redirectPath)
           return
         }
 

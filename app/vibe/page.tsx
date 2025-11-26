@@ -193,9 +193,19 @@ export default function VibePage() {
         }
 
         // Only redirect if we have a valid result and onboarding is actually incomplete
-        if (result && !result.completed) {
+        // DOUBLE CHECK: Ensure we're not redirecting on API errors
+        if (result && !result.completed && !result.apiError) {
           console.log('[VibePage] Onboarding incomplete, redirecting to:', result.step)
-          router.replace(`/onboarding?step=${result.step}`)
+          const redirectPath = `/onboarding?step=${result.step}`
+          
+          // Additional safety check: prevent redirect loops
+          const currentPath = window.location.pathname
+          if (currentPath === redirectPath) {
+            console.warn('[VibePage] ⚠️ Already on target path, skipping redirect to prevent loop')
+            return
+          }
+          
+          router.replace(redirectPath)
           return
         }
 
