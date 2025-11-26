@@ -13,11 +13,12 @@ export default function Home() {
   const [checking, setChecking] = useState(false)
 
   // Redirect authenticated users based on onboarding_step from DB
+  // Only redirect if user is actually on the home page (/)
   useEffect(() => {
     if (authLoading) return
     
-    // Don't redirect if already on correct page
-    if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
+    // Only redirect if we're on the home page
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
       return
     }
     
@@ -34,25 +35,17 @@ export default function Home() {
             
             // Redirect based on DB step
             if (dbStep === 'complete' || data.data.onboarding_completed) {
-              if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
-                router.replace("/chat")
-              }
+              router.replace("/chat")
             } else {
-              if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                router.replace(`/onboarding?step=${dbStep}`)
-              }
+              router.replace(`/onboarding?step=${dbStep || 'email'}`)
             }
           } else {
             // User not found in database → go to onboarding
-            if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.replace("/onboarding?step=email")
-            }
+            router.replace("/onboarding?step=email")
           }
         } catch (error) {
           // On error, redirect to onboarding to be safe
-          if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-            router.push("/onboarding?step=email")
-          }
+          router.replace("/onboarding?step=email")
         } finally {
           setChecking(false)
         }
@@ -60,7 +53,7 @@ export default function Home() {
       
       checkAndRedirect()
     }
-  }, [user, authLoading]) // Removed router from dependencies
+  }, [user, authLoading, router])
 
   // Show loading while checking auth or onboarding status
   if (authLoading || checking) {

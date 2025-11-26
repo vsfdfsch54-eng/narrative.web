@@ -7,6 +7,7 @@ import { Save, Users, Edit2, Bell, Check, X, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
+import { normalizeOnboardingStep } from "@/lib/onboarding"
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -25,10 +26,41 @@ export default function ProfilePage() {
   const [personalityTraits, setPersonalityTraits] = useState<any>(null)
   const [loadingPersonality, setLoadingPersonality] = useState(true)
 
+  // Check authentication and onboarding status
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (authLoading) return
+    
+    if (!user) {
       router.push("/")
+      return
     }
+    
+    // Check onboarding status
+    const checkOnboarding = async () => {
+      try {
+        const response = await fetch(`/api/users?userId=${user.id}`)
+        const data = await response.json()
+        
+        if (data.success && data.data) {
+          const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
+          // If onboarding not complete, redirect to onboarding
+          if (dbStep !== 'complete' && !data.data.onboarding_completed) {
+            router.replace(`/onboarding?step=${dbStep || 'email'}`)
+            return
+          }
+        } else {
+          // User not found in database, redirect to onboarding
+          router.replace('/onboarding?step=email')
+          return
+        }
+      } catch (error) {
+        console.error('[ProfilePage] Error checking onboarding:', error)
+        router.replace('/onboarding?step=email')
+        return
+      }
+    }
+    
+    checkOnboarding()
   }, [user, authLoading, router])
 
   useEffect(() => {
