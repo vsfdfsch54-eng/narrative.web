@@ -207,10 +207,20 @@ export default function VibePage() {
     const loadTopics = async () => {
       setLoadingTopics(true)
       const category = TOPIC_CATEGORIES.find((cat) => cat.id === selectedCategory)
+      const fallbackTopics = category?.topics || []
+      
       try {
-        const response = await fetch(`/api/topics?category=${selectedCategory}`)
+        const response = await fetch(`/api/topics?category=${selectedCategory}`, {
+          // Add timeout to prevent hanging
+          signal: AbortSignal.timeout(5000)
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
         const data = await response.json()
-        if (data.success && data.data && data.data.length > 0) {
+        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
           const dbTopics: Topic[] = data.data.map((t: any) => ({
             id: t.id,
             label: t.label,
@@ -219,12 +229,15 @@ export default function VibePage() {
           }))
           setTopics(prev => ({ ...prev, [selectedCategory]: dbTopics }))
         } else {
-          const fallbackTopics = category?.topics || []
+          // Use fallback topics if API returns empty or invalid data
           setTopics(prev => ({ ...prev, [selectedCategory]: fallbackTopics }))
         }
       } catch (error) {
-        console.error('Error loading topics:', error)
-        const fallbackTopics = category?.topics || []
+        // Silently fall back to default topics - don't spam console
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.warn('[VibePage] Error loading topics, using fallback:', error.message)
+        }
+        // Always use fallback topics on error
         setTopics(prev => ({ ...prev, [selectedCategory]: fallbackTopics }))
       } finally {
         setLoadingTopics(false)

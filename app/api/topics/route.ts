@@ -5,11 +5,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAllTopics, getTopicsByCategory } from '@/lib/supabase-helpers'
 
 export async function GET(request: NextRequest) {
-  // Access searchParams outside try/catch to ensure Next.js recognizes dynamic usage
-  const { searchParams } = new URL(request.url)
-  const category = searchParams.get('category')
-
   try {
+    // Access searchParams inside try/catch to handle URL parsing errors
+    const { searchParams } = new URL(request.url)
+    const category = searchParams.get('category')
 
     let result
     if (category) {
@@ -18,12 +17,31 @@ export async function GET(request: NextRequest) {
       result = await getAllTopics()
     }
 
-    return NextResponse.json({ success: true, data: result })
+    // Ensure we always return a valid response, even if result is empty
+    return NextResponse.json({ 
+      success: true, 
+      data: result || [] 
+    }, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
   } catch (error: any) {
-    console.error('Error in GET /api/topics:', error)
+    console.error('[Topics API] Error:', error)
+    // Return empty array instead of error to prevent breaking the UI
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { 
+        success: true, 
+        data: [],
+        error: error?.message || 'Failed to load topics'
+      },
+      { 
+        status: 200, // Return 200 so client can handle gracefully
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
     )
   }
 }
