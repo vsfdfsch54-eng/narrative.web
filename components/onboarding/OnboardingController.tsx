@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/hooks/use-auth"
@@ -42,6 +42,7 @@ export function OnboardingController() {
   
   const hasInitializedRef = useRef(false)
   const hasRedirectedRef = useRef(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
 
   // Redirect if onboarding is complete - ALWAYS redirect to /vibe
   useEffect(() => {
@@ -132,31 +133,34 @@ export function OnboardingController() {
 
   // Password step handler - create account here
   const handlePasswordSubmit = async (password: string): Promise<void> => {
+    setPasswordError(null) // Clear previous errors
     setPassword(password)
     
     // Create account immediately (this is where account creation happens)
     if (!user && state.email) {
       try {
-      const result = await signUp(state.email, password)
-      if (result.error) {
-          if (result.error.includes('already registered') || result.error.includes('already exists')) {
-            // User exists - they should login, but continue anyway
-            console.warn('[OnboardingController] User already exists, continuing anyway')
-        } else {
-            // Other error - log but continue
-            console.error('[OnboardingController] Signup error:', result.error)
-          }
+        const result = await signUp(state.email, password)
+        
+        if (!result.success || result.error) {
+          // Signup failed - show error to user
+          const errorMessage = result.error || 'Failed to create account. Please try again.'
+          setPasswordError(errorMessage)
+          console.error('[OnboardingController] Signup error:', errorMessage)
+          return // Don't navigate if signup failed
         }
         
         // Wait briefly for auth to propagate
         await new Promise(resolve => setTimeout(resolve, 300))
-      } catch (error) {
+      } catch (error: any) {
+        // Signup failed - show error to user
+        const errorMessage = error?.message || 'Failed to create account. Please try again.'
+        setPasswordError(errorMessage)
         console.error('[OnboardingController] Account creation error:', error)
-        // Continue anyway - user might already exist
+        return // Don't navigate if signup failed
       }
-        }
+    }
         
-    // Navigate to name step
+    // Navigate to name step only if signup succeeded or user already exists
     navigateToStep('name')
     
     // Save progress in background (non-blocking)
@@ -342,7 +346,7 @@ export function OnboardingController() {
                 onPasswordChange={setPassword}
                 onSubmit={handlePasswordSubmit}
                 loading={false}
-                error={null}
+                error={passwordError}
                 onBack={canGoBack ? goBack : undefined}
               />
             )}

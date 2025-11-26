@@ -27,9 +27,10 @@ export default function OnboardingPage() {
       return
     }
 
-    // USER LOGGED OUT → Redirect to welcome page
+    // USER LOGGED OUT → Allow access to onboarding (they need to create account)
+    // Account creation happens at password step, so they must be able to access onboarding
     if (!user) {
-      router.replace("/")
+      setCheckingOnboarding(false)
       return
     }
 
