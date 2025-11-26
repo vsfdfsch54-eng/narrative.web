@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Input } from "@/components/ui/input"
 import { AnimatedButton } from "@/components/ui/animated-button"
@@ -32,11 +32,25 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
     setIsSubmitting(true)
     onEmailChange(localEmail)
     
-    // Call onSubmit but don't block - navigation happens immediately
-    Promise.resolve(onSubmit(localEmail)).catch((error) => {
-      console.error('[EmailStep] Submit error:', error)
-      setIsSubmitting(false)
-    })
+    // Call onSubmit - navigation should happen immediately
+    onSubmit(localEmail)
+      .then(() => {
+        // Navigation initiated - use window.location as fallback if router is slow
+        setTimeout(() => {
+          if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
+            const params = new URLSearchParams(window.location.search)
+            if (params.get('step') !== 'name') {
+              // Router didn't navigate, force it
+              window.location.href = '/onboarding?step=name'
+            }
+          }
+          setIsSubmitting(false)
+        }, 500)
+      })
+      .catch((error) => {
+        console.error('[EmailStep] Submit error:', error)
+        setIsSubmitting(false)
+      })
   }
 
   const handleBackToWelcome = async (e: React.MouseEvent<HTMLAnchorElement>) => {

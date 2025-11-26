@@ -95,14 +95,19 @@ export function OnboardingController() {
   // Account creation will happen when name is submitted (if needed)
   const handleEmailSubmit = async (email: string): Promise<void> => {
     setEmail(email)
-    // Just advance immediately - no blocking operations
-    // Use setTimeout to ensure state update happens first
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        router.replace(`/onboarding?step=name`)
-        resolve()
-      }, 0)
-    })
+    // Update step in context first
+    setStep('name')
+    // Then navigate - use both router and window.location for reliability
+    router.replace(`/onboarding?step=name`)
+    // Fallback: if router doesn't work, use window.location
+    setTimeout(() => {
+      if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
+        const params = new URLSearchParams(window.location.search)
+        if (params.get('step') !== 'name') {
+          window.location.href = '/onboarding?step=name'
+        }
+      }
+    }, 100)
   }
 
   // Name step handler - create account here if needed
