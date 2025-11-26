@@ -20,15 +20,23 @@ interface EmailStepProps {
 
 export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBack }: EmailStepProps) {
   const [localEmail, setLocalEmail] = useState(email)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const router = useRouter()
   const { signOut } = useAuth()
 
-  const handleSubmit = async () => {
-    if (!localEmail.trim() || !localEmail.includes('@')) {
+  const handleSubmit = () => {
+    if (!localEmail.trim() || !localEmail.includes('@') || isSubmitting) {
       return
     }
+    
+    setIsSubmitting(true)
     onEmailChange(localEmail)
-    await onSubmit(localEmail)
+    
+    // Call onSubmit but don't block - navigation happens immediately
+    Promise.resolve(onSubmit(localEmail)).catch((error) => {
+      console.error('[EmailStep] Submit error:', error)
+      setIsSubmitting(false)
+    })
   }
 
   const handleBackToWelcome = async (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -88,11 +96,11 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
               setLocalEmail(newEmail)
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && isValid && !loading) {
+              if (e.key === 'Enter' && isValid && !isSubmitting) {
                 handleSubmit()
               }
             }}
-            disabled={loading}
+            disabled={isSubmitting}
             autoFocus
           />
         </div>
@@ -101,17 +109,17 @@ export function EmailStep({ email, onEmailChange, onSubmit, loading, error, onBa
       <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
         <AnimatedButton
           onClick={handleSubmit}
-          disabled={!isValid || loading}
+          disabled={!isValid || isSubmitting}
           style={{ width: '100%' }}
         >
-          {loading ? 'Saving...' : 'Continue'}
+          {isSubmitting ? 'Continuing...' : 'Continue'}
         </AnimatedButton>
 
         {onBack && (
           <AnimatedButton
             variant="ghost"
             onClick={onBack}
-            disabled={loading}
+            disabled={isSubmitting}
             style={{ width: '100%' }}
           >
             Back

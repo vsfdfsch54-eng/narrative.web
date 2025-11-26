@@ -93,10 +93,16 @@ export function OnboardingController() {
 
   // Email step handler - just advance to name step
   // Account creation will happen when name is submitted (if needed)
-  const handleEmailSubmit = async (email: string) => {
+  const handleEmailSubmit = async (email: string): Promise<void> => {
     setEmail(email)
     // Just advance immediately - no blocking operations
-    router.replace(`/onboarding?step=name`)
+    // Use setTimeout to ensure state update happens first
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        router.replace(`/onboarding?step=name`)
+        resolve()
+      }, 0)
+    })
   }
 
   // Name step handler - create account here if needed
@@ -305,7 +311,7 @@ export function OnboardingController() {
                   onEmailChange={setEmail}
                   onSubmit={handleEmailSubmit}
                   loading={false}
-                  error={state.error}
+                  error={null}
                   onBack={() => router.push('/')}
                 />
               )}
