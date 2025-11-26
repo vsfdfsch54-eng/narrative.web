@@ -11,7 +11,7 @@ export default function NavBar() {
 
   const items = [
     { label: "Home", icon: Home, href: "/vibe" },
-    { label: "Chat", icon: MessageCircle, href: "/conversations" },
+    { label: "Chat", icon: MessageCircle, href: "/chat" },
     { label: "Calendar", icon: Calendar, href: "/calendar" },
     { label: "Profile", icon: User, href: "/profile" },
   ];
