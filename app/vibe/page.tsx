@@ -28,7 +28,7 @@ const pageContainerStyle: CSSProperties = {
   maxWidth: tokens.layout.maxWidth,
   margin: '0 auto',
   padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
-  paddingBottom: '160px', // Space for navbar
+  paddingBottom: tokens.spacing[32],
   display: 'flex',
   flexDirection: 'column',
   gap: tokens.spacing[32],
@@ -142,7 +142,7 @@ export default function VibePage() {
     
     if (!user) {
       if (typeof window !== 'undefined' && window.location.pathname !== '/') {
-        router.push("/")
+      router.push("/")
       }
       return
     }
@@ -151,14 +151,14 @@ export default function VibePage() {
     if (typeof window !== 'undefined' && window.location.pathname === '/onboarding') {
       return
     }
-    
-    const checkOnboarding = async () => {
-      try {
+      
+      const checkOnboarding = async () => {
+        try {
         // Fetch user from database - SINGLE SOURCE OF TRUTH
-        const response = await fetch(`/api/users?userId=${user.id}`)
-        const data = await response.json()
-        
-        if (data.success && data.data) {
+          const response = await fetch(`/api/users?userId=${user.id}`)
+          const data = await response.json()
+          
+          if (data.success && data.data) {
           const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
           
           // If not complete, redirect to onboarding
@@ -166,15 +166,15 @@ export default function VibePage() {
             if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
               router.push(`/onboarding?step=${dbStep}`)
             }
-          }
-        } else {
-          // User not found in database → redirect to onboarding
+            }
+          } else {
+            // User not found in database → redirect to onboarding
           if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
             router.push("/onboarding?step=email")
           }
-        }
-      } catch (error) {
-        // On error, redirect to onboarding to be safe
+          }
+        } catch (error) {
+          // On error, redirect to onboarding to be safe
         if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
           router.push("/onboarding?step=email")
         }
@@ -223,7 +223,7 @@ export default function VibePage() {
     
     loadTopics()
   }, [selectedCategory])
-  
+
   const handleConnect = async () => {
     const userId = getUserId()
     
@@ -413,7 +413,7 @@ export default function VibePage() {
                     <span style={{ fontSize: '13px', color: tokens.colors.textSecondary }}>
                       {vibe.description}
                     </span>
-                  </div>
+              </div>
                 </button>
               )
             })}
@@ -427,25 +427,25 @@ export default function VibePage() {
             <p style={sectionDescriptionStyle}>
               What do you want to talk about?
             </p>
-          </div>
+              </div>
 
           <div style={categoryRowStyle}>
-            {TOPIC_CATEGORIES.map((category) => {
+                  {TOPIC_CATEGORIES.map((category) => {
               const Icon = category.icon
               const selected = selectedCategory === category.id
-              return (
-                <button
-                  key={category.id}
+                    return (
+                      <button
+                        key={category.id}
                   type="button"
                   onClick={() => setSelectedCategory(category.id)}
                   style={createCategoryChipStyle(selected)}
-                >
+                      >
                   <Icon size={16} />
-                  {category.label}
-                </button>
-              )
-            })}
-          </div>
+                        {category.label}
+                      </button>
+                    )
+                  })}
+                </div>
 
           <div style={optionsGridStyle}>
             {loadingTopics && (
@@ -470,7 +470,7 @@ export default function VibePage() {
                   <span style={smallIconStyle}>{topic.icon || '💬'}</span>
                   <div style={{ flex: 1 }}>
                     <span style={{ fontSize: '16px', fontWeight: 500 }}>{topic.label}</span>
-                  </div>
+          </div>
                 </button>
               )
             })}
@@ -493,12 +493,12 @@ export default function VibePage() {
                 <button
                   key={limit}
                   type="button"
-                  onClick={() => setSelectedTimeLimit(isSelected ? null : limit)}
+                    onClick={() => setSelectedTimeLimit(isSelected ? null : limit)}
                   style={createOptionStyle(isSelected)}
                 >
                   <div style={{ flex: 1, textAlign: 'left' }}>
                     <span style={{ fontSize: '16px', fontWeight: 500 }}>{limit} minutes</span>
-                  </div>
+                </div>
                 </button>
               )
             })}
@@ -516,23 +516,23 @@ export default function VibePage() {
 
         {/* CTA Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12], marginTop: tokens.spacing[8] }}>
-          <AnimatedButton
-            onClick={handleConnect}
+            <AnimatedButton
+              onClick={handleConnect}
             disabled={!canConnect || saving}
-            size="large"
-            fullWidth
-          >
+              size="large"
+              fullWidth
+            >
             {saving ? "Finding someone..." : canConnect ? "Connect now" : "Select a vibe or topic to connect"}
-          </AnimatedButton>
-          <AnimatedButton
+            </AnimatedButton>
+            <AnimatedButton
             variant="ghost"
-            onClick={handleSkip}
-            size="large"
-            fullWidth
+              onClick={handleSkip}
+              size="large"
+              fullWidth
             disabled={saving}
-          >
+            >
             Skip for now
-          </AnimatedButton>
+            </AnimatedButton>
         </div>
       </div>
     </AppShell>

@@ -109,7 +109,7 @@ export function OnboardingController() {
 
         const dbUser = data.data
         const dbStep = normalizeOnboardingStep(dbUser.onboarding_step)
-        
+
         // If complete, redirect immediately
         if (dbStep === 'complete') {
           router.push(getOnboardingRouteForStep('complete'))
@@ -139,12 +139,12 @@ export function OnboardingController() {
         // On error, use URL step or default to email - clear any previous errors
         const urlStep = searchParams.get('step')
         const stepToUse = urlStep && isValidOnboardingStep(urlStep) ? urlStep : 'email'
-        setState(prev => ({
-          ...prev,
+        setState(prev => ({ 
+          ...prev, 
           step: stepToUse,
           email: user.email || '',
           dbStepLoaded: true,
-          loading: false,
+          loading: false, 
           error: null, // Clear any previous errors
         }))
       }
@@ -154,8 +154,9 @@ export function OnboardingController() {
   }, [user, authLoading]) // Removed router from dependencies
 
   // Helper to update onboarding step in database (non-blocking)
-  const updateOnboardingStepInDB = useCallback(async (step: OnboardingStep): Promise<boolean> => {
-    if (!user?.id) {
+  const updateOnboardingStepInDB = useCallback(async (step: OnboardingStep, userId?: string): Promise<boolean> => {
+    const userIdToUse = userId || user?.id
+    if (!userIdToUse) {
       console.error('[Onboarding] Cannot update step: user ID is missing')
       return false
     }
@@ -165,7 +166,7 @@ export function OnboardingController() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user.id,
+          userId: userIdToUse,
           onboarding_step: step,
         }),
       })
@@ -267,7 +268,7 @@ export function OnboardingController() {
     try {
       // Now create account with email + password
       const result = await signUp(state.email, password)
-      
+          
       if (result.error) {
         if (result.error.includes('already registered') || 
             result.error.includes('already exists') ||
@@ -287,7 +288,8 @@ export function OnboardingController() {
       
       if (signupUserId) {
         // Update DB step to 'name' BEFORE advancing
-        const updated = await updateOnboardingStepInDB('name')
+        // Pass signupUserId directly since user from useAuth might not be updated yet
+        const updated = await updateOnboardingStepInDB('name', signupUserId)
         
         if (updated) {
           // Only advance after DB confirms update
@@ -318,7 +320,7 @@ export function OnboardingController() {
     } catch (error: any) {
       setState(prev => ({ ...prev, loading: false, error: error.message || 'Failed to create account' }))
     }
-  }, [state.email, signUp, updateOnboardingStepInDB])
+  }, [state.email, signUp, updateOnboardingStepInDB, router])
 
   // Interests step handler
   const handleInterestsSubmit = useCallback(async (interests: string[]) => {
@@ -433,7 +435,7 @@ export function OnboardingController() {
         updateOnboardingStepInDB('complete').catch((error) => {
           console.error('[Onboarding] Failed to update step to complete (fallback):', error)
         })
-        router.push(getNextOnboardingRoute('complete'))
+      router.push(getNextOnboardingRoute('complete'))
       }
     } catch (error) {
       // Redirect anyway

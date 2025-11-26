@@ -16,8 +16,13 @@ export default function NavBar() {
     { label: "Profile", icon: User, href: "/profile" },
   ];
 
-  // Don't show on onboarding pages
-  if (pathname?.startsWith("/onboarding")) {
+  // Only show on specific pages: chat, calendar, and profile
+  const allowedPaths = ['/conversations', '/chat', '/calendar', '/profile']
+  const isAllowedPath = pathname && (
+    allowedPaths.some(path => pathname === path || pathname.startsWith(path + '/'))
+  )
+
+  if (!isAllowedPath) {
     return null;
   }
 
@@ -28,17 +33,17 @@ export default function NavBar() {
           const selected = pathname === item.href;
           const Icon = item.icon;
 
-          return (
+              return (
             <motion.button
-              key={item.href}
+                  key={item.href}
               onClick={() => router.push(item.href)}
               whileTap={{ scale: 0.92 }}
-              className={cn(
+                  className={cn(
                 "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all",
                 selected
                   ? "bg-white text-black shadow-md"
                   : "bg-white/10 text-white hover:bg-white/20"
-              )}
+                  )}
             >
               <Icon size={18} />
               {selected && (
@@ -49,7 +54,7 @@ export default function NavBar() {
                 >
                   {item.label}
                 </motion.span>
-              )}
+                  )}
             </motion.button>
           );
         })}

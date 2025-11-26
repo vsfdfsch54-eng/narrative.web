@@ -26,15 +26,15 @@ export default function LoginPage() {
         return
       }
       
-      const checkOnboarding = async () => {
-        try {
+        const checkOnboarding = async () => {
+          try {
           // Fetch user from database - SINGLE SOURCE OF TRUTH
-          const response = await fetch(`/api/users?userId=${user.id}`)
-          const data = await response.json()
-          
-          if (data.success && data.data) {
-            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
+            const response = await fetch(`/api/users?userId=${user.id}`)
+            const data = await response.json()
             
+            if (data.success && data.data) {
+            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
+              
             // Redirect based on DB step
             if (dbStep === 'complete') {
               if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
@@ -56,9 +56,9 @@ export default function LoginPage() {
           if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
             router.push("/onboarding?step=email")
           }
+          }
         }
-      }
-      checkOnboarding()
+        checkOnboarding()
     } else if (!authLoading && user && !user.email_confirmed_at) {
       // User is logged in but not verified
       if (typeof window !== 'undefined' && window.location.pathname !== '/verify') {
@@ -96,7 +96,7 @@ export default function LoginPage() {
               // Redirect based on DB step
               if (dbStep === 'complete') {
                 if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
-                  router.push("/vibe")
+                router.push("/vibe")
                 }
               } else {
                 if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
@@ -132,7 +132,7 @@ export default function LoginPage() {
       <AppShell>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
           <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
-        </div>
+      </div>
       </AppShell>
     )
   }
@@ -143,7 +143,7 @@ export default function LoginPage() {
       <AppShell>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
           <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
-        </div>
+      </div>
       </AppShell>
     )
   }
@@ -159,7 +159,7 @@ export default function LoginPage() {
         justifyContent: 'center',
         minHeight: 'calc(100vh - 140px)',
         padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
-        paddingBottom: '160px',
+        paddingBottom: tokens.spacing[32],
       }}>
         <div style={{
           width: '100%',
@@ -176,32 +176,32 @@ export default function LoginPage() {
               marginBottom: tokens.spacing[8],
               textAlign: 'center',
             }}>
-              Welcome back
-            </h1>
+                  Welcome back
+                </h1>
             <p style={{
               ...tokens.typography.body,
               color: tokens.colors.textSecondary,
               margin: 0,
               textAlign: 'center',
             }}>
-              Sign in to continue the conversation
-            </p>
-          </div>
+                  Sign in to continue the conversation
+                </p>
+              </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
-            {error && (
-              <div style={{
-                padding: tokens.spacing[12],
-                borderRadius: tokens.radii.input,
-                background: 'rgba(239, 68, 68, 0.15)',
+                    {error && (
+                      <div style={{
+                        padding: tokens.spacing[12],
+                        borderRadius: tokens.radii.input,
+                        background: 'rgba(239, 68, 68, 0.15)',
                 border: '1px solid rgba(239, 68, 68, 0.3)',
-                color: '#FCA5A5',
+                        color: '#FCA5A5',
                 fontSize: '13px',
                 textAlign: 'center',
-              }}>
-                {error}
-              </div>
-            )}
+                      }}>
+                        {error}
+                      </div>
+                    )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
               <div>
@@ -213,18 +213,18 @@ export default function LoginPage() {
                   marginBottom: tokens.spacing[8],
                   display: 'block',
                 }}>
-                  Email
-                </label>
-                <Input
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={loading}
+                          Email
+                        </label>
+                        <Input
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                          disabled={loading}
                   autoFocus
-                />
-              </div>
+                        />
+                      </div>
 
               <div>
                 <label style={{
@@ -235,25 +235,25 @@ export default function LoginPage() {
                   marginBottom: tokens.spacing[8],
                   display: 'block',
                 }}>
-                  Password
-                </label>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                />
-              </div>
-            </div>
+                          Password
+                        </label>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
               <AnimatedButton
-                type="submit"
+                        type="submit"
                 disabled={!isValid || loading}
                 style={{ width: '100%' }}
-              >
+                      >
                 {loading ? 'Signing in...' : 'Sign In'}
               </AnimatedButton>
 
@@ -268,13 +268,13 @@ export default function LoginPage() {
                   color: tokens.colors.textSecondary,
                   margin: 0,
                 }}>
-                  Don&apos;t have an account?{" "}
+                          Don&apos;t have an account?{" "}
                   <Link href="/onboarding" style={{ 
                     color: tokens.colors.textPrimaryOnDark, 
                     textDecoration: 'underline' 
                   }}>
-                    Create account
-                  </Link>
+                            Create account
+                          </Link>
                 </p>
                 <Link 
                   href="/auth/reset-password" 
@@ -284,11 +284,11 @@ export default function LoginPage() {
                     textDecoration: 'underline',
                   }}
                 >
-                  Forgot password?
-                </Link>
-              </div>
-            </div>
-          </form>
+                            Forgot password?
+                          </Link>
+                      </div>
+                    </div>
+                  </form>
         </div>
       </div>
     </AppShell>
