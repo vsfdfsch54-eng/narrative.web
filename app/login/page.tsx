@@ -28,38 +28,34 @@ export default function LoginPage() {
       
         const checkOnboarding = async () => {
           try {
-          // Fetch user from database - SINGLE SOURCE OF TRUTH
+            // Fetch user from database - SINGLE SOURCE OF TRUTH
             const response = await fetch(`/api/users?userId=${user.id}`)
             const data = await response.json()
             
             if (data.success && data.data) {
-            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
+              const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
               
-            // Redirect based on DB step
-            if (dbStep === 'complete' || data.data.onboarding_completed) {
-              if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
-                router.replace("/chat")
+              // Redirect based on DB step
+              if (dbStep === 'complete' || data.data.onboarding_completed) {
+                if (typeof window !== 'undefined' && window.location.pathname !== '/chat') {
+                  router.replace("/chat")
+                }
+              } else {
+                if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
+                  router.replace(`/onboarding?step=${dbStep}`)
+                }
               }
             } else {
+              // User not found, need onboarding
               if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                router.replace(`/onboarding?step=${dbStep}`)
-              }
-            } else {
-              if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-                router.push(`/onboarding?step=${dbStep}`)
+                router.replace("/onboarding?step=email")
               }
             }
-          } else {
-            // Need onboarding
+          } catch (err) {
+            // On error, redirect to onboarding
             if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-              router.push("/onboarding?step=email")
+              router.replace("/onboarding?step=email")
             }
-          }
-        } catch (err) {
-          // Need onboarding
-          if (typeof window !== 'undefined' && window.location.pathname !== '/onboarding') {
-            router.push("/onboarding?step=email")
-          }
           }
         }
         checkOnboarding()
