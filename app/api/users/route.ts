@@ -208,12 +208,15 @@ export async function GET(request: NextRequest) {
           }
         } else {
           // No user with this email exists - safe to create new user
+          // Ensure name is never null (NOT NULL constraint)
+          const safeUserName = userName || userEmail?.split('@')[0] || 'User'
+          
           const { data: upsertResult, error: createError } = await supabase
             .from('users')
             .upsert({
               id: userId,
               email: userEmail,
-              name: userName,
+              name: safeUserName, // Always provide a value (NOT NULL constraint)
               interests: [],
               onboarding_step: 'email', // Start at email step, not 'start'
             }, {
@@ -423,12 +426,33 @@ async function saveOnboardingProgress(
       updated_at: new Date().toISOString()
     }
     
-    // Set name from firstName and lastName
+    // CRITICAL: name column has NOT NULL constraint - always provide a value
+    // Set name from firstName and lastName, or use existing name, or fallback
+    let nameValue: string
+    
     if (data.firstName !== undefined || data.lastName !== undefined) {
       const firstName = data.firstName || ''
       const lastName = data.lastName || ''
-      updateData.name = `${firstName} ${lastName}`.trim() || undefined
+      nameValue = `${firstName} ${lastName}`.trim()
+    } else if (existingUser?.name) {
+      // Use existing name if available
+      nameValue = existingUser.name
+    } else if (email) {
+      // Fallback to email username if no name provided
+      nameValue = email.split('@')[0] || 'User'
+    } else {
+      // Last resort fallback
+      nameValue = 'User'
+    }
+    
+    // Always set name (required by NOT NULL constraint)
+    updateData.name = nameValue
+    
+    // Set first_name and last_name if provided
+    if (data.firstName !== undefined) {
       updateData.first_name = data.firstName
+    }
+    if (data.lastName !== undefined) {
       updateData.last_name = data.lastName
     }
     
@@ -490,6 +514,10 @@ async function saveOnboardingProgress(
         
         // Remove onboarding_completed and try again
         const { onboarding_completed, ...updateDataWithoutCompleted } = updateData
+        // Ensure name is still set (NOT NULL constraint)
+        if (!updateDataWithoutCompleted.name) {
+          updateDataWithoutCompleted.name = nameValue
+        }
         // Ensure onboarding_step is set correctly - this is the fallback
         if (data.onboarding_completed === true || data.onboarding_step === 'complete') {
           updateDataWithoutCompleted.onboarding_step = 'complete'
