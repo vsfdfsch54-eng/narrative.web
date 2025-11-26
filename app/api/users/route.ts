@@ -54,6 +54,14 @@ export async function GET(request: NextRequest) {
     )
   }
 
+  // Log request for debugging (especially mobile issues)
+  console.log('[Users API GET] Request received:', {
+    userId,
+    userAgent: request.headers.get('user-agent')?.substring(0, 50) || 'unknown',
+    origin: request.headers.get('origin') || 'unknown',
+    timestamp: new Date().toISOString()
+  })
+
   try {
     // Create Supabase client - wrap in try-catch in case env vars are missing
     let supabase
@@ -504,9 +512,28 @@ async function saveOnboardingProgress(
 }
 
 export async function PUT(request: NextRequest) {
+  let userId: string | null = null
+  
   try {
-    const body = await request.json()
-    const { userId, firstName, lastName, questionsAnswers, interests, onboarding_step, email: providedEmail, onboarding_completed } = body
+    // Parse request body safely
+    let body: any
+    try {
+      body = await request.json()
+    } catch (parseError: any) {
+      console.error('[Users API PUT] ❌ JSON parse error:', parseError)
+      return NextResponse.json(
+        { success: false, error: 'Invalid request body' }, 
+        { 
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+    }
+    
+    const { firstName, lastName, questionsAnswers, interests, onboarding_step, email: providedEmail, onboarding_completed } = body
+    userId = body.userId
 
     if (!userId) {
       return NextResponse.json(
@@ -520,7 +547,41 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const supabase = createServerClient()
+    // Validate userId format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidRegex.test(userId)) {
+      console.warn('[Users API PUT] ⚠️ Invalid userId format:', userId)
+      return NextResponse.json(
+        { success: false, error: 'Invalid user ID format' }, 
+        { 
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+    }
+
+    // Create Supabase client with error handling
+    let supabase
+    try {
+      supabase = createServerClient()
+    } catch (clientError: any) {
+      console.error('[Users API PUT] ❌ Failed to create Supabase client:', clientError)
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Server configuration error',
+          details: clientError?.message || 'Failed to initialize database connection'
+        }, 
+        { 
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+    }
     
     // Use centralized saveOnboardingProgress function
     const result = await saveOnboardingProgress(supabase, userId, {
@@ -534,6 +595,10 @@ export async function PUT(request: NextRequest) {
     })
 
     if (!result.success) {
+      console.error('[Users API PUT] ❌ Save failed:', {
+        userId,
+        error: result.error
+      })
       return NextResponse.json(
         { success: false, error: result.error || 'Failed to save progress' },
         { 
@@ -554,8 +619,18 @@ export async function PUT(request: NextRequest) {
       }
     )
   } catch (error: any) {
+    console.error('[Users API PUT] ❌ Unhandled error:', {
+      error: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+      userId
+    })
     return NextResponse.json(
-      { success: false, error: error.message }, 
+      { 
+        success: false, 
+        error: error?.message || 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      }, 
       { 
         status: 500,
         headers: {
