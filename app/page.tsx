@@ -35,7 +35,8 @@ export default function Home() {
             
             // Redirect based on DB step
             if (dbStep === 'complete' || data.data.onboarding_completed) {
-              router.replace("/chat")
+              // Redirect to vibe page (where users select vibe and topic)
+              router.replace("/vibe")
             } else {
               router.replace(`/onboarding?step=${dbStep || 'email'}`)
             }
