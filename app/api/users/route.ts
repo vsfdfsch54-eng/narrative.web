@@ -231,6 +231,20 @@ export async function GET(request: NextRequest) {
       userData = existingUser
     }
 
+    // Ensure userData is set before returning
+    if (!userData) {
+      console.error('[Users API GET] ❌ userData is null after all checks')
+      return NextResponse.json(
+        { success: false, error: 'User data not found. Please try again.' },
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+    }
+
     return NextResponse.json(
       { success: true, data: userData },
       {
@@ -240,8 +254,13 @@ export async function GET(request: NextRequest) {
       }
     )
   } catch (error: any) {
+    console.error('[Users API GET] ❌ Unhandled error:', error)
     return NextResponse.json(
-      { success: false, error: error.message }, 
+      { 
+        success: false, 
+        error: error?.message || 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      }, 
       { 
         status: 500,
         headers: {
