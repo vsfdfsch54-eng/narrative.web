@@ -78,22 +78,61 @@ export async function GET(request: NextRequest) {
             // Same user, same email - use existing record
             userData = existingUserByEmail
           } else {
-            // Email exists but with different id - this is a conflict
-            console.warn('[Users API GET] ⚠️ Email conflict: email exists with different id', {
-              existingId: existingUserByEmail.id,
-              requestedId: userId,
-              email: userEmail
-            })
-            return NextResponse.json({ 
-              success: false, 
-              error: 'An account with this email already exists. Please sign in instead.',
-              details: 'Email is already registered with a different account.'
-            }, { 
-              status: 409, // Conflict
-              headers: {
-                'Content-Type': 'application/json',
+            // Email exists but with different id - this could be:
+            // 1. A legitimate conflict (user trying to use email from another account)
+            // 2. A race condition where user was created multiple times
+            // 3. An auth user ID mismatch (shouldn't happen but can)
+            
+            // Check if the requested userId exists in auth - if not, it's likely a stale/invalid request
+            try {
+              const { data: requestedAuthUser, error: requestedAuthError } = await supabase.auth.admin.getUserById(userId)
+              
+              if (requestedAuthError || !requestedAuthUser?.user) {
+                // Requested userId doesn't exist in auth - use the existing user record instead
+                console.warn('[Users API GET] ⚠️ Requested userId not in auth, using existing user by email', {
+                  existingId: existingUserByEmail.id,
+                  requestedId: userId,
+                  email: userEmail
+                })
+                userData = existingUserByEmail
+              } else if (requestedAuthUser.user.email === userEmail) {
+                // The requested userId's email matches - this is likely a data inconsistency
+                // Use the existing user record (it has the right email)
+                console.warn('[Users API GET] ⚠️ Email matches but ID differs - using existing record', {
+                  existingId: existingUserByEmail.id,
+                  requestedId: userId,
+                  email: userEmail
+                })
+                userData = existingUserByEmail
+              } else {
+                // Different email - this is a real conflict
+                console.warn('[Users API GET] ⚠️ Email conflict: email exists with different id and different email', {
+                  existingId: existingUserByEmail.id,
+                  requestedId: userId,
+                  existingEmail: existingUserByEmail.email,
+                  requestedEmail: userEmail
+                })
+                return NextResponse.json({ 
+                  success: false, 
+                  error: 'An account with this email already exists. Please sign in instead.',
+                  details: 'Email is already registered with a different account.'
+                }, { 
+                  status: 409, // Conflict
+                  headers: {
+                    'Content-Type': 'application/json',
+                  }
+                })
               }
-            })
+            } catch (authCheckError) {
+              // If we can't verify, be lenient and use existing record
+              console.warn('[Users API GET] ⚠️ Could not verify auth user, using existing record', {
+                existingId: existingUserByEmail.id,
+                requestedId: userId,
+                email: userEmail,
+                error: authCheckError
+              })
+              userData = existingUserByEmail
+            }
           }
         } else {
           // No user with this email exists - safe to create new user
