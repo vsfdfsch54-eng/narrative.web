@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { AnimatedButton } from "@/components/ui/animated-button"
-import { HeroPill } from "@/components/ui/hero-pill"
 import { tokens } from "@/lib/design-tokens"
-import { INTERESTS, INTEREST_CATEGORIES, getAllCategories } from "@/lib/interests"
+import { INTERESTS, getAllCategories } from "@/lib/interests"
 import { ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -56,64 +55,32 @@ export function InterestsStep({
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: tokens.spacing[20],
-      width: '100%',
-      maxWidth: '600px',
-      margin: '0 auto',
-    }}>
-      <div>
-        <h1 style={{
-          ...tokens.typography.title,
-          color: tokens.colors.textPrimaryOnDark,
-          margin: 0,
-          marginBottom: tokens.spacing[8],
-          textAlign: 'center',
-        }}>
+    <div className="flex flex-col items-center justify-start w-full px-6 max-w-md mx-auto">
+      {/* Header */}
+      <div className="w-full mb-6">
+        <h1 className="text-2xl font-semibold text-white text-center mb-2">
           What are you into?
         </h1>
-        <p style={{
-          ...tokens.typography.body,
-          color: tokens.colors.textSecondary,
-          margin: 0,
-          marginBottom: tokens.spacing[16],
-          textAlign: 'center',
-        }}>
+        <p className="text-sm text-white/60 text-center">
           Select your interests (choose at least one)
         </p>
       </div>
 
-      {/* Category Filter */}
-      <div style={{
-        display: 'flex',
-        gap: tokens.spacing[10],
-        overflowX: 'auto',
-        paddingBottom: tokens.spacing[12],
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-      }}>
+      {/* Category Filter - Top Row (Horizontal Scrolling) */}
+      <div className="flex flex-row gap-2 overflow-x-auto whitespace-nowrap no-scrollbar py-2 w-full -mx-6 px-6">
         <button
           type="button"
           onClick={() => setSelectedCategory(null)}
           disabled={loading}
-          style={{
-            padding: '10px 18px',
-            borderRadius: '20px',
-            border: selectedCategory === null ? '2px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.15)',
-            background: selectedCategory === null ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
-            color: tokens.colors.textPrimaryOnDark,
-            fontSize: '14px',
-            fontWeight: selectedCategory === null ? 500 : 400,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.15s ease',
-            whiteSpace: 'nowrap',
-            opacity: loading ? 0.5 : 1,
-          }}
+          className={cn(
+            "px-4 py-2 rounded-xl transition-all flex items-center gap-2 flex-shrink-0",
+            selectedCategory === null
+              ? "bg-white/12 border-2 border-white/40 text-white font-medium"
+              : "bg-white/5 border border-white/15 text-white/90 font-normal",
+            loading && "opacity-50 cursor-not-allowed"
+          )}
         >
-          All
+          <span className="truncate">All</span>
         </button>
         {categories.map(category => (
           <button
@@ -121,35 +88,21 @@ export function InterestsStep({
             type="button"
             onClick={() => setSelectedCategory(category)}
             disabled={loading}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '20px',
-              border: selectedCategory === category ? '2px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.15)',
-              background: selectedCategory === category ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
-              color: tokens.colors.textPrimaryOnDark,
-              fontSize: '14px',
-              fontWeight: selectedCategory === category ? 500 : 400,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.15s ease',
-              whiteSpace: 'nowrap',
-              opacity: loading ? 0.5 : 1,
-            }}
+            className={cn(
+              "px-4 py-2 rounded-xl transition-all flex items-center gap-2 flex-shrink-0",
+              selectedCategory === category
+                ? "bg-white/12 border-2 border-white/40 text-white font-medium"
+                : "bg-white/5 border border-white/15 text-white/90 font-normal",
+              loading && "opacity-50 cursor-not-allowed"
+            )}
           >
-            {category}
+            <span className="truncate">{category}</span>
           </button>
         ))}
       </div>
 
-      {/* Interests Grid */}
-      <div style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: tokens.spacing[12],
-        maxHeight: '400px',
-        overflowY: 'auto',
-        paddingBottom: tokens.spacing[20],
-        paddingRight: tokens.spacing[4],
-      }}>
+      {/* Interests Grid - 2 Column Layout */}
+      <div className="grid grid-cols-2 gap-3 w-full mt-4 max-h-[400px] overflow-y-auto no-scrollbar pb-6">
         {displayedInterests.map(interest => {
           const isSelected = localInterests.includes(interest.id)
           return (
@@ -158,60 +111,46 @@ export function InterestsStep({
               type="button"
               onClick={() => toggleInterest(interest.id)}
               disabled={loading}
-              style={{
-                padding: '12px 20px',
-                borderRadius: '16px',
-                border: isSelected ? '2px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.15)',
-                background: isSelected ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
-                color: tokens.colors.textPrimaryOnDark,
-                fontSize: '15px',
-                fontWeight: isSelected ? 500 : 400,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.15s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: tokens.spacing[8],
-                opacity: loading ? 0.5 : 1,
-                boxShadow: isSelected ? '0 2px 8px rgba(0,0,0,0.2)' : 'none',
-              }}
+              className={cn(
+                "px-4 py-2 rounded-xl transition-all flex items-center gap-2",
+                isSelected
+                  ? "bg-white/12 border-2 border-white/40 text-white font-medium shadow-lg"
+                  : "bg-white/5 border border-white/15 text-white/90 font-normal",
+                loading && "opacity-50 cursor-not-allowed"
+              )}
             >
               {interest.emoji && (
-                <span style={{ fontSize: '18px' }}>
-                  {interest.emoji}
-                </span>
+                <span className="text-lg flex-shrink-0">{interest.emoji}</span>
               )}
-              <span>{interest.label}</span>
+              <span className="truncate text-sm">{interest.label}</span>
             </button>
           )
         })}
       </div>
 
+      {/* Error Message */}
       {error && (
-        <p style={{
-          ...tokens.typography.label,
-          color: '#EF4444',
-          margin: 0,
-          textAlign: 'center',
-        }}>
+        <p className="text-sm text-red-400 text-center mt-4">
           {error}
         </p>
       )}
 
-      <div style={{ display: 'flex', gap: tokens.spacing[16] }}>
+      {/* Action Buttons */}
+      <div className="flex gap-4 w-full mt-6">
         {onBack && (
           <AnimatedButton
             variant="ghost"
             onClick={onBack}
             disabled={loading}
-            style={{ flex: 1 }}
+            className="flex-1"
           >
-            <ChevronLeft style={{ width: '16px', height: '16px' }} />
+            <ChevronLeft className="w-4 h-4" />
           </AnimatedButton>
         )}
         <AnimatedButton
           onClick={handleSubmit}
           disabled={localInterests.length === 0 || loading}
-          style={{ flex: 1 }}
+          className="flex-1"
         >
           {loading ? 'Saving...' : 'Continue'}
         </AnimatedButton>
