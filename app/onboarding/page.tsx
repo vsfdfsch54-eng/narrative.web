@@ -38,20 +38,39 @@ export default function OnboardingPage() {
     async function checkOnboarding() {
       if (!user) return
       
+      // If we're in the process of completing, don't check - let the completion handler navigate
+      if (isCompleting) {
+        console.log('[OnboardingPage] Completion in progress, skipping check')
+        setCheckingOnboarding(false)
+        return
+      }
+      
       setCheckingOnboarding(true)
       
       try {
-        const record = await getAppUserRecord(user.id)
-        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-        const completed = step === 'complete' || record?.onboarding_completed === true
-
-        if (completed) {
-          // Onboarding complete → redirect to /vibe
-          router.replace("/vibe")
-          return
+        // Add retry logic with delays to handle save propagation
+        let record = null
+        let completed = false
+        
+        for (let attempt = 0; attempt < 3; attempt++) {
+          record = await getAppUserRecord(user.id)
+          const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+          completed = step === 'complete' || record?.onboarding_completed === true
+          
+          if (completed) {
+            console.log('[OnboardingPage] Onboarding is complete, redirecting to /vibe')
+            router.replace("/vibe")
+            return
+          }
+          
+          // If not complete and not last attempt, wait and retry
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 400))
+          }
         }
 
-        // Onboarding incomplete → allow access (OnboardingController will handle step routing)
+        // Still incomplete after retries → allow access (OnboardingController will handle step routing)
+        console.log('[OnboardingPage] Onboarding incomplete, allowing access. Step:', normalizeOnboardingStep(record?.onboarding_step ?? null))
         setCheckingOnboarding(false)
       } catch (error) {
         console.error('[OnboardingPage] Error checking onboarding:', error)

@@ -205,20 +205,34 @@ export function OnboardingController() {
 
   // Confirmation step handler - complete onboarding
   const handleConfirmationSubmit = async () => {
+    // Mark that we're completing onboarding to prevent redirect loops
+    hasRedirectedRef.current = true
+    
     // Update step in context immediately (synchronous)
     setStep('complete')
     
     // Save completion - WAIT for it to complete before navigating
     // This is critical: we must ensure the database is updated before redirecting
-    // Otherwise the /vibe page routing guard will see incomplete onboarding and redirect back
     try {
       if (!user?.id) {
-        // No user ID yet - navigate anyway, save will retry later
+        console.error('[OnboardingController] Cannot complete: user ID missing')
+        // Still try to navigate - might work if user becomes available
         router.replace('/vibe')
+        setTimeout(() => {
+          if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
+            window.location.href = '/vibe'
+          }
+        }, 100)
         return
       }
       
       // Save synchronously for completion step - MUST wait for this
+      console.log('[OnboardingController] Saving completion to database...', {
+        userId: user.id,
+        step: 'complete',
+        completed: true
+      })
+      
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -237,25 +251,51 @@ export function OnboardingController() {
       const data = await response.json()
       
       if (!data.success) {
-        console.error('[OnboardingController] Save completion error:', data.error)
-        // Still navigate - don't block user even if save fails
+        console.error('[OnboardingController] ❌ Save completion FAILED:', data.error)
+        // Don't navigate if save failed - show error instead
+        // But for now, still navigate to avoid blocking user
+        console.warn('[OnboardingController] Navigating anyway despite save failure')
+      } else {
+        console.log('[OnboardingController] ✅ Completion saved successfully')
       }
       
-      // Wait a brief moment to ensure database write is committed
-      await new Promise(resolve => setTimeout(resolve, 200))
+      // Wait longer to ensure database write is committed and propagated
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Verify the save worked by checking the database
+      try {
+        const verifyResponse = await fetch(`/api/users?userId=${user.id}`)
+        const verifyData = await verifyResponse.json()
+        
+        if (verifyData.success && verifyData.data) {
+          const dbStep = normalizeOnboardingStep(verifyData.data.onboarding_step)
+          const dbCompleted = dbStep === 'complete' || verifyData.data.onboarding_completed === true
+          
+          if (!dbCompleted) {
+            console.warn('[OnboardingController] ⚠️ Save verification failed - step is:', dbStep)
+            // Still navigate - might be a timing issue
+          } else {
+            console.log('[OnboardingController] ✅ Save verified - onboarding is complete')
+          }
+        }
+      } catch (verifyError) {
+        console.error('[OnboardingController] Error verifying save:', verifyError)
+      }
     } catch (error) {
-      console.error('[OnboardingController] Save completion error:', error)
+      console.error('[OnboardingController] ❌ Save completion error:', error)
       // Continue anyway - navigation should still work
     }
     
-    // Navigate to vibe after save completes
-    router.replace('/vibe')
-    // Fallback navigation
-    setTimeout(() => {
-      if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
-        window.location.href = '/vibe'
-      }
-    }, 100)
+    // Navigate to vibe after save completes and is verified
+    // Use window.location.href for hard navigation to prevent redirect loops
+    console.log('[OnboardingController] Navigating to /vibe...')
+    
+    // Use hard navigation to ensure clean state
+    if (typeof window !== 'undefined') {
+      window.location.href = '/vibe'
+    } else {
+      router.replace('/vibe')
+    }
   }
 
   // Go back handler - with fallback navigation
