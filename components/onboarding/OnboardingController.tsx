@@ -205,18 +205,56 @@ export function OnboardingController() {
 
   // Confirmation step handler - complete onboarding
   const handleConfirmationSubmit = async () => {
-    // Save completion in background
-    saveProgress('complete').catch((error) => {
-      console.error('[OnboardingController] Save progress error:', error)
-        })
+    // Update step in context immediately (synchronous)
+    setStep('complete')
     
-    // Navigate to chat immediately
+    // Save completion - WAIT for it to complete before navigating
+    // This is critical: we must ensure the database is updated before redirecting
+    // Otherwise the /vibe page routing guard will see incomplete onboarding and redirect back
+    try {
+      if (!user?.id) {
+        // No user ID yet - navigate anyway, save will retry later
+        router.replace('/vibe')
+        return
+      }
+      
+      // Save synchronously for completion step - MUST wait for this
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          firstName: state.firstName || undefined,
+          lastName: state.lastName || undefined,
+          questionsAnswers: Object.keys(state.questionsAnswers).length > 0 ? state.questionsAnswers : undefined,
+          interests: state.interests.length > 0 ? state.interests : undefined,
+          onboarding_step: 'complete',
+          onboarding_completed: true,
+          email: state.email || undefined,
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        console.error('[OnboardingController] Save completion error:', data.error)
+        // Still navigate - don't block user even if save fails
+      }
+      
+      // Wait a brief moment to ensure database write is committed
+      await new Promise(resolve => setTimeout(resolve, 200))
+    } catch (error) {
+      console.error('[OnboardingController] Save completion error:', error)
+      // Continue anyway - navigation should still work
+    }
+    
+    // Navigate to vibe after save completes
     router.replace('/vibe')
     // Fallback navigation
     setTimeout(() => {
       if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
         window.location.href = '/vibe'
-    }
+      }
     }, 100)
   }
 

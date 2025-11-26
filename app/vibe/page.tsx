@@ -155,12 +155,30 @@ export default function VibePage() {
       if (!user) return
       
       try {
-        const record = await getAppUserRecord(user.id)
-        const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
-        const completed = step === 'complete' || record?.onboarding_completed === true
+        // Retry logic: sometimes the save from onboarding completion hasn't propagated yet
+        // Check up to 3 times with small delays
+        let record = null
+        let completed = false
+        
+        for (let attempt = 0; attempt < 3; attempt++) {
+          record = await getAppUserRecord(user.id)
+          const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
+          completed = step === 'complete' || record?.onboarding_completed === true
+          
+          if (completed) {
+            // Onboarding is complete → allow access
+            break
+          }
+          
+          // If not complete and not last attempt, wait a bit and retry
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 300))
+          }
+        }
 
         if (!completed) {
-          // Incomplete onboarding → redirect to onboarding
+          // Still incomplete after retries → redirect to onboarding
+          const step = normalizeOnboardingStep(record?.onboarding_step ?? null)
           router.replace(`/onboarding?step=${step}`)
           return
         }
