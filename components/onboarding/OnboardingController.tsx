@@ -243,9 +243,9 @@ export function OnboardingController() {
     )
   }
 
-  // For steps other than email and password, require user
-  // (password step is where account creation happens, so user may not exist yet)
-  if (!user && state.step !== 'email' && state.step !== 'password') {
+  // For steps other than email, password, and name, require user
+  // (password step creates account, name step may not have user hydrated yet)
+  if (!user && state.step !== 'email' && state.step !== 'password' && state.step !== 'name') {
     return (
       <AppShell title="Onboarding" showDock={false}>
       <div
