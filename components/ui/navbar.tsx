@@ -11,7 +11,7 @@ export default function NavBar() {
 
   const items = [
     { label: "Home", icon: Home, href: "/vibe" },
-    { label: "Chat", icon: MessageCircle, href: "/chat" },
+    { label: "Chat", icon: MessageCircle, href: "/conversations" },
     { label: "Calendar", icon: Calendar, href: "/calendar" },
     { label: "Profile", icon: User, href: "/profile" },
   ];
@@ -30,7 +30,10 @@ export default function NavBar() {
     <div className="fixed bottom-4 left-0 right-0 flex justify-center z-50 pointer-events-none" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0)' }}>
       <div className="pointer-events-auto flex items-center gap-4 px-6 py-3 rounded-3xl bg-black/60 backdrop-blur-xl shadow-2xl border border-white/5">
         {items.map((item) => {
-          const selected = pathname === item.href;
+          // For chat/conversations, check if we're on conversations or chat pages
+          const selected = item.href === '/conversations' 
+            ? (pathname === '/conversations' || pathname?.startsWith('/chat/'))
+            : pathname === item.href;
           const Icon = item.icon;
 
               return (

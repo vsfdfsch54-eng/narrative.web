@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, MessageCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/use-auth"
 import { checkOnboardingStatus } from "@/lib/user-helpers"
@@ -172,8 +172,14 @@ export default function ConversationsPage() {
                     <p className="text-[#f1f1f3]/60 text-sm">Loading conversations...</p>
                   </div>
                 ) : conversations.length === 0 ? (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-[#f1f1f3]/60 text-sm">No conversations yet</p>
+                  <div className="flex flex-col items-center justify-center h-full px-6 text-center">
+                    <div className="mb-4">
+                      <MessageCircle className="h-12 w-12 text-[#f1f1f3]/30" />
+                    </div>
+                    <p className="text-[#f1f1f3]/90 text-base font-medium mb-2">No conversations yet</p>
+                    <p className="text-[#f1f1f3]/60 text-sm max-w-sm">
+                      Your conversations will be saved here once you start chatting with someone.
+                    </p>
                   </div>
                 ) : (
                   conversations.map((person) => (

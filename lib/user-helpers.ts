@@ -30,8 +30,8 @@ export async function getAppUserRecord(userId: string): Promise<AppUserRecord | 
   try {
     const response = await fetch(`/api/users?userId=${userId}`, {
       cache: 'no-store',
-      // Add timeout to prevent hanging
-      signal: AbortSignal.timeout(10000), // 10 second timeout
+      // Add timeout to prevent hanging (longer for mobile networks)
+      signal: AbortSignal.timeout(15000), // 15 second timeout (increased for mobile)
     })
     
     if (!response.ok) {
@@ -43,18 +43,28 @@ export async function getAppUserRecord(userId: string): Promise<AppUserRecord | 
       // Store error type for checkOnboardingStatus to use
       if (status >= 500) {
         // Server error - mark in session storage to prevent redirect loops
-        const errorKey = `api_error_${userId}`
-        const errorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
-        sessionStorage.setItem(errorKey, String(errorCount + 1))
-        console.warn(`[getAppUserRecord] Server error (${status}) - error count: ${errorCount + 1}`)
+        // Use try-catch for mobile browsers that may restrict sessionStorage
+        try {
+          const errorKey = `api_error_${userId}`
+          const errorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
+          sessionStorage.setItem(errorKey, String(errorCount + 1))
+          console.warn(`[getAppUserRecord] Server error (${status}) - error count: ${errorCount + 1}`)
+        } catch (e) {
+          // sessionStorage may be unavailable on mobile - log but continue
+          console.warn('[getAppUserRecord] Could not access sessionStorage:', e)
+        }
       }
       
       return null
     }
     
     // Success - clear any error tracking
-    const errorKey = `api_error_${userId}`
-    sessionStorage.removeItem(errorKey)
+    try {
+      const errorKey = `api_error_${userId}`
+      sessionStorage.removeItem(errorKey)
+    } catch (e) {
+      // sessionStorage may be unavailable on mobile - ignore
+    }
     
     const data = await response.json()
     
@@ -67,11 +77,17 @@ export async function getAppUserRecord(userId: string): Promise<AppUserRecord | 
     console.error('[getAppUserRecord] Error fetching user:', error)
     
     // Network/timeout errors - mark in session storage
+    // Use try-catch for mobile browsers that may restrict sessionStorage
     if (error.name === 'AbortError' || error.name === 'TypeError') {
-      const errorKey = `api_error_${userId}`
-      const errorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
-      sessionStorage.setItem(errorKey, String(errorCount + 1))
-      console.warn(`[getAppUserRecord] Network/timeout error - error count: ${errorCount + 1}`)
+      try {
+        const errorKey = `api_error_${userId}`
+        const errorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
+        sessionStorage.setItem(errorKey, String(errorCount + 1))
+        console.warn(`[getAppUserRecord] Network/timeout error - error count: ${errorCount + 1}`)
+      } catch (e) {
+        // sessionStorage may be unavailable on mobile - log but continue
+        console.warn('[getAppUserRecord] Could not access sessionStorage:', e)
+      }
     }
     
     return null
@@ -97,19 +113,26 @@ export async function checkOnboardingStatus(userId: string): Promise<{
   apiError: boolean
 }> {
   // Circuit breaker: Check if we've had repeated API errors
+  // Use try-catch for mobile browsers that may restrict sessionStorage
+  let errorCount = 0
   if (typeof window !== 'undefined') {
-    const errorKey = `api_error_${userId}`
-    const errorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
-    
-    // If 3+ consecutive errors, assume API is down - don't even try
-    if (errorCount >= 3) {
-      console.warn(`[checkOnboardingStatus] Circuit breaker active - ${errorCount} consecutive errors for userId: ${userId}`)
-      return {
-        completed: false,
-        step: normalizeOnboardingStep(null),
-        record: null,
-        apiError: true // Always return apiError when circuit breaker is active
+    try {
+      const errorKey = `api_error_${userId}`
+      errorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
+      
+      // If 3+ consecutive errors, assume API is down - don't even try
+      if (errorCount >= 3) {
+        console.warn(`[checkOnboardingStatus] Circuit breaker active - ${errorCount} consecutive errors for userId: ${userId}`)
+        return {
+          completed: false,
+          step: normalizeOnboardingStep(null),
+          record: null,
+          apiError: true // Always return apiError when circuit breaker is active
+        }
       }
+    } catch (e) {
+      // sessionStorage may be unavailable on mobile - continue without circuit breaker
+      console.warn('[checkOnboardingStatus] Could not access sessionStorage, continuing without circuit breaker:', e)
     }
   }
   
@@ -119,14 +142,21 @@ export async function checkOnboardingStatus(userId: string): Promise<{
   if (!record) {
     let isApiError = true // Default to true (conservative - prevents loops)
     
+    // On mobile, if sessionStorage fails, always assume API error to prevent loops
     if (typeof window !== 'undefined') {
-      const errorKey = `api_error_${userId}`
-      const currentErrorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
-      
-      // If we have error tracking, it's likely an API error
-      // If no error tracking but record is null, be conservative and assume API error
-      // This prevents redirect loops
-      isApiError = currentErrorCount > 0
+      try {
+        const errorKey = `api_error_${userId}`
+        const currentErrorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
+        
+        // If we have error tracking, it's likely an API error
+        // If no error tracking but record is null, be conservative and assume API error
+        // This prevents redirect loops
+        isApiError = currentErrorCount > 0 || errorCount > 0
+      } catch (e) {
+        // sessionStorage unavailable on mobile - default to apiError=true (conservative)
+        console.warn('[checkOnboardingStatus] Could not check error count, assuming API error:', e)
+        isApiError = true // Conservative: assume API error to prevent loops
+      }
     }
     
     return {
@@ -139,8 +169,12 @@ export async function checkOnboardingStatus(userId: string): Promise<{
   
   // Success - clear error tracking
   if (typeof window !== 'undefined') {
-    const errorKey = `api_error_${userId}`
-    sessionStorage.removeItem(errorKey)
+    try {
+      const errorKey = `api_error_${userId}`
+      sessionStorage.removeItem(errorKey)
+    } catch (e) {
+      // sessionStorage may be unavailable on mobile - ignore
+    }
   }
   
   const step = normalizeOnboardingStep(record.onboarding_step ?? null)
