@@ -77,23 +77,9 @@ export default function ChatPage() {
     const loadMatches = async () => {
       setLoading(true)
       try {
-        // First, check if user has an active match
-        const response = await fetch(`/api/matches?userId=${user.id}`)
-        const data = await response.json()
-        
-        if (data.success && data.data && data.data.length > 0) {
-          // User has matches - randomly select one
-          const matches = Array.isArray(data.data) ? data.data : [data.data]
-          const activeMatches = matches.filter((m: any) => m.status === 'active')
-          
-          if (activeMatches.length > 0) {
-            // Randomly select a match
-            const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
-            const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
-            router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
-            return
-          }
-        }
+        // REMOVED: Auto-redirect to old matches
+        // When user clicks "Connect", they want NEW matches, not old conversations
+        // Old conversations are accessible via /conversations page
         
         // Check if user is in waiting pool (AI matching queue) with retry logic
         // This handles race conditions where the entry might not be immediately visible
@@ -224,28 +210,13 @@ export default function ChatPage() {
           }
           
           if (!data.inQueue) {
-            // No longer in queue - check for existing matches
+            // No longer in queue - redirect to /vibe to find NEW matches
+            // Don't auto-redirect to old conversations (Omegle-style: always fresh)
             clearInterval(interval)
             channel.unsubscribe()
-            
-            const matchesResponse = await fetch(`/api/matches?userId=${user.id}`, {
-              cache: 'no-store'
-            })
-            if (matchesResponse.ok) {
-              const matchesData = await matchesResponse.json()
-              if (matchesData.success && matchesData.data && matchesData.data.length > 0) {
-                const matches = Array.isArray(matchesData.data) ? matchesData.data : [matchesData.data]
-                const activeMatches = matches.filter((m: any) => m.status === 'active')
-                if (activeMatches.length > 0) {
-                  const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
-                  const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
-                  setLoading(false)
-                  router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
-                  return
-                }
-              }
-            }
             setLoading(false)
+            router.push('/vibe')
+            return
           }
         } catch (error) {
           // Don't stop polling on error
