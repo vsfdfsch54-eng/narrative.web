@@ -351,7 +351,9 @@ export default function VibePage() {
       } else if (data.needsOnboarding) {
         router.push("/onboarding?step=email")
       } else {
-        router.push("/chat")
+        // Not matched and not in queue - stay on vibe page to try again
+        // Don't redirect to /chat (which would redirect back to /vibe)
+        console.log('[VibePage] Not matched and not in queue - staying on vibe page')
       }
     } catch (error: any) {
       // Check if error is about being inactive
@@ -360,7 +362,8 @@ export default function VibePage() {
         setSaving(false)
         return
       }
-      router.push("/chat")
+      // On error, stay on vibe page - don't redirect to /chat
+      console.error('[VibePage] Error connecting:', error)
     } finally {
       setSaving(false)
     }
