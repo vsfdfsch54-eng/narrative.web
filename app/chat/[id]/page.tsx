@@ -16,7 +16,6 @@ import { useRealtimeChat } from "@/hooks/use-realtime-chat"
 import { useTypingIndicator } from "@/hooks/use-typing-indicator"
 import { usePresence } from "@/hooks/use-presence"
 import { supabase } from "@/lib/supabaseClient"
-import { supabase } from "@/lib/supabaseClient"
 
 export default function ChatDetailPage() {
   const params = useParams()
