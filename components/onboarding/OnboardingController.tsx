@@ -99,7 +99,17 @@ export function OnboardingController() {
     const urlStep = searchParams.get('step')
     if (urlStep && isValidOnboardingStep(urlStep)) {
       const normalizedStep = normalizeOnboardingStep(urlStep)
-      if (normalizedStep !== state.step) {
+      // CRITICAL: Never reset to 'email' if user is already on a later step
+      // This prevents the email loop
+      if (normalizedStep === 'email' && state.step !== 'email' && state.step !== 'start') {
+        console.log('[OnboardingController] ⚠️ URL says "email" but user is on', state.step, '- preserving current step (preventing email loop)')
+        // Update URL to match current step instead
+        if (typeof window !== 'undefined') {
+          const currentUrl = new URL(window.location.href)
+          currentUrl.searchParams.set('step', state.step)
+          window.history.replaceState({}, '', currentUrl.toString())
+        }
+      } else if (normalizedStep !== state.step) {
         setStep(normalizedStep)
         // Update URL to match (in case it was invalid)
         if (typeof window !== 'undefined') {

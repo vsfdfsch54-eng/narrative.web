@@ -125,29 +125,31 @@ export default function OnboardingPage() {
 
         // PART 4: Still incomplete after retries → allow access (OnboardingController will handle step routing)
         const finalResult = result as OnboardingCheckResult | null
-        const dbStep = finalResult !== null ? finalResult.step : 'email'
+        const dbStep = finalResult !== null ? finalResult.step : null // Don't default to 'email' - let OnboardingController handle it
         const clientStep = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('step') : null
         
         // PART 4: Log both client and DB steps before allowing access
         console.log('[OnboardingPage] 📊 Step comparison:', {
           userId: user.id,
-          dbStep,
-          clientStep,
+          dbStep: dbStep || 'null',
+          clientStep: clientStep || 'null',
           dbCompleted: finalResult?.completed || false,
           apiError: finalResult?.apiError || false,
         })
         
-        // PART 4: If user is already on the correct client step, don't reset them
-        // Only redirect if DB step is significantly ahead or behind
-        if (clientStep && dbStep === clientStep) {
-          console.log('[OnboardingPage] ✅ Client step matches DB step, allowing access without redirect')
-        } else if (dbStep === 'email' && clientStep && clientStep !== 'email') {
-          // PART 4: If DB says "email" but user is mid-onboarding, don't override unless DB explicitly says so
-          // This prevents resetting user progress if DB check happens during a save
-          console.log('[OnboardingPage] ⚠️ DB step is "email" but client is ahead, allowing access (DB may be stale)')
+        // CRITICAL: Never redirect to email if user is already on a later step
+        // This prevents the email loop
+        if (clientStep && clientStep !== 'email' && clientStep !== 'start') {
+          // User is already on a later step - trust the client state
+          // Don't redirect even if DB says 'email' (DB might be stale)
+          console.log('[OnboardingPage] ✅ User is on step', clientStep, '- allowing access without redirect (preventing email loop)')
+          setCheckingOnboarding(false)
+          return
         }
         
-        console.log('[OnboardingPage] Onboarding incomplete, allowing access. DB Step:', dbStep, 'Client Step:', clientStep)
+        // If DB step is null or 'email' and client has no step, that's fine - let OnboardingController initialize
+        // If DB step is ahead of client, OnboardingController will sync it
+        console.log('[OnboardingPage] Onboarding incomplete, allowing access. DB Step:', dbStep || 'null', 'Client Step:', clientStep || 'null')
         setCheckingOnboarding(false)
       } catch (error) {
         console.error('[OnboardingPage] Error checking onboarding:', error)

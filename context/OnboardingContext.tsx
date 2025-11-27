@@ -79,11 +79,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       clearTimeout(timeoutId)
       
       if (!response.ok) {
-        // API error - don't block, just use default state
+        // API error - don't block, but preserve current step if user is already ahead
         console.warn('[OnboardingContext] Initialize API error:', response.status)
         setState(prev => ({
           ...prev,
-          step: 'email',
+          // Only reset to 'email' if we're already at 'email' or 'start'
+          // If user is on a later step, preserve it (prevents email loop)
+          step: (prev.step === 'email' || prev.step === 'start') ? 'email' : prev.step,
           initialized: true,
           error: null,
         }))
@@ -108,9 +110,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
           error: null,
         }))
       } else {
+        // No user data - but preserve current step if user is already ahead
         setState(prev => ({
           ...prev,
-          step: 'email',
+          // Only reset to 'email' if we're already at 'email' or 'start'
+          // If user is on a later step, preserve it (prevents email loop)
+          step: (prev.step === 'email' || prev.step === 'start') ? 'email' : prev.step,
           initialized: true,
           error: null,
         }))
@@ -123,9 +128,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         console.error('[OnboardingContext] Initialize error:', error)
       }
       // Always initialize to allow onboarding to proceed
+      // But preserve current step if user is already ahead (prevents email loop)
       setState(prev => ({
         ...prev,
-        step: 'email',
+        // Only reset to 'email' if we're already at 'email' or 'start'
+        // If user is on a later step, preserve it (prevents email loop)
+        step: (prev.step === 'email' || prev.step === 'start') ? 'email' : prev.step,
         initialized: true,
         error: null,
       }))
