@@ -576,6 +576,14 @@ export async function PUT(request: NextRequest) {
       })
 
     if (poolError) {
+      console.error('[Connect API] Error updating last_active:', poolError)
+      // Don't fail if presence update succeeded - user is still active
+      // Only fail if both updates failed
+    }
+
+    return NextResponse.json({ success: true }, {
+      headers: getCorsHeaders(),
+    })
 
     if (error) {
       console.error('[Connect API] Error updating activity:', error)
