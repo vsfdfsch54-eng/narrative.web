@@ -127,9 +127,17 @@ export function OnboardingController() {
   // Email step handler - advance to password step
   const handleEmailSubmit = async (email: string): Promise<void> => {
     setEmail(email)
+    
+    // Save email to database (non-blocking)
+    // Even if user isn't logged in yet, this will queue the save
+    // and retry when user becomes available after password step
+    saveProgress('password', { email }).catch((error) => {
+      console.error('[OnboardingController] Save email error:', error)
+    })
+    
     // Navigate immediately - non-blocking
     navigateToStep('password')
-    }
+  }
 
   // Password step handler - create account here
   const handlePasswordSubmit = async (password: string): Promise<void> => {
@@ -267,34 +275,93 @@ export function OnboardingController() {
       
       if (!data.success) {
         console.error('[OnboardingController] ❌ Save completion FAILED:', data.error)
-        // Don't navigate if save failed - show error instead
-        // But for now, still navigate to avoid blocking user
+        console.error('[OnboardingController] Response details:', {
+          success: data.success,
+          error: data.error,
+          details: data.details,
+          status: response.status,
+        })
+        // Still set localStorage flag even on failure (allows user to proceed)
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('onboarding_just_completed', 'true')
+            localStorage.setItem('onboarding_completed_timestamp', String(Date.now()))
+            console.log('[OnboardingController] Set localStorage flag despite save failure')
+          }
+        } catch (e) {
+          // Ignore
+        }
         console.warn('[OnboardingController] Navigating anyway despite save failure')
       } else {
         console.log('[OnboardingController] ✅ Completion saved successfully')
+        console.log('[OnboardingController] Save response:', {
+          success: data.success,
+          hasData: !!data.data,
+          userId: data.data?.id,
+          onboarding_step: data.data?.onboarding_step,
+          onboarding_completed: data.data?.onboarding_completed,
+        })
       }
       
-      // Wait longer to ensure database write is committed and propagated
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Verify the save worked by checking the database
+      // Set localStorage flag BEFORE waiting (critical for mobile)
       try {
-        const verifyResponse = await fetch(`/api/users?userId=${user.id}`)
-        const verifyData = await verifyResponse.json()
-        
-        if (verifyData.success && verifyData.data) {
-          const dbStep = normalizeOnboardingStep(verifyData.data.onboarding_step)
-          const dbCompleted = dbStep === 'complete' || verifyData.data.onboarding_completed === true
-          
-          if (!dbCompleted) {
-            console.warn('[OnboardingController] ⚠️ Save verification failed - step is:', dbStep)
-            // Still navigate - might be a timing issue
-          } else {
-            console.log('[OnboardingController] ✅ Save verified - onboarding is complete')
-          }
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('onboarding_just_completed', 'true')
+          localStorage.setItem('onboarding_completed_timestamp', String(Date.now()))
+          console.log('[OnboardingController] ✅ Set completion flag in localStorage')
         }
-      } catch (verifyError) {
-        console.error('[OnboardingController] Error verifying save:', verifyError)
+      } catch (e) {
+        console.warn('[OnboardingController] Could not set localStorage flag:', e)
+      }
+      
+      // Wait longer to ensure database write is committed and propagated (especially on mobile)
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Increased to 1 second for mobile
+      
+      // Verify the save worked by checking the database (with retries for mobile)
+      let verified = false
+      for (let verifyAttempt = 0; verifyAttempt < 5; verifyAttempt++) {
+        try {
+          const verifyResponse = await fetch(`/api/users?userId=${user.id}`, {
+            cache: 'no-store',
+            signal: AbortSignal.timeout(10000)
+          })
+          const verifyData = await verifyResponse.json()
+          
+          if (verifyData.success && verifyData.data) {
+            const dbStep = normalizeOnboardingStep(verifyData.data.onboarding_step)
+            const dbCompleted = dbStep === 'complete' || verifyData.data.onboarding_completed === true
+            
+            if (dbCompleted) {
+              console.log(`[OnboardingController] ✅ Save verified (attempt ${verifyAttempt + 1}/5) - onboarding is complete`)
+              verified = true
+              break
+            } else {
+              console.warn(`[OnboardingController] ⚠️ Verification attempt ${verifyAttempt + 1}/5 - step is:`, dbStep, 'completed:', verifyData.data.onboarding_completed)
+            }
+          } else {
+            console.warn(`[OnboardingController] ⚠️ Verification attempt ${verifyAttempt + 1}/5 - no data returned`)
+          }
+        } catch (verifyError: any) {
+          console.warn(`[OnboardingController] Verification attempt ${verifyAttempt + 1}/5 failed:`, verifyError.message)
+        }
+        
+        // Wait before retry (longer delays for mobile)
+        if (verifyAttempt < 4) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+      }
+      
+      if (!verified) {
+        console.warn('[OnboardingController] ⚠️ Could not verify save after 5 attempts - navigating anyway')
+        // Still set the flag even if verification failed
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('onboarding_just_completed', 'true')
+            localStorage.setItem('onboarding_completed_timestamp', String(Date.now()))
+          }
+        } catch (e) {
+          // Ignore
+        }
       }
     } catch (error) {
       console.error('[OnboardingController] ❌ Save completion error:', error)

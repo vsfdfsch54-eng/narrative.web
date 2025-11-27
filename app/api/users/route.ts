@@ -486,6 +486,18 @@ async function saveOnboardingProgress(
       updateData.onboarding_completed = true
     }
 
+    // Log what we're about to save
+    console.log('[saveOnboardingProgress] Saving to database:', {
+      userId,
+      onboarding_step: updateData.onboarding_step,
+      onboarding_completed: updateData.onboarding_completed,
+      hasName: !!updateData.name,
+      hasFirstName: !!updateData.first_name,
+      hasLastName: !!updateData.last_name,
+      hasInterests: !!updateData.interests,
+      hasQuestions: !!updateData.questions_answers,
+    })
+
     // Use upsert to handle both new users and existing users
     const { data: upsertData, error: upsertError } = await supabase
       .from('users')
@@ -499,7 +511,8 @@ async function saveOnboardingProgress(
       console.error('[saveOnboardingProgress] ❌ Upsert error:', {
         message: upsertError.message,
         code: upsertError.code,
-        details: upsertError.details
+        details: upsertError.details,
+        hint: upsertError.hint,
       })
       
       // If error is about missing column (schema cache issue), try without onboarding_completed
@@ -661,6 +674,17 @@ export async function PUT(request: NextRequest) {
     }
     
     // Use centralized saveOnboardingProgress function
+    console.log('[Users API PUT] Saving onboarding progress:', {
+      userId,
+      onboarding_step,
+      onboarding_completed,
+      hasFirstName: !!firstName,
+      hasLastName: !!lastName,
+      hasQuestions: !!questionsAnswers,
+      hasInterests: !!interests,
+      hasEmail: !!providedEmail,
+    })
+
     const result = await saveOnboardingProgress(supabase, userId, {
       firstName,
       lastName,
@@ -674,7 +698,9 @@ export async function PUT(request: NextRequest) {
     if (!result.success) {
       console.error('[Users API PUT] ❌ Save failed:', {
         userId,
-        error: result.error
+        error: result.error,
+        onboarding_step,
+        onboarding_completed,
       })
       return NextResponse.json(
         { success: false, error: result.error || 'Failed to save progress' },
@@ -686,6 +712,13 @@ export async function PUT(request: NextRequest) {
         }
       )
     }
+
+    console.log('[Users API PUT] ✅ Save successful:', {
+      userId,
+      savedStep: result.data?.onboarding_step,
+      savedCompleted: result.data?.onboarding_completed,
+      savedName: result.data?.name,
+    })
 
     return NextResponse.json(
       { success: true, data: result.data },

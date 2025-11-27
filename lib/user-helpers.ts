@@ -138,6 +138,18 @@ export async function checkOnboardingStatus(userId: string): Promise<{
   
   const record = await getAppUserRecord(userId)
   
+  // Log what we got for debugging
+  if (record) {
+    console.log('[checkOnboardingStatus] User record found:', {
+      userId,
+      onboarding_step: record.onboarding_step,
+      onboarding_completed: record.onboarding_completed,
+      name: record.name,
+    })
+  } else {
+    console.warn('[checkOnboardingStatus] No user record found for userId:', userId)
+  }
+  
   // If record is null, check error count to determine if it's an API error
   if (!record) {
     let isApiError = true // Default to true (conservative - prevents loops)
@@ -177,14 +189,22 @@ export async function checkOnboardingStatus(userId: string): Promise<{
     }
   }
   
-  const step = normalizeOnboardingStep(record.onboarding_step ?? null)
-  const completed = step === 'complete' || record.onboarding_completed === true
-  
-  return {
-    completed,
-    step,
-    record,
-    apiError: false
-  }
+    const step = normalizeOnboardingStep(record.onboarding_step ?? null)
+    const completed = step === 'complete' || record.onboarding_completed === true
+    
+    console.log('[checkOnboardingStatus] Final result:', {
+      userId,
+      step,
+      completed,
+      onboarding_step: record.onboarding_step,
+      onboarding_completed: record.onboarding_completed,
+    })
+    
+    return {
+      completed,
+      step,
+      record,
+      apiError: false
+    }
 }
 
