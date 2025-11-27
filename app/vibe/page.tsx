@@ -409,17 +409,26 @@ export default function VibePage() {
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
         // In queue - start polling for match status
+        // Don't set saving to false - let startPollingForMatch handle the UI state
         startPollingForMatch(userId)
+        return // Exit early - don't set saving to false
       } else {
-        // Not matched and not in queue - stay on vibe page to try again
-        // Don't redirect to /chat (which would redirect back to /vibe)
-        console.log('[VibePage] Skip: Not matched and not in queue - staying on vibe page')
+        // Not matched and not in queue - redirect to /chat to show "AI is finding your match" screen
+        setSaving(false)
+        router.push('/chat')
+        return
       }
     } catch (error) {
-      // On error, stay on vibe page - don't redirect to /chat
+      // On error, redirect to /chat to show matching screen
       console.error('[VibePage] Error skipping:', error)
-    } finally {
       setSaving(false)
+      router.push('/chat')
+    } finally {
+      // Only set saving to false if we're not starting polling
+      // (polling will handle its own state)
+      if (!data?.inQueue) {
+        setSaving(false)
+      }
     }
   }
 
