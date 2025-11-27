@@ -20,14 +20,19 @@ export interface WaitingUser {
 
 /**
  * Get all users in waiting pool (excluding the current user)
+ * Only returns users who are actively using the site (last_active within 30 seconds)
  */
 export async function getWaitingPoolUsers(excludeUserId: string): Promise<WaitingUser[]> {
   const supabase = createServerClient()
   
+  // Only get users who are actively using the site (not in background)
+  const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString()
+  
   const { data, error } = await supabase
     .from('waiting_pool')
-    .select('id, user_id, embedding, created_at')
+    .select('id, user_id, embedding, created_at, last_active')
     .neq('user_id', excludeUserId)
+    .gte('last_active', thirtySecondsAgo) // Only active users
   
   if (error) {
     throw new Error(`Failed to fetch waiting pool: ${error.message}`)

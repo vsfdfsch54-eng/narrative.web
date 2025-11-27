@@ -178,19 +178,30 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
           }
           
           // First, try to find a user you haven't matched with (new match)
-          let otherUser = waitingUsers.find(u => 
-            u.user_id !== waitingUser.user_id && 
-            !processedUserIds.has(u.user_id) &&
-            !matchedUserIds.has(u.user_id) // Exclude previous matches
-          )
+          // Also verify they're still active (double-check last_active)
+          let otherUser = waitingUsers.find(u => {
+            if (u.user_id === waitingUser.user_id || processedUserIds.has(u.user_id) || matchedUserIds.has(u.user_id)) {
+              return false
+            }
+            // Verify user is still active
+            const lastActive = u.last_active ? new Date(u.last_active) : null
+            const isActive = lastActive && (Date.now() - lastActive.getTime()) < 30000 // 30 seconds
+            return isActive
+          })
           
           // If no new users available, allow rematch (Omegle-style)
+          // But still verify they're active
           if (!otherUser && waitingUsers.length > 1) {
             console.log(`[AI Matchmaking] No new users available for ${waitingUser.user_id}, allowing rematch (Omegle-style)`)
-            otherUser = waitingUsers.find(u => 
-              u.user_id !== waitingUser.user_id && 
-              !processedUserIds.has(u.user_id)
-            )
+            otherUser = waitingUsers.find(u => {
+              if (u.user_id === waitingUser.user_id || processedUserIds.has(u.user_id)) {
+                return false
+              }
+              // Verify user is still active even for rematch
+              const lastActive = u.last_active ? new Date(u.last_active) : null
+              const isActive = lastActive && (Date.now() - lastActive.getTime()) < 30000 // 30 seconds
+              return isActive
+            })
           }
           
           if (otherUser) {
@@ -217,15 +228,24 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
         const matchScore = matchResult.matchScore
         const traitsUsed = matchResult.traitsUsed
 
-        // Verify matched user is still in waiting pool
+        // Verify matched user is still in waiting pool AND still active
         const { data: matchedUserInPool } = await supabase
           .from('waiting_pool')
-          .select('user_id')
+          .select('user_id, last_active')
           .eq('user_id', matchedUserId)
           .maybeSingle()
 
         if (!matchedUserInPool) {
           console.log(`[AI Matchmaking] Matched user ${matchedUserId} no longer in waiting pool`)
+          continue
+        }
+
+        // Verify matched user is still active (double-check)
+        const matchedUserLastActive = matchedUserInPool.last_active ? new Date(matchedUserInPool.last_active) : null
+        const isMatchedUserActive = matchedUserLastActive && (Date.now() - matchedUserLastActive.getTime()) < 30000 // 30 seconds
+
+        if (!isMatchedUserActive) {
+          console.log(`[AI Matchmaking] Matched user ${matchedUserId} is no longer active (inactive), skipping match`)
           continue
         }
 
