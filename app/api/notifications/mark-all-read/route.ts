@@ -13,17 +13,18 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 /**
- * GET /api/notifications?userId=UUID
- * Fetch notifications for a user with sender profile
+ * PUT /api/notifications/mark-all-read
+ * Mark all notifications for a user as read
+ * Body: { userId: string }
  */
-export async function GET(request: NextRequest) {
+export async function PUT(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const body = await request.json()
+    const { userId } = body
 
     if (!userId) {
       return NextResponse.json(
-        { error: 'Missing userId query parameter' },
+        { error: 'Missing userId' },
         { 
           status: 400,
           headers: getCorsHeaders(),
@@ -45,34 +46,18 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServerClient()
 
-    // Fetch notifications with sender profile
-    const { data: notifications, error } = await supabase
+    // Update all unread notifications for this user
+    const { data, error } = await supabase
       .from('notifications')
-      .select(`
-        id,
-        user_id,
-        sender_id,
-        type,
-        title,
-        body,
-        metadata,
-        is_read,
-        created_at,
-        sender:users!notifications_sender_id_fkey (
-          id,
-          name,
-          email,
-          avatar_url
-        )
-      `)
+      .update({ is_read: true })
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(100)
+      .eq('is_read', false)
+      .select()
 
     if (error) {
-      console.error('[Notifications API] Error fetching notifications:', error)
+      console.error('[Notifications API] Error marking all notifications as read:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch notifications', details: error.message },
+        { error: 'Failed to mark all notifications as read', details: error.message },
         { 
           status: 500,
           headers: getCorsHeaders(),
@@ -83,8 +68,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         success: true, 
-        data: notifications || [],
-        count: notifications?.length || 0,
+        count: data?.length || 0,
+        data: data || [],
       },
       {
         headers: getCorsHeaders(),
@@ -101,3 +86,4 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+

@@ -1,23 +1,26 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Home, MessageCircle, Calendar, User } from "lucide-react";
+import { Home, MessageCircle, Calendar, User, Bell } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export default function NavBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { unreadCount } = useNotifications();
 
   const items = [
     { label: "Home", icon: Home, href: "/vibe" },
     { label: "Chat", icon: MessageCircle, href: "/conversations" },
+    { label: "Notifications", icon: Bell, href: "/notifications" },
     { label: "Calendar", icon: Calendar, href: "/calendar" },
     { label: "Profile", icon: User, href: "/profile" },
   ];
 
-  // Only show on specific pages: vibe, chat, calendar, and profile
-  const allowedPaths = ['/vibe', '/conversations', '/chat', '/calendar', '/profile']
+  // Only show on specific pages: vibe, chat, notifications, calendar, and profile
+  const allowedPaths = ['/vibe', '/conversations', '/chat', '/notifications', '/calendar', '/profile']
   const isAllowedPath = pathname && (
     allowedPaths.some(path => pathname === path || pathname.startsWith(path + '/'))
   )
@@ -36,19 +39,36 @@ export default function NavBar() {
             : pathname === item.href;
           const Icon = item.icon;
 
+              // Special handling for notifications with badge
+              const isNotifications = item.href === '/notifications';
+              const showBadge = isNotifications && unreadCount > 0;
+
               return (
             <motion.button
                   key={item.href}
               onClick={() => router.push(item.href)}
               whileTap={{ scale: 0.92 }}
                   className={cn(
-                "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all",
+                "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all relative",
                 selected
                   ? "bg-white text-black shadow-md"
                   : "bg-white/10 text-white hover:bg-white/20"
                   )}
             >
-              <Icon size={18} />
+              <div className="relative">
+                <Icon size={18} />
+                {showBadge && (
+                  <div 
+                    className="absolute -top-1 -right-1 h-5 min-w-5 px-1 bg-[#FF3B30] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md"
+                    style={{ 
+                      backgroundColor: '#FF3B30', // iOS red
+                      lineHeight: '1',
+                    }}
+                  >
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </div>
+                )}
+              </div>
               {selected && (
                 <motion.span
                   initial={{ opacity: 0, width: 0 }}

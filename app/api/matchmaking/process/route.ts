@@ -200,6 +200,46 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
           continue
         }
 
+        // Get user names for notifications
+        const { data: user1Data } = await supabase
+          .from('users')
+          .select('name, first_name')
+          .eq('id', user1Id)
+          .single()
+        
+        const { data: user2Data } = await supabase
+          .from('users')
+          .select('name, first_name')
+          .eq('id', user2Id)
+          .single()
+
+        const user1Name = user1Data?.first_name || user1Data?.name || 'Someone'
+        const user2Name = user2Data?.first_name || user2Data?.name || 'Someone'
+
+        // Create notifications for both users
+        try {
+          await supabase.rpc('create_notification', {
+            p_user_id: user1Id,
+            p_sender_id: user2Id,
+            p_type: 'match_found',
+            p_title: 'New Match',
+            p_body: `You've been matched with ${user2Name}`,
+            p_metadata: { matchId: chatMatch.id, otherUserId: user2Id },
+          })
+
+          await supabase.rpc('create_notification', {
+            p_user_id: user2Id,
+            p_sender_id: user1Id,
+            p_type: 'match_found',
+            p_title: 'New Match',
+            p_body: `You've been matched with ${user1Name}`,
+            p_metadata: { matchId: chatMatch.id, otherUserId: user1Id },
+          })
+        } catch (notifError: any) {
+          console.error(`[AI Matchmaking] Error creating notifications:`, notifError)
+          // Don't fail the match if notifications fail
+        }
+
         // Remove both users from waiting pool
         await supabase.from('waiting_pool').delete().eq('user_id', waitingUser.user_id)
         await supabase.from('waiting_pool').delete().eq('user_id', matchedUserId)

@@ -13,17 +13,18 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 /**
- * GET /api/notifications?userId=UUID
- * Fetch notifications for a user with sender profile
+ * PUT /api/notifications/mark-read
+ * Mark a single notification as read
+ * Body: { notificationId: string, userId: string }
  */
-export async function GET(request: NextRequest) {
+export async function PUT(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const body = await request.json()
+    const { notificationId, userId } = body
 
-    if (!userId) {
+    if (!notificationId || !userId) {
       return NextResponse.json(
-        { error: 'Missing userId query parameter' },
+        { error: 'Missing notificationId or userId' },
         { 
           status: 400,
           headers: getCorsHeaders(),
@@ -33,9 +34,9 @@ export async function GET(request: NextRequest) {
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(userId)) {
+    if (!uuidRegex.test(notificationId) || !uuidRegex.test(userId)) {
       return NextResponse.json(
-        { error: 'Invalid userId format' },
+        { error: 'Invalid UUID format' },
         { 
           status: 400,
           headers: getCorsHeaders(),
@@ -45,36 +46,31 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServerClient()
 
-    // Fetch notifications with sender profile
-    const { data: notifications, error } = await supabase
+    // Update notification (only if it belongs to the user)
+    const { data, error } = await supabase
       .from('notifications')
-      .select(`
-        id,
-        user_id,
-        sender_id,
-        type,
-        title,
-        body,
-        metadata,
-        is_read,
-        created_at,
-        sender:users!notifications_sender_id_fkey (
-          id,
-          name,
-          email,
-          avatar_url
-        )
-      `)
+      .update({ is_read: true })
+      .eq('id', notificationId)
       .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(100)
+      .select()
+      .single()
 
     if (error) {
-      console.error('[Notifications API] Error fetching notifications:', error)
+      console.error('[Notifications API] Error marking notification as read:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch notifications', details: error.message },
+        { error: 'Failed to mark notification as read', details: error.message },
         { 
           status: 500,
+          headers: getCorsHeaders(),
+        }
+      )
+    }
+
+    if (!data) {
+      return NextResponse.json(
+        { error: 'Notification not found or access denied' },
+        { 
+          status: 404,
           headers: getCorsHeaders(),
         }
       )
@@ -83,8 +79,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         success: true, 
-        data: notifications || [],
-        count: notifications?.length || 0,
+        data,
       },
       {
         headers: getCorsHeaders(),
@@ -101,3 +96,4 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
