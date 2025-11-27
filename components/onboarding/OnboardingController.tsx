@@ -121,41 +121,64 @@ export function OnboardingController() {
   }, [authLoading, state.initialized, state.step, searchParams, setStep])
 
   // PART 3: Verify step was saved to database
+  // CRITICAL: Add delay before first check to allow DB replication
   const verifyStepSaved = async (expectedStep: OnboardingStep, userId: string, retries = 3): Promise<boolean> => {
+    // Wait 300ms before first check to allow database write to propagate
+    await new Promise(resolve => setTimeout(resolve, 300))
+    
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
         const response = await fetch(`/api/users?userId=${userId}`, {
           cache: 'no-store',
-          signal: AbortSignal.timeout(5000)
+          signal: AbortSignal.timeout(10000) // Increased timeout for slow networks
         })
-        const data = await response.json()
         
-        if (data.success && data.data) {
-          const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
-          if (dbStep === expectedStep) {
-            console.log(`[OnboardingController] ✅ Step verified (attempt ${attempt + 1}/${retries}):`, {
-              userId,
-              expectedStep,
-              dbStep,
-              match: true
-            })
-            return true
+        if (!response.ok) {
+          console.warn(`[OnboardingController] Verification attempt ${attempt + 1}/${retries} - HTTP error:`, response.status, response.statusText)
+          // Continue to retry
+        } else {
+          const data = await response.json()
+          
+          if (data.success && data.data) {
+            const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
+            if (dbStep === expectedStep) {
+              console.log(`[OnboardingController] ✅ Step verified (attempt ${attempt + 1}/${retries}):`, {
+                userId,
+                expectedStep,
+                dbStep,
+                match: true
+              })
+              return true
+            } else {
+              console.warn(`[OnboardingController] ⚠️ Step mismatch (attempt ${attempt + 1}/${retries}):`, {
+                userId,
+                expectedStep,
+                dbStep,
+                rawDbStep: data.data.onboarding_step,
+                match: false
+              })
+            }
           } else {
-            console.warn(`[OnboardingController] ⚠️ Step mismatch (attempt ${attempt + 1}/${retries}):`, {
-              userId,
-              expectedStep,
-              dbStep,
-              match: false
-            })
+            console.warn(`[OnboardingController] Verification attempt ${attempt + 1}/${retries} - No data returned:`, data)
           }
         }
       } catch (error: any) {
-        console.warn(`[OnboardingController] Verification attempt ${attempt + 1}/${retries} failed:`, error.message)
+        // Check if it's a CORS/network error
+        if (error.message?.includes('Load failed') || error.message?.includes('access control') || error.message?.includes('CORS')) {
+          console.error(`[OnboardingController] ❌ CORS/Network error during verification (attempt ${attempt + 1}/${retries}):`, error.message)
+          // For CORS errors, we can't verify, so return false but log it
+          if (attempt === retries - 1) {
+            console.error('[OnboardingController] ❌ Verification failed due to CORS/network errors - saves may not be working')
+            return false
+          }
+        } else {
+          console.warn(`[OnboardingController] Verification attempt ${attempt + 1}/${retries} failed:`, error.message)
+        }
       }
       
-      // Wait before retry (except on last attempt)
+      // Wait before retry (except on last attempt) - longer delay for DB replication
       if (attempt < retries - 1) {
-        await new Promise(resolve => setTimeout(resolve, 500))
+        await new Promise(resolve => setTimeout(resolve, 800)) // Increased to 800ms for better DB replication
       }
     }
     
@@ -206,24 +229,47 @@ export function OnboardingController() {
       
       // PART 3: Wait for save to complete (if user exists)
       if (user?.id) {
-        const response = await fetch('/api/users', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            email: email,
-            onboarding_step: 'password',
-          }),
-        })
-        
-        const data = await response.json()
-        
-        if (!data.success) {
-          console.error('[OnboardingController] ❌ Save email error:', data.error)
+        try {
+          const response = await fetch('/api/users', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              email: email,
+              onboarding_step: 'password',
+            }),
+            cache: 'no-store',
+          })
+          
+          if (!response.ok) {
+            console.error('[OnboardingController] ❌ Save email error - HTTP error:', response.status, response.statusText)
+            const errorText = await response.text()
+            console.error('[OnboardingController] Error response body:', errorText)
+            // Still navigate - don't block UX
+          } else {
+            const data = await response.json()
+            
+            if (!data.success) {
+              console.error('[OnboardingController] ❌ Save email error:', data.error)
+              // Still navigate - don't block UX
+            } else {
+              console.log('[OnboardingController] ✅ Email save successful:', {
+                savedStep: data.data?.onboarding_step,
+                savedCompleted: data.data?.onboarding_completed,
+              })
+              // PART 3: Verify the save (with delay for DB replication)
+              await verifyStepSaved('password', user.id)
+            }
+          }
+        } catch (fetchError: any) {
+          // CORS/Network errors
+          if (fetchError.message?.includes('Load failed') || fetchError.message?.includes('access control') || fetchError.message?.includes('CORS') || fetchError.message?.includes('Failed to fetch')) {
+            console.error('[OnboardingController] ❌ CRITICAL: CORS/Network error - save did NOT reach server:', fetchError.message)
+            console.error('[OnboardingController] This means the database was NOT updated. Check Vercel CORS configuration.')
+          } else {
+            console.error('[OnboardingController] ❌ Save email error:', fetchError)
+          }
           // Still navigate - don't block UX
-        } else {
-          // PART 3: Verify the save
-          await verifyStepSaved('password', user.id)
         }
       }
       
@@ -294,24 +340,45 @@ export function OnboardingController() {
         nextStep: 'name'
       })
       
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: currentUserId,
-          email: state.email,
-          onboarding_step: 'name',
-        }),
-      })
-      
-      const data = await response.json()
-      
-      if (!data.success) {
-        console.error('[OnboardingController] ❌ Save name step error:', data.error)
+      try {
+        const response = await fetch('/api/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: currentUserId,
+            email: state.email,
+            onboarding_step: 'name',
+          }),
+          cache: 'no-store',
+        })
+        
+        if (!response.ok) {
+          console.error('[OnboardingController] ❌ Save name step error - HTTP error:', response.status, response.statusText)
+          const errorText = await response.text()
+          console.error('[OnboardingController] Error response body:', errorText)
+          // Still navigate - don't block UX
+        } else {
+          const data = await response.json()
+          
+          if (!data.success) {
+            console.error('[OnboardingController] ❌ Save name step error:', data.error)
+            // Still navigate - don't block UX
+          } else {
+            console.log('[OnboardingController] ✅ Name step save successful:', {
+              savedStep: data.data?.onboarding_step,
+              savedCompleted: data.data?.onboarding_completed,
+            })
+            // PART 3: Verify the save (with delay for DB replication)
+            await verifyStepSaved('name', currentUserId)
+          }
+        }
+      } catch (fetchError: any) {
+        if (fetchError.message?.includes('Load failed') || fetchError.message?.includes('access control') || fetchError.message?.includes('CORS') || fetchError.message?.includes('Failed to fetch')) {
+          console.error('[OnboardingController] ❌ CRITICAL: CORS/Network error - save did NOT reach server:', fetchError.message)
+        } else {
+          console.error('[OnboardingController] ❌ Save name step error:', fetchError)
+        }
         // Still navigate - don't block UX
-      } else {
-        // PART 3: Verify the save
-        await verifyStepSaved('name', currentUserId)
       }
       
       // Navigate after save completes
@@ -352,24 +419,43 @@ export function OnboardingController() {
         nextStep: 'questions'
       })
       
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          firstName,
-          lastName,
-          onboarding_step: 'questions',
-        }),
-      })
-      
-      const data = await response.json()
-      
-      if (!data.success) {
-        console.error('[OnboardingController] ❌ Save progress error:', data.error)
-      } else {
-        // PART 3: Verify the save
-        await verifyStepSaved('questions', user.id)
+      try {
+        const response = await fetch('/api/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            firstName,
+            lastName,
+            onboarding_step: 'questions',
+          }),
+          cache: 'no-store',
+        })
+        
+        if (!response.ok) {
+          console.error('[OnboardingController] ❌ Save progress error - HTTP error:', response.status, response.statusText)
+          const errorText = await response.text()
+          console.error('[OnboardingController] Error response body:', errorText)
+        } else {
+          const data = await response.json()
+          
+          if (!data.success) {
+            console.error('[OnboardingController] ❌ Save progress error:', data.error)
+          } else {
+            console.log('[OnboardingController] ✅ Questions step save successful:', {
+              savedStep: data.data?.onboarding_step,
+              savedCompleted: data.data?.onboarding_completed,
+            })
+            // PART 3: Verify the save (with delay for DB replication)
+            await verifyStepSaved('questions', user.id)
+          }
+        }
+      } catch (fetchError: any) {
+        if (fetchError.message?.includes('Load failed') || fetchError.message?.includes('access control') || fetchError.message?.includes('CORS') || fetchError.message?.includes('Failed to fetch')) {
+          console.error('[OnboardingController] ❌ CRITICAL: CORS/Network error - save did NOT reach server:', fetchError.message)
+        } else {
+          console.error('[OnboardingController] ❌ Save progress error:', fetchError)
+        }
       }
       
       navigateToStep('questions')
@@ -406,23 +492,42 @@ export function OnboardingController() {
         nextStep: 'interests'
       })
       
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          questionsAnswers: answers,
-          onboarding_step: 'interests',
-        }),
-      })
-      
-      const data = await response.json()
-      
-      if (!data.success) {
-        console.error('[OnboardingController] ❌ Save progress error:', data.error)
-      } else {
-        // PART 3: Verify the save
-        await verifyStepSaved('interests', user.id)
+      try {
+        const response = await fetch('/api/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            questionsAnswers: answers,
+            onboarding_step: 'interests',
+          }),
+          cache: 'no-store',
+        })
+        
+        if (!response.ok) {
+          console.error('[OnboardingController] ❌ Save progress error - HTTP error:', response.status, response.statusText)
+          const errorText = await response.text()
+          console.error('[OnboardingController] Error response body:', errorText)
+        } else {
+          const data = await response.json()
+          
+          if (!data.success) {
+            console.error('[OnboardingController] ❌ Save progress error:', data.error)
+          } else {
+            console.log('[OnboardingController] ✅ Interests step save successful:', {
+              savedStep: data.data?.onboarding_step,
+              savedCompleted: data.data?.onboarding_completed,
+            })
+            // PART 3: Verify the save (with delay for DB replication)
+            await verifyStepSaved('interests', user.id)
+          }
+        }
+      } catch (fetchError: any) {
+        if (fetchError.message?.includes('Load failed') || fetchError.message?.includes('access control') || fetchError.message?.includes('CORS') || fetchError.message?.includes('Failed to fetch')) {
+          console.error('[OnboardingController] ❌ CRITICAL: CORS/Network error - save did NOT reach server:', fetchError.message)
+        } else {
+          console.error('[OnboardingController] ❌ Save progress error:', fetchError)
+        }
       }
       
       navigateToStep('interests')
@@ -459,23 +564,42 @@ export function OnboardingController() {
         nextStep: 'confirmation'
       })
       
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          interests,
-          onboarding_step: 'confirmation',
-        }),
-      })
-      
-      const data = await response.json()
-      
-      if (!data.success) {
-        console.error('[OnboardingController] ❌ Save progress error:', data.error)
-      } else {
-        // PART 3: Verify the save
-        await verifyStepSaved('confirmation', user.id)
+      try {
+        const response = await fetch('/api/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            interests,
+            onboarding_step: 'confirmation',
+          }),
+          cache: 'no-store',
+        })
+        
+        if (!response.ok) {
+          console.error('[OnboardingController] ❌ Save progress error - HTTP error:', response.status, response.statusText)
+          const errorText = await response.text()
+          console.error('[OnboardingController] Error response body:', errorText)
+        } else {
+          const data = await response.json()
+          
+          if (!data.success) {
+            console.error('[OnboardingController] ❌ Save progress error:', data.error)
+          } else {
+            console.log('[OnboardingController] ✅ Confirmation step save successful:', {
+              savedStep: data.data?.onboarding_step,
+              savedCompleted: data.data?.onboarding_completed,
+            })
+            // PART 3: Verify the save (with delay for DB replication)
+            await verifyStepSaved('confirmation', user.id)
+          }
+        }
+      } catch (fetchError: any) {
+        if (fetchError.message?.includes('Load failed') || fetchError.message?.includes('access control') || fetchError.message?.includes('CORS') || fetchError.message?.includes('Failed to fetch')) {
+          console.error('[OnboardingController] ❌ CRITICAL: CORS/Network error - save did NOT reach server:', fetchError.message)
+        } else {
+          console.error('[OnboardingController] ❌ Save progress error:', fetchError)
+        }
       }
       
       navigateToStep('confirmation')

@@ -4,6 +4,22 @@ export const runtime = "nodejs"
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
 
+// CORS headers helper
+function getCorsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, PUT, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  }
+}
+
+// Handle OPTIONS for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json({}, {
+    headers: getCorsHeaders(),
+  })
+}
+
 export async function GET(request: NextRequest) {
   // Parse URL safely - mobile browsers might format URLs differently
   let searchParams: URLSearchParams
@@ -142,14 +158,15 @@ export async function GET(request: NextRequest) {
         email: existingUser.email,
       })
       
-      return NextResponse.json(
-        { success: true, data: existingUser },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          }
+    return NextResponse.json(
+      { success: true, data: existingUser },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...getCorsHeaders(),
         }
-      )
+      }
+    )
     }
 
     // PART 2: User doesn't exist - only create if auth confirms user exists
@@ -411,6 +428,7 @@ export async function GET(request: NextRequest) {
       {
         headers: {
           'Content-Type': 'application/json',
+          ...getCorsHeaders(),
         }
       }
     )
@@ -903,6 +921,7 @@ export async function PUT(request: NextRequest) {
       {
         headers: {
           'Content-Type': 'application/json',
+          ...getCorsHeaders(),
         }
       }
     )
