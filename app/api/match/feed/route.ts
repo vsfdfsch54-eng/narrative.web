@@ -80,8 +80,10 @@ export async function GET(request: NextRequest) {
       console.error('[Match Feed] Error fetching current user:', userError)
     }
 
-    // Build exclusion list
-    const excludeIds = Array.from(new Set([userId, ...matchedUserIds, ...pendingUserIds]))
+    // Build exclusion list - convert Sets to arrays first
+    const matchedArray = Array.from(matchedUserIds)
+    const pendingArray = Array.from(pendingUserIds)
+    const excludeIds = Array.from(new Set([userId, ...matchedArray, ...pendingArray]))
 
     // Fetch potential matches
     // Prefer users with same vibe/topic, fallback to any active user
