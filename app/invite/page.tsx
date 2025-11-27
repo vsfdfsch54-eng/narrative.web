@@ -127,7 +127,7 @@ export default function InvitePage() {
           display: 'flex',
           alignItems: 'center',
           gap: tokens.spacing[12],
-          marginBottom: tokens.spacing[24],
+          marginBottom: tokens.spacing[28],
         }}>
           <motion.button
             whileTap={{ scale: 0.95 }}

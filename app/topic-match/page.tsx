@@ -252,7 +252,7 @@ export default function TopicMatchPage() {
 
         {/* Friend Filter Section */}
         <div style={{
-          marginBottom: tokens.spacing[24],
+          marginBottom: tokens.spacing[28],
         }}>
           <div style={{
             position: 'relative',
@@ -400,7 +400,7 @@ export default function TopicMatchPage() {
 
         {/* Topics Section */}
         <div style={{
-          marginBottom: tokens.spacing[24],
+          marginBottom: tokens.spacing[28],
         }}>
           <h2 style={{
             ...tokens.typography.heading,
@@ -456,7 +456,7 @@ export default function TopicMatchPage() {
 
         {/* Time Limit Section */}
         <div style={{
-          marginBottom: tokens.spacing[24],
+          marginBottom: tokens.spacing[28],
         }}>
           <h2 style={{
             ...tokens.typography.heading,

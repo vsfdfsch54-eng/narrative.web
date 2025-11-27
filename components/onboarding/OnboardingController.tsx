@@ -76,8 +76,8 @@ export function OnboardingController() {
             router.replace('/topic-match')
             // Fallback navigation
             setTimeout(() => {
-              if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
-                window.location.href = '/vibe'
+              if (typeof window !== 'undefined' && window.location.pathname !== '/topic-match') {
+                window.location.href = '/topic-match'
               }
             }, 100)
           }

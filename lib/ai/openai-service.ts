@@ -67,7 +67,7 @@ export async function generatePersonalityEmbedding(text: string): Promise<number
 export async function generatePersonalitySummary(
   questionnaireAnswers: Record<string, any>,
   interests: string[],
-  vibe?: string | null,
+  mood?: string | null,
   topic?: string | null
 ): Promise<string> {
   try {
