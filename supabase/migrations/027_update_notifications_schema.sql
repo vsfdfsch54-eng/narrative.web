@@ -56,6 +56,10 @@ ALTER TABLE notifications
 ALTER COLUMN title SET NOT NULL,
 ALTER COLUMN body SET NOT NULL;
 
+-- First, drop the constraint if it exists (to allow updates)
+ALTER TABLE notifications 
+DROP CONSTRAINT IF EXISTS notifications_type_check;
+
 -- Update existing types to new format BEFORE applying constraint
 -- This ensures no rows violate the new constraint
 UPDATE notifications 
@@ -73,11 +77,36 @@ WHERE type IS NULL OR type NOT IN (
   'message_received'
 );
 
--- Now drop the old constraint
-ALTER TABLE notifications 
-DROP CONSTRAINT IF EXISTS notifications_type_check;
+-- Verify all rows have valid types (safety check)
+DO $$
+DECLARE
+  invalid_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO invalid_count
+  FROM notifications
+  WHERE type IS NULL OR type NOT IN (
+    'friend_chat_request',
+    'community_added',
+    'event_invite',
+    'match_found',
+    'message_received'
+  );
+  
+  IF invalid_count > 0 THEN
+    -- Force update any remaining invalid types
+    UPDATE notifications 
+    SET type = 'community_added' 
+    WHERE type IS NULL OR type NOT IN (
+      'friend_chat_request',
+      'community_added',
+      'event_invite',
+      'match_found',
+      'message_received'
+    );
+  END IF;
+END $$;
 
--- Apply the new CHECK constraint
+-- Now apply the new CHECK constraint
 ALTER TABLE notifications 
 ADD CONSTRAINT notifications_type_check 
 CHECK (type IN (
