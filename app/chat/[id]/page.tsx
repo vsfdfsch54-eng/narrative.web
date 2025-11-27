@@ -25,6 +25,7 @@ export default function ChatDetailPage() {
   const [message, setMessage] = useState("")
   const [showEndModal, setShowEndModal] = useState(false)
   const [showAddSuccessModal, setShowAddSuccessModal] = useState(false)
+  const [matchEnded, setMatchEnded] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [profileName, setProfileName] = useState("User")
   const [profileGender, setProfileGender] = useState<"male" | "female">("male")
@@ -137,13 +138,13 @@ export default function ChatDetailPage() {
         (payload) => {
           const updatedMatch = payload.new as any
           if (updatedMatch.status === 'ended') {
-            // Other user ended the conversation - redirect to feedback
+            // Other user ended the conversation - mark as ended and redirect immediately
             console.log('[ChatDetailPage] Match ended by other user')
+            setMatchEnded(true) // Prevent any further actions
             localStorage.setItem("feedbackChatId", chatId)
             localStorage.setItem("feedbackProfileName", profileName)
-            setTimeout(() => {
-              router.push("/feedback")
-            }, 100)
+            // Use window.location for immediate redirect (prevents page from continuing to function)
+            window.location.href = "/feedback"
           }
         }
       )
@@ -288,6 +289,10 @@ export default function ChatDetailPage() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
+    // Prevent sending if match is ended
+    if (matchEnded) {
+      return
+    }
     if (!currentUserId || !message.trim() || !matchId) return
     
     setTyping(false)
@@ -427,7 +432,17 @@ export default function ChatDetailPage() {
   }
 
   const handleAddToCommunity = async () => {
-    if (!currentUserId || !chatId) return
+    if (!currentUserId || !chatId) {
+      console.error('[ChatDetailPage] Missing userId or chatId for add to community')
+      alert('Unable to add to community. Please try again.')
+      return
+    }
+    
+    // Prevent action if match is ended
+    if (matchEnded) {
+      console.warn('[ChatDetailPage] Cannot add to community - match has ended')
+      return
+    }
     
     try {
       const response = await fetch('/api/relationships', {
@@ -439,14 +454,21 @@ export default function ChatDetailPage() {
         })
       })
       
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('[ChatDetailPage] Add to community failed:', response.status, errorData)
+        alert(errorData.error || 'Failed to send community request. Please try again.')
+        return
+      }
+      
       const data = await response.json()
       if (data.success) {
         setShowAddSuccessModal(true)
       } else {
-        alert('Failed to send community request. Please try again.')
+        alert(data.error || 'Failed to send community request. Please try again.')
       }
     } catch (error) {
-      console.error('Error adding to community:', error)
+      console.error('[ChatDetailPage] Error adding to community:', error)
       alert('Failed to send community request. Please try again.')
     }
   }
@@ -457,7 +479,13 @@ export default function ChatDetailPage() {
       return
     }
     
+    // Prevent multiple calls
+    if (matchEnded) {
+      return
+    }
+    
     setShowEndModal(false)
+    setMatchEnded(true) // Mark as ended immediately to prevent other actions
     
     try {
       // Update match status to 'ended' in database
@@ -470,18 +498,20 @@ export default function ChatDetailPage() {
       
       if (!response.ok) {
         console.error('[ChatDetailPage] Failed to end conversation')
+        setMatchEnded(false) // Reset if failed
         alert('Failed to end conversation. Please try again.')
         return
       }
       
-      // Store feedback info and redirect
+      // Store feedback info and redirect immediately
       localStorage.setItem("feedbackChatId", chatId)
       localStorage.setItem("feedbackProfileName", profileName)
-      setTimeout(() => {
-        router.push("/feedback")
-      }, 100)
+      
+      // Use window.location for immediate redirect (prevents page from continuing to function)
+      window.location.href = "/feedback"
     } catch (error) {
       console.error('[ChatDetailPage] Error ending conversation:', error)
+      setMatchEnded(false) // Reset if failed
       alert('Failed to end conversation. Please try again.')
     }
   }
@@ -603,8 +633,9 @@ export default function ChatDetailPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[10] }}>
             <ChatSearch messages={messages} onMessageSelect={scrollToMessage} />
             <motion.button
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: matchEnded ? 1 : 0.95 }}
               onClick={handleAddToCommunity}
+              disabled={matchEnded}
               style={{
                 padding: `8px ${tokens.spacing[14]}`,
                 borderRadius: tokens.radii.pill,
@@ -614,7 +645,8 @@ export default function ChatDetailPage() {
                 boxShadow: tokens.shadows.pillUnselected,
                 fontSize: '13px',
                 fontWeight: 500,
-                cursor: 'pointer',
+                cursor: matchEnded ? 'not-allowed' : 'pointer',
+                opacity: matchEnded ? 0.5 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 gap: tokens.spacing[8],
@@ -625,8 +657,9 @@ export default function ChatDetailPage() {
             </motion.button>
             
             <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowEndModal(true)}
+              whileTap={{ scale: matchEnded ? 1 : 0.95 }}
+              onClick={() => !matchEnded && setShowEndModal(true)}
+              disabled={matchEnded}
               style={{
                 padding: `8px ${tokens.spacing[14]}`,
                 borderRadius: tokens.radii.pill,
@@ -636,7 +669,8 @@ export default function ChatDetailPage() {
                 color: tokens.colors.textPrimaryOnDark,
                 fontSize: '13px',
                 fontWeight: 500,
-                cursor: 'pointer',
+                cursor: matchEnded ? 'not-allowed' : 'pointer',
+                opacity: matchEnded ? 0.5 : 1,
               }}
             >
               End
@@ -753,6 +787,7 @@ export default function ChatDetailPage() {
                 value={message}
                 onChange={handleInputChange}
                 placeholder="Type a message..."
+                disabled={matchEnded}
                 style={{
                   width: '100%',
                   padding: `10px ${tokens.spacing[14]}`,
@@ -765,13 +800,15 @@ export default function ChatDetailPage() {
                   fontWeight: 400,
                   letterSpacing: '0',
                   outline: 'none',
+                  opacity: matchEnded ? 0.5 : 1,
+                  cursor: matchEnded ? 'not-allowed' : 'text',
                 }}
               />
             </div>
             <motion.button
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: (!message.trim() || uploadingFile || matchEnded) ? 1 : 0.95 }}
               type="submit"
-              disabled={!message.trim() || uploadingFile}
+              disabled={!message.trim() || uploadingFile || matchEnded}
               style={{
                 padding: tokens.spacing[10],
                 borderRadius: tokens.radii.button,
@@ -779,8 +816,8 @@ export default function ChatDetailPage() {
                 border: 'none',
                 color: tokens.colors.textOnPill,
                 boxShadow: tokens.shadows.pillUnselected,
-                cursor: (!message.trim() || uploadingFile) ? 'not-allowed' : 'pointer',
-                opacity: (!message.trim() || uploadingFile) ? 0.5 : 1,
+                cursor: (!message.trim() || uploadingFile || matchEnded) ? 'not-allowed' : 'pointer',
+                opacity: (!message.trim() || uploadingFile || matchEnded) ? 0.5 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
