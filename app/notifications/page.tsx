@@ -232,7 +232,7 @@ export default function NotificationsPage() {
           </div>
         ) : (
           groupedNotifications.map((group) => (
-            <div key={group.label} style={{ marginBottom: tokens.spacing[24] }}>
+            <div key={group.label} style={{ marginBottom: tokens.spacing[28] }}>
               <h2 style={{
                 fontSize: tokens.typography.label.fontSize,
                 fontWeight: tokens.typography.label.fontWeight,
