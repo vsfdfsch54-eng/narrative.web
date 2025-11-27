@@ -67,20 +67,62 @@ function groupNotifications(notifications: Notification[]) {
 }
 
 // Helper to get navigation URL based on notification type
-function getNotificationUrl(notification: Notification): string {
+// Returns a function that needs to be called with userId to resolve the URL
+async function getNotificationUrl(notification: Notification, currentUserId: string): Promise<string> {
   const { type, metadata } = notification
   
   switch (type) {
     case 'friend_chat_request':
       return metadata?.userId ? `/chat/${metadata.userId}` : '/conversations'
     case 'community_added':
-      return metadata?.userId ? `/profile?userId=${metadata.userId}` : '/profile'
+      // Handled separately in handleNotificationClick
+      return '/notifications'
     case 'event_invite':
       return metadata?.eventId ? `/calendar/event?id=${metadata.eventId}` : '/calendar'
     case 'match_found':
-      return metadata?.matchId ? `/chat?matchId=${metadata.matchId}` : '/conversations'
+      // Use otherUserId from metadata (already included in notification)
+      if (metadata?.otherUserId) {
+        const matchId = metadata?.matchId ? `?matchId=${metadata.matchId}` : ''
+        return `/chat/${metadata.otherUserId}${matchId}`
+      }
+      // Fallback: fetch match if otherUserId not in metadata
+      if (metadata?.matchId) {
+        try {
+          const response = await fetch(`/api/matches?matchId=${metadata.matchId}&userId=${currentUserId}`)
+          const data = await response.json()
+          if (data.success && data.data) {
+            const match = data.data
+            const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id
+            return `/chat/${otherUserId}?matchId=${metadata.matchId}`
+          }
+        } catch (error) {
+          console.error('Error fetching match:', error)
+        }
+      }
+      return '/conversations'
     case 'message_received':
-      return metadata?.threadId ? `/chat?threadId=${metadata.threadId}` : '/conversations'
+      // Use otherUserId from metadata if available, otherwise fetch match
+      if (metadata?.otherUserId) {
+        const matchId = metadata?.threadId || metadata?.matchId
+        const matchIdParam = matchId ? `?matchId=${matchId}` : ''
+        return `/chat/${metadata.otherUserId}${matchIdParam}`
+      }
+      // Fallback: fetch match if otherUserId not in metadata
+      if (metadata?.threadId || metadata?.matchId) {
+        const matchId = metadata.threadId || metadata.matchId
+        try {
+          const response = await fetch(`/api/matches?matchId=${matchId}&userId=${currentUserId}`)
+          const data = await response.json()
+          if (data.success && data.data) {
+            const match = data.data
+            const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id
+            return `/chat/${otherUserId}?matchId=${matchId}`
+          }
+        } catch (error) {
+          console.error('Error fetching match:', error)
+        }
+      }
+      return '/conversations'
     default:
       return '/conversations'
   }
@@ -149,7 +191,10 @@ export default function NotificationsPage() {
     }
     
     // Navigate based on type for other notifications
-    const url = getNotificationUrl(notification)
+    // Need to resolve URLs that require fetching match data
+    if (!user) return
+    
+    const url = await getNotificationUrl(notification, user.id)
     router.push(url)
   }
   

@@ -39,8 +39,54 @@ export async function GET(request: NextRequest) {
   // Access searchParams outside try/catch to ensure Next.js recognizes dynamic usage
   const { searchParams } = new URL(request.url)
   const userId = searchParams.get('userId')
-  const action = searchParams.get('action') // 'find' or 'get'
+  const matchId = searchParams.get('matchId')
 
+  // If matchId is provided, fetch that specific match
+  if (matchId) {
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Missing userId query parameter (required when matchId is provided)' },
+        { status: 400 }
+      )
+    }
+
+    try {
+      const { createServerClient } = await import('@/lib/supabaseClient')
+      const supabase = createServerClient()
+      
+      const { data, error } = await supabase
+        .from('chat_matches')
+        .select('*')
+        .eq('id', matchId)
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Error fetching match:', error)
+        return NextResponse.json(
+          { error: 'Failed to fetch match' },
+          { status: 500 }
+        )
+      }
+
+      if (!data) {
+        return NextResponse.json(
+          { error: 'Match not found' },
+          { status: 404 }
+        )
+      }
+
+      return NextResponse.json({ success: true, data })
+    } catch (error) {
+      console.error('Error in GET /api/matches:', error)
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      )
+    }
+  }
+
+  // If no matchId, return next match for userId (legacy behavior)
   if (!userId) {
     return NextResponse.json(
       { error: 'Missing userId query parameter' },
