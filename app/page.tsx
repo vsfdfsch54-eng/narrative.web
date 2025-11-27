@@ -35,8 +35,8 @@ export default function Home() {
             
         // NEVER redirect on API errors - causes redirect loops
         if (apiError) {
-          console.warn('[Home] ⚠️ API error checking onboarding - redirecting to /vibe to prevent loop')
-          router.replace("/vibe")
+          console.warn('[Home] ⚠️ API error checking onboarding - redirecting to /match to prevent loop')
+          router.replace("/match")
           return
         }
 
@@ -53,12 +53,12 @@ export default function Home() {
           return
         }
 
-        // Complete onboarding → redirect to /vibe (never show welcome again)
-        router.replace("/vibe")
+        // Complete onboarding → redirect to /match (never show welcome again)
+        router.replace("/match")
       } catch (error) {
         console.error('[Home] Error checking onboarding:', error)
-        // On error, redirect to /vibe (not onboarding) to prevent loops
-        router.replace("/vibe")
+        // On error, redirect to /match (not onboarding) to prevent loops
+        router.replace("/match")
         } finally {
         setCheckingOnboarding(false)
         }
