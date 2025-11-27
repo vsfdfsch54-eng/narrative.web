@@ -40,13 +40,13 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
       // 1. Entries older than 10 minutes (safety cleanup)
       // 2. Entries where last_active is older than 5 minutes (inactive users - background tabs)
       const tenMinutesAgo = new Date(Date.now() - 1000 * 60 * 10).toISOString()
-      const fiveMinutesAgo = new Date(Date.now() - 1000 * 60 * 5).toISOString()
+      const fiveMinutesAgoCleanup = new Date(Date.now() - 1000 * 60 * 5).toISOString()
       
       // Remove entries that are too old OR inactive for 5+ minutes
       const { error: cleanupError } = await supabase
         .from('waiting_pool')
         .delete()
-        .or(`created_at.lt.${tenMinutesAgo},last_active.lt.${fiveMinutesAgo}`)
+        .or(`created_at.lt.${tenMinutesAgo},last_active.lt.${fiveMinutesAgoCleanup}`)
 
       if (cleanupError) {
         logWithContext('error', 'MATCH_CLEANUP_ERROR', context, { error: cleanupError.message })
