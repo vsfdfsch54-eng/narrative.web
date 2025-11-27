@@ -162,29 +162,6 @@ export async function createMatch(
   return Array.isArray(data) ? data[0] : data
 }
 
-/**
- * Find or create a match for a user (server-side)
- * Tries to find an available user in the queue, or adds current user to queue
- */
-export async function findOrCreateMatch(userId: string): Promise<ChatMatch | null> {
-  const supabaseServer = createServerClient()
-  
-  // First, check if user already has an active match
-  const { data: existingMatches, error: existingError } = await supabaseServer
-    .from('chat_matches')
-    .select('*')
-    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-    .eq('status', 'active')
-
-  if (!existingError && existingMatches && existingMatches.length > 0) {
-    // Return a random match instead of always the first one
-    const randomIndex = Math.floor(Math.random() * existingMatches.length)
-    return existingMatches[randomIndex]
-  }
-
-  // Legacy match_queue code removed - use /api/connect instead
-  return null
-}
 
 /**
  * Get the next available match for a user (server-side)

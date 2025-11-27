@@ -74,7 +74,7 @@ export const logger = {
     },
     found: (count: number) => {
       if (isDevelopment) {
-        console.log(`[Matching] 📊 Found ${count} users in waiting pool`)
+        console.log(`[Matching] 📊 Found ${count} potential matches`)
       }
     },
     matched: (user1: string, user2: string, score?: number) => {

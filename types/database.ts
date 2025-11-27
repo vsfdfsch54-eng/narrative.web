@@ -24,13 +24,6 @@ export interface PersonalityTraits {
   socialIntention?: string[] // Array of: 'venting', 'learning', 'humor', 'connection'
 }
 
-export interface WaitingPoolUser {
-  id: string
-  user_id: string
-  embedding: PersonalityEmbedding
-  created_at: string
-}
-
 export interface MatchScore {
   score: number // 0.0 to 1.0
   embeddingSimilarity: number

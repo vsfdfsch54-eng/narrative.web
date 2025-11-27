@@ -46,14 +46,14 @@ export async function sendSlackAlert(
 }
 
 /**
- * Send alert for matchmaking failures
+ * Send alert for matching failures
  */
-export async function alertMatchmakingFailure(error: string, context?: Record<string, any>) {
+export async function alertMatchingFailure(error: string, context?: Record<string, any>) {
   await sendSlackAlert(
-    `Matchmaking system failure: ${error}`,
+    `Matching system failure: ${error}`,
     'error',
     {
-      service: 'matchmaking',
+      service: 'matching',
       timestamp: new Date().toISOString(),
       ...context,
     }

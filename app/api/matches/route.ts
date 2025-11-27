@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // If no matchId, return next match for userId (legacy behavior)
+  // If no matchId, return next match for userId
   if (!userId) {
     return NextResponse.json(
       { error: 'Missing userId query parameter' },
@@ -95,11 +95,10 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Legacy 'find' action removed - use /api/connect instead
-    // This endpoint now only returns existing matches
+    // Return existing active matches for the user
     const result = await getNextMatch(userId)
 
-    return NextResponse.json({ success: true, data: result, inQueue: false })
+    return NextResponse.json({ success: true, data: result })
   } catch (error) {
     console.error('Error in GET /api/matches:', error)
     return NextResponse.json(
