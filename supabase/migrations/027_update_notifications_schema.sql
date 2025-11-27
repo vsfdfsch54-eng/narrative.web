@@ -56,10 +56,28 @@ ALTER TABLE notifications
 ALTER COLUMN title SET NOT NULL,
 ALTER COLUMN body SET NOT NULL;
 
--- Update type CHECK constraint to include all new types
+-- Update existing types to new format BEFORE applying constraint
+-- This ensures no rows violate the new constraint
+UPDATE notifications 
+SET type = 'community_added' 
+WHERE type IN ('community_request', 'community_accepted');
+
+-- Also handle any other potential old types or NULL values
+UPDATE notifications 
+SET type = 'community_added' 
+WHERE type IS NULL OR type NOT IN (
+  'friend_chat_request',
+  'community_added',
+  'event_invite',
+  'match_found',
+  'message_received'
+);
+
+-- Now drop the old constraint
 ALTER TABLE notifications 
 DROP CONSTRAINT IF EXISTS notifications_type_check;
 
+-- Apply the new CHECK constraint
 ALTER TABLE notifications 
 ADD CONSTRAINT notifications_type_check 
 CHECK (type IN (
@@ -69,11 +87,6 @@ CHECK (type IN (
   'match_found',
   'message_received'
 ));
-
--- Update existing types to new format (if any exist)
-UPDATE notifications 
-SET type = 'community_added' 
-WHERE type IN ('community_request', 'community_accepted');
 
 -- Recreate indexes with new column names
 DROP INDEX IF EXISTS idx_notifications_recipient_id;
