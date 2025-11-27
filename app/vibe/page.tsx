@@ -148,7 +148,7 @@ export default function VibePage() {
 
         <div style={{ marginBottom: tokens.spacing[32] }}>
           <VibeSelectorHorizontal
-            vibes={VIBES}
+            vibes={VIBES.map(v => ({ id: v.id, emoji: v.icon, label: v.label }))}
             selectedId={selectedVibe}
             onSelect={setSelectedVibe}
           />
