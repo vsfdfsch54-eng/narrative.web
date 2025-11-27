@@ -162,9 +162,9 @@ export default function VibePage() {
           Choose a topic
         </h2>
 
-        <div style={{ marginBottom: tokens.spacing[40] }}>
+        <div style={{ marginBottom: tokens.spacing[32] }}>
           <TopicSelectorHorizontal
-            topics={TOPICS}
+            topics={TOPICS.map(t => ({ id: t.id, emoji: t.icon, label: t.label }))}
             selectedId={selectedTopic}
             onSelect={setSelectedTopic}
           />
