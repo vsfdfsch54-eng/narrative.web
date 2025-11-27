@@ -52,21 +52,21 @@ export async function POST(request: NextRequest) {
       // Get user1's name for the notification
       const { data: senderData } = await supabase
         .from('users')
-        .select('name')
+        .select('name, first_name')
         .eq('id', user1Id)
         .single()
 
-      const senderName = senderData?.name || 'Someone'
+      const senderName = senderData?.first_name || senderData?.name || 'Someone'
 
-      // Create notification for user2
-      await supabase
-        .from('notifications')
-        .insert({
-          recipient_id: user2Id,
-          sender_id: user1Id,
-          type: 'community_request',
-          message: `${senderName} wants to add you to their community`,
-        })
+      // Create notification for user2 using RPC function
+      await supabase.rpc('create_notification', {
+        p_user_id: user2Id,
+        p_sender_id: user1Id,
+        p_type: 'community_added',
+        p_title: `${senderName} wants to add you`,
+        p_body: `${senderName} wants to add you to their community. Tap to accept or decline.`,
+        p_metadata: { userId: user1Id },
+      })
     }
 
     // Handle array response from upsert

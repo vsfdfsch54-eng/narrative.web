@@ -9,6 +9,7 @@ import { tokens } from "@/lib/design-tokens"
 import { checkOnboardingStatus } from "@/lib/user-helpers"
 import { Notification } from "@/hooks/useNotifications"
 import { User } from "lucide-react"
+import { CommunityRequestModal } from "@/components/ui/community-request-modal"
 
 // Helper to format relative time
 function formatRelativeTime(date: string): string {
@@ -90,6 +91,7 @@ export default function NotificationsPage() {
   const { user, loading: authLoading } = useAuth()
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications()
   const [checkingOnboarding, setCheckingOnboarding] = useState(true)
+  const [selectedCommunityRequest, setSelectedCommunityRequest] = useState<Notification | null>(null)
 
   // Routing guard: Check auth and onboarding status
   useEffect(() => {
@@ -140,9 +142,46 @@ export default function NotificationsPage() {
       await markAsRead(notification.id)
     }
     
-    // Navigate based on type
+    // For community_added notifications, show accept/decline modal
+    if (notification.type === 'community_added' && notification.sender_id) {
+      setSelectedCommunityRequest(notification)
+      return
+    }
+    
+    // Navigate based on type for other notifications
     const url = getNotificationUrl(notification)
     router.push(url)
+  }
+  
+  const handleAcceptCommunityRequest = async () => {
+    if (!selectedCommunityRequest || !user) return
+    
+    try {
+      // Add the sender to current user's community
+      const response = await fetch('/api/relationships', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user1Id: user.id,
+          user2Id: selectedCommunityRequest.sender_id,
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        setSelectedCommunityRequest(null)
+        // Optionally show success message or refresh notifications
+      } else {
+        alert('Failed to add to community. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error accepting community request:', error)
+      alert('Failed to add to community. Please try again.')
+    }
+  }
+  
+  const handleDeclineCommunityRequest = () => {
+    setSelectedCommunityRequest(null)
   }
 
   const groupedNotifications = groupNotifications(notifications)

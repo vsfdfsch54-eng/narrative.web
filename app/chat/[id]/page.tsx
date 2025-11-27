@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { ChatBubble } from "@/components/ui/chat-bubble"
 import { TypingIndicator } from "@/components/ui/typing-indicator"
 import { EndConvoModal } from "@/components/ui/end-convo-modal"
+import { AddSuccessModal } from "@/components/ui/add-success-modal"
 import { ChatSearch } from "@/components/ui/chat-search"
 import { Message } from "@/lib/types"
 import { Send, ArrowLeft, Users, Image as ImageIcon, Paperclip } from "lucide-react"
@@ -23,6 +24,7 @@ export default function ChatDetailPage() {
   const chatId = params.id as string
   const [message, setMessage] = useState("")
   const [showEndModal, setShowEndModal] = useState(false)
+  const [showAddSuccessModal, setShowAddSuccessModal] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null)
   const [profileName, setProfileName] = useState("User")
   const [profileGender, setProfileGender] = useState<"male" | "female">("male")
@@ -439,7 +441,7 @@ export default function ChatDetailPage() {
       
       const data = await response.json()
       if (data.success) {
-        alert(`${profileName} will receive a notification to add you back!`)
+        setShowAddSuccessModal(true)
       } else {
         alert('Failed to send community request. Please try again.')
       }
