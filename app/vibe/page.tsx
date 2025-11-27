@@ -518,6 +518,66 @@ export default function VibePage() {
 
   const canConnect = selectedVibe !== null && selectedTopic !== null
 
+  // Show "no match found" page after 2+ minutes with no match
+  if (noMatchFound) {
+    return (
+      <AppShell>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          padding: tokens.spacing[20],
+          textAlign: 'center',
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: tokens.spacing[20],
+            maxWidth: tokens.layout.maxWidth,
+          }}>
+            <div style={{
+              fontSize: '64px',
+              marginBottom: tokens.spacing[8],
+            }}>
+              😔
+            </div>
+            <h2 style={{
+              fontSize: '28px',
+              fontWeight: 600,
+              color: tokens.colors.textPrimaryOnDark,
+              marginBottom: tokens.spacing[8],
+            }}>
+              No match found
+            </h2>
+            <p style={{
+              fontSize: '16px',
+              color: tokens.colors.textSecondary,
+              marginBottom: tokens.spacing[28],
+              lineHeight: 1.5,
+            }}>
+              We couldn't find a match right now. Don't worry, try again and we'll keep looking!
+            </p>
+            <AnimatedButton
+              onClick={() => {
+                setNoMatchFound(false)
+                setMatching(false)
+                setMatchStatus(null)
+                // Reset to vibe selection - user can try again
+              }}
+              size="large"
+              fullWidth
+            >
+              Try Again
+            </AnimatedButton>
+          </div>
+        </div>
+      </AppShell>
+    )
+  }
+
   // Show matching overlay if in queue
   if (matching) {
     return (
