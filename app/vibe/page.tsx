@@ -1,159 +1,37 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { CSSProperties } from "react"
 import { useRouter } from "next/navigation"
-import { VIBES, NEWS_TOPICS, POP_CULTURE_TOPICS, GENERAL_TOPICS, SPORTS_TOPICS } from "@/lib/constants"
-import { Vibe, Topic } from "@/lib/types"
+import { VIBES, TOPICS } from "@/lib/constants"
 import { useAuth } from "@/hooks/use-auth"
-import { VibeColors } from "@/components/ui/vibe-icons"
-import { Compass, Mic, Newspaper, CircleDot } from "lucide-react"
 import { AppShell } from "@/components/AppShell"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { tokens } from "@/lib/design-tokens"
 import { checkOnboardingStatus } from "@/lib/user-helpers"
-
-const TOPIC_CATEGORIES = [
-  { id: "general", label: "General", topics: GENERAL_TOPICS, icon: Compass },
-  { id: "pop-culture", label: "Pop Culture", topics: POP_CULTURE_TOPICS, icon: Mic },
-  { id: "news", label: "News", topics: NEWS_TOPICS, icon: Newspaper },
-  { id: "sports", label: "Sports", topics: SPORTS_TOPICS, icon: CircleDot },
-] as const
-
-const TIME_LIMITS = [5, 15, 30]
-
-// Clean, minimal page container
-const pageContainerStyle: CSSProperties = {
-  width: '100%',
-  maxWidth: tokens.layout.maxWidth,
-  margin: '0 auto',
-  padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
-  paddingBottom: tokens.spacing[32],
-  display: 'flex',
-  flexDirection: 'column',
-  gap: tokens.spacing[32],
-}
-
-// Simple section header
-const sectionHeaderStyle: CSSProperties = {
-  marginBottom: tokens.spacing[20],
-}
-
-const sectionTitleStyle: CSSProperties = {
-  fontSize: '20px',
-  fontWeight: 600,
-  letterSpacing: '-0.01em',
-  color: tokens.colors.textPrimaryOnDark,
-  margin: '0 0 8px 0',
-}
-
-const sectionDescriptionStyle: CSSProperties = {
-  fontSize: '14px',
-  lineHeight: 1.5,
-  color: tokens.colors.textSecondary,
-  margin: 0,
-}
-
-// Clean option button style
-const createOptionStyle = (selected: boolean): CSSProperties => ({
-  width: '100%',
-  padding: '16px 20px',
-  borderRadius: '16px',
-  border: selected ? '2px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.1)',
-  background: selected ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-  color: tokens.colors.textPrimaryOnDark,
-  textAlign: 'left',
-  cursor: 'pointer',
-  transition: 'all 0.15s ease',
-  display: 'flex',
-  alignItems: 'center',
-  gap: tokens.spacing[12],
-})
-
-// Simple grid for options
-const optionsGridStyle: CSSProperties = {
-  display: 'grid',
-  gap: tokens.spacing[12],
-  gridTemplateColumns: '1fr',
-}
-
-// Category chip style
-const createCategoryChipStyle = (selected: boolean): CSSProperties => ({
-  padding: '10px 18px',
-  borderRadius: '20px',
-  border: selected ? '1.5px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.15)',
-  background: selected ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
-  color: tokens.colors.textPrimaryOnDark,
-  fontSize: '14px',
-  fontWeight: selected ? 500 : 400,
-  cursor: 'pointer',
-  transition: 'all 0.15s ease',
-  display: 'flex',
-  alignItems: 'center',
-  gap: tokens.spacing[8],
-})
-
-const categoryRowStyle: CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: tokens.spacing[10],
-  marginBottom: tokens.spacing[20],
-}
-
-// Simple icon container
-const iconStyle: CSSProperties = {
-  width: '40px',
-  height: '40px',
-  borderRadius: '12px',
-  background: 'rgba(255,255,255,0.06)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: '20px',
-  flexShrink: 0,
-}
-
-const smallIconStyle: CSSProperties = {
-  ...iconStyle,
-  width: '36px',
-  height: '36px',
-  fontSize: '18px',
-}
+import { VibeSelectorHorizontal } from "@/components/vibe/VibeSelectorHorizontal"
+import { TopicSelectorHorizontal } from "@/components/vibe/TopicSelectorHorizontal"
 
 export default function VibePage() {
-  const [selectedVibe, setSelectedVibe] = useState<Vibe | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState<string>("general")
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
-  const [selectedTimeLimit, setSelectedTimeLimit] = useState<number | null>(null)
+  const [selectedVibe, setSelectedVibe] = useState<string | null>(null)
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [topics, setTopics] = useState<{ [key: string]: Topic[] }>({
-    news: NEWS_TOPICS,
-    'pop-culture': POP_CULTURE_TOPICS,
-    general: GENERAL_TOPICS,
-    sports: SPORTS_TOPICS
-  })
-  const [loadingTopics, setLoadingTopics] = useState(false)
   const router = useRouter()
   const { user, loading } = useAuth()
   
   // Routing guard: Check auth and onboarding status
   useEffect(() => {
-    // Wait for auth to finish loading
     if (loading) {
       return
     }
 
-    // USER LOGGED OUT → Redirect to welcome page
     if (!user) {
       router.replace("/")
       return
     }
 
-    // USER LOGGED IN → Check onboarding status
     async function checkOnboarding() {
       if (!user) return
       
-      // CRITICAL: Check if onboarding was just completed (prevents redirect loops on mobile)
       let justCompleted = false
       try {
         if (typeof window !== 'undefined') {
@@ -161,11 +39,9 @@ export default function VibePage() {
           const completedTimestamp = parseInt(localStorage.getItem('onboarding_completed_timestamp') || '0', 10)
           const timeSinceCompletion = Date.now() - completedTimestamp
           
-          // If flag exists and was set within last 30 seconds, trust it
           if (completedFlag === 'true' && timeSinceCompletion < 30000) {
             console.log('[VibePage] ✅ Onboarding just completed (flag set), allowing access')
             justCompleted = true
-            // Clear the flag after using it
             localStorage.removeItem('onboarding_just_completed')
             localStorage.removeItem('onboarding_completed_timestamp')
           }
@@ -174,132 +50,68 @@ export default function VibePage() {
         console.warn('[VibePage] Could not check completion flag:', e)
       }
       
-      // If just completed, skip the check and allow access immediately
       if (justCompleted) {
         console.log('[VibePage] Allowing access - onboarding just completed')
         return
       }
       
       try {
-        // Retry logic: sometimes the save from onboarding completion hasn't propagated yet
-        // Increased retries and delays for mobile networks
         let result = null
         let apiError = false
         
-        for (let attempt = 0; attempt < 5; attempt++) { // Increased from 3 to 5
+        for (let attempt = 0; attempt < 5; attempt++) {
           result = await checkOnboardingStatus(user.id)
           
-          // If API error, retry once more
           if (result.apiError) {
             console.warn(`[VibePage] ⚠️ API error (attempt ${attempt + 1}/5)`)
             if (attempt < 4) {
-              await new Promise(resolve => setTimeout(resolve, 500)) // Increased delay
+              await new Promise(resolve => setTimeout(resolve, 500))
               continue
             }
-            // Last attempt failed - mark as API error
             apiError = true
             break
           }
           
-          // If completed, we're done
           if (result.completed) {
             break
           }
           
-          // If not complete and not last attempt, wait longer and retry (mobile networks are slower)
           if (attempt < 4) {
-            await new Promise(resolve => setTimeout(resolve, 500)) // Increased from 300ms to 500ms
+            await new Promise(resolve => setTimeout(resolve, 500))
           }
         }
 
-        // NEVER redirect on API errors - causes redirect loops
         if (apiError || (result && result.apiError)) {
           console.warn('[VibePage] ⚠️ API error - allowing access to prevent redirect loop')
-          // Allow access - don't redirect on API errors
           return
         }
 
-        // Only redirect if we have a valid result and onboarding is actually incomplete
-        // DOUBLE CHECK: Ensure we're not redirecting on API errors
         if (result && !result.completed && !result.apiError) {
           console.log('[VibePage] Onboarding incomplete, redirecting to:', result.step)
           const redirectPath = `/onboarding?step=${result.step}`
           
-          // Additional safety check: prevent redirect loops
           const currentPath = window.location.pathname
           if (currentPath === redirectPath) {
-            console.warn('[VibePage] ⚠️ Already on target path, skipping redirect to prevent loop')
+            console.warn('[VibePage] ⚠️ Already on target path or blocked by redirect guard, skipping redirect to prevent loop')
             return
           }
           
           router.replace(redirectPath)
           return
         }
-
-        // Complete onboarding → allow access to vibe page
       } catch (error) {
         console.error('[VibePage] Error checking onboarding:', error)
-        // Don't redirect on errors - allow user to stay on page
-        // Redirecting on errors causes loops when API is having issues
         console.warn('[VibePage] ⚠️ Error in checkOnboarding - allowing access to prevent redirect loop')
       }
     }
 
     checkOnboarding()
-  }, [user, loading]) // Removed router from dependencies to prevent re-renders
-  
+  }, [user, loading])
+
   const getUserId = () => {
     if (user?.id) return user.id
     return null
   }
-
-  const currentCategory = TOPIC_CATEGORIES.find((cat) => cat.id === selectedCategory)
-  const currentTopics = topics[selectedCategory] || currentCategory?.topics || []
-  const canConnect = Boolean(selectedVibe || selectedTopic)
-
-  useEffect(() => {
-    const loadTopics = async () => {
-      setLoadingTopics(true)
-      const category = TOPIC_CATEGORIES.find((cat) => cat.id === selectedCategory)
-      const fallbackTopics = category?.topics || []
-      
-      try {
-        const response = await fetch(`/api/topics?category=${selectedCategory}`, {
-          // Add timeout to prevent hanging
-          signal: AbortSignal.timeout(5000)
-        })
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
-          const dbTopics: Topic[] = data.data.map((t: any) => ({
-            id: t.id,
-            label: t.label,
-            icon: t.emoji || '📄',
-            category: t.category || selectedCategory
-          }))
-          setTopics(prev => ({ ...prev, [selectedCategory]: dbTopics }))
-        } else {
-          // Use fallback topics if API returns empty or invalid data
-          setTopics(prev => ({ ...prev, [selectedCategory]: fallbackTopics }))
-        }
-      } catch (error) {
-        // Silently fall back to default topics - don't spam console
-        if (error instanceof Error && error.name !== 'AbortError') {
-          console.warn('[VibePage] Error loading topics, using fallback:', error.message)
-        }
-        // Always use fallback topics on error
-        setTopics(prev => ({ ...prev, [selectedCategory]: fallbackTopics }))
-      } finally {
-        setLoadingTopics(false)
-      }
-    }
-    
-    loadTopics()
-  }, [selectedCategory])
 
   const handleConnect = async () => {
     const userId = getUserId()
@@ -312,37 +124,34 @@ export default function VibePage() {
     setSaving(true)
     
     try {
-      // Store selections locally for record-keeping
-      if (selectedVibe) {
-        localStorage.setItem("selectedVibe", selectedVibe.id)
+      const selectedVibeObj = VIBES.find(v => v.id === selectedVibe)
+      const selectedTopicObj = TOPICS.find(t => t.id === selectedTopic)
+      
+      if (selectedVibeObj) {
+        localStorage.setItem("selectedVibe", selectedVibeObj.id)
       }
-      if (selectedTopic) {
-        localStorage.setItem("selectedTopic", selectedTopic.id)
-      }
-      if (selectedTimeLimit) {
-        localStorage.setItem("selectedTimeLimit", selectedTimeLimit.toString())
+      if (selectedTopicObj) {
+        localStorage.setItem("selectedTopic", selectedTopicObj.id)
       }
       
-      // Save vibe to database for analytics (non-blocking)
-      if (selectedVibe) {
+      if (selectedVibeObj) {
         fetch('/api/vibes', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             userId, 
-            vibe: selectedVibe.label 
+            vibe: selectedVibeObj.label 
           })
         }).catch(() => {})
       }
       
       const requestBody = { 
         userId,
-        vibe: selectedVibe?.label || null,
-        topic: selectedTopic?.label || null,
-        timeframe: selectedTimeLimit || null,
+        vibe: selectedVibeObj?.label || null,
+        topic: selectedTopicObj?.label || null,
+        timeframe: null,
       }
       
-      // Connect using AI matching
       const response = await fetch('/api/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -353,7 +162,6 @@ export default function VibePage() {
       if (!response.ok) {
         const errorText = await response.text()
         
-        // If user not found, redirect to onboarding
         if (response.status === 404 && errorText.includes('User not found')) {
           router.push('/onboarding?step=email')
           return
@@ -365,20 +173,15 @@ export default function VibePage() {
       const data = await response.json()
       
       if (data.success && data.matched && data.match && data.otherUserId) {
-        // Matched immediately via AI! Navigate to chat
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
-        // In queue, AI is finding best match
         router.push("/chat")
       } else if (data.needsOnboarding) {
-        // User needs to complete onboarding
         router.push("/onboarding?step=email")
       } else {
-        // Unexpected response, still navigate to chat
         router.push("/chat")
       }
     } catch (error) {
-      // Still navigate to chat page even if there's an error
       router.push("/chat")
     } finally {
       setSaving(false)
@@ -403,7 +206,6 @@ export default function VibePage() {
         timeframe: null,
       }
       
-      // Use connect API (replaces old pending-matches)
       const response = await fetch('/api/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -436,7 +238,6 @@ export default function VibePage() {
     }
   }
 
-  // Show loading while checking auth or onboarding
   if (loading || !user) {
     return (
       <AppShell>
@@ -447,170 +248,102 @@ export default function VibePage() {
     )
   }
 
+  const vibesForSelector = VIBES.map(v => ({
+    id: v.id,
+    emoji: v.icon,
+    label: v.label
+  }))
+
+  const topicsForSelector = TOPICS.map(t => ({
+    id: t.id,
+    emoji: t.icon,
+    label: t.label
+  }))
+
+  const canConnect = selectedVibe !== null && selectedTopic !== null
+
   return (
     <AppShell>
-      <div style={pageContainerStyle}>
-        {/* Header */}
-        <div>
-          <h1 style={{ 
-            fontSize: '28px', 
-            fontWeight: 600, 
-            letterSpacing: '-0.02em',
-            color: tokens.colors.textPrimaryOnDark,
-            margin: '0 0 12px 0',
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: '100vh',
+        paddingBottom: '100px'
+      }}>
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
+          paddingBottom: tokens.spacing[32],
+        }}>
+          <div style={{
+            maxWidth: tokens.layout.maxWidth,
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: tokens.spacing[32],
           }}>
-            Find your conversation
-          </h1>
-          <p style={sectionDescriptionStyle}>
-            Choose your vibe, pick a topic, or set a timer. We&apos;ll match you with someone who&apos;s on the same wavelength.
-          </p>
-        </div>
+            <div>
+              <h1 style={{
+                fontSize: '28px',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: tokens.colors.textPrimaryOnDark,
+                margin: '0 0 8px 0',
+              }}>
+                Choose your vibe
+              </h1>
+            </div>
 
-        {/* Step 1: Vibe Selection */}
-        <div>
-          <div style={sectionHeaderStyle}>
-            <h2 style={sectionTitleStyle}>Choose your vibe</h2>
-            <p style={sectionDescriptionStyle}>
-              Set the tone for your conversation
-            </p>
+            <VibeSelectorHorizontal
+              vibes={vibesForSelector}
+              selectedId={selectedVibe}
+              onSelect={(id) => setSelectedVibe(id === selectedVibe ? null : id)}
+            />
+
+            <div>
+              <h2 style={{
+                fontSize: '28px',
+                fontWeight: 600,
+                letterSpacing: '-0.02em',
+                color: tokens.colors.textPrimaryOnDark,
+                margin: '0 0 8px 0',
+              }}>
+                Choose a topic
+              </h2>
+            </div>
+
+            <TopicSelectorHorizontal
+              topics={topicsForSelector}
+              selectedId={selectedTopic}
+              onSelect={(id) => setSelectedTopic(id === selectedTopic ? null : id)}
+            />
+
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: tokens.spacing[12],
+              marginTop: tokens.spacing[8],
+            }}>
+              <AnimatedButton
+                onClick={handleConnect}
+                disabled={!canConnect || saving}
+                size="large"
+                fullWidth
+              >
+                {saving ? "Finding someone..." : "Connect"}
+              </AnimatedButton>
+              <AnimatedButton
+                variant="ghost"
+                onClick={handleSkip}
+                size="large"
+                fullWidth
+                disabled={saving}
+              >
+                Skip
+              </AnimatedButton>
+            </div>
           </div>
-
-          <div style={optionsGridStyle}>
-            {VIBES.map((vibe) => {
-              const isSelected = selectedVibe?.id === vibe.id
-              return (
-                <button
-                  key={vibe.id}
-                  type="button"
-                  onClick={() => setSelectedVibe(isSelected ? null : vibe)}
-                  style={createOptionStyle(isSelected)}
-                >
-                  <span style={iconStyle}>{vibe.icon}</span>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 500 }}>{vibe.label}</span>
-                    <span style={{ fontSize: '13px', color: tokens.colors.textSecondary }}>
-                      {vibe.description}
-                    </span>
-              </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Step 2: Topic Selection */}
-        <div>
-          <div style={sectionHeaderStyle}>
-            <h2 style={sectionTitleStyle}>Pick a topic</h2>
-            <p style={sectionDescriptionStyle}>
-              What do you want to talk about?
-            </p>
-              </div>
-
-          <div style={categoryRowStyle}>
-                  {TOPIC_CATEGORIES.map((category) => {
-              const Icon = category.icon
-              const selected = selectedCategory === category.id
-                    return (
-                      <button
-                        key={category.id}
-                  type="button"
-                  onClick={() => setSelectedCategory(category.id)}
-                  style={createCategoryChipStyle(selected)}
-                      >
-                  <Icon size={16} />
-                        {category.label}
-                      </button>
-                    )
-                  })}
-                </div>
-
-          <div style={optionsGridStyle}>
-            {loadingTopics && (
-              <p style={{ color: tokens.colors.textSecondary, margin: 0, textAlign: 'center', padding: tokens.spacing[20] }}>
-                Loading topics…
-              </p>
-            )}
-            {!loadingTopics && currentTopics.length === 0 && (
-              <p style={{ color: tokens.colors.textSecondary, margin: 0, textAlign: 'center', padding: tokens.spacing[20] }}>
-                No topics available for this category yet.
-              </p>
-            )}
-            {!loadingTopics && currentTopics.map((topic) => {
-              const isSelected = selectedTopic?.id === topic.id
-              return (
-                <button
-                  key={topic.id}
-                  type="button"
-                  onClick={() => setSelectedTopic(isSelected ? null : topic)}
-                  style={createOptionStyle(isSelected)}
-                >
-                  <span style={smallIconStyle}>{topic.icon || '💬'}</span>
-                  <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: '16px', fontWeight: 500 }}>{topic.label}</span>
-          </div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Step 3: Timer Selection */}
-        <div>
-          <div style={sectionHeaderStyle}>
-            <h2 style={sectionTitleStyle}>Set a timer</h2>
-            <p style={sectionDescriptionStyle}>
-              How long do you want to chat? You can always extend later.
-            </p>
-          </div>
-
-          <div style={optionsGridStyle}>
-            {TIME_LIMITS.map((limit) => {
-              const isSelected = selectedTimeLimit === limit
-              return (
-                <button
-                  key={limit}
-                  type="button"
-                    onClick={() => setSelectedTimeLimit(isSelected ? null : limit)}
-                  style={createOptionStyle(isSelected)}
-                >
-                  <div style={{ flex: 1, textAlign: 'left' }}>
-                    <span style={{ fontSize: '16px', fontWeight: 500 }}>{limit} minutes</span>
-                </div>
-                </button>
-              )
-            })}
-            <button
-              type="button"
-              onClick={() => setSelectedTimeLimit(null)}
-              style={createOptionStyle(selectedTimeLimit === null)}
-            >
-              <div style={{ flex: 1, textAlign: 'left' }}>
-                <span style={{ fontSize: '16px', fontWeight: 500 }}>I&apos;m flexible</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* CTA Buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12], marginTop: tokens.spacing[8] }}>
-            <AnimatedButton
-              onClick={handleConnect}
-            disabled={!canConnect || saving}
-              size="large"
-              fullWidth
-            >
-            {saving ? "Finding someone..." : canConnect ? "Connect now" : "Select a vibe or topic to connect"}
-            </AnimatedButton>
-            <AnimatedButton
-            variant="ghost"
-              onClick={handleSkip}
-              size="large"
-              fullWidth
-            disabled={saving}
-            >
-            Skip for now
-            </AnimatedButton>
         </div>
       </div>
     </AppShell>
