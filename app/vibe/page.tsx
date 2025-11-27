@@ -124,8 +124,9 @@ export default function VibePage() {
     let pollCount = 0
     const maxPolls = 60 // Poll for up to 60 seconds (30 polls * 2s)
     
-    // Heartbeat: Update last_active in waiting_pool every 30 seconds
+    // Heartbeat: Update last_active in waiting_pool every 15 seconds
     // This keeps user in pool as long as tab is active
+    // More frequent updates ensure users stay in pool if actively using the site
     const heartbeatInterval = setInterval(async () => {
       // Only send heartbeat if tab is visible (not in background)
       if (!document.hidden) {
@@ -140,18 +141,18 @@ export default function VibePage() {
           // Ignore heartbeat errors
         }
       }
-    }, 30000) // Every 30 seconds
+    }, 15000) // Every 15 seconds (more frequent to stay within 30s window)
     
     // Remove from waiting pool when tab goes to background
-    // More aggressive: remove after 1 minute of being hidden (not 10 seconds)
+    // Aggressive: remove after 30 seconds of being hidden
     const handleVisibilityChange = async () => {
       if (document.hidden) {
-        // Tab went to background - remove from pool after 1 minute
+        // Tab went to background - remove from pool after 30 seconds
         // This ensures background tabs don't stay in pool
         setTimeout(async () => {
           if (document.hidden) {
-            // Still hidden after 1 minute - remove from pool
-            console.log('[VibePage] Tab hidden for 1 minute, removing from waiting pool')
+            // Still hidden after 30 seconds - remove from pool
+            console.log('[VibePage] Tab hidden for 30 seconds, removing from waiting pool')
             try {
               await fetch('/api/connect', {
                 method: 'DELETE',
@@ -163,7 +164,7 @@ export default function VibePage() {
               // Ignore errors
             }
           }
-        }, 60000) // 1 minute delay (more aggressive than 10 seconds)
+        }, 30000) // 30 second delay
       } else {
         // Tab became visible again - update activity immediately
         try {

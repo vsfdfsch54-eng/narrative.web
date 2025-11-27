@@ -38,15 +38,15 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
     try {
       // Clean stale entries:
       // 1. Entries older than 10 minutes (safety cleanup)
-      // 2. Entries where last_active is older than 5 minutes (inactive users - background tabs)
+      // 2. Entries where last_active is older than 30 seconds (inactive users - background tabs)
       const tenMinutesAgo = new Date(Date.now() - 1000 * 60 * 10).toISOString()
-      const fiveMinutesAgoCleanup = new Date(Date.now() - 1000 * 60 * 5).toISOString()
+      const thirtySecondsAgoCleanup = new Date(Date.now() - 30000).toISOString()
       
-      // Remove entries that are too old OR inactive for 5+ minutes
+      // Remove entries that are too old OR inactive for 30+ seconds
       const { error: cleanupError } = await supabase
         .from('waiting_pool')
         .delete()
-        .or(`created_at.lt.${tenMinutesAgo},last_active.lt.${fiveMinutesAgoCleanup}`)
+        .or(`created_at.lt.${tenMinutesAgo},last_active.lt.${thirtySecondsAgoCleanup}`)
 
       if (cleanupError) {
         logWithContext('error', 'MATCH_CLEANUP_ERROR', context, { error: cleanupError.message })
@@ -56,13 +56,13 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
 
     // Get all users in waiting pool who are online and recently active
     // Only match users who are actively on the site (not in background)
-    // Remove users inactive for 5+ minutes (background tabs)
-    const fiveMinutesAgo = new Date(Date.now() - 1000 * 60 * 5).toISOString() // 5 minutes ago
+    // Remove users inactive for 30+ seconds (background tabs)
+    const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString() // 30 seconds ago
     
     const { data: waitingUsers, error: fetchError } = await supabase
       .from('waiting_pool')
       .select('*')
-      .gte('last_active', fiveMinutesAgo) // Only users active in last 5 minutes
+      .gte('last_active', thirtySecondsAgo) // Only users active in last 30 seconds
       .order('created_at', { ascending: true })
 
     if (fetchError) {
@@ -89,7 +89,7 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
 
       try {
         // Verify user is still online and active before matching
-        // Check both presence AND last_active timestamp (5 minute window)
+        // Check both presence AND last_active timestamp (30 second window)
         const { data: presenceData } = await supabase
           .from('user_presence')
           .select('is_online, last_seen_at')
@@ -98,11 +98,11 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
 
         const isOnline = presenceData?.is_online === true
         const lastSeenAt = presenceData?.last_seen_at ? new Date(presenceData.last_seen_at) : null
-        const isRecentlyActive = lastSeenAt && (Date.now() - lastSeenAt.getTime()) < 300000 // 5 minutes
+        const isRecentlyActive = lastSeenAt && (Date.now() - lastSeenAt.getTime()) < 30000 // 30 seconds
         
         // Also check last_active from waiting_pool
         const lastActive = waitingUser.last_active ? new Date(waitingUser.last_active) : null
-        const isActiveInPool = lastActive && (Date.now() - lastActive.getTime()) < 300000 // 5 minutes
+        const isActiveInPool = lastActive && (Date.now() - lastActive.getTime()) < 30000 // 30 seconds
 
         if (!isOnline || !isRecentlyActive || !isActiveInPool) {
           console.log(`[AI Matchmaking] User ${waitingUser.user_id} is not online or inactive (background tab), removing from pool`)
