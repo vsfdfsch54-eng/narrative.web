@@ -87,15 +87,39 @@ export async function GET(request: NextRequest) {
     let userData = null
     
     // First, check if user exists in database
-    const { data: existingUser, error: fetchError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle()
+    let existingUser = null
+    let fetchError = null
+    
+    try {
+      const result = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle()
+      
+      existingUser = result.data
+      fetchError = result.error
+    } catch (dbError: any) {
+      console.error('[Users API GET] ❌ Database query error:', {
+        message: dbError?.message,
+        code: dbError?.code,
+        userId
+      })
+      fetchError = dbError
+    }
 
     if (fetchError && fetchError.code !== 'PGRST116') {
+      console.error('[Users API GET] ❌ Database fetch error:', {
+        message: fetchError.message,
+        code: fetchError.code,
+        userId
+      })
       return NextResponse.json(
-        { success: false, error: fetchError.message }, 
+        { 
+          success: false, 
+          error: 'Database error. Please try again.',
+          details: fetchError.message
+        }, 
         { 
           status: 500,
           headers: {
@@ -113,11 +137,37 @@ export async function GET(request: NextRequest) {
         let authError = null
         
         try {
-          const result = await supabase.auth.admin.getUserById(userId)
+          // Add timeout to prevent hanging (5 seconds max)
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Auth lookup timeout')), 5000)
+          })
+          
+          const result = await Promise.race([
+            supabase.auth.admin.getUserById(userId),
+            timeoutPromise
+          ]) as Awaited<ReturnType<typeof supabase.auth.admin.getUserById>>
+          
           authUser = result.data
           authError = result.error
         } catch (adminError: any) {
-          console.error('[Users API GET] ❌ Error calling auth.admin.getUserById:', adminError)
+          console.error('[Users API GET] ❌ Error calling auth.admin.getUserById:', {
+            message: adminError?.message,
+            name: adminError?.name,
+            userId
+          })
+          // If it's a timeout or network error, return a more helpful error
+          if (adminError?.message?.includes('timeout') || adminError?.name === 'AbortError') {
+            return NextResponse.json({ 
+              success: false, 
+              error: 'Authentication service temporarily unavailable. Please try again.',
+              details: 'Auth lookup timed out'
+            }, { 
+              status: 503,
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            })
+          }
           authError = adminError
         }
         
@@ -325,17 +375,33 @@ export async function GET(request: NextRequest) {
       }
     )
   } catch (error: any) {
-    console.error('[Users API GET] ❌ Unhandled error:', {
-      error: error?.message,
+    const errorDetails = {
+      message: error?.message,
       stack: error?.stack,
       name: error?.name,
-      userId: request.url ? new URL(request.url).searchParams.get('userId') : 'unknown'
-    })
+      code: error?.code,
+      userId: request.url ? new URL(request.url).searchParams.get('userId') : 'unknown',
+      timestamp: new Date().toISOString()
+    }
+    
+    console.error('[Users API GET] ❌ Unhandled error:', errorDetails)
+    
+    // Provide more helpful error message based on error type
+    let userFriendlyError = 'Internal server error. Please try again.'
+    if (error?.message?.includes('timeout')) {
+      userFriendlyError = 'Request timed out. The server may be busy. Please try again.'
+    } else if (error?.message?.includes('ENOTFOUND') || error?.message?.includes('ECONNREFUSED')) {
+      userFriendlyError = 'Database connection failed. Please try again in a moment.'
+    } else if (error?.message?.includes('Missing') || error?.message?.includes('environment')) {
+      userFriendlyError = 'Server configuration error. Please contact support.'
+    }
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: error?.message || 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+        error: userFriendlyError,
+        details: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+        errorType: error?.name || 'UnknownError'
       }, 
       { 
         status: 500,

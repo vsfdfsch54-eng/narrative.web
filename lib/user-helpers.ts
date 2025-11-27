@@ -36,7 +36,21 @@ export async function getAppUserRecord(userId: string): Promise<AppUserRecord | 
     
     if (!response.ok) {
       const status = response.status
-      console.warn(`[getAppUserRecord] API returned ${status} for userId: ${userId}`)
+      
+      // Try to get error details from response
+      let errorDetails = null
+      try {
+        const errorData = await response.json().catch(() => null)
+        errorDetails = errorData?.error || errorData?.details || null
+      } catch (e) {
+        // Ignore JSON parse errors
+      }
+      
+      console.warn(`[getAppUserRecord] API returned ${status} for userId: ${userId}`, {
+        status,
+        error: errorDetails,
+        url: `/api/users?userId=${userId}`
+      })
       
       // 404/400 = user doesn't exist (legitimate case)
       // 500/502/503/504 = server error (should not trigger redirects)
@@ -46,9 +60,21 @@ export async function getAppUserRecord(userId: string): Promise<AppUserRecord | 
         // Use try-catch for mobile browsers that may restrict sessionStorage
         try {
           const errorKey = `api_error_${userId}`
+          const errorTimestampKey = `api_error_timestamp_${userId}`
           const errorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
-          sessionStorage.setItem(errorKey, String(errorCount + 1))
-          console.warn(`[getAppUserRecord] Server error (${status}) - error count: ${errorCount + 1}`)
+          const lastErrorTime = parseInt(sessionStorage.getItem(errorTimestampKey) || '0', 10)
+          const timeSinceLastError = Date.now() - lastErrorTime
+          
+          // Reset circuit breaker after 5 minutes (300000ms)
+          if (timeSinceLastError > 300000 && errorCount >= 3) {
+            console.log(`[getAppUserRecord] Resetting circuit breaker after ${Math.round(timeSinceLastError / 1000)}s`)
+            sessionStorage.setItem(errorKey, '0')
+            sessionStorage.setItem(errorTimestampKey, String(Date.now()))
+          } else {
+            sessionStorage.setItem(errorKey, String(errorCount + 1))
+            sessionStorage.setItem(errorTimestampKey, String(Date.now()))
+            console.warn(`[getAppUserRecord] Server error (${status}) - error count: ${errorCount + 1}, error: ${errorDetails || 'unknown'}`)
+          }
         } catch (e) {
           // sessionStorage may be unavailable on mobile - log but continue
           console.warn('[getAppUserRecord] Could not access sessionStorage:', e)
@@ -120,14 +146,28 @@ export async function checkOnboardingStatus(userId: string): Promise<{
       const errorKey = `api_error_${userId}`
       errorCount = parseInt(sessionStorage.getItem(errorKey) || '0', 10)
       
+      // Check if enough time has passed to reset circuit breaker (5 minutes)
+      const errorTimestampKey = `api_error_timestamp_${userId}`
+      const lastErrorTime = parseInt(sessionStorage.getItem(errorTimestampKey) || '0', 10)
+      const timeSinceLastError = Date.now() - lastErrorTime
+      
       // If 3+ consecutive errors, assume API is down - don't even try
+      // UNLESS enough time has passed (5 minutes) - then reset and try again
       if (errorCount >= 3) {
-        console.warn(`[checkOnboardingStatus] Circuit breaker active - ${errorCount} consecutive errors for userId: ${userId}`)
-        return {
-          completed: false,
-          step: normalizeOnboardingStep(null),
-          record: null,
-          apiError: true // Always return apiError when circuit breaker is active
+        if (timeSinceLastError > 300000) {
+          // Reset circuit breaker after 5 minutes
+          console.log(`[checkOnboardingStatus] Resetting circuit breaker after ${Math.round(timeSinceLastError / 1000)}s`)
+          sessionStorage.setItem(errorKey, '0')
+          sessionStorage.setItem(errorTimestampKey, '0')
+          // Continue to make the API call
+        } else {
+          console.warn(`[checkOnboardingStatus] Circuit breaker active - ${errorCount} consecutive errors for userId: ${userId} (last error ${Math.round(timeSinceLastError / 1000)}s ago)`)
+          return {
+            completed: false,
+            step: normalizeOnboardingStep(null),
+            record: null,
+            apiError: true // Always return apiError when circuit breaker is active
+          }
         }
       }
     } catch (e) {
