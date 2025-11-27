@@ -86,7 +86,8 @@ export async function GET(request: NextRequest) {
     
     let userData = null
     
-    // First, check if user exists in database
+    // PART 2: GUARD AT TOP - Check if user exists FIRST, return immediately if found
+    // This prevents any creation logic from running if user already exists
     let existingUser = null
     let fetchError = null
     
@@ -129,7 +130,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // If user doesn't exist, try to create from auth
+    // PART 2: CRITICAL GUARD - If user exists, return immediately
+    // DO NOT run any creation logic - this prevents overwriting progress
+    if (existingUser) {
+      // PART 5: Verbose logging - log what we're returning
+      console.log('[Users API GET] ✅ Existing record returned:', {
+        userId,
+        onboarding_step: existingUser.onboarding_step,
+        onboarding_completed: existingUser.onboarding_completed,
+        name: existingUser.name,
+        email: existingUser.email,
+      })
+      
+      return NextResponse.json(
+        { success: true, data: existingUser },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      )
+    }
+
+    // PART 2: User doesn't exist - only create if auth confirms user exists
+    // DO NOT create based on email-only collisions
     if (!existingUser) {
       try {
         // Get user from auth - wrap in try-catch to handle any unexpected errors
@@ -326,6 +350,14 @@ export async function GET(request: NextRequest) {
               })
             } else if (insertResult && insertResult.length > 0) {
               userData = Array.isArray(insertResult) ? insertResult[0] : insertResult
+              // PART 5: Verbose logging - newly created record
+              console.log('[Users API GET] ✅ Newly created record:', {
+                userId,
+                onboarding_step: userData.onboarding_step,
+                onboarding_completed: userData.onboarding_completed,
+                name: userData.name,
+                email: userData.email,
+              })
             }
           }
         }
@@ -348,11 +380,10 @@ export async function GET(request: NextRequest) {
           }
         })
       }
-    } else {
-      userData = existingUser
     }
 
-    // Ensure userData is set before returning
+    // PART 2: Ensure userData is set before returning
+    // This should only happen if user was just created
     if (!userData) {
       console.error('[Users API GET] ❌ userData is null after all checks')
       return NextResponse.json(
@@ -365,6 +396,15 @@ export async function GET(request: NextRequest) {
         }
       )
     }
+
+    // PART 5: Verbose logging - final return (for newly created users)
+    console.log('[Users API GET] ✅ Returning user data:', {
+      userId,
+      onboarding_step: userData.onboarding_step,
+      onboarding_completed: userData.onboarding_completed,
+      name: userData.name,
+      email: userData.email,
+    })
 
     return NextResponse.json(
       { success: true, data: userData },
@@ -514,34 +554,31 @@ async function saveOnboardingProgress(
       updateData.interests = data.interests
     }
     
-    if (data.onboarding_step !== undefined) {
-      updateData.onboarding_step = data.onboarding_step
+    // PART 6: Defensive conversion - NEVER allow "start" values
+    let stepToSave: string | undefined = data.onboarding_step
+    if (stepToSave === 'start') {
+      console.warn('[saveOnboardingProgress] ⚠️ Converting "start" to "email" (defensive patch)')
+      stepToSave = 'email'
     }
     
-    // Only include onboarding_completed if column exists (handle schema cache issues)
-    // If the column doesn't exist, we'll set it via onboarding_step = 'complete' instead
-    // Handle onboarding_completed - if column doesn't exist, use onboarding_step = 'complete' instead
-    if (data.onboarding_completed !== undefined) {
-      // If completing onboarding, always set onboarding_step to 'complete'
-      if (data.onboarding_completed === true || data.onboarding_step === 'complete') {
-        updateData.onboarding_step = 'complete'
-        // Try to include onboarding_completed, but it may not exist in schema cache
-        updateData.onboarding_completed = data.onboarding_completed
-      } else {
-        updateData.onboarding_completed = data.onboarding_completed
-      }
-    } else if (data.onboarding_step === 'complete') {
-      // If step is 'complete' but onboarding_completed not provided, set it
-      updateData.onboarding_step = 'complete'
-      updateData.onboarding_completed = true
+    if (stepToSave !== undefined) {
+      updateData.onboarding_step = stepToSave
     }
     
-    // CRITICAL: If onboarding_completed is true, ALWAYS set onboarding_step to 'complete'
-    // This ensures completion status is never lost
+    // PART 1: HARD RULE - If onboarding_completed === true, ALWAYS set both fields
+    // This must happen BEFORE any other logic to ensure it's never overwritten
     if (data.onboarding_completed === true) {
       updateData.onboarding_step = 'complete'
       updateData.onboarding_completed = true
-      console.log('[saveOnboardingProgress] ✅ Forcing onboarding_step to "complete" because onboarding_completed is true')
+      console.log('[saveOnboardingProgress] ✅ HARD RULE: onboarding_completed=true → forcing onboarding_step="complete"')
+    } else if (data.onboarding_step === 'complete') {
+      // If step is 'complete' but onboarding_completed not explicitly false, set it to true
+      updateData.onboarding_step = 'complete'
+      updateData.onboarding_completed = true
+      console.log('[saveOnboardingProgress] ✅ Step is "complete" → setting onboarding_completed=true')
+    } else if (data.onboarding_completed !== undefined) {
+      // onboarding_completed is explicitly false or undefined, but not true
+      updateData.onboarding_completed = data.onboarding_completed
     }
 
     // Log what we're about to save
@@ -589,10 +626,11 @@ async function saveOnboardingProgress(
         if (!updateDataWithoutCompleted.name) {
           updateDataWithoutCompleted.name = nameValue
         }
-        // Ensure onboarding_step is set correctly - this is the fallback
-        if (data.onboarding_completed === true || data.onboarding_step === 'complete') {
+        // PART 1: Ensure onboarding_step is set correctly - this is the fallback
+        // If onboarding_completed was true, we MUST set step to 'complete'
+        if (data.onboarding_completed === true || updateData.onboarding_step === 'complete') {
           updateDataWithoutCompleted.onboarding_step = 'complete'
-          console.log('[saveOnboardingProgress] Using onboarding_step = "complete" as fallback')
+          console.log('[saveOnboardingProgress] Using onboarding_step = "complete" as fallback (schema cache issue)')
         }
         
         const { data: retryData, error: retryError } = await supabase
@@ -655,7 +693,73 @@ async function saveOnboardingProgress(
     const finalData = Array.isArray(upsertData) ? upsertData[0] : upsertData
     if (!finalData) {
       return { success: false, error: 'Failed to save user data. Please try again.' }
-              }
+    }
+
+    // PART 1: Post-save verification - re-fetch and confirm the save worked
+    // This is critical for completion saves
+    if (data.onboarding_completed === true || updateData.onboarding_step === 'complete') {
+      console.log('[saveOnboardingProgress] 🔍 Verifying completion save...')
+      
+      // Re-fetch the user to confirm the save
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('users')
+        .select('onboarding_step, onboarding_completed')
+        .eq('id', userId)
+        .maybeSingle()
+      
+      if (verifyError) {
+        console.error('[saveOnboardingProgress] ❌ Verification fetch error:', verifyError.message)
+        // Still return success - the upsert succeeded, verification is just a safety check
+      } else if (verifyData) {
+        const savedStep = verifyData.onboarding_step
+        const savedCompleted = verifyData.onboarding_completed
+        
+        // CRITICAL: If we saved completion but DB doesn't reflect it, log error and retry once
+        if (data.onboarding_completed === true && (savedStep !== 'complete' || savedCompleted !== true)) {
+          console.error('[saveOnboardingProgress] ❌ CRITICAL: Completion save verification FAILED!', {
+            userId,
+            expectedStep: 'complete',
+            actualStep: savedStep,
+            expectedCompleted: true,
+            actualCompleted: savedCompleted,
+          })
+          
+          // Retry once with explicit completion
+          console.log('[saveOnboardingProgress] 🔄 Retrying completion save...')
+          const { data: retryData, error: retryError } = await supabase
+            .from('users')
+            .update({
+              onboarding_step: 'complete',
+              onboarding_completed: true,
+            })
+            .eq('id', userId)
+            .select()
+          
+          if (retryError) {
+            console.error('[saveOnboardingProgress] ❌ Retry also failed:', retryError.message)
+          } else {
+            console.log('[saveOnboardingProgress] ✅ Retry succeeded')
+            return { success: true, data: Array.isArray(retryData) ? retryData[0] : retryData }
+          }
+        } else {
+          console.log('[saveOnboardingProgress] ✅ Verification passed:', {
+            userId,
+            savedStep,
+            savedCompleted,
+          })
+        }
+      }
+    }
+
+    // PART 5: Verbose logging - log what was actually saved
+    console.log('[saveOnboardingProgress] ✅ Save successful:', {
+      userId,
+      savedStep: finalData.onboarding_step,
+      savedCompleted: finalData.onboarding_completed,
+      savedName: finalData.name,
+      incomingStep: data.onboarding_step,
+      incomingCompleted: data.onboarding_completed,
+    })
 
     return { success: true, data: finalData }
   } catch (error: any) {
@@ -685,8 +789,14 @@ export async function PUT(request: NextRequest) {
       )
     }
     
-    const { firstName, lastName, questionsAnswers, interests, onboarding_step, email: providedEmail, onboarding_completed } = body
+    let { firstName, lastName, questionsAnswers, interests, onboarding_step, email: providedEmail, onboarding_completed } = body
     userId = body.userId
+
+    // PART 6: Defensive conversion - NEVER allow "start" values
+    if (onboarding_step === 'start') {
+      console.warn('[Users API PUT] ⚠️ Converting "start" to "email" (defensive patch)')
+      onboarding_step = 'email'
+    }
 
     if (!userId) {
       return NextResponse.json(
@@ -736,11 +846,11 @@ export async function PUT(request: NextRequest) {
       )
     }
     
-    // Use centralized saveOnboardingProgress function
-    console.log('[Users API PUT] Saving onboarding progress:', {
+    // PART 5: Verbose logging - log incoming data
+    console.log('[Users API PUT] 📝 Saving onboarding progress:', {
       userId,
-      onboarding_step,
-      onboarding_completed,
+      incomingStep: onboarding_step,
+      incomingCompleted: onboarding_completed,
       hasFirstName: !!firstName,
       hasLastName: !!lastName,
       hasQuestions: !!questionsAnswers,
@@ -776,11 +886,16 @@ export async function PUT(request: NextRequest) {
       )
     }
 
+    // PART 5: Verbose logging - log what was actually saved
     console.log('[Users API PUT] ✅ Save successful:', {
       userId,
+      incomingStep: onboarding_step,
+      incomingCompleted: onboarding_completed,
       savedStep: result.data?.onboarding_step,
       savedCompleted: result.data?.onboarding_completed,
       savedName: result.data?.name,
+      stepMatch: result.data?.onboarding_step === onboarding_step,
+      completedMatch: result.data?.onboarding_completed === onboarding_completed,
     })
 
     return NextResponse.json(

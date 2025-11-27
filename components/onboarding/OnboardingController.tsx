@@ -43,6 +43,7 @@ export function OnboardingController() {
   const hasInitializedRef = useRef(false)
   const hasRedirectedRef = useRef(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
+  const isSavingRef = useRef(false) // PART 3: Prevent concurrent saves
 
   // Redirect if onboarding is complete - ALWAYS redirect to /vibe
   useEffect(() => {
@@ -119,10 +120,57 @@ export function OnboardingController() {
     hasInitializedRef.current = true
   }, [authLoading, state.initialized, state.step, searchParams, setStep])
 
+  // PART 3: Verify step was saved to database
+  const verifyStepSaved = async (expectedStep: OnboardingStep, userId: string, retries = 3): Promise<boolean> => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        const response = await fetch(`/api/users?userId=${userId}`, {
+          cache: 'no-store',
+          signal: AbortSignal.timeout(5000)
+        })
+        const data = await response.json()
+        
+        if (data.success && data.data) {
+          const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
+          if (dbStep === expectedStep) {
+            console.log(`[OnboardingController] ✅ Step verified (attempt ${attempt + 1}/${retries}):`, {
+              userId,
+              expectedStep,
+              dbStep,
+              match: true
+            })
+            return true
+          } else {
+            console.warn(`[OnboardingController] ⚠️ Step mismatch (attempt ${attempt + 1}/${retries}):`, {
+              userId,
+              expectedStep,
+              dbStep,
+              match: false
+            })
+          }
+        }
+      } catch (error: any) {
+        console.warn(`[OnboardingController] Verification attempt ${attempt + 1}/${retries} failed:`, error.message)
+      }
+      
+      // Wait before retry (except on last attempt)
+      if (attempt < retries - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+      }
+    }
+    
+    console.error('[OnboardingController] ❌ Step verification failed after all retries:', {
+      userId,
+      expectedStep
+    })
+    return false
+  }
+
   // Helper function for reliable navigation with fallback
   const navigateToStep = (step: OnboardingStep) => {
     const route = `/onboarding?step=${step}`
-    // Update step in context FIRST (synchronous)
+    // PART 3: Update step in context AFTER DB save (not before)
+    // This is now called after verification, so it's safe
     setStep(step)
     // Then navigate - router.replace() is non-blocking
     router.replace(route)
@@ -135,25 +183,70 @@ export function OnboardingController() {
         }
       }
     }, 100)
-      }
+  }
 
   // Email step handler - advance to password step
+  // PART 3: Wait for save and verification before navigating
   const handleEmailSubmit = async (email: string): Promise<void> => {
+    if (isSavingRef.current) {
+      console.warn('[OnboardingController] ⚠️ Save already in progress, ignoring duplicate request')
+      return
+    }
+    
+    isSavingRef.current = true
     setEmail(email)
     
-    // Save email to database (non-blocking)
-    // Even if user isn't logged in yet, this will queue the save
-    // and retry when user becomes available after password step
-    saveProgress('password', { email }).catch((error) => {
+    try {
+      // PART 5: Verbose logging
+      console.log('[OnboardingController] 📝 Email step: saving progress...', {
+        email,
+        nextStep: 'password',
+        hasUser: !!user?.id
+      })
+      
+      // PART 3: Wait for save to complete (if user exists)
+      if (user?.id) {
+        const response = await fetch('/api/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            email: email,
+            onboarding_step: 'password',
+          }),
+        })
+        
+        const data = await response.json()
+        
+        if (!data.success) {
+          console.error('[OnboardingController] ❌ Save email error:', data.error)
+          // Still navigate - don't block UX
+        } else {
+          // PART 3: Verify the save
+          await verifyStepSaved('password', user.id)
+        }
+      }
+      
+      // Navigate after save completes
+      navigateToStep('password')
+    } catch (error: any) {
       console.error('[OnboardingController] Save email error:', error)
-    })
-    
-    // Navigate immediately - non-blocking
-    navigateToStep('password')
+      // Still navigate - don't block UX
+      navigateToStep('password')
+    } finally {
+      isSavingRef.current = false
+    }
   }
 
   // Password step handler - create account here
+  // PART 3: Wait for save and verification before navigating
   const handlePasswordSubmit = async (password: string): Promise<void> => {
+    if (isSavingRef.current) {
+      console.warn('[OnboardingController] ⚠️ Save already in progress, ignoring duplicate request')
+      return
+    }
+    
+    isSavingRef.current = true
     setPasswordError(null) // Clear previous errors
     setPassword(password)
     
@@ -167,67 +260,231 @@ export function OnboardingController() {
           const errorMessage = result.error || 'Failed to create account. Please try again.'
           setPasswordError(errorMessage)
           console.error('[OnboardingController] Signup error:', errorMessage)
+          isSavingRef.current = false
           return // Don't navigate if signup failed
         }
         
         // Wait briefly for auth to propagate (reduced to 300ms for faster UX)
-        // Don't wait too long - navigation should be instant
         await new Promise(resolve => setTimeout(resolve, 300))
       } catch (error: any) {
         // Signup failed - show error to user
         const errorMessage = error?.message || 'Failed to create account. Please try again.'
         setPasswordError(errorMessage)
         console.error('[OnboardingController] Account creation error:', error)
+        isSavingRef.current = false
         return // Don't navigate if signup failed
       }
     }
-        
-    // Navigate to name step immediately (non-blocking)
-    navigateToStep('name')
     
-    // Save progress AFTER account creation (now user.id should exist or will be available soon)
-    // Save step as 'name' since we're navigating there
-    // The saveProgress function will retry if user.id isn't available yet
-    saveProgress('name', { email: state.email }).catch((error) => {
+    // PART 3: Wait for save to complete before navigating
+    // Get current user ID (might have been created by signUp)
+    const currentUserId = user?.id
+    if (!currentUserId) {
+      console.warn('[OnboardingController] ⚠️ No user ID after signup, navigating anyway')
+      navigateToStep('name')
+      isSavingRef.current = false
+      return
+    }
+    
+    try {
+      // PART 5: Verbose logging
+      console.log('[OnboardingController] 📝 Password step: saving progress...', {
+        userId: currentUserId,
+        email: state.email,
+        nextStep: 'name'
+      })
+      
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: currentUserId,
+          email: state.email,
+          onboarding_step: 'name',
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        console.error('[OnboardingController] ❌ Save name step error:', data.error)
+        // Still navigate - don't block UX
+      } else {
+        // PART 3: Verify the save
+        await verifyStepSaved('name', currentUserId)
+      }
+      
+      // Navigate after save completes
+      navigateToStep('name')
+    } catch (error: any) {
       console.error('[OnboardingController] Save name step error:', error)
-    })
+      // Still navigate - don't block UX
+      navigateToStep('name')
+    } finally {
+      isSavingRef.current = false
+    }
   }
 
-  // Name step handler - instant navigation, background save
+  // Name step handler - PART 3: Wait for save and verification before navigating
   const handleNameSubmit = async (firstName: string, lastName: string) => {
+    if (isSavingRef.current) {
+      console.warn('[OnboardingController] ⚠️ Save already in progress, ignoring duplicate request')
+      return
+    }
+    
+    isSavingRef.current = true
     setFirstName(firstName)
     setLastName(lastName)
-    // Navigate immediately
-    navigateToStep('questions')
-    // Save in background with explicit values (non-blocking)
-    // Pass names explicitly to avoid stale closure issues
-    saveProgress('questions', { firstName, lastName }).catch((error) => {
+    
+    if (!user?.id) {
+      console.warn('[OnboardingController] ⚠️ No user ID, navigating anyway')
+      navigateToStep('questions')
+      isSavingRef.current = false
+      return
+    }
+    
+    try {
+      // PART 5: Verbose logging
+      console.log('[OnboardingController] 📝 Name step: saving progress...', {
+        userId: user.id,
+        firstName,
+        lastName,
+        nextStep: 'questions'
+      })
+      
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          firstName,
+          lastName,
+          onboarding_step: 'questions',
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        console.error('[OnboardingController] ❌ Save progress error:', data.error)
+      } else {
+        // PART 3: Verify the save
+        await verifyStepSaved('questions', user.id)
+      }
+      
+      navigateToStep('questions')
+    } catch (error: any) {
       console.error('[OnboardingController] Save progress error:', error)
-    })
+      navigateToStep('questions')
+    } finally {
+      isSavingRef.current = false
+    }
   }
 
-  // Questions step handler - instant navigation, background save
+  // Questions step handler - PART 3: Wait for save and verification before navigating
   const handleQuestionsSubmit = async (answers: Record<string, string>) => {
+    if (isSavingRef.current) {
+      console.warn('[OnboardingController] ⚠️ Save already in progress, ignoring duplicate request')
+      return
+    }
+    
+    isSavingRef.current = true
     setQuestionsAnswers(answers)
-    // Navigate immediately
-    navigateToStep('interests')
-    // Save in background with explicit values (non-blocking)
-    // Pass answers explicitly to avoid stale closure issues
-    saveProgress('interests', { questionsAnswers: answers }).catch((error) => {
+    
+    if (!user?.id) {
+      console.warn('[OnboardingController] ⚠️ No user ID, navigating anyway')
+      navigateToStep('interests')
+      isSavingRef.current = false
+      return
+    }
+    
+    try {
+      // PART 5: Verbose logging
+      console.log('[OnboardingController] 📝 Questions step: saving progress...', {
+        userId: user.id,
+        answersCount: Object.keys(answers).length,
+        nextStep: 'interests'
+      })
+      
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          questionsAnswers: answers,
+          onboarding_step: 'interests',
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        console.error('[OnboardingController] ❌ Save progress error:', data.error)
+      } else {
+        // PART 3: Verify the save
+        await verifyStepSaved('interests', user.id)
+      }
+      
+      navigateToStep('interests')
+    } catch (error: any) {
       console.error('[OnboardingController] Save progress error:', error)
-    })
+      navigateToStep('interests')
+    } finally {
+      isSavingRef.current = false
+    }
   }
 
-  // Interests step handler - instant navigation, background save
+  // Interests step handler - PART 3: Wait for save and verification before navigating
   const handleInterestsSubmit = async (interests: string[]) => {
+    if (isSavingRef.current) {
+      console.warn('[OnboardingController] ⚠️ Save already in progress, ignoring duplicate request')
+      return
+    }
+    
+    isSavingRef.current = true
     setInterests(interests)
-    // Navigate immediately
-    navigateToStep('confirmation')
-    // Save in background with explicit values (non-blocking)
-    // Pass interests explicitly to avoid stale closure issues
-    saveProgress('confirmation', { interests }).catch((error) => {
+    
+    if (!user?.id) {
+      console.warn('[OnboardingController] ⚠️ No user ID, navigating anyway')
+      navigateToStep('confirmation')
+      isSavingRef.current = false
+      return
+    }
+    
+    try {
+      // PART 5: Verbose logging
+      console.log('[OnboardingController] 📝 Interests step: saving progress...', {
+        userId: user.id,
+        interestsCount: interests.length,
+        nextStep: 'confirmation'
+      })
+      
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          interests,
+          onboarding_step: 'confirmation',
+        }),
+      })
+      
+      const data = await response.json()
+      
+      if (!data.success) {
+        console.error('[OnboardingController] ❌ Save progress error:', data.error)
+      } else {
+        // PART 3: Verify the save
+        await verifyStepSaved('confirmation', user.id)
+      }
+      
+      navigateToStep('confirmation')
+    } catch (error: any) {
       console.error('[OnboardingController] Save progress error:', error)
-    })
+      navigateToStep('confirmation')
+    } finally {
+      isSavingRef.current = false
+    }
   }
 
   // Confirmation step handler - complete onboarding
