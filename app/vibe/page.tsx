@@ -243,13 +243,14 @@ export default function VibePage() {
             message: data.estimatedWaitTime || (data.queueCount >= 2 ? 'Any moment now!' : 'Waiting for another user...'),
           })
         } else {
-          // Not in queue anymore but not matched - go to chat page
+          // Not in queue anymore but not matched - stay on vibe page to try again
+          // Don't redirect to /chat (which would redirect back to /vibe anyway)
           clearInterval(pollInterval)
           clearInterval(heartbeatInterval)
           setMatching(false)
           document.removeEventListener('visibilitychange', handleVisibilityChange)
           window.removeEventListener('beforeunload', handleBeforeUnload)
-          router.push("/chat")
+          // Stay on vibe page - user can try connecting again
           return
         }
         
@@ -260,7 +261,7 @@ export default function VibePage() {
           setMatching(false)
           document.removeEventListener('visibilitychange', handleVisibilityChange)
           window.removeEventListener('beforeunload', handleBeforeUnload)
-          router.push("/chat")
+          // Stay on vibe page - user can try connecting again
         }
       } catch (error) {
         console.error('[VibePage] Error polling match status:', error)
