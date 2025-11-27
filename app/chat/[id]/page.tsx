@@ -759,18 +759,18 @@ export default function ChatDetailPage() {
               }}
             />
             <motion.button
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: (uploadingFile || matchEnded) ? 1 : 0.95 }}
               type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingFile}
+              onClick={() => !matchEnded && fileInputRef.current?.click()}
+              disabled={uploadingFile || matchEnded}
               style={{
                 padding: tokens.spacing[10],
                 borderRadius: tokens.radii.button,
                 background: 'transparent',
                 border: 'none',
                 color: tokens.colors.textPrimaryOnDark,
-                cursor: uploadingFile ? 'not-allowed' : 'pointer',
-                opacity: uploadingFile ? 0.5 : 1,
+                cursor: (uploadingFile || matchEnded) ? 'not-allowed' : 'pointer',
+                opacity: (uploadingFile || matchEnded) ? 0.5 : 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
