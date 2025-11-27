@@ -113,14 +113,22 @@ export async function GET(request: NextRequest) {
     // Fallback: Get any active users (active in last 48 hours)
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
     
-    const { data: allMatches, error: allError } = await supabase
+    let fallbackQuery = supabase
       .from('users')
       .select('id, name, interests, vibe, topic, reputation_emojis, communities')
       .neq('id', userId)
-      .not('id', 'in', `(${excludeArray.join(',')})`)
       .gte('created_at', fortyEightHoursAgo)
       .order('created_at', { ascending: false })
       .limit(20)
+    
+    // Filter out excluded users
+    excludeIds.forEach(id => {
+      if (id !== userId) {
+        fallbackQuery = fallbackQuery.neq('id', id)
+      }
+    })
+    
+    const { data: allMatches, error: allError } = await fallbackQuery
 
     if (allError) {
       console.error('[Match Feed] Error fetching all matches:', allError)
