@@ -64,6 +64,11 @@ export async function GET(request: NextRequest) {
     // Small delay for processing
     await new Promise(resolve => setTimeout(resolve, 200))
 
+    // Get queue count for better feedback
+    const { count: queueCount } = await supabase
+      .from('waiting_pool')
+      .select('*', { count: 'exact', head: true })
+
     // Check if user is still in waiting pool
     const { data: waitingPoolEntry, error: waitingPoolError } = await supabase
       .from('waiting_pool')
@@ -100,12 +105,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Still in queue
+    // Still in queue - return queue info
     if (waitingPoolEntry) {
+      const waitTime = Date.now() - new Date(waitingPoolEntry.created_at).getTime()
       return NextResponse.json({
         success: true,
         matched: false,
         inQueue: true,
+        queueCount: queueCount || 0,
+        waitTimeSeconds: Math.floor(waitTime / 1000),
+        estimatedWaitTime: queueCount && queueCount >= 2 ? 'Any moment now!' : 'Waiting for another user...',
       }, {
         headers: getCorsHeaders(),
       })
@@ -116,6 +125,7 @@ export async function GET(request: NextRequest) {
       success: true,
       matched: false,
       inQueue: false,
+      queueCount: queueCount || 0,
     }, {
       headers: getCorsHeaders(),
     })

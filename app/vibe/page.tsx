@@ -10,11 +10,14 @@ import { tokens } from "@/lib/design-tokens"
 import { checkOnboardingStatus } from "@/lib/user-helpers"
 import { VibeSelectorHorizontal } from "@/components/vibe/VibeSelectorHorizontal"
 import { TopicSelectorHorizontal } from "@/components/vibe/TopicSelectorHorizontal"
+import { Loader2 } from "lucide-react"
 
 export default function VibePage() {
   const [selectedVibe, setSelectedVibe] = useState<string | null>(null)
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [matching, setMatching] = useState(false)
+  const [matchStatus, setMatchStatus] = useState<{ queueCount?: number; waitTime?: string; message?: string } | null>(null)
   const router = useRouter()
   const { user, loading } = useAuth()
   
@@ -113,6 +116,68 @@ export default function VibePage() {
     return null
   }
 
+  // Poll for match status
+  const startPollingForMatch = async (userId: string) => {
+    setMatching(true)
+    setMatchStatus({ message: 'Finding your match...' })
+    
+    let pollCount = 0
+    const maxPolls = 60 // Poll for up to 60 seconds (30 polls * 2s)
+    
+    const pollInterval = setInterval(async () => {
+      pollCount++
+      
+      try {
+        const response = await fetch(`/api/connect/status?userId=${userId}`, {
+          method: 'GET',
+          cache: 'no-store',
+        })
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
+        const data = await response.json()
+        
+        if (data.success && data.matched && data.match && data.otherUserId) {
+          // Match found!
+          clearInterval(pollInterval)
+          setMatching(false)
+          router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
+          return
+        }
+        
+        if (data.success && data.inQueue) {
+          // Update status with queue info
+          setMatchStatus({
+            queueCount: data.queueCount || 0,
+            waitTime: data.waitTimeSeconds ? `${Math.floor(data.waitTimeSeconds / 60)}:${String(data.waitTimeSeconds % 60).padStart(2, '0')}` : undefined,
+            message: data.estimatedWaitTime || (data.queueCount >= 2 ? 'Any moment now!' : 'Waiting for another user...'),
+          })
+        } else {
+          // Not in queue anymore but not matched - go to chat page
+          clearInterval(pollInterval)
+          setMatching(false)
+          router.push("/chat")
+          return
+        }
+        
+        // Stop polling after max attempts
+        if (pollCount >= maxPolls) {
+          clearInterval(pollInterval)
+          setMatching(false)
+          router.push("/chat")
+        }
+      } catch (error) {
+        console.error('[VibePage] Error polling match status:', error)
+        // Continue polling on error
+      }
+    }, 2000) // Poll every 2 seconds
+    
+    // Cleanup on unmount
+    return () => clearInterval(pollInterval)
+  }
+
   const handleConnect = async () => {
     const userId = getUserId()
     
@@ -173,9 +238,11 @@ export default function VibePage() {
       const data = await response.json()
       
       if (data.success && data.matched && data.match && data.otherUserId) {
+        // Immediate match - go to chat
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
-        router.push("/chat")
+        // In queue - start polling for match status
+        startPollingForMatch(userId)
       } else if (data.needsOnboarding) {
         router.push("/onboarding?step=email")
       } else {
@@ -261,6 +328,63 @@ export default function VibePage() {
   }))
 
   const canConnect = selectedVibe !== null && selectedTopic !== null
+
+  // Show matching overlay if in queue
+  if (matching) {
+    return (
+      <AppShell>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          padding: tokens.spacing[20],
+          textAlign: 'center',
+        }}>
+          <Loader2 className="h-12 w-12 animate-spin mb-6" style={{ color: tokens.colors.textPrimaryOnDark }} />
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: 600,
+            color: tokens.colors.textPrimaryOnDark,
+            marginBottom: tokens.spacing[8],
+          }}>
+            Finding your match...
+          </h2>
+          {matchStatus && (
+            <>
+              {matchStatus.message && (
+                <p style={{
+                  fontSize: '16px',
+                  color: tokens.colors.textSecondary,
+                  marginBottom: tokens.spacing[4],
+                }}>
+                  {matchStatus.message}
+                </p>
+              )}
+              {matchStatus.queueCount !== undefined && (
+                <p style={{
+                  fontSize: '14px',
+                  color: tokens.colors.textSecondary,
+                  marginBottom: tokens.spacing[4],
+                }}>
+                  {matchStatus.queueCount} {matchStatus.queueCount === 1 ? 'person' : 'people'} in queue
+                </p>
+              )}
+              {matchStatus.waitTime && (
+                <p style={{
+                  fontSize: '14px',
+                  color: tokens.colors.textSecondary,
+                }}>
+                  Waiting: {matchStatus.waitTime}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      </AppShell>
+    )
+  }
 
   return (
     <AppShell>

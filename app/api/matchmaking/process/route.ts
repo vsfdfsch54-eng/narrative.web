@@ -86,33 +86,33 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
           .eq('id', waitingUser.user_id)
           .single()
 
-        if (userError || !userData || !userData.personality_embedding) {
-          console.error(`[AI Matchmaking] User ${waitingUser.user_id} has no embedding, skipping`)
-          // Remove from waiting pool if no embedding
-          await supabase.from('waiting_pool').delete().eq('user_id', waitingUser.user_id)
-          continue
+        let userEmbedding: number[] | null = null
+        let hasEmbedding = false
+
+        // Try to parse embedding if it exists
+        if (!userError && userData && userData.personality_embedding) {
+          const embeddingString = userData.personality_embedding
+          
+          if (typeof embeddingString === 'string') {
+            const cleaned = embeddingString.replace(/[\[\]]/g, '')
+            userEmbedding = cleaned.split(',').map(Number)
+            hasEmbedding = userEmbedding.length > 0
+          } else if (Array.isArray(embeddingString)) {
+            userEmbedding = embeddingString
+            hasEmbedding = userEmbedding.length > 0
+          }
         }
 
-        // Parse embedding
-        const embeddingString = userData.personality_embedding
-        let userEmbedding: number[]
-        
-        if (typeof embeddingString === 'string') {
-          const cleaned = embeddingString.replace(/[\[\]]/g, '')
-          userEmbedding = cleaned.split(',').map(Number)
-        } else if (Array.isArray(embeddingString)) {
-          userEmbedding = embeddingString
-        } else {
-          console.error(`[AI Matchmaking] Invalid embedding format for user ${waitingUser.user_id}`)
-          continue
+        let matchResult = null
+
+        // Try AI matching if user has embedding
+        if (hasEmbedding && userEmbedding) {
+          matchResult = await findBestMatch(waitingUser.user_id, userEmbedding)
         }
 
-        // Find best match using AI matching service
-        let matchResult = await findBestMatch(waitingUser.user_id, userEmbedding)
-
-        // FIFO fallback: if AI matching fails and there are other users, match the first one
+        // FIFO fallback: if no AI match (or no embedding), match with first available user
         if (!matchResult && waitingUsers.length > 1) {
-          console.log(`[AI Matchmaking] AI matching failed, using FIFO fallback for user ${waitingUser.user_id}`)
+          console.log(`[AI Matchmaking] ${hasEmbedding ? 'AI matching failed' : 'No embedding'}, using FIFO fallback for user ${waitingUser.user_id}`)
           // Find first available user in waiting pool (excluding current user)
           const otherUser = waitingUsers.find(u => 
             u.user_id !== waitingUser.user_id && 
@@ -126,7 +126,7 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
               matchScore: 0.5, // Default score for FIFO matches
               traitsUsed: {
                 method: 'FIFO_fallback',
-                reason: 'AI matching failed or score too low',
+                reason: hasEmbedding ? 'AI matching failed or score too low' : 'No personality embedding available',
               },
             }
             console.log(`[AI Matchmaking] FIFO fallback: matching ${waitingUser.user_id} with ${otherUser.user_id}`)
