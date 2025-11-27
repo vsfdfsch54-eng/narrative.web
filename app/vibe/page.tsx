@@ -558,7 +558,7 @@ export default function VibePage() {
               marginBottom: tokens.spacing[28],
               lineHeight: 1.5,
             }}>
-              We couldn't find a match right now. Don't worry, try again and we'll keep looking!
+              We couldn&apos;t find a match right now. Don&apos;t worry, try again and we&apos;ll keep looking!
             </p>
             <AnimatedButton
               onClick={() => {
