@@ -144,22 +144,7 @@ export async function GET(request: NextRequest) {
     // Fallback: Get any active users (active in last 48 hours) who are ONLINE
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
     
-    // Get online user IDs from presence table
-    const { data: onlinePresence, error: presenceError } = await supabase
-      .from('user_presence')
-      .select('user_id')
-      .eq('is_online', true)
-      .gte('last_seen_at', new Date(Date.now() - 60000).toISOString()) // Active in last minute
-
-    if (presenceError) {
-      console.error('[Match Feed] Error fetching online presence:', presenceError)
-    }
-
-    const onlineUserIds = new Set(
-      (onlinePresence || []).map(p => p.user_id)
-    )
-
-    // Only fetch users who are online
+    // Only fetch users who are online (onlineUserIds already fetched above)
     let fallbackQuery = supabase
       .from('users')
       .select('id, name, interests, vibe, topic, reputation_emojis, communities')

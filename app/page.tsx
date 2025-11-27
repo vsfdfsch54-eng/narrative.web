@@ -552,11 +552,13 @@ export default function HomePage() {
       </div>
 
       {/* Invite Modal */}
-      <InviteModal
-        isOpen={showInviteModal}
-        onClose={() => setShowInviteModal(false)}
-        currentUserId={user?.id || ''}
-      />
+      {user && (
+        <InviteModal
+          isOpen={showInviteModal}
+          onClose={() => setShowInviteModal(false)}
+          currentUserId={user.id}
+        />
+      )}
     </AppShell>
   )
 }
