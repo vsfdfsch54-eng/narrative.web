@@ -246,7 +246,7 @@ export default function VibePage() {
     }
 
     checkOnboarding()
-  }, [user, loading, router])
+  }, [user, loading]) // Removed router from dependencies to prevent re-renders
   
   const getUserId = () => {
     if (user?.id) return user.id

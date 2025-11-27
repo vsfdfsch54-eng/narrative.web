@@ -207,46 +207,54 @@ export async function GET(request: NextRequest) {
             }
           }
         } else {
-          // No user with this email exists - safe to create new user
-          // Ensure name is never null (NOT NULL constraint)
-          const safeUserName = userName || userEmail?.split('@')[0] || 'User'
-          
-          const { data: upsertResult, error: createError } = await supabase
+          // No user with this email exists - BUT check if user exists by ID first
+          // This prevents race conditions where user was just created or updated
+          const { data: existingById, error: idCheckError } = await supabase
             .from('users')
-            .upsert({
-              id: userId,
-              email: userEmail,
-              name: safeUserName, // Always provide a value (NOT NULL constraint)
-              interests: [],
-              onboarding_step: 'email', // Start at email step, not 'start'
-            }, {
-              onConflict: 'id', // Update if user with this id exists
-              ignoreDuplicates: false
-            })
             .select('*')
-
-          if (createError) {
-            console.error('[Users API GET] ❌ Upsert error:', {
-              message: createError.message,
-              code: createError.code,
-              details: createError.details
-            })
+            .eq('id', userId)
+            .maybeSingle()
+          
+          if (existingById) {
+            // User exists by ID - use it (might have been created/updated between our checks)
+            console.log('[Users API GET] User found by ID after email check, using existing record')
+            userData = existingById
+          } else {
+            // User truly doesn't exist - safe to create
+            // Ensure name is never null (NOT NULL constraint)
+            const safeUserName = userName || userEmail?.split('@')[0] || 'User'
             
-            // If duplicate email error, check by email (in case email was created between our check and upsert)
-            if (createError.code === '23505' || createError.message.includes('duplicate key') || createError.message.includes('user_email_key')) {
-              const { data: existingByEmail, error: fetchError } = await supabase
+            // Use INSERT instead of UPSERT to prevent overwriting existing users
+            // If user exists, we'll catch the duplicate key error and fetch it
+            const { data: insertResult, error: insertError } = await supabase
+              .from('users')
+              .insert({
+                id: userId,
+                email: userEmail,
+                name: safeUserName, // Always provide a value (NOT NULL constraint)
+                interests: [],
+                onboarding_step: 'email', // Start at email step, not 'start'
+              })
+              .select('*')
+            
+            // Handle duplicate key error (user was created between checks)
+            if (insertError && (insertError.code === '23505' || insertError.message.includes('duplicate') || insertError.message.includes('unique'))) {
+              console.log('[Users API GET] User was created between checks, fetching existing record')
+              // User was created - fetch it
+              const { data: existingUser, error: fetchError } = await supabase
                 .from('users')
                 .select('*')
-                .eq('email', userEmail)
+                .eq('id', userId)
                 .maybeSingle()
               
-              if (existingByEmail && !fetchError) {
-                userData = existingByEmail
+              if (existingUser && !fetchError) {
+                userData = existingUser
               } else {
+                // Return error if we can't fetch
+                console.error('[Users API GET] Failed to fetch user after duplicate key error:', fetchError)
                 return NextResponse.json({ 
                   success: false, 
-                  error: 'Failed to create user record. An account with this email may already exist.',
-                  details: createError.message
+                  error: 'Failed to create user record. Please try again.' 
                 }, { 
                   status: 500,
                   headers: {
@@ -254,44 +262,20 @@ export async function GET(request: NextRequest) {
                   }
                 })
               }
-            } else {
+            } else if (insertError) {
+              // Other error
+              console.error('[Users API GET] ❌ Insert error:', insertError)
               return NextResponse.json({ 
                 success: false, 
-                error: 'Failed to create user record.',
-                details: createError.message
+                error: insertError.message || 'Failed to create user record' 
               }, { 
                 status: 500,
                 headers: {
                   'Content-Type': 'application/json',
                 }
               })
-            }
-          } else {
-            // Handle upsert result - it's always an array
-            if (upsertResult && Array.isArray(upsertResult) && upsertResult.length > 0) {
-              userData = upsertResult[0]
-            } else {
-              // If no data returned, try fetching once
-              const { data: fetchedUser, error: fetchError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', userId)
-                .maybeSingle()
-              
-              if (fetchedUser && !fetchError) {
-                userData = fetchedUser
-              } else {
-                return NextResponse.json({ 
-                  success: false, 
-                  error: 'User was created but could not be retrieved. Please try again.',
-                  details: fetchError?.message || 'Unknown error'
-                }, { 
-                  status: 500,
-                  headers: {
-                    'Content-Type': 'application/json',
-                  }
-                })
-              }
+            } else if (insertResult && insertResult.length > 0) {
+              userData = Array.isArray(insertResult) ? insertResult[0] : insertResult
             }
           }
         }
@@ -485,6 +469,14 @@ async function saveOnboardingProgress(
       updateData.onboarding_step = 'complete'
       updateData.onboarding_completed = true
     }
+    
+    // CRITICAL: If onboarding_completed is true, ALWAYS set onboarding_step to 'complete'
+    // This ensures completion status is never lost
+    if (data.onboarding_completed === true) {
+      updateData.onboarding_step = 'complete'
+      updateData.onboarding_completed = true
+      console.log('[saveOnboardingProgress] ✅ Forcing onboarding_step to "complete" because onboarding_completed is true')
+    }
 
     // Log what we're about to save
     console.log('[saveOnboardingProgress] Saving to database:', {
@@ -551,7 +543,12 @@ async function saveOnboardingProgress(
         }
         
         console.log('[saveOnboardingProgress] ✅ Retry succeeded without onboarding_completed column')
-        return { success: true, data: Array.isArray(retryData) ? retryData[0] : retryData }
+        const savedRecord = Array.isArray(retryData) ? retryData[0] : retryData
+        // Verify the saved data
+        if (data.onboarding_completed === true && savedRecord?.onboarding_step !== 'complete') {
+          console.warn('[saveOnboardingProgress] ⚠️ WARNING: Saved onboarding_step is not "complete" when it should be:', savedRecord?.onboarding_step)
+        }
+        return { success: true, data: savedRecord }
       }
       
       // Handle duplicate email error

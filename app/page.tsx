@@ -65,7 +65,7 @@ export default function Home() {
     }
 
     checkAndRedirect()
-  }, [authLoading, user, router])
+  }, [authLoading, user]) // Removed router from dependencies to prevent re-renders
 
   // Show loading while checking auth or onboarding status
   if (authLoading || checkingOnboarding) {

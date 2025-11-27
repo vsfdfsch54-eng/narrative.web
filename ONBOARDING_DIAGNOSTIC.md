@@ -1,81 +1,166 @@
-# Onboarding Diagnostic Report
+# Onboarding Completion Diagnostic
 
-## Issue: "Continuing..." Button Stuck
+## Problem
+Users are completing onboarding but being redirected back to the email step. Logs show:
+- `[VibePage] Onboarding incomplete, redirecting to: "email"`
+- `[OnboardingPage] Onboarding incomplete, allowing access. Step: "email"`
 
-### Root Cause
-The `isSubmitting` state in `EmailStep` was getting stuck because:
-1. Navigation via `router.replace()` doesn't immediately unmount the component
-2. `isSubmitting` was never reset if navigation was slow
-3. No fallback mechanism if router navigation failed
+## Root Causes (Possible)
+1. **API Save Failure**: The completion save is failing silently
+2. **Database Propagation Delay**: Save succeeds but read returns stale data (especially on mobile)
+3. **Schema Cache Issue**: `onboarding_completed` column not recognized
+4. **Service Role Key**: Wrong or missing `SUPABASE_SERVICE_ROLE_KEY` in Vercel
 
-### Fixes Applied
+## Diagnostic Tools Added
 
-1. **EmailStep Component** (`components/onboarding/steps/EmailStep.tsx`)
-   - Added fallback navigation using `window.location.href` if router is slow
-   - Added timeout to reset `isSubmitting` state after 500ms
-   - Better error handling with state reset on error
+### 1. Enhanced Logging
+All onboarding completion steps now log detailed information:
 
-2. **OnboardingController** (`components/onboarding/OnboardingController.tsx`)
-   - Update step in context before navigation
-   - Added fallback navigation using `window.location.href`
-   - More reliable navigation flow
+**OnboardingController:**
+- `[OnboardingController] Saving completion to database...` - Shows what's being saved
+- `[OnboardingController] ✅ Completion saved successfully` - Save succeeded
+- `[OnboardingController] ❌ Save completion FAILED` - Save failed (with error details)
+- `[OnboardingController] ✅ Save verified (attempt X/5)` - Verification succeeded
+- `[OnboardingController] ⚠️ Verification attempt X/5 - step is: ...` - Verification retry
 
-### Current Flow
+**API Route (`/api/users` PUT):**
+- `[Users API PUT] Saving onboarding progress:` - Request received
+- `[Users API PUT] ✅ Save successful:` - Save succeeded (with saved values)
+- `[Users API PUT] ❌ Save failed:` - Save failed (with error)
 
-**Email Step:**
-1. User enters email and clicks Continue
-2. `isSubmitting` set to `true` → button shows "Continuing..."
-3. `setEmail()` updates context
-4. `router.replace('/onboarding?step=name')` initiates navigation
-5. Fallback: After 100ms, check if navigation happened, if not use `window.location.href`
-6. After 500ms, reset `isSubmitting` state (safety timeout)
+**saveOnboardingProgress:**
+- `[saveOnboardingProgress] Saving to database:` - What's being saved
+- `[saveOnboardingProgress] ❌ Upsert error:` - Database error details
 
-**All Other Steps:**
-- Non-blocking navigation
-- Always advance regardless of save result
-- Background retry for failed saves
+**checkOnboardingStatus:**
+- `[checkOnboardingStatus] User record found:` - Record retrieved
+- `[checkOnboardingStatus] Final result:` - Final status determination
 
-### Testing Checklist
+### 2. Diagnostic API Endpoint
+New endpoint: `/api/diagnostic?userId=YOUR_USER_ID`
 
-✅ **Email Step**
-- [x] Button shows "Continuing..." when clicked
-- [x] Navigation happens immediately
-- [x] State resets if navigation fails
-- [x] Fallback navigation works
+**Usage:**
+```javascript
+// In browser console after completing onboarding:
+const userId = 'YOUR_USER_ID' // Get from user.id
+fetch(`/api/diagnostic?userId=${userId}`)
+  .then(r => r.json())
+  .then(data => console.log('Diagnostics:', data.diagnostics))
+```
 
-✅ **Name Step**
-- [x] Account creation happens in background
-- [x] Navigation proceeds even if account creation fails
-- [x] Progress saves when user becomes available
+**What it checks:**
+- ✅ Environment variables (Supabase URL, anon key, service role key)
+- ✅ Can create Supabase client
+- ✅ Can query database
+- ✅ Can use auth.admin API (requires service_role key)
+- ✅ Current user record state (onboarding_step, onboarding_completed, etc.)
 
-✅ **Vibe/Topic/Timeframe Steps**
-- [x] Navigation is instant
-- [x] Progress saves in background
-- [x] No blocking on save failures
+### 3. Improved Completion Flow
 
-✅ **Confirmation Step**
-- [x] Completes onboarding
-- [x] Redirects to /chat
-- [x] Sets onboarding_completed flag
+**Changes:**
+1. **localStorage Flag Set Earlier**: Flag is set immediately after save (not after verification)
+2. **Retry Verification**: 5 attempts with 500ms delays (for mobile networks)
+3. **Longer Wait Time**: 1 second delay after save (increased from 500ms)
+4. **Better Error Handling**: Even if save fails, localStorage flag is set to allow user to proceed
 
-### Known Issues (Fixed)
+## How to Diagnose
 
-1. ✅ "Failed to save progress" errors - Fixed by making navigation non-blocking
-2. ✅ Button stuck on "Continuing..." - Fixed with fallback navigation and timeout
-3. ✅ Lag on email step - Fixed by removing blocking operations
-4. ✅ Missing user errors - Fixed by allowing navigation without user ID
+### Step 1: Check Browser Console
+After completing onboarding, look for these logs in order:
 
-### Performance
+1. `[OnboardingController] Saving completion to database...`
+2. `[Users API PUT] Saving onboarding progress:`
+3. `[saveOnboardingProgress] Saving to database:`
+4. Either:
+   - `[Users API PUT] ✅ Save successful:` ✅
+   - `[Users API PUT] ❌ Save failed:` ❌
+5. `[OnboardingController] ✅ Completion saved successfully` or `❌ Save completion FAILED`
+6. `[OnboardingController] ✅ Save verified (attempt X/5)` or `⚠️ Verification attempt X/5`
 
-- Email step: < 100ms navigation
-- All steps: Non-blocking, instant navigation
-- Save operations: Background, don't block UI
-- Error handling: Silent for expected cases, visible for critical errors
+### Step 2: Run Diagnostic API
+```javascript
+// In browser console:
+const userId = 'YOUR_USER_ID' // Replace with actual user ID
+fetch(`/api/diagnostic?userId=${userId}`)
+  .then(r => r.json())
+  .then(data => {
+    console.log('=== DIAGNOSTIC RESULTS ===')
+    console.log('Environment:', data.diagnostics.environment)
+    console.log('Supabase Client:', data.diagnostics.supabaseClient)
+    console.log('Database:', data.diagnostics.database)
+    console.log('Auth Admin:', data.diagnostics.auth)
+    console.log('User Record:', data.diagnostics.userRecord)
+  })
+```
 
-### Next Steps
+**What to look for:**
+- `hasServiceRoleKey: true` - Service role key is set
+- `canUseAdmin: true` - Auth admin API works (requires service_role key)
+- `canQuery: true` - Database queries work
+- `userRecord.onboarding_step: "complete"` - Step is saved correctly
+- `userRecord.onboarding_completed: true` - Completion flag is set
 
-1. Monitor production for any remaining issues
-2. Consider adding analytics to track drop-off points
-3. Add retry logic for network failures
-4. Consider optimistic UI updates
+### Step 3: Check Vercel Server Logs
+1. Go to Vercel Dashboard → Your Project → Functions → View Logs
+2. Filter for `/api/users` PUT requests
+3. Look for:
+   - `[Users API PUT] ✅ Save successful:` - Success
+   - `[Users API PUT] ❌ Save failed:` - Failure (with error details)
+   - `[saveOnboardingProgress] ❌ Upsert error:` - Database error
 
+### Step 4: Verify Environment Variables
+In Vercel Dashboard → Settings → Environment Variables, verify:
+- `SUPABASE_SERVICE_ROLE_KEY` is set (NOT the same as anon key)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` is set
+- `NEXT_PUBLIC_SUPABASE_URL` is set
+
+**Important**: The service_role key and anon key MUST be different!
+
+## Common Issues & Fixes
+
+### Issue 1: "Save completion FAILED"
+**Cause**: API save is failing
+**Check**: Vercel server logs for error details
+**Fix**: 
+- Verify `SUPABASE_SERVICE_ROLE_KEY` is correct
+- Check database connection
+- Verify migration `025_ensure_onboarding_completed.sql` has been run
+
+### Issue 2: "Save verified - step is: email" (not 'complete')
+**Cause**: Save succeeded but wrong step was saved, or read is getting stale data
+**Check**: Diagnostic API to see actual database state
+**Fix**: 
+- Wait longer (mobile networks are slower)
+- Check if `onboarding_completed` column exists in database
+- Run migration `025_ensure_onboarding_completed.sql`
+
+### Issue 3: "Could not verify save after 5 attempts"
+**Cause**: Database read is failing or returning stale data
+**Check**: Diagnostic API to see if database queries work
+**Fix**:
+- Check Vercel server logs for database errors
+- Verify database connection
+- Check if user record exists
+
+### Issue 4: "API error checking onboarding"
+**Cause**: `/api/users` GET endpoint is failing
+**Check**: Browser console for network errors
+**Fix**:
+- Check Vercel server logs
+- Verify environment variables
+- Check database connection
+
+## Next Steps
+
+1. **Deploy these changes** to get enhanced logging
+2. **Complete onboarding** and check browser console logs
+3. **Run diagnostic API** to verify database state
+4. **Check Vercel logs** for server-side errors
+5. **Share the logs** if issue persists
+
+## Files Changed
+
+- `app/api/diagnostic/route.ts` - New diagnostic endpoint
+- `components/onboarding/OnboardingController.tsx` - Enhanced logging and retry logic
+- `app/api/users/route.ts` - Enhanced logging in PUT handler and saveOnboardingProgress
+- `lib/user-helpers.ts` - Enhanced logging in checkOnboardingStatus

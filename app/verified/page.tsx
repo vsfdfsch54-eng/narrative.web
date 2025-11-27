@@ -17,7 +17,7 @@ export default function VerifiedPage() {
         if (sessionError) {
           console.error('Error getting session:', sessionError)
           setStatus('error')
-          setTimeout(() => router.push('/onboarding'), 2000)
+          setTimeout(() => router.push('/onboarding?step=email'), 2000)
           return
         }
         
@@ -31,7 +31,7 @@ export default function VerifiedPage() {
           }, 1500)
         } else {
           // Not verified or no session, redirect to onboarding
-          router.push('/onboarding')
+          router.push('/onboarding?step=email')
         }
       } catch (err) {
         console.error('Verification check error:', err)
@@ -41,7 +41,7 @@ export default function VerifiedPage() {
     }
 
     checkVerificationAndRedirect()
-  }, [router])
+  }, []) // Removed router from dependencies to prevent re-renders
 
   if (status === 'checking') {
     return (

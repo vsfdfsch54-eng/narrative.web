@@ -76,7 +76,7 @@ export default function ProfilePage() {
     }
 
     checkOnboarding()
-  }, [user, authLoading, router])
+  }, [user, authLoading]) // Removed router from dependencies to prevent re-renders
 
   useEffect(() => {
     if (!user?.id) return

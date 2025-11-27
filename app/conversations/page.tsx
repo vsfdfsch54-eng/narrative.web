@@ -70,7 +70,7 @@ export default function ConversationsPage() {
     }
 
     checkOnboarding()
-  }, [user, loading, router])
+  }, [user, loading]) // Removed router from dependencies to prevent re-renders
 
   useEffect(() => {
     if (!user || authLoading || loading) return

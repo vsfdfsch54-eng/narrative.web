@@ -128,7 +128,7 @@ export default function CalendarPage() {
     }
 
     checkOnboarding()
-  }, [user, authLoading, router])
+  }, [user, authLoading]) // Removed router from dependencies to prevent re-renders
 
   const { firstDay, totalDays } = useMemo(
     () => generateDays(currentDate.getFullYear(), currentDate.getMonth()),

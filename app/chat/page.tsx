@@ -69,7 +69,7 @@ export default function ChatPage() {
     }
 
     checkOnboarding()
-  }, [user, authLoading, router])
+  }, [user, authLoading]) // Removed router from dependencies to prevent re-renders
 
   useEffect(() => {
     if (!user?.id) return
@@ -157,7 +157,7 @@ export default function ChatPage() {
           
           if (!userCheckData.success || !userCheckData.data) {
             // User doesn't exist in database, redirect to onboarding
-            router.push('/onboarding')
+            router.push('/onboarding?step=email')
             return
           }
           
@@ -299,7 +299,7 @@ export default function ChatPage() {
     }
 
     loadMatches()
-  }, [user, router])
+  }, [user]) // Removed router from dependencies to prevent re-renders
 
   const currentProfile = profiles[currentIndex]
 

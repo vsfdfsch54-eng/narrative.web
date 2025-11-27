@@ -113,7 +113,7 @@ export default function OnboardingPage() {
     }
 
     checkOnboarding()
-  }, [authLoading, user, router])
+  }, [authLoading, user]) // Removed router from dependencies to prevent re-renders
 
   // Show loading while checking
   if (authLoading || checkingOnboarding) {
