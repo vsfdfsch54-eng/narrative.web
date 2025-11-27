@@ -170,15 +170,9 @@ export function OnboardingController() {
           return // Don't navigate if signup failed
         }
         
-        // Wait for auth to propagate and user object to be available
-        // The user object from useAuth might not update immediately
-        let retries = 0
-        while (retries < 10) {
-          await new Promise(resolve => setTimeout(resolve, 200))
-          // Check if user is now available (will be updated by useAuth hook)
-          // We can't directly check user here, but we can try to save and it will retry
-          retries++
-        }
+        // Wait briefly for auth to propagate (reduced to 300ms for faster UX)
+        // Don't wait too long - navigation should be instant
+        await new Promise(resolve => setTimeout(resolve, 300))
       } catch (error: any) {
         // Signup failed - show error to user
         const errorMessage = error?.message || 'Failed to create account. Please try again.'

@@ -57,7 +57,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     initialized: false,
   })
 
-  // Initialize from database
+  // Initialize from database - NON-BLOCKING with timeout
+  // Never blocks onboarding progress - always initializes quickly
   const initialize = useCallback(async () => {
     if (authLoading || !user) {
       setState(prev => ({ ...prev, initialized: true }))
@@ -65,7 +66,30 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`/api/users?userId=${user.id}`)
+      // Add timeout to prevent hanging (3 seconds max)
+      // If API is slow or circuit breaker is active, don't wait
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 3000)
+      
+      const response = await fetch(`/api/users?userId=${user.id}`, {
+        signal: controller.signal,
+        cache: 'no-store'
+      })
+      
+      clearTimeout(timeoutId)
+      
+      if (!response.ok) {
+        // API error - don't block, just use default state
+        console.warn('[OnboardingContext] Initialize API error:', response.status)
+        setState(prev => ({
+          ...prev,
+          step: 'email',
+          initialized: true,
+          error: null,
+        }))
+        return
+      }
+
       const data = await response.json()
 
       if (data.success && data.data) {
@@ -92,7 +116,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         }))
       }
     } catch (error: any) {
-      console.error('[OnboardingContext] Initialize error:', error)
+      // Timeout or network error - don't block onboarding
+      if (error.name === 'AbortError') {
+        console.warn('[OnboardingContext] Initialize timeout - using default state')
+      } else {
+        console.error('[OnboardingContext] Initialize error:', error)
+      }
+      // Always initialize to allow onboarding to proceed
       setState(prev => ({
         ...prev,
         step: 'email',
