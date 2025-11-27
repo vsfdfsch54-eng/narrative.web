@@ -173,7 +173,7 @@ export default function HomePage() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          marginBottom: tokens.spacing[24],
+          marginBottom: tokens.spacing[20],
         }}>
           {/* Top Left: Invite Button */}
           <motion.button

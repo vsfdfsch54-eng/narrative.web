@@ -74,6 +74,8 @@ export default function ProfilePage() {
     if (!user?.id) return
 
     async function loadProfile() {
+      if (!user) return // Additional check for TypeScript
+      
       try {
         setLoading(true)
         const response = await fetch(`/api/users?userId=${user.id}`)
@@ -88,7 +90,9 @@ export default function ProfilePage() {
         }
       } catch (error) {
         console.error('[ProfilePage] Error loading profile:', error)
-        setUserName(user.email?.split('@')[0] || 'User')
+        if (user) {
+          setUserName(user.email?.split('@')[0] || 'User')
+        }
       } finally {
         setLoading(false)
       }
