@@ -94,10 +94,39 @@ export async function GET(request: NextRequest) {
       .not('id', 'in', `(${excludeIds.join(',')})`)
       .limit(50)
 
-    // If user has vibe/topic, prefer matching those
+    // Get online user IDs from presence table (for all queries)
+    const { data: onlinePresence, error: presenceError } = await supabase
+      .from('user_presence')
+      .select('user_id')
+      .eq('is_online', true)
+      .gte('last_seen_at', new Date(Date.now() - 60000).toISOString()) // Active in last minute
+
+    if (presenceError) {
+      console.error('[Match Feed] Error fetching online presence:', presenceError)
+    }
+
+    const onlineUserIds = new Set(
+      (onlinePresence || []).map(p => p.user_id)
+    )
+
+    // If user has vibe/topic, prefer matching those (but only online users)
     if (currentUser?.vibe || currentUser?.topic) {
-      // First try to get users with matching vibe/topic
-      const { data: preferredMatches, error: preferredError } = await query
+      // First try to get users with matching vibe/topic who are online
+      let preferredQuery = supabase
+        .from('users')
+        .select('id, name, interests, vibe, topic, reputation_emojis, communities')
+        .neq('id', userId)
+        .in('id', Array.from(onlineUserIds))
+        .limit(50)
+      
+      // Filter out excluded users
+      excludeIds.forEach(id => {
+        if (id !== userId) {
+          preferredQuery = preferredQuery.neq('id', id)
+        }
+      })
+
+      const { data: preferredMatches, error: preferredError } = await preferredQuery
         .or(`vibe.eq.${currentUser.vibe || ''},topic.eq.${currentUser.topic || ''}`)
         .order('created_at', { ascending: false })
         .limit(20)
@@ -112,13 +141,30 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fallback: Get any active users (active in last 48 hours)
+    // Fallback: Get any active users (active in last 48 hours) who are ONLINE
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
     
+    // Get online user IDs from presence table
+    const { data: onlinePresence, error: presenceError } = await supabase
+      .from('user_presence')
+      .select('user_id')
+      .eq('is_online', true)
+      .gte('last_seen_at', new Date(Date.now() - 60000).toISOString()) // Active in last minute
+
+    if (presenceError) {
+      console.error('[Match Feed] Error fetching online presence:', presenceError)
+    }
+
+    const onlineUserIds = new Set(
+      (onlinePresence || []).map(p => p.user_id)
+    )
+
+    // Only fetch users who are online
     let fallbackQuery = supabase
       .from('users')
       .select('id, name, interests, vibe, topic, reputation_emojis, communities')
       .neq('id', userId)
+      .in('id', Array.from(onlineUserIds))
       .gte('created_at', fortyEightHoursAgo)
       .order('created_at', { ascending: false })
       .limit(20)
