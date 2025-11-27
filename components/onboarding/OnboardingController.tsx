@@ -324,7 +324,32 @@ export function OnboardingController() {
     
     // PART 3: Wait for save to complete before navigating
     // Get current user ID (might have been created by signUp)
-    const currentUserId = user?.id
+    let currentUserId = user?.id
+    
+    // CRITICAL: If user was just created, ensure user record exists in database
+    // Call GET /api/users to create the user record if it doesn't exist
+    if (currentUserId) {
+      try {
+        console.log('[OnboardingController] 🔍 Ensuring user record exists after signup...', { userId: currentUserId })
+        const getUserResponse = await fetch(`/api/users?userId=${currentUserId}`, {
+          method: 'GET',
+          cache: 'no-store',
+        })
+        
+        if (!getUserResponse.ok) {
+          console.error('[OnboardingController] ❌ Failed to ensure user record exists:', await getUserResponse.text())
+        } else {
+          const getUserData = await getUserResponse.json()
+          if (getUserData.success) {
+            console.log('[OnboardingController] ✅ User record exists or was created')
+          }
+        }
+      } catch (error) {
+        console.error('[OnboardingController] ❌ Error ensuring user record exists:', error)
+        // Continue anyway - PUT might still work
+      }
+    }
+    
     if (!currentUserId) {
       console.warn('[OnboardingController] ⚠️ No user ID after signup, navigating anyway')
       navigateToStep('name')
