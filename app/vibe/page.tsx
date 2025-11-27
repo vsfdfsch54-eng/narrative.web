@@ -281,12 +281,16 @@ export default function VibePage() {
         
         // Stop polling after max attempts
         if (pollCount >= maxPolls) {
+          console.log('[VibePage] Max polls reached - stopping polling')
           clearInterval(pollInterval)
           clearInterval(heartbeatInterval)
           setMatching(false)
           document.removeEventListener('visibilitychange', handleVisibilityChange)
           window.removeEventListener('beforeunload', handleBeforeUnload)
           // Stay on vibe page - user can try connecting again
+          setMatchStatus({
+            message: 'No match found. Try again?',
+          })
         }
       } catch (error) {
         console.error('[VibePage] Error polling match status:', error)
