@@ -289,29 +289,56 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is online before adding to waiting pool
+    // Use maybeSingle() to handle missing records (first-time connections)
     const { data: presenceData, error: presenceError } = await supabase
       .from('user_presence')
       .select('is_online, last_seen_at')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
-    // Only allow matching if user is online and recently active (within last 30 seconds)
-    const isOnline = presenceData?.is_online === true
-    const lastSeenAt = presenceData?.last_seen_at ? new Date(presenceData.last_seen_at) : null
-    const isRecentlyActive = lastSeenAt && (Date.now() - lastSeenAt.getTime()) < 30000 // 30 seconds
+    // If user_presence doesn't exist, create it (first-time connection)
+    // Otherwise, update it to mark user as online and active
+    const now = new Date().toISOString()
+    if (!presenceData) {
+      // First-time connection - create presence record
+      console.log('[Connect API] Creating user_presence for first-time connection:', userId)
+      await supabase
+        .from('user_presence')
+        .upsert({
+          user_id: userId,
+          is_online: true,
+          last_seen_at: now,
+          updated_at: now,
+        }, {
+          onConflict: 'user_id',
+        })
+    } else {
+      // Existing presence - check if online and recently active
+      const isOnline = presenceData.is_online === true
+      const lastSeenAt = presenceData.last_seen_at ? new Date(presenceData.last_seen_at) : null
+      const isRecentlyActive = lastSeenAt && (Date.now() - lastSeenAt.getTime()) < 30000 // 30 seconds
 
-    if (!isOnline || !isRecentlyActive) {
-      console.warn('[Connect API] User is not online or not recently active:', { userId, isOnline, lastSeenAt })
-      return NextResponse.json(
-        { 
-          error: 'You must be actively using the site to find matches. Please make sure your tab is open and active.',
-          requiresActive: true,
-        },
-        { 
-          status: 400,
-          headers: getCorsHeaders(),
-        }
-      )
+      if (!isOnline || !isRecentlyActive) {
+        // User was offline or inactive - update presence and allow connection anyway
+        // (they're actively clicking "Connect", so they're clearly active now)
+        console.log('[Connect API] User was offline/inactive, updating presence:', { userId, isOnline, lastSeenAt })
+        await supabase
+          .from('user_presence')
+          .upsert({
+            user_id: userId,
+            is_online: true,
+            last_seen_at: now,
+            updated_at: now,
+          }, {
+            onConflict: 'user_id',
+          })
+      } else {
+        // User is already online and active - just update last_seen_at
+        await supabase
+          .from('user_presence')
+          .update({ last_seen_at: now, updated_at: now })
+          .eq('user_id', userId)
+      }
     }
 
     // Remove any existing entry in waiting pool for this user
