@@ -17,6 +17,7 @@ export default function VibePage() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [matching, setMatching] = useState(false)
+  const [noMatchFound, setNoMatchFound] = useState(false)
   const [matchStatus, setMatchStatus] = useState<{ queueCount?: number; waitTime?: string; message?: string } | null>(null)
   const router = useRouter()
   const { user, loading } = useAuth()
@@ -122,9 +123,10 @@ export default function VibePage() {
     setMatchStatus({ message: 'Finding your match...' })
     
     let pollCount = 0
-    const maxPolls = 120 // Poll for up to 4 minutes (120 polls * 2s = 240 seconds)
+    const minPolls = 60 // Minimum 2 minutes (60 polls * 2s = 120 seconds)
+    const maxPolls = 120 // Maximum 4 minutes (120 polls * 2s = 240 seconds)
     let consecutiveNotInQueue = 0 // Track how many times we've seen "not in queue"
-    const maxConsecutiveNotInQueue = 3 // Only stop if we see "not in queue" 3 times in a row
+    const maxConsecutiveNotInQueue = 3 // Only stop if we see "not in queue" 3 times in a row (but only after minPolls)
     
     // Heartbeat: Update last_active in waiting_pool every 15 seconds
     // This keeps user in pool as long as tab is active
@@ -258,19 +260,22 @@ export default function VibePage() {
           })
         } else {
           // Not in queue - but don't stop immediately (might be a race condition)
-          consecutiveNotInQueue++
-          console.log(`[VibePage] Not in queue (attempt ${consecutiveNotInQueue}/${maxConsecutiveNotInQueue})`)
-          
-          // Only stop if we've seen "not in queue" multiple times in a row
-          if (consecutiveNotInQueue >= maxConsecutiveNotInQueue) {
-            console.log('[VibePage] Not in queue after multiple checks - stopping polling')
-            clearInterval(pollInterval)
-            clearInterval(heartbeatInterval)
-            setMatching(false)
-            document.removeEventListener('visibilitychange', handleVisibilityChange)
-            window.removeEventListener('beforeunload', handleBeforeUnload)
-            // Stay on vibe page - user can try connecting again
-            return
+          // Only check for consecutive failures after minimum polling time
+          if (pollCount >= minPolls) {
+            consecutiveNotInQueue++
+            console.log(`[VibePage] Not in queue (attempt ${consecutiveNotInQueue}/${maxConsecutiveNotInQueue})`)
+            
+            // Only stop if we've seen "not in queue" multiple times in a row AND we've polled for at least 2 minutes
+            if (consecutiveNotInQueue >= maxConsecutiveNotInQueue) {
+              console.log('[VibePage] Not in queue after multiple checks - showing no match found')
+              clearInterval(pollInterval)
+              clearInterval(heartbeatInterval)
+              setMatching(false)
+              setNoMatchFound(true)
+              document.removeEventListener('visibilitychange', handleVisibilityChange)
+              window.removeEventListener('beforeunload', handleBeforeUnload)
+              return
+            }
           }
           
           // Continue polling - might be a temporary issue
@@ -279,18 +284,15 @@ export default function VibePage() {
           })
         }
         
-        // Stop polling after max attempts
+        // Stop polling after max attempts (4 minutes) - show no match found
         if (pollCount >= maxPolls) {
-          console.log('[VibePage] Max polls reached - stopping polling')
+          console.log('[VibePage] Max polls reached (4 minutes) - showing no match found')
           clearInterval(pollInterval)
           clearInterval(heartbeatInterval)
           setMatching(false)
+          setNoMatchFound(true)
           document.removeEventListener('visibilitychange', handleVisibilityChange)
           window.removeEventListener('beforeunload', handleBeforeUnload)
-          // Stay on vibe page - user can try connecting again
-          setMatchStatus({
-            message: 'No match found. Try again?',
-          })
         }
       } catch (error) {
         console.error('[VibePage] Error polling match status:', error)
