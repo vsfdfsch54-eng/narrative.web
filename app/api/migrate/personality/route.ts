@@ -68,16 +68,14 @@ export async function POST(request: NextRequest) {
         // Get user's interests (if any)
         const interests = (user.interests as string[]) || []
 
-        // Get user's vibe history (if any)
-        const { data: vibes } = await supabase
-          .from('vibes')
-          .select('vibe')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
+        // Get user's current mood (from users table)
+        const { data: userData } = await supabase
+          .from('users')
+          .select('mood')
+          .eq('id', user.id)
           .single()
 
-        const lastVibe = vibes?.vibe || null
+        const lastMood = userData?.mood || null
 
         // Create questionnaire answers from existing data
         // Since we don't have original questionnaire, infer from available data

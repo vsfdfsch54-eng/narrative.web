@@ -240,7 +240,7 @@ Return ONLY valid JSON, no other text.`
 export async function generatePersonalityProfile(
   questionnaireAnswers: Record<string, any>,
   interests: string[],
-  vibe?: string | null,
+  mood?: string | null,
   topic?: string | null
 ): Promise<{
   summary: string
@@ -248,7 +248,7 @@ export async function generatePersonalityProfile(
   traits: Record<string, any>
 }> {
   // Step 1: Generate personality summary
-  const summary = await generatePersonalitySummary(questionnaireAnswers, interests, vibe, topic)
+  const summary = await generatePersonalitySummary(questionnaireAnswers, interests, mood, topic)
   
   // Step 2: Generate embedding from summary
   const embedding = await generatePersonalityEmbedding(summary)

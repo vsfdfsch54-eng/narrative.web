@@ -120,12 +120,12 @@ export default function LoginPage() {
           if (!completed) {
             router.replace(`/onboarding?step=${step}`)
               } else {
-            router.replace("/vibe")
+            router.replace("/topic-match")
               }
         } catch (err) {
           console.error('[LoginPage] Error checking onboarding after signin:', err)
-          // On error, redirect to /vibe (not onboarding) to prevent loops
-          router.replace("/vibe")
+          // On error, redirect to /topic-match (not onboarding) to prevent loops
+          router.replace("/topic-match")
             }
       } else {
         setError(result.error || "Invalid credentials")

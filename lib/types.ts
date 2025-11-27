@@ -16,6 +16,8 @@ export interface User {
   }
 }
 
+// Vibe interface removed - using mood in users table instead
+// Keeping for backward compatibility with VIBES constant (will be removed later)
 export interface Vibe {
   id: string
   label: string
@@ -35,7 +37,7 @@ export interface Topic {
 export interface Match {
   id: string
   user: User
-  vibe: string
+  mood: string
   topic: string
   compatibility: number
   intimacyTier: IntimacyTier

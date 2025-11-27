@@ -56,8 +56,8 @@ export function OnboardingController() {
       router.replace('/topic-match')
       // Fallback navigation
       setTimeout(() => {
-        if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
-          window.location.href = '/vibe'
+        if (typeof window !== 'undefined' && window.location.pathname !== '/topic-match') {
+          window.location.href = '/topic-match'
         }
       }, 100)
       return
@@ -856,13 +856,13 @@ export function OnboardingController() {
       }
     }
     
-    // Navigate to vibe after save completes and is verified
+    // Navigate to topic-match after save completes and is verified
     // Use window.location.href for hard navigation to prevent redirect loops
-    console.log('[OnboardingController] Navigating to /vibe...')
+    console.log('[OnboardingController] Navigating to /topic-match...')
     
     // Use hard navigation to ensure clean state
     if (typeof window !== 'undefined') {
-      window.location.href = '/vibe'
+      window.location.href = '/topic-match'
     } else {
       router.replace('/topic-match')
     }

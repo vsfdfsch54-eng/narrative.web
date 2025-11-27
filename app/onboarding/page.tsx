@@ -50,12 +50,12 @@ export default function OnboardingPage() {
             
             // If flag exists and was set within last 30 seconds, trust it
             if (completedFlag === 'true' && timeSinceCompletion < 30000) {
-              console.log('[OnboardingPage] ✅ Onboarding just completed (flag set), redirecting to /vibe')
+              console.log('[OnboardingPage] ✅ Onboarding just completed (flag set), redirecting to /topic-match')
               justCompleted = true
               // Clear the flag
               localStorage.removeItem('onboarding_just_completed')
               localStorage.removeItem('onboarding_completed_timestamp')
-              router.replace("/vibe")
+              router.replace("/topic-match")
               return
             }
           }
@@ -92,10 +92,10 @@ export default function OnboardingPage() {
               break
             }
             
-            // If completed, redirect to vibe
+            // If completed, redirect to topic-match
             if (checkResult.completed) {
-              console.log('[OnboardingPage] Onboarding is complete, redirecting to /vibe')
-              router.replace("/vibe")
+              console.log('[OnboardingPage] Onboarding is complete, redirecting to /topic-match')
+              router.replace("/topic-match")
               return
             }
             

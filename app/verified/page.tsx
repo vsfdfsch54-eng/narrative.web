@@ -22,12 +22,12 @@ export default function VerifiedPage() {
         }
         
         if (session && session.user && session.user.email_confirmed_at) {
-          // Email is verified - show success message briefly then redirect to /vibe
+          // Email is verified - show success message briefly then redirect to /topic-match
           setStatus('verified')
           
-          // Redirect to /vibe after 1.5 seconds
+          // Redirect to /topic-match after 1.5 seconds
           setTimeout(() => {
-            router.push('/vibe')
+            router.push('/topic-match')
           }, 1500)
         } else {
           // Not verified or no session, redirect to onboarding

@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
       const profile = await generatePersonalityProfile(
         questionnaireAnswers,
         interests,
-        vibe || null,
+        mood || null,
         topic || null
       )
       summary = profile.summary
