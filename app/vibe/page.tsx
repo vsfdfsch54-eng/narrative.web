@@ -408,12 +408,16 @@ export default function VibePage() {
       if (data.success && data.matched && data.match && data.otherUserId) {
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
       } else if (data.success && data.inQueue) {
-        router.push("/chat")
+        // In queue - start polling for match status
+        startPollingForMatch(userId)
       } else {
-        router.push("/chat")
+        // Not matched and not in queue - stay on vibe page to try again
+        // Don't redirect to /chat (which would redirect back to /vibe)
+        console.log('[VibePage] Skip: Not matched and not in queue - staying on vibe page')
       }
     } catch (error) {
-      router.push("/chat")
+      // On error, stay on vibe page - don't redirect to /chat
+      console.error('[VibePage] Error skipping:', error)
     } finally {
       setSaving(false)
     }
