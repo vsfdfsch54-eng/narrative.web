@@ -98,17 +98,33 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         const dbUser = data.data
         const dbStep = normalizeOnboardingStep(dbUser.onboarding_step)
 
-        setState(prev => ({
-          ...prev,
-          step: dbStep,
-          email: dbUser.email || '',
-          firstName: dbUser.first_name || '',
-          lastName: dbUser.last_name || '',
-          questionsAnswers: (dbUser.questions_answers as Record<string, string>) || {},
-          interests: dbUser.interests || [],
-          initialized: true,
-          error: null,
-        }))
+        setState(prev => {
+          // CRITICAL: Never reset to 'email' if user is already on a later step
+          // This prevents the email loop when DB is stale or hasn't propagated
+          let finalStep = dbStep
+          if (dbStep === 'email' && prev.step !== 'email' && prev.step !== 'start') {
+            console.log('[OnboardingContext] ⚠️ DB says "email" but user is on', prev.step, '- preserving current step (preventing email loop)')
+            finalStep = prev.step // Preserve current step
+          } else if (dbStep !== 'email' && dbStep !== 'start') {
+            // If DB has a later step, use it (user progressed)
+            finalStep = dbStep
+          } else if (prev.step !== 'email' && prev.step !== 'start') {
+            // If DB says 'email' but user is ahead, preserve user's step
+            finalStep = prev.step
+          }
+          
+          return {
+            ...prev,
+            step: finalStep,
+            email: dbUser.email || '',
+            firstName: dbUser.first_name || '',
+            lastName: dbUser.last_name || '',
+            questionsAnswers: (dbUser.questions_answers as Record<string, string>) || {},
+            interests: dbUser.interests || [],
+            initialized: true,
+            error: null,
+          }
+        })
       } else {
         // No user data - but preserve current step if user is already ahead
         setState(prev => ({
