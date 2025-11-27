@@ -155,25 +155,56 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
         }
 
         // FIFO fallback: if no AI match (or no embedding), match with first available user
+        // BUT: exclude users you've already matched with (prefer new matches)
         if (!matchResult && waitingUsers.length > 1) {
           console.log(`[AI Matchmaking] ${hasEmbedding ? 'AI matching failed' : 'No embedding'}, using FIFO fallback for user ${waitingUser.user_id}`)
-          // Find first available user in waiting pool (excluding current user)
-          const otherUser = waitingUsers.find(u => 
+          
+          // Get list of users you've already matched with (exclude them for new matches)
+          const { data: existingMatches } = await supabase
+            .from('chat_matches')
+            .select('user1_id, user2_id')
+            .or(`user1_id.eq.${waitingUser.user_id},user2_id.eq.${waitingUser.user_id}`)
+            .in('status', ['active', 'ended'])
+          
+          const matchedUserIds = new Set<string>()
+          if (existingMatches) {
+            existingMatches.forEach(match => {
+              if (match.user1_id === waitingUser.user_id) {
+                matchedUserIds.add(match.user2_id)
+              } else {
+                matchedUserIds.add(match.user1_id)
+              }
+            })
+          }
+          
+          // First, try to find a user you haven't matched with (new match)
+          let otherUser = waitingUsers.find(u => 
             u.user_id !== waitingUser.user_id && 
-            !processedUserIds.has(u.user_id)
+            !processedUserIds.has(u.user_id) &&
+            !matchedUserIds.has(u.user_id) // Exclude previous matches
           )
+          
+          // If no new users available, allow rematch (Omegle-style)
+          if (!otherUser && waitingUsers.length > 1) {
+            console.log(`[AI Matchmaking] No new users available for ${waitingUser.user_id}, allowing rematch (Omegle-style)`)
+            otherUser = waitingUsers.find(u => 
+              u.user_id !== waitingUser.user_id && 
+              !processedUserIds.has(u.user_id)
+            )
+          }
           
           if (otherUser) {
             // Create a basic match result for FIFO fallback
+            const isRematch = matchedUserIds.has(otherUser.user_id)
             matchResult = {
               userId: otherUser.user_id,
               matchScore: 0.5, // Default score for FIFO matches
               traitsUsed: {
-                method: 'FIFO_fallback',
+                method: isRematch ? 'FIFO_rematch' : 'FIFO_new_match',
                 reason: hasEmbedding ? 'AI matching failed or score too low' : 'No personality embedding available',
               },
             }
-            console.log(`[AI Matchmaking] FIFO fallback: matching ${waitingUser.user_id} with ${otherUser.user_id}`)
+            console.log(`[AI Matchmaking] FIFO fallback: matching ${waitingUser.user_id} with ${otherUser.user_id} (${isRematch ? 'rematch' : 'new match'})`)
           }
         }
 
