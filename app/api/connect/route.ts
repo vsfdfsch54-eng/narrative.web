@@ -539,6 +539,7 @@ export async function POST(request: NextRequest) {
 /**
  * PUT /api/connect
  * Update last_active timestamp for user in waiting pool (heartbeat)
+ * Also updates user_presence to keep them in sync
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -553,12 +554,28 @@ export async function PUT(request: NextRequest) {
     }
 
     const supabase = createServerClient()
+    const now = new Date().toISOString()
 
-    // Update last_active timestamp
-    const { error } = await supabase
+    // Update last_active timestamp in waiting_pool
+    const { error: poolError } = await supabase
       .from('waiting_pool')
-      .update({ last_active: new Date().toISOString() })
+      .update({ last_active: now })
       .eq('user_id', userId)
+
+    // Also update user_presence to keep them in sync
+    // This ensures presence system reflects actual activity
+    await supabase
+      .from('user_presence')
+      .upsert({
+        user_id: userId,
+        is_online: true,
+        last_seen_at: now,
+        updated_at: now,
+      }, {
+        onConflict: 'user_id',
+      })
+
+    if (poolError) {
 
     if (error) {
       console.error('[Connect API] Error updating activity:', error)

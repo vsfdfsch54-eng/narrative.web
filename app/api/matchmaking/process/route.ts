@@ -88,8 +88,24 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
       }
 
       try {
-        // Verify user is still online and active before matching
-        // Check both presence AND last_active timestamp (30 second window)
+        // CRITICAL: Check last_active FIRST - if it's old, remove immediately
+        // This is the most reliable indicator of actual activity
+        const lastActive = waitingUser.last_active ? new Date(waitingUser.last_active) : null
+        const isActiveInPool = lastActive && (Date.now() - lastActive.getTime()) < 30000 // 30 seconds
+
+        // If last_active is missing or too old, remove immediately (don't even check presence)
+        if (!isActiveInPool) {
+          console.log(`[AI Matchmaking] User ${waitingUser.user_id} inactive (last_active too old), removing from pool`)
+          await supabase.from('waiting_pool').delete().eq('user_id', waitingUser.user_id)
+          // Also mark as offline in presence
+          await supabase
+            .from('user_presence')
+            .update({ is_online: false })
+            .eq('user_id', waitingUser.user_id)
+          continue
+        }
+
+        // Double-check presence for extra safety
         const { data: presenceData } = await supabase
           .from('user_presence')
           .select('is_online, last_seen_at')
@@ -99,13 +115,10 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
         const isOnline = presenceData?.is_online === true
         const lastSeenAt = presenceData?.last_seen_at ? new Date(presenceData.last_seen_at) : null
         const isRecentlyActive = lastSeenAt && (Date.now() - lastSeenAt.getTime()) < 30000 // 30 seconds
-        
-        // Also check last_active from waiting_pool
-        const lastActive = waitingUser.last_active ? new Date(waitingUser.last_active) : null
-        const isActiveInPool = lastActive && (Date.now() - lastActive.getTime()) < 30000 // 30 seconds
 
-        if (!isOnline || !isRecentlyActive || !isActiveInPool) {
-          console.log(`[AI Matchmaking] User ${waitingUser.user_id} is not online or inactive (background tab), removing from pool`)
+        // If presence shows offline or inactive, remove from pool
+        if (!isOnline || !isRecentlyActive) {
+          console.log(`[AI Matchmaking] User ${waitingUser.user_id} not online or inactive (presence check failed), removing from pool`)
           await supabase.from('waiting_pool').delete().eq('user_id', waitingUser.user_id)
           continue
         }
