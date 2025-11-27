@@ -16,8 +16,8 @@ export default function VerifyPage() {
   // Redirect if user is verified
   useEffect(() => {
     if (!authLoading && user && user.email_confirmed_at) {
-      // User is verified, redirect to /vibe
-      router.push('/vibe')
+      // User is verified, redirect to /topic-match
+      router.push('/topic-match')
     } else if (!authLoading && !user) {
       // Not logged in, redirect to landing page
       router.push('/')
@@ -31,8 +31,8 @@ export default function VerifyPage() {
     const checkVerification = setInterval(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user?.email_confirmed_at) {
-        // Email verified, redirect to /vibe
-        router.push('/vibe')
+        // Email verified, redirect to /topic-match
+        router.push('/topic-match')
       }
     }, 3000) // Check every 3 seconds
 

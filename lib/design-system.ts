@@ -19,7 +19,7 @@ export const colors = {
   border: 'rgba(0, 0, 0, 0.08)',
   borderStrong: 'rgba(0, 0, 0, 0.12)',
   
-  // Accent Colors (for categories, vibes, chips, buttons)
+  // Accent Colors (for categories, moods, chips, buttons)
   accent: {
     green: '#4ADE80',
     blue: '#3B82F6',

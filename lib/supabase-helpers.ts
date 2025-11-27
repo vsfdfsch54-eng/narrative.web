@@ -2,7 +2,7 @@ import { supabase, createServerClient } from './supabaseClient'
 import { Database } from '@/types/database'
 
 type User = Database['public']['Tables']['users']['Row']
-type Vibe = Database['public']['Tables']['vibes']['Row']
+// Vibe type removed - using mood column in users table instead
 type Topic = Database['public']['Tables']['topics']['Row']
 type ChatMatch = Database['public']['Tables']['chat_matches']['Row']
 type Message = Database['public']['Tables']['messages']['Row']

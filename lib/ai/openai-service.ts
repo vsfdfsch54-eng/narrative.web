@@ -61,7 +61,7 @@ export async function generatePersonalityEmbedding(text: string): Promise<number
 }
 
 /**
- * Generate personality summary from questionnaire answers, interests, and optional vibe/topic
+ * Generate personality summary from questionnaire answers, interests, and optional mood/topic
  * Uses GPT-4 to create a comprehensive personality description
  */
 export async function generatePersonalitySummary(
@@ -82,7 +82,7 @@ export async function generatePersonalitySummary(
       ? `Interests: ${interests.join(', ')}`
       : ''
     
-    const vibeText = vibe ? `Current vibe/mood: ${vibe}` : ''
+    const moodText = mood ? `Current mood: ${mood}` : ''
     const topicText = topic ? `Current topic interest: ${topic}` : ''
     
     const prompt = `You are a personality psychologist analyzing a user's profile. Based on the following information, generate a comprehensive personality summary (2-3 paragraphs) that captures:
@@ -98,7 +98,7 @@ Questionnaire Answers:
 ${questionnaireText}
 
 ${interestsText}
-${vibeText}
+${moodText}
 ${topicText}
 
 Generate a detailed personality summary that would be useful for matching them with compatible conversation partners. Be specific and insightful, focusing on traits that affect social compatibility.`
@@ -138,7 +138,7 @@ Generate a detailed personality summary that would be useful for matching them w
     // Retry logic for rate limits
     if (error.status === 429 || error.message?.includes('rate limit')) {
       await new Promise(resolve => setTimeout(resolve, 2000))
-      return generatePersonalitySummary(questionnaireAnswers, interests, vibe, topic)
+      return generatePersonalitySummary(questionnaireAnswers, interests, mood, topic)
     }
     
     throw new Error(`Failed to generate personality summary: ${error.message || 'Unknown error'}`)

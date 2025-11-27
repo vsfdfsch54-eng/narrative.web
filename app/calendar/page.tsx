@@ -42,9 +42,9 @@ const tagColors: Record<string, { dot: string; label: string; color: string }> =
 }
 
 const planTemplates = [
-  { title: "Brunch + Walk", detail: "Saturday • 11:00 AM • Elmwood Village", vibe: "Warm" },
-  { title: "Night Swim", detail: "Friday • 9:30 PM • North Lake", vibe: "Spontaneous" },
-  { title: "Micro Gallery Hop", detail: "Thursday • 6:00 PM • Allen St.", vibe: "Creative" },
+  { title: "Brunch + Walk", detail: "Saturday • 11:00 AM • Elmwood Village", mood: "Warm" },
+  { title: "Night Swim", detail: "Friday • 9:30 PM • North Lake", mood: "Spontaneous" },
+  { title: "Micro Gallery Hop", detail: "Thursday • 6:00 PM • Allen St.", mood: "Creative" },
 ]
 
 function generateDays(year: number, month: number) {
@@ -69,7 +69,7 @@ export default function CalendarPage() {
     title: "",
     inviteGroup: "Inner Circle" as keyof typeof friends,
     privacy: "private",
-    vibe: "Curious",
+    mood: "Curious",
     notes: "",
   })
 
@@ -238,7 +238,7 @@ export default function CalendarPage() {
           title: "",
           inviteGroup: "Inner Circle",
           privacy: "private",
-          vibe: "Curious",
+          mood: "Curious",
           notes: "",
         })
         const newEvents = [...events, {

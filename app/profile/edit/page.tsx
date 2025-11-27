@@ -23,7 +23,7 @@ export default function ProfileEditPage() {
     stats: {
       connections: 0,
       topics: 0,
-      vibes: 0,
+      moods: 0,
     },
   })
 

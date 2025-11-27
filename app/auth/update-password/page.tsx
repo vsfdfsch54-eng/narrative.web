@@ -48,7 +48,7 @@ function UpdatePasswordContent() {
       if (error) {
         setError(error.message)
       } else {
-        router.push('/vibe')
+        router.push('/topic-match')
       }
     } catch (err: any) {
       setError(err.message || "Something went wrong")

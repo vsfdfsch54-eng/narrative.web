@@ -69,10 +69,10 @@ export async function GET(request: NextRequest) {
       pendingConnections.forEach(conn => pendingUserIds.add(conn.target_id))
     }
 
-    // Get current user's vibe and topic for preference matching
+    // Get current user's mood and topic for preference matching
     const { data: currentUser, error: userError } = await supabase
       .from('users')
-      .select('vibe, topic')
+      .select('mood, topic')
       .eq('id', userId)
       .single()
 
@@ -86,10 +86,10 @@ export async function GET(request: NextRequest) {
     const excludeIds = Array.from(new Set([userId, ...matchedArray, ...pendingArray]))
 
     // Fetch potential matches
-    // Prefer users with same vibe/topic, fallback to any active user
+    // Prefer users with same mood/topic, fallback to any active user
     let query = supabase
       .from('users')
-      .select('id, name, interests, vibe, topic, reputation_emojis, communities')
+      .select('id, name, interests, mood, topic, reputation_emojis, communities')
       .neq('id', userId)
       .not('id', 'in', `(${excludeIds.join(',')})`)
       .limit(50)
@@ -109,12 +109,12 @@ export async function GET(request: NextRequest) {
       (onlinePresence || []).map(p => p.user_id)
     )
 
-    // If user has vibe/topic, prefer matching those (but only online users)
-    if (currentUser?.vibe || currentUser?.topic) {
-      // First try to get users with matching vibe/topic who are online
+    // If user has mood/topic, prefer matching those (but only online users)
+    if (currentUser?.mood || currentUser?.topic) {
+      // First try to get users with matching mood/topic who are online
       let preferredQuery = supabase
         .from('users')
-        .select('id, name, interests, vibe, topic, reputation_emojis, communities')
+        .select('id, name, interests, mood, topic, reputation_emojis, communities')
         .neq('id', userId)
         .in('id', Array.from(onlineUserIds))
         .limit(50)
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
       })
 
       const { data: preferredMatches, error: preferredError } = await preferredQuery
-        .or(`vibe.eq.${currentUser.vibe || ''},topic.eq.${currentUser.topic || ''}`)
+        .or(`mood.eq.${currentUser.mood || ''},topic.eq.${currentUser.topic || ''}`)
         .order('created_at', { ascending: false })
         .limit(20)
 
@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
     // Only fetch users who are online (onlineUserIds already fetched above)
     let fallbackQuery = supabase
       .from('users')
-      .select('id, name, interests, vibe, topic, reputation_emojis, communities')
+      .select('id, name, interests, mood, topic, reputation_emojis, communities')
       .neq('id', userId)
       .in('id', Array.from(onlineUserIds))
       .gte('created_at', fortyEightHoursAgo)
@@ -193,7 +193,7 @@ function formatProfile(user: any) {
     id: user.id,
     name: user.name || 'User',
     interests: Array.isArray(user.interests) ? user.interests : [],
-    vibe: user.vibe || null,
+    mood: user.mood || null,
     topic: user.topic || null,
     reputation_emojis: Array.isArray(user.reputation_emojis) ? user.reputation_emojis : [],
     communities: Array.isArray(user.communities) ? user.communities : [],

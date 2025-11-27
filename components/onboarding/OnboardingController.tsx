@@ -45,7 +45,7 @@ export function OnboardingController() {
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const isSavingRef = useRef(false) // PART 3: Prevent concurrent saves
 
-  // Redirect if onboarding is complete - ALWAYS redirect to /vibe
+  // Redirect if onboarding is complete - ALWAYS redirect to /topic-match
   useEffect(() => {
     if (authLoading || !user || !state.initialized) return
     if (hasRedirectedRef.current) return
@@ -53,7 +53,7 @@ export function OnboardingController() {
     // Check if user is already completed
     if (state.step === 'complete') {
       hasRedirectedRef.current = true
-      router.replace('/vibe')
+      router.replace('/topic-match')
       // Fallback navigation
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
@@ -73,7 +73,7 @@ export function OnboardingController() {
           const dbStep = normalizeOnboardingStep(data.data.onboarding_step)
           if (dbStep === 'complete' || data.data.onboarding_completed) {
             hasRedirectedRef.current = true
-            router.replace('/vibe')
+            router.replace('/topic-match')
             // Fallback navigation
             setTimeout(() => {
               if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
@@ -660,10 +660,10 @@ export function OnboardingController() {
       if (!user?.id) {
         console.error('[OnboardingController] Cannot complete: user ID missing')
         // Still try to navigate - might work if user becomes available
-        router.replace('/vibe')
+        router.replace('/topic-match')
         setTimeout(() => {
-          if (typeof window !== 'undefined' && window.location.pathname !== '/vibe') {
-            window.location.href = '/vibe'
+          if (typeof window !== 'undefined' && window.location.pathname !== '/topic-match') {
+            window.location.href = '/topic-match'
           }
         }, 100)
         return
@@ -864,7 +864,7 @@ export function OnboardingController() {
     if (typeof window !== 'undefined') {
       window.location.href = '/vibe'
     } else {
-      router.replace('/vibe')
+      router.replace('/topic-match')
     }
   }
 

@@ -72,7 +72,7 @@ export const PERSONALITY_QUESTIONS: PersonalityQuestion[] = [
     options: [
       { value: 'venting', label: 'A space to vent and be heard', emoji: '🗣️' },
       { value: 'learning', label: 'To learn new perspectives', emoji: '📚' },
-      { value: 'humor', label: 'Laughs and good vibes', emoji: '😄' },
+      { value: 'humor', label: 'Laughs and good moods', emoji: '😄' },
       { value: 'connection', label: 'Deep connection with others', emoji: '💫' },
     ],
     category: 'intention',

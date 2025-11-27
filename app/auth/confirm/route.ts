@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type')
-  const next = searchParams.get('next') || '/vibe'
+  const next = searchParams.get('next') || '/topic-match'
 
   if (!token_hash || !type) {
     return NextResponse.redirect(new URL('/?error=missing_params', request.url))

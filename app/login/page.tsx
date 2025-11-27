@@ -39,8 +39,8 @@ export default function LoginPage() {
               
         // NEVER redirect on API errors - causes redirect loops
         if (apiError) {
-          console.warn('[LoginPage] ⚠️ API error checking onboarding - redirecting to /vibe to prevent loop')
-          router.replace("/vibe")
+          console.warn('[LoginPage] ⚠️ API error checking onboarding - redirecting to /topic-match to prevent loop')
+          router.replace("/topic-match")
           return
         }
 
@@ -57,12 +57,12 @@ export default function LoginPage() {
           return
         }
 
-        // Complete onboarding → redirect to /vibe
-        router.replace("/vibe")
+        // Complete onboarding → redirect to /topic-match
+        router.replace("/topic-match")
       } catch (error) {
         console.error('[LoginPage] Error checking onboarding:', error)
-        // On error, redirect to /vibe (not onboarding) to prevent loops
-        router.replace("/vibe")
+        // On error, redirect to /topic-match (not onboarding) to prevent loops
+        router.replace("/topic-match")
       }
     }
 
@@ -112,8 +112,8 @@ export default function LoginPage() {
               
           // NEVER redirect on API errors - causes redirect loops
           if (apiError) {
-            console.warn('[LoginPage] ⚠️ API error after signin - redirecting to /vibe to prevent loop')
-            router.replace("/vibe")
+            console.warn('[LoginPage] ⚠️ API error after signin - redirecting to /topic-match to prevent loop')
+            router.replace("/topic-match")
             return
           }
 

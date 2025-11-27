@@ -7,12 +7,12 @@ import { generatePersonalityProfile } from '@/lib/ai/openai-service'
 
 /**
  * POST /api/personality/generate
- * Generates AI personality profile from questionnaire answers, interests, and optional vibe/topic
+ * Generates AI personality profile from questionnaire answers, interests, and optional mood/topic
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { userId, questionnaireAnswers, interests, vibe, topic } = body
+    const { userId, questionnaireAnswers, interests, mood, topic } = body
 
     if (!userId) {
       return NextResponse.json(

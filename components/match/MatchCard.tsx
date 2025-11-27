@@ -9,7 +9,7 @@ interface MatchCardProps {
     id: string
     name: string
     interests?: string[]
-    vibe?: string | null
+    mood?: string | null
     topic?: string | null
     reputation_emojis?: string[]
     communities?: any[]
@@ -113,7 +113,7 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
           </div>
         </div>
 
-        {/* Box 2: Vibe + Topic */}
+        {/* Box 2: Mood + Topic */}
         <div style={{
           padding: tokens.spacing[16],
           borderRadius: tokens.radii.button,
@@ -128,15 +128,15 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
           }}>
-            Vibe & Topic
+            Mood & Topic
           </h3>
           <div style={{
             color: tokens.colors.textPrimaryOnDark,
             fontSize: '14px',
           }}>
-            {profile.vibe && profile.topic ? (
+            {profile.mood && profile.topic ? (
               <div>
-                <div style={{ marginBottom: tokens.spacing[4] }}>{profile.vibe}</div>
+                <div style={{ marginBottom: tokens.spacing[4] }}>{profile.mood}</div>
                 <div style={{ color: tokens.colors.textSecondary }}>{profile.topic}</div>
               </div>
             ) : (

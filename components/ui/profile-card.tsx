@@ -12,7 +12,7 @@ export interface Profile {
     count: number
     names: string[]
   }
-  vibe?: {
+  mood?: {
     id: string
     label: string
   }
@@ -79,7 +79,7 @@ export function ProfileCard({ profile, onChat, onSkip }: ProfileCardProps) {
         </div>
       </div>
 
-      {/* Box 2: What People Say, Vibe & Topic */}
+      {/* Box 2: What People Say, Mood & Topic */}
       <div className="sleek-module p-3 border-2 border-white/15">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-white/65 mb-2">
           What people say
@@ -95,9 +95,9 @@ export function ProfileCard({ profile, onChat, onSkip }: ProfileCardProps) {
         <div className="pt-2 border-t border-white/10">
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/65 mb-1">Vibe</p>
-              {profile.vibe ? (
-                <p className="text-xs font-semibold text-white/90">{profile.vibe.label}</p>
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-white/65 mb-1">Mood</p>
+              {profile.mood ? (
+                <p className="text-xs font-semibold text-white/90">{profile.mood.label}</p>
               ) : (
                 <p className="text-xs text-white/60 font-medium">None</p>
               )}

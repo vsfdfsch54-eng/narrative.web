@@ -12,7 +12,7 @@ export interface User {
   stats?: {
     connections: number
     topics: number
-    vibes: number
+    moods: number
   }
 }
 

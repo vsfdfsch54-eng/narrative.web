@@ -585,7 +585,7 @@ export default function ChatDetailPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12], flex: 1, minWidth: 0 }}>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => router.push("/vibe")}
+              onClick={() => router.push("/topic-match")}
               style={{
                 padding: tokens.spacing[8],
                 borderRadius: tokens.radii.pill,

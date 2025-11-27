@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
         const questionnaireAnswers = {
           inferred_from: 'existing_profile',
           interests: interests.join(', '),
-          has_vibe_history: !!lastVibe,
-          last_vibe: lastVibe,
+          has_mood: !!lastMood,
+          last_mood: lastMood,
           profile_completeness: interests.length > 0 ? 'partial' : 'minimal',
         }
 
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         const { summary, embedding, traits } = await generatePersonalityProfile(
           questionnaireAnswers,
           interests,
-          lastVibe,
+          lastMood,
           null // No topic available
         )
 
