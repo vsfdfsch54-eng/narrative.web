@@ -876,6 +876,50 @@ export async function PUT(request: NextRequest) {
       hasEmail: !!providedEmail,
     })
 
+    // Handle direct field updates (mood, topic, etc.) that aren't part of onboarding
+    const directUpdateFields: any = {}
+    if (body.mood !== undefined) directUpdateFields.mood = body.mood
+    if (body.topic !== undefined) directUpdateFields.topic = body.topic
+    if (body.name !== undefined) directUpdateFields.name = body.name
+    if (body.interests !== undefined) directUpdateFields.interests = body.interests
+    if (body.reputation_emojis !== undefined) directUpdateFields.reputation_emojis = body.reputation_emojis
+    if (body.communities !== undefined) directUpdateFields.communities = body.communities
+
+    // If there are direct updates and no onboarding fields, just do a direct update
+    if (Object.keys(directUpdateFields).length > 0 && !onboarding_step && onboarding_completed === undefined && !firstName && !lastName && !questionsAnswers) {
+      directUpdateFields.updated_at = new Date().toISOString()
+      const { data: updateData, error: updateError } = await supabase
+        .from('users')
+        .update(directUpdateFields)
+        .eq('id', userId)
+        .select()
+
+      if (updateError) {
+        console.error('[Users API PUT] ❌ Direct update failed:', updateError)
+        return NextResponse.json(
+          { success: false, error: updateError.message || 'Failed to update user' },
+          { 
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              ...getCorsHeaders(),
+            }
+          }
+        )
+      }
+
+      const finalData = Array.isArray(updateData) ? updateData[0] : updateData
+      return NextResponse.json(
+        { success: true, data: finalData },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            ...getCorsHeaders(),
+          }
+        }
+      )
+    }
+
     const result = await saveOnboardingProgress(supabase, userId, {
       firstName,
       lastName,
@@ -902,6 +946,25 @@ export async function PUT(request: NextRequest) {
           }
         }
       )
+    }
+
+    // If there are also direct updates, apply them after onboarding save
+    if (Object.keys(directUpdateFields).length > 0) {
+      directUpdateFields.updated_at = new Date().toISOString()
+      const { data: updateData, error: updateError } = await supabase
+        .from('users')
+        .update(directUpdateFields)
+        .eq('id', userId)
+        .select()
+
+      if (updateError) {
+        console.error('[Users API PUT] ⚠️ Direct update after onboarding save failed:', updateError)
+        // Don't fail the request, just log the error
+      } else {
+        // Merge the direct updates with the onboarding result
+        const mergedData = { ...result.data, ...(Array.isArray(updateData) ? updateData[0] : updateData) }
+        result.data = mergedData
+      }
     }
 
     // PART 5: Verbose logging - log what was actually saved
