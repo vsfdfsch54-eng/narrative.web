@@ -15,6 +15,8 @@ import { AppShell } from "@/components/AppShell"
 import { useRealtimeChat } from "@/hooks/use-realtime-chat"
 import { useTypingIndicator } from "@/hooks/use-typing-indicator"
 import { usePresence } from "@/hooks/use-presence"
+import { supabase } from "@/lib/supabaseClient"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function ChatDetailPage() {
   const params = useParams()
@@ -116,6 +118,40 @@ export default function ChatDetailPage() {
 
   // Real-time chat hook
   const { messages, setMessages } = useRealtimeChat(matchId, currentUserId)
+  
+  // Listen for match status changes (when other user ends conversation)
+  useEffect(() => {
+    if (!matchId || !currentUserId) return
+    
+    const channel = supabase
+      .channel(`match:${matchId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_matches',
+          filter: `id=eq.${matchId}`,
+        },
+        (payload) => {
+          const updatedMatch = payload.new as any
+          if (updatedMatch.status === 'ended') {
+            // Other user ended the conversation - redirect to feedback
+            console.log('[ChatDetailPage] Match ended by other user')
+            localStorage.setItem("feedbackChatId", chatId)
+            localStorage.setItem("feedbackProfileName", profileName)
+            setTimeout(() => {
+              router.push("/feedback")
+            }, 100)
+          }
+        }
+      )
+      .subscribe()
+    
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [matchId, currentUserId, chatId, profileName, router])
 
   // Typing indicator hook
   const { isOtherUserTyping, setTyping } = useTypingIndicator(matchId, currentUserId, chatId)
@@ -414,13 +450,39 @@ export default function ChatDetailPage() {
     }
   }
 
-  const handleEndConvo = () => {
+  const handleEndConvo = async () => {
+    if (!matchId) {
+      console.error('[ChatDetailPage] No matchId to end conversation')
+      return
+    }
+    
     setShowEndModal(false)
-    localStorage.setItem("feedbackChatId", chatId)
-    localStorage.setItem("feedbackProfileName", profileName)
-    setTimeout(() => {
-      router.push("/feedback")
-    }, 100)
+    
+    try {
+      // Update match status to 'ended' in database
+      // This will be detected by the other user via realtime
+      const response = await fetch('/api/matches', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchId, status: 'ended' }),
+      })
+      
+      if (!response.ok) {
+        console.error('[ChatDetailPage] Failed to end conversation')
+        alert('Failed to end conversation. Please try again.')
+        return
+      }
+      
+      // Store feedback info and redirect
+      localStorage.setItem("feedbackChatId", chatId)
+      localStorage.setItem("feedbackProfileName", profileName)
+      setTimeout(() => {
+        router.push("/feedback")
+      }, 100)
+    } catch (error) {
+      console.error('[ChatDetailPage] Error ending conversation:', error)
+      alert('Failed to end conversation. Please try again.')
+    }
   }
 
   const formatTimeRemaining = (ms: number): string => {
@@ -469,9 +531,16 @@ export default function ChatDetailPage() {
       <div style={{ 
         display: 'flex', 
         flexDirection: 'column', 
-        height: 'calc(100vh - 140px)',
-        maxHeight: 'calc(100vh - 140px)',
+        height: '100vh',
+        maxHeight: '100vh',
+        overflow: 'hidden',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         paddingTop: tokens.spacing[20],
+        paddingBottom: tokens.spacing[20],
       }}>
         {/* Header */}
         <div style={{
@@ -578,11 +647,14 @@ export default function ChatDetailPage() {
         <div style={{
           flex: 1,
           overflowY: 'auto',
+          overflowX: 'hidden',
           padding: `${tokens.spacing[12]} 0`,
           minHeight: 0,
+          maxHeight: '100%',
           display: 'flex',
           flexDirection: 'column',
           gap: tokens.spacing[12],
+          WebkitOverflowScrolling: 'touch',
         }}>
           {messages.length === 0 ? (
             <div style={{
