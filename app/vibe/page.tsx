@@ -116,7 +116,7 @@ export default function VibePage() {
     return null
   }
 
-  // Poll for match status
+  // Poll for match status and maintain active status
   const startPollingForMatch = async (userId: string) => {
     setMatching(true)
     setMatchStatus({ message: 'Finding your match...' })
@@ -124,8 +124,73 @@ export default function VibePage() {
     let pollCount = 0
     const maxPolls = 60 // Poll for up to 60 seconds (30 polls * 2s)
     
+    // Heartbeat: Update last_active in waiting_pool every 30 seconds
+    const heartbeatInterval = setInterval(async () => {
+      try {
+        await fetch('/api/connect', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, updateActivity: true }),
+          cache: 'no-store',
+        }).catch(() => {}) // Silently fail - heartbeat is best effort
+      } catch (error) {
+        // Ignore heartbeat errors
+      }
+    }, 30000) // Every 30 seconds
+    
+    // Remove from waiting pool when tab goes to background or closes
+    const handleVisibilityChange = async () => {
+      if (document.hidden) {
+        // Tab went to background - remove from pool after 10 seconds
+        setTimeout(async () => {
+          if (document.hidden) {
+            // Still hidden after 10 seconds - remove from pool
+            try {
+              await fetch('/api/connect', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId }),
+                cache: 'no-store',
+              }).catch(() => {})
+            } catch (error) {
+              // Ignore errors
+            }
+          }
+        }, 10000) // 10 second delay
+      }
+    }
+    
+    const handleBeforeUnload = async () => {
+      // Tab is closing - remove from pool immediately
+      try {
+        // Use sendBeacon for reliability during page unload
+        navigator.sendBeacon('/api/connect', JSON.stringify({ userId, remove: true }))
+      } catch (error) {
+        // Fallback: try fetch (may not complete)
+        fetch('/api/connect', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId }),
+          keepalive: true,
+        }).catch(() => {})
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
     const pollInterval = setInterval(async () => {
       pollCount++
+      
+      // Check if tab is hidden - if so, stop polling
+      if (document.hidden) {
+        clearInterval(pollInterval)
+        clearInterval(heartbeatInterval)
+        setMatching(false)
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+        window.removeEventListener('beforeunload', handleBeforeUnload)
+        return
+      }
       
       try {
         const response = await fetch(`/api/connect/status?userId=${userId}`, {
@@ -142,7 +207,10 @@ export default function VibePage() {
         if (data.success && data.matched && data.match && data.otherUserId) {
           // Match found!
           clearInterval(pollInterval)
+          clearInterval(heartbeatInterval)
           setMatching(false)
+          document.removeEventListener('visibilitychange', handleVisibilityChange)
+          window.removeEventListener('beforeunload', handleBeforeUnload)
           router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
           return
         }
@@ -157,7 +225,10 @@ export default function VibePage() {
         } else {
           // Not in queue anymore but not matched - go to chat page
           clearInterval(pollInterval)
+          clearInterval(heartbeatInterval)
           setMatching(false)
+          document.removeEventListener('visibilitychange', handleVisibilityChange)
+          window.removeEventListener('beforeunload', handleBeforeUnload)
           router.push("/chat")
           return
         }
@@ -165,7 +236,10 @@ export default function VibePage() {
         // Stop polling after max attempts
         if (pollCount >= maxPolls) {
           clearInterval(pollInterval)
+          clearInterval(heartbeatInterval)
           setMatching(false)
+          document.removeEventListener('visibilitychange', handleVisibilityChange)
+          window.removeEventListener('beforeunload', handleBeforeUnload)
           router.push("/chat")
         }
       } catch (error) {
@@ -175,7 +249,12 @@ export default function VibePage() {
     }, 2000) // Poll every 2 seconds
     
     // Cleanup on unmount
-    return () => clearInterval(pollInterval)
+    return () => {
+      clearInterval(pollInterval)
+      clearInterval(heartbeatInterval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
   }
 
   const handleConnect = async () => {
@@ -243,12 +322,23 @@ export default function VibePage() {
       } else if (data.success && data.inQueue) {
         // In queue - start polling for match status
         startPollingForMatch(userId)
+      } else if (data.requiresActive) {
+        // User is not active - show error message
+        alert(data.error || 'You must be actively using the site to find matches. Please make sure your tab is open and active.')
+        setSaving(false)
+        return
       } else if (data.needsOnboarding) {
         router.push("/onboarding?step=email")
       } else {
         router.push("/chat")
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Check if error is about being inactive
+      if (error.message?.includes('actively using') || error.message?.includes('requiresActive')) {
+        alert('You must be actively using the site to find matches. Please make sure your tab is open and active.')
+        setSaving(false)
+        return
+      }
       router.push("/chat")
     } finally {
       setSaving(false)

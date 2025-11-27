@@ -17,13 +17,13 @@ export default function Home() {
     if (authLoading) {
       return
     }
-
+    
     // USER LOGGED OUT → Show welcome page
     if (!user) {
       setCheckingOnboarding(false)
       return
     }
-
+    
     // USER LOGGED IN → Check onboarding and redirect
     async function checkAndRedirect() {
       if (!user) return
@@ -32,7 +32,7 @@ export default function Home() {
       
       try {
         const { completed, step, apiError } = await checkOnboardingStatus(user.id)
-
+            
         // NEVER redirect on API errors - causes redirect loops
         if (apiError) {
           console.warn('[Home] ⚠️ API error checking onboarding - redirecting to /vibe to prevent loop')
@@ -59,12 +59,12 @@ export default function Home() {
         console.error('[Home] Error checking onboarding:', error)
         // On error, redirect to /vibe (not onboarding) to prevent loops
         router.replace("/vibe")
-      } finally {
+        } finally {
         setCheckingOnboarding(false)
+        }
       }
-    }
-
-    checkAndRedirect()
+      
+      checkAndRedirect()
   }, [authLoading, user]) // Removed router from dependencies to prevent re-renders
 
   // Show loading while checking auth or onboarding status

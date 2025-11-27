@@ -36,13 +36,17 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
     }
 
     try {
-      // Clean stale entries (older than 10 minutes - more lenient)
+      // Clean stale entries:
+      // 1. Entries older than 10 minutes (safety cleanup)
+      // 2. Entries where last_active is older than 60 seconds (inactive users)
       const tenMinutesAgo = new Date(Date.now() - 1000 * 60 * 10).toISOString()
+      const oneMinuteAgoCleanup = new Date(Date.now() - 60000).toISOString()
       
+      // Remove entries that are too old OR inactive
       const { error: cleanupError } = await supabase
         .from('waiting_pool')
         .delete()
-        .lt('created_at', tenMinutesAgo)
+        .or(`created_at.lt.${tenMinutesAgo},last_active.lt.${oneMinuteAgoCleanup}`)
 
       if (cleanupError) {
         logWithContext('error', 'MATCH_CLEANUP_ERROR', context, { error: cleanupError.message })
@@ -50,10 +54,14 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
         logWithContext('info', 'MATCH_CLEANUP_SUCCESS', context)
       }
 
-    // Get all users in waiting pool
+    // Get all users in waiting pool who are online and recently active
+    // Only match users who are actively on the site (not in background)
+    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString() // 60 seconds ago
+    
     const { data: waitingUsers, error: fetchError } = await supabase
       .from('waiting_pool')
       .select('*')
+      .gte('last_active', oneMinuteAgo) // Only users active in last 60 seconds
       .order('created_at', { ascending: true })
 
     if (fetchError) {
@@ -79,6 +87,23 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
       }
 
       try {
+        // Verify user is still online and active before matching
+        const { data: presenceData } = await supabase
+          .from('user_presence')
+          .select('is_online, last_seen_at')
+          .eq('user_id', waitingUser.user_id)
+          .single()
+
+        const isOnline = presenceData?.is_online === true
+        const lastSeenAt = presenceData?.last_seen_at ? new Date(presenceData.last_seen_at) : null
+        const isRecentlyActive = lastSeenAt && (Date.now() - lastSeenAt.getTime()) < 60000 // 60 seconds
+
+        if (!isOnline || !isRecentlyActive) {
+          console.log(`[AI Matchmaking] User ${waitingUser.user_id} is not online or not recently active, removing from pool`)
+          await supabase.from('waiting_pool').delete().eq('user_id', waitingUser.user_id)
+          continue
+        }
+
         // Get user's embedding from users table (more reliable than waiting_pool copy)
         const { data: userData, error: userError } = await supabase
           .from('users')

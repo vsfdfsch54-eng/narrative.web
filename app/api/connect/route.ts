@@ -288,6 +288,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Check if user is online before adding to waiting pool
+    const { data: presenceData, error: presenceError } = await supabase
+      .from('user_presence')
+      .select('is_online, last_seen_at')
+      .eq('user_id', userId)
+      .single()
+
+    // Only allow matching if user is online and recently active (within last 60 seconds)
+    const isOnline = presenceData?.is_online === true
+    const lastSeenAt = presenceData?.last_seen_at ? new Date(presenceData.last_seen_at) : null
+    const isRecentlyActive = lastSeenAt && (Date.now() - lastSeenAt.getTime()) < 60000 // 60 seconds
+
+    if (!isOnline || !isRecentlyActive) {
+      console.warn('[Connect API] User is not online or not recently active:', { userId, isOnline, lastSeenAt })
+      return NextResponse.json(
+        { 
+          error: 'You must be actively using the site to find matches. Please make sure your tab is open and active.',
+          requiresActive: true,
+        },
+        { 
+          status: 400,
+          headers: getCorsHeaders(),
+        }
+      )
+    }
+
     // Remove any existing entry in waiting pool for this user
     await supabase.from('waiting_pool').delete().eq('user_id', userId)
 
@@ -298,6 +324,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: userId,
         embedding: userEmbedding, // Can be null - matching service will use FIFO
+        last_active: new Date().toISOString(), // Track when user was last active
       })
 
     if (insertError) {
@@ -501,13 +528,74 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * PUT /api/connect
+ * Update last_active timestamp for user in waiting pool (heartbeat)
+ */
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { userId, updateActivity } = body
+
+    if (!userId || !updateActivity) {
+      return NextResponse.json({ error: 'Missing userId or updateActivity' }, { 
+        status: 400,
+        headers: getCorsHeaders(),
+      })
+    }
+
+    const supabase = createServerClient()
+
+    // Update last_active timestamp
+    const { error } = await supabase
+      .from('waiting_pool')
+      .update({ last_active: new Date().toISOString() })
+      .eq('user_id', userId)
+
+    if (error) {
+      console.error('[Connect API] Error updating activity:', error)
+      return NextResponse.json(
+        { error: 'Failed to update activity' },
+        { 
+          status: 500,
+          headers: getCorsHeaders(),
+        }
+      )
+    }
+
+    return NextResponse.json({ success: true }, {
+      headers: getCorsHeaders(),
+    })
+  } catch (error: any) {
+    console.error('[Connect API] Error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { 
+        status: 500,
+        headers: getCorsHeaders(),
+      }
+    )
+  }
+}
+
+/**
  * DELETE /api/connect
  * Removes user from waiting pool
  */
 export async function DELETE(request: NextRequest) {
   try {
+    // Support both query params and body for DELETE
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    let userId = searchParams.get('userId')
+    
+    // If not in query params, try body (for sendBeacon)
+    if (!userId) {
+      try {
+        const body = await request.json().catch(() => ({}))
+        userId = body.userId || body.user_id
+      } catch {
+        // Body parsing failed, continue with query params only
+      }
+    }
 
     if (!userId) {
       return NextResponse.json({ error: 'Missing userId' }, { 
