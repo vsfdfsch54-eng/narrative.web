@@ -85,6 +85,28 @@ export default function LoginPage() {
               return
             }
             
+        // CRITICAL: Ensure user record exists in database after sign-in
+        // This handles cases where user signed up but record wasn't created
+        try {
+          console.log('[LoginPage] 🔍 Ensuring user record exists after sign-in...', { userId })
+          const getUserResponse = await fetch(`/api/users?userId=${userId}`, {
+            method: 'GET',
+            cache: 'no-store',
+          })
+          
+          if (!getUserResponse.ok) {
+            console.error('[LoginPage] ❌ Failed to ensure user record exists:', await getUserResponse.text())
+          } else {
+            const getUserData = await getUserResponse.json()
+            if (getUserData.success) {
+              console.log('[LoginPage] ✅ User record exists or was created')
+            }
+          }
+        } catch (error) {
+          console.error('[LoginPage] ❌ Error ensuring user record exists:', error)
+          // Continue anyway - might still work
+        }
+            
         try {
           const { completed, step, apiError } = await checkOnboardingStatus(userId)
               
