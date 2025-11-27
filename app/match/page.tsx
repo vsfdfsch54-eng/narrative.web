@@ -136,7 +136,7 @@ export default function MatchPage() {
         {error && (
           <div style={{
             padding: tokens.spacing[16],
-            borderRadius: tokens.radii.card,
+            borderRadius: tokens.radii.button,
             background: 'rgba(255, 0, 0, 0.1)',
             border: '1px solid rgba(255, 0, 0, 0.3)',
             color: tokens.colors.textPrimaryOnDark,
