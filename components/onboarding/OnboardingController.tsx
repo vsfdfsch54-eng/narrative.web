@@ -88,7 +88,7 @@ export function OnboardingController() {
     }
 
     checkCompletion()
-  }, [user, authLoading, state.initialized, state.step]) // Removed router from dependencies to prevent re-renders
+  }, [user, authLoading, state.initialized, state.step, router]) // Include router in dependencies
 
   // Initialize from URL or database
   useEffect(() => {

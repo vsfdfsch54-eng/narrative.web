@@ -110,7 +110,7 @@ export default function VibePage() {
     }
 
     checkOnboarding()
-  }, [user, loading])
+  }, [user, loading, router])
 
   const getUserId = () => {
     if (user?.id) return user.id
