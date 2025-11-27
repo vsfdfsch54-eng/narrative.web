@@ -378,6 +378,7 @@ export default function VibePage() {
     }
     
     setSaving(true)
+    let inQueue = false
     
     try {
       const requestBody = { 
@@ -398,6 +399,7 @@ export default function VibePage() {
         const errorText = await response.text()
         if (response.status === 404 && errorText.includes('User not found')) {
           router.push('/onboarding?step=email')
+          setSaving(false)
           return
         }
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -407,9 +409,12 @@ export default function VibePage() {
       
       if (data.success && data.matched && data.match && data.otherUserId) {
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
+        setSaving(false)
+        return
       } else if (data.success && data.inQueue) {
         // In queue - start polling for match status
         // Don't set saving to false - let startPollingForMatch handle the UI state
+        inQueue = true
         startPollingForMatch(userId)
         return // Exit early - don't set saving to false
       } else {
@@ -426,7 +431,7 @@ export default function VibePage() {
     } finally {
       // Only set saving to false if we're not starting polling
       // (polling will handle its own state)
-      if (!data?.inQueue) {
+      if (!inQueue) {
         setSaving(false)
       }
     }
