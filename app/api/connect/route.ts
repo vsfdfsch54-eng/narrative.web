@@ -584,21 +584,6 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ success: true }, {
       headers: getCorsHeaders(),
     })
-
-    if (error) {
-      console.error('[Connect API] Error updating activity:', error)
-      return NextResponse.json(
-        { error: 'Failed to update activity' },
-        { 
-          status: 500,
-          headers: getCorsHeaders(),
-        }
-      )
-    }
-
-    return NextResponse.json({ success: true }, {
-      headers: getCorsHeaders(),
-    })
   } catch (error: any) {
     console.error('[Connect API] Error:', error)
     return NextResponse.json(
