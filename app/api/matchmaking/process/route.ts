@@ -6,6 +6,14 @@ import { createServerClient } from '@/lib/supabaseClient'
 import { findBestMatch } from '@/lib/ai/matching-service'
 import { createRequestContext } from '@/lib/request-context'
 import { logWithContext } from '@/lib/logger'
+import { getCorsHeaders } from '@/lib/cors-headers'
+
+// Handle OPTIONS for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json({}, {
+    headers: getCorsHeaders(),
+  })
+}
 
 /**
  * AI MATCHMAKING PROCESSOR
@@ -232,12 +240,17 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient()
     const result = await runAIMatchmaking(supabase, ctx)
-    return NextResponse.json(result)
+    return NextResponse.json(result, {
+      headers: getCorsHeaders(),
+    })
   } catch (error: any) {
     logWithContext('error', 'MATCH_ROUTE_ERROR', ctx, { error: error.message })
     return NextResponse.json(
       { matched: 0, error: error.message || 'Internal server error' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: getCorsHeaders(),
+      }
     )
   }
 }

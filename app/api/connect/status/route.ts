@@ -3,6 +3,14 @@ export const runtime = "nodejs"
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
+import { getCorsHeaders } from '@/lib/cors-headers'
+
+// Handle OPTIONS for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json({}, {
+    headers: getCorsHeaders(),
+  })
+}
 
 /**
  * GET /api/connect/status
@@ -86,6 +94,8 @@ export async function GET(request: NextRequest) {
           match: match,
           otherUserId: otherUserId,
           matchScore: match.match_score,
+        }, {
+          headers: getCorsHeaders(),
         })
       }
     }
@@ -96,6 +106,8 @@ export async function GET(request: NextRequest) {
         success: true,
         matched: false,
         inQueue: true,
+      }, {
+        headers: getCorsHeaders(),
       })
     }
 
@@ -104,12 +116,17 @@ export async function GET(request: NextRequest) {
       success: true,
       matched: false,
       inQueue: false,
+    }, {
+      headers: getCorsHeaders(),
     })
   } catch (error: any) {
     console.error('[Connect Status] Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: getCorsHeaders(),
+      }
     )
   }
 }

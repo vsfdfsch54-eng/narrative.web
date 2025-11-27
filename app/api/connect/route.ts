@@ -4,6 +4,14 @@ export const runtime = "nodejs"
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabaseClient'
 import { findBestMatch } from '@/lib/ai/matching-service'
+import { getCorsHeaders } from '@/lib/cors-headers'
+
+// Handle OPTIONS for CORS preflight
+export async function OPTIONS(request: NextRequest) {
+  return NextResponse.json({}, {
+    headers: getCorsHeaders(),
+  })
+}
 
 /**
  * POST /api/connect
@@ -19,7 +27,10 @@ export async function POST(request: NextRequest) {
 
     if (!userId) {
       console.error('[Connect API] ❌ Missing userId')
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
+      return NextResponse.json({ error: 'Missing userId' }, { 
+        status: 400,
+        headers: getCorsHeaders(),
+      })
     }
 
     const supabase = createServerClient()
@@ -36,7 +47,10 @@ export async function POST(request: NextRequest) {
       console.error('[Connect API] Error checking user:', userCheckError)
       return NextResponse.json(
         { error: 'Database error', details: userCheckError.message },
-        { status: 500 }
+        { 
+          status: 500,
+          headers: getCorsHeaders(),
+        }
       )
     }
 
@@ -50,7 +64,10 @@ export async function POST(request: NextRequest) {
           console.error('[Connect API] ❌ User not found in auth:', authError)
           return NextResponse.json(
             { error: 'User not found. Please complete onboarding first.' },
-            { status: 404 }
+            { 
+              status: 404,
+              headers: getCorsHeaders(),
+            }
           )
         }
 
@@ -116,7 +133,10 @@ export async function POST(request: NextRequest) {
                     error: 'Failed to create user record. An account with this email may already exist.',
                     details: createError.message
                   },
-                  { status: 500 }
+                  { 
+                    status: 500,
+                    headers: getCorsHeaders(),
+                  }
                 )
               }
             } else {
@@ -125,7 +145,10 @@ export async function POST(request: NextRequest) {
                   error: 'Failed to create user record.',
                   details: createError.message
                 },
-                { status: 500 }
+                { 
+                  status: 500,
+                  headers: getCorsHeaders(),
+                }
               )
             }
           } else {
@@ -148,7 +171,10 @@ export async function POST(request: NextRequest) {
                     error: 'User was created but could not be retrieved. Please try again.',
                     details: fetchError?.message || 'Unknown error'
                   },
-                  { status: 500 }
+                  { 
+                    status: 500,
+                    headers: getCorsHeaders(),
+                  }
                 )
               }
             }
@@ -158,7 +184,10 @@ export async function POST(request: NextRequest) {
         console.error('[Connect API] ❌ Error creating user:', error)
         return NextResponse.json(
           { error: 'Failed to create user record', details: error.message },
-          { status: 500 }
+          { 
+            status: 500,
+            headers: getCorsHeaders(),
+          }
         )
       }
     } else {
@@ -233,7 +262,10 @@ export async function POST(request: NextRequest) {
       console.error('[Connect API] ❌ Error fetching user data:', freshUserError)
       return NextResponse.json(
         { error: 'Failed to fetch user data' },
-        { status: 500 }
+        { 
+          status: 500,
+          headers: getCorsHeaders(),
+        }
       )
     }
 
@@ -272,7 +304,10 @@ export async function POST(request: NextRequest) {
       console.error('[Connect API] ❌ Error adding to waiting pool:', insertError)
       return NextResponse.json(
         { error: 'Failed to join waiting pool', details: insertError.message },
-        { status: 500 }
+        { 
+          status: 500,
+          headers: getCorsHeaders(),
+        }
       )
     }
 
@@ -361,6 +396,8 @@ export async function POST(request: NextRequest) {
             match: chatMatch,
             otherUserId: matchedUserId,
             matchScore: matchScore,
+          }, {
+            headers: getCorsHeaders(),
           })
         }
       }
@@ -408,12 +445,17 @@ export async function POST(request: NextRequest) {
       matched: false,
       inQueue: true,
       message: 'Added to waiting pool. AI is finding your match...',
+    }, {
+      headers: getCorsHeaders(),
     })
   } catch (error: any) {
     console.error('[Connect API] ❌ Error:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: getCorsHeaders(),
+      }
     )
   }
 }
@@ -428,7 +470,10 @@ export async function DELETE(request: NextRequest) {
     const userId = searchParams.get('userId')
 
     if (!userId) {
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
+      return NextResponse.json({ error: 'Missing userId' }, { 
+        status: 400,
+        headers: getCorsHeaders(),
+      })
     }
 
     const supabase = createServerClient()
@@ -442,16 +487,24 @@ export async function DELETE(request: NextRequest) {
       console.error('[Connect API] Error removing from waiting pool:', error)
       return NextResponse.json(
         { error: 'Failed to remove from waiting pool' },
-        { status: 500 }
+        { 
+          status: 500,
+          headers: getCorsHeaders(),
+        }
       )
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true }, {
+      headers: getCorsHeaders(),
+    })
   } catch (error: any) {
     console.error('[Connect API] Error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: getCorsHeaders(),
+      }
     )
   }
 }
