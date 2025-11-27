@@ -192,22 +192,56 @@ async function runAIMatchmaking(supabase: ReturnType<typeof createServerClient>,
         // Check if match already exists
         const { data: existingMatch } = await supabase
           .from('chat_matches')
+          .select('id, status')
+          .eq('user1_id', user1Id)
+          .eq('user2_id', user2Id)
+          .maybeSingle()
+
+        if (existingMatch) {
+          // Check if there are other users available (prefer new matches)
+          const otherAvailableUsers = waitingUsers.filter(u => 
+            u.user_id !== waitingUser.user_id && 
+            u.user_id !== matchedUserId &&
+            !processedUserIds.has(u.user_id)
+          )
+          
+          if (otherAvailableUsers.length > 0) {
+            // Other users available - skip this match (prefer new matches)
+            console.log(`[AI Matchmaking] Match already exists between ${user1Id} and ${user2Id}, skipping (${otherAvailableUsers.length} other users available)`)
+            continue
+          } else {
+            // No other users - allow rematch (Omegle-style)
+            console.log(`[AI Matchmaking] Match already exists but no other users available, allowing rematch (Omegle-style)`)
+            // Mark old match as ended for fresh start
+            if (existingMatch.status !== 'ended') {
+              await supabase
+                .from('chat_matches')
+                .update({ status: 'ended' })
+                .eq('id', existingMatch.id)
+              console.log(`[AI Matchmaking] Marked old match ${existingMatch.id} as ended for fresh start`)
+            }
+          }
+        }
+
+        // Mark any other existing matches between these users as "ended" (fresh start)
+        const { data: oldMatches } = await supabase
+          .from('chat_matches')
           .select('id')
           .eq('user1_id', user1Id)
           .eq('user2_id', user2Id)
-          .single()
+          .in('status', ['active', 'pending'])
 
-        if (existingMatch) {
-          console.log(`[AI Matchmaking] Match already exists between ${user1Id} and ${user2Id}`)
-          // Remove both from waiting pool
-          await supabase.from('waiting_pool').delete().eq('user_id', waitingUser.user_id)
-          await supabase.from('waiting_pool').delete().eq('user_id', matchedUserId)
-          processedUserIds.add(waitingUser.user_id)
-          processedUserIds.add(matchedUserId)
-          continue
+        if (oldMatches && oldMatches.length > 0) {
+          await supabase
+            .from('chat_matches')
+            .update({ status: 'ended' })
+            .eq('user1_id', user1Id)
+            .eq('user2_id', user2Id)
+            .in('status', ['active', 'pending'])
+          console.log(`[AI Matchmaking] Marked ${oldMatches.length} old match(es) as ended for fresh start`)
         }
 
-        // Create chat match
+        // Create chat match (fresh start)
         const { data: chatMatch, error: matchError } = await supabase
           .from('chat_matches')
           .insert({

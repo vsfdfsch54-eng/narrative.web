@@ -384,16 +384,25 @@ export async function POST(request: NextRequest) {
       const user1Id = userId < matchedUserId ? userId : matchedUserId
       const user2Id = userId < matchedUserId ? matchedUserId : userId
 
-      // Check if match already exists
-      const { data: existingMatch } = await supabase
-        .from('chat_matches')
-        .select('id')
-        .eq('user1_id', user1Id)
-        .eq('user2_id', user2Id)
-        .single()
+        // Check if match already exists
+        const { data: existingMatch } = await supabase
+          .from('chat_matches')
+          .select('id, status')
+          .eq('user1_id', user1Id)
+          .eq('user2_id', user2Id)
+          .maybeSingle()
 
-      if (!existingMatch) {
-        // Create chat match
+        // Mark any existing matches as "ended" for fresh start
+        if (existingMatch && existingMatch.status !== 'ended') {
+          await supabase
+            .from('chat_matches')
+            .update({ status: 'ended' })
+            .eq('id', existingMatch.id)
+          console.log('[Connect API] Marked old match as ended for fresh start')
+        }
+
+        if (!existingMatch || existingMatch.status === 'ended') {
+          // Create new chat match (fresh start)
         const { data: chatMatch, error: matchError } = await supabase
           .from('chat_matches')
           .insert({

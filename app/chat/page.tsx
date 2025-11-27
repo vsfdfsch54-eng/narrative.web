@@ -129,42 +129,11 @@ export default function ChatPage() {
           const otherUserId = waitingData.otherUserId
           router.push(`/chat/${otherUserId}?matchId=${waitingData.match.id}`)
         } else {
-          // Not in queue after retries - check for existing matches first
-          
-          // Check for existing active matches first
-          const matchesResponse = await fetch(`/api/matches?userId=${user.id}`, {
-            cache: 'no-store'
-          })
-          
-          if (matchesResponse.ok) {
-            const matchesData = await matchesResponse.json()
-            if (matchesData.success && matchesData.data && matchesData.data.length > 0) {
-              const matches = Array.isArray(matchesData.data) ? matchesData.data : [matchesData.data]
-              const activeMatches = matches.filter((m: any) => m.status === 'active')
-              if (activeMatches.length > 0) {
-                const randomMatch = activeMatches[Math.floor(Math.random() * activeMatches.length)]
-                const otherUserId = randomMatch.user1_id === user.id ? randomMatch.user2_id : randomMatch.user1_id
-                setLoading(false)
-                router.push(`/chat/${otherUserId}?matchId=${randomMatch.id}`)
-                return
-              }
-            }
-          }
-          
-          // No matches found - check if user exists in database
-          const userCheckResponse = await fetch(`/api/users?userId=${user.id}`)
-          const userCheckData = await userCheckResponse.json()
-          
-          if (!userCheckData.success || !userCheckData.data) {
-            // User doesn't exist in database, redirect to onboarding
-            router.push('/onboarding?step=email')
-            return
-          }
-          
-          // User exists but not in queue - show empty state instead of redirecting
-          // This prevents redirect loops
+          // Not in queue - redirect to vibe page to find NEW matches
+          // Don't auto-show old conversations (Omegle-style: always fresh matches)
           setLoading(false)
-          // Don't redirect - just show empty state so user can try connecting again
+          router.push('/vibe')
+          return
         }
       } catch (error) {
         console.error('Error loading matches:', error)

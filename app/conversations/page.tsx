@@ -88,6 +88,19 @@ export default function ConversationsPage() {
           const conversationsWithMessages = await Promise.all(
             data.data.map(async (match: any) => {
               const otherUserId = match.user1_id === userId ? match.user2_id : match.user1_id
+              
+              // Get other user's name
+              let otherUserName = `User ${otherUserId.slice(0, 5)}`
+              try {
+                const userResponse = await fetch(`/api/users?userId=${otherUserId}`)
+                const userData = await userResponse.json()
+                if (userData.success && userData.data) {
+                  otherUserName = userData.data.first_name || userData.data.name || otherUserName
+                }
+              } catch (error) {
+                console.error('Error fetching user name:', error)
+              }
+              
               // Get last message
               const msgResponse = await fetch(`/api/messages?matchId=${match.id}`)
               const msgData = await msgResponse.json()
@@ -113,7 +126,7 @@ export default function ConversationsPage() {
               return {
                 id: otherUserId,
                 matchId: match.id,
-                name: `User ${otherUserId.slice(0, 5)}`,
+                name: otherUserName,
                 emoji: "👤",
                 lastMessage: lastMessage?.text || "Start conversation",
                 time: lastMessage ? timeAgo(lastMessage.created_at) : "New",
@@ -350,6 +363,45 @@ export default function ConversationsPage() {
             )}
           </div>
         </div>
+        
+        {/* Continue chat button at bottom */}
+        {conversations.length > 0 && (
+          <div style={{
+            padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
+            paddingTop: tokens.spacing[16],
+            borderTop: '1px solid rgba(255,255,255,0.10)',
+            background: tokens.colors.backgroundApp,
+          }}>
+            <button
+              onClick={() => {
+                const mostRecent = conversations[0] // First one is most recent
+                router.push(`/chat/${mostRecent.id}${mostRecent.matchId ? `?matchId=${mostRecent.matchId}` : ''}`)
+              }}
+              style={{
+                width: '100%',
+                padding: `${tokens.spacing[14]} ${tokens.spacing[20]}`,
+                borderRadius: tokens.radii.button,
+                background: tokens.colors.surface1,
+                color: tokens.colors.textOnPill,
+                fontSize: tokens.typography.body.fontSize,
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = tokens.colors.surface2
+                e.currentTarget.style.transform = 'scale(1.02)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = tokens.colors.surface1
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+            >
+              Continue chat with {conversations[0]?.name || 'User'}
+            </button>
+          </div>
+        )}
       </div>
     </AppShell>
   )

@@ -27,16 +27,16 @@ export default function LoginPage() {
 
     // USER LOGGED OUT → Show login page
     if (!user) {
-      return
-    }
-
+        return
+      }
+      
     // USER LOGGED IN → Check onboarding and redirect
     async function checkAndRedirect() {
       if (!user) return
       
       try {
         const { completed, step, apiError } = await checkOnboardingStatus(user.id)
-
+              
         // NEVER redirect on API errors - causes redirect loops
         if (apiError) {
           console.warn('[LoginPage] ⚠️ API error checking onboarding - redirecting to /vibe to prevent loop')
@@ -79,15 +79,15 @@ export default function LoginPage() {
       if (result.success) {
         // After successful login, check onboarding step from DB
         // After successful login, check onboarding and redirect
-        const userId = (result as any).data?.user?.id || user?.id
-        if (!userId) {
+            const userId = (result as any).data?.user?.id || user?.id
+            if (!userId) {
           router.replace("/onboarding?step=email")
-          return
-        }
-
+              return
+            }
+            
         try {
           const { completed, step, apiError } = await checkOnboardingStatus(userId)
-
+              
           // NEVER redirect on API errors - causes redirect loops
           if (apiError) {
             console.warn('[LoginPage] ⚠️ API error after signin - redirecting to /vibe to prevent loop')
@@ -97,14 +97,14 @@ export default function LoginPage() {
 
           if (!completed) {
             router.replace(`/onboarding?step=${step}`)
-          } else {
+              } else {
             router.replace("/vibe")
-          }
+              }
         } catch (err) {
           console.error('[LoginPage] Error checking onboarding after signin:', err)
           // On error, redirect to /vibe (not onboarding) to prevent loops
           router.replace("/vibe")
-        }
+            }
       } else {
         setError(result.error || "Invalid credentials")
       }
@@ -133,7 +133,7 @@ export default function LoginPage() {
       <AppShell>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
           <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
-        </div>
+      </div>
       </AppShell>
     )
   }

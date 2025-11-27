@@ -152,9 +152,40 @@ export async function findBestMatch(
     return null
   }
   
+  // Get list of users you've already matched with (exclude them for new matches)
+  const { data: existingMatches } = await supabase
+    .from('chat_matches')
+    .select('user1_id, user2_id')
+    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+    .in('status', ['active', 'ended']) // Include both active and ended matches
+  
+  const matchedUserIds = new Set<string>()
+  if (existingMatches) {
+    existingMatches.forEach(match => {
+      if (match.user1_id === userId) {
+        matchedUserIds.add(match.user2_id)
+      } else {
+        matchedUserIds.add(match.user1_id)
+      }
+    })
+  }
+  
+  // Filter out users you've already matched with (prefer new matches)
+  let availableUsers = waitingUsers.filter(user => !matchedUserIds.has(user.user_id))
+  
+  // If no new users available, allow rematch (Omegle-style - option A)
+  if (availableUsers.length === 0 && waitingUsers.length > 0) {
+    console.log(`[findBestMatch] No new users available for ${userId}, allowing rematch (Omegle-style)`)
+    availableUsers = waitingUsers // Allow rematch with previous matches
+  }
+  
+  if (availableUsers.length === 0) {
+    return null
+  }
+  
   // Calculate scores for each candidate
   const candidates = await Promise.all(
-    waitingUsers.map(async (candidate) => {
+    availableUsers.map(async (candidate) => {
       // Get candidate's traits
       const { data: candidateData } = await supabase
         .from('users')
@@ -201,12 +232,12 @@ export async function findBestMatch(
   )
   
   // Lower threshold: 0.1 instead of 0.3, or match immediately if only 2 users total
-  // waitingUsers.length === 1 means 1 other user (excluding current), so 2 total users
-  const threshold = waitingUsers.length === 1 ? 0.0 : 0.1
+  // availableUsers.length === 1 means 1 other user (excluding current), so 2 total users
+  const threshold = availableUsers.length === 1 ? 0.0 : 0.1
   
   if (bestMatch.matchScore < threshold) {
     // If only 2 users total (1 candidate), match them anyway (FIFO fallback)
-    if (waitingUsers.length === 1) {
+    if (availableUsers.length === 1) {
       return bestMatch
     }
     return null
