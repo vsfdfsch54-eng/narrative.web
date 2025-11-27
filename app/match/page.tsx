@@ -172,7 +172,7 @@ export default function MatchPage() {
             <p style={{
               ...tokens.typography.body,
               color: tokens.colors.textSecondary,
-              marginBottom: tokens.spacing[24],
+              marginBottom: tokens.spacing[20],
             }}>
               Check back later for new people to connect with!
             </p>
