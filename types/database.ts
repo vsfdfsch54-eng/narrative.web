@@ -82,26 +82,6 @@ export interface Database {
           updated_at?: string | null
         }
       }
-      waiting_pool: {
-        Row: {
-          id: string
-          user_id: string
-          embedding: number[] | string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          embedding: number[] | string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          embedding?: number[] | string
-          created_at?: string
-        }
-      }
       onboarding_responses: {
         Row: {
           id: string
