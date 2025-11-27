@@ -287,6 +287,7 @@ export default function VibePage() {
     }
     
     setSaving(true)
+    let inQueue = false
     
     try {
       const selectedVibeObj = VIBES.find(v => v.id === selectedVibe)
@@ -329,6 +330,7 @@ export default function VibePage() {
         
         if (response.status === 404 && errorText.includes('User not found')) {
           router.push('/onboarding?step=email')
+          setSaving(false)
           return
         }
         
@@ -340,9 +342,14 @@ export default function VibePage() {
       if (data.success && data.matched && data.match && data.otherUserId) {
         // Immediate match - go to chat
         router.push(`/chat/${data.otherUserId}?matchId=${data.match.id}`)
+        setSaving(false)
+        return
       } else if (data.success && data.inQueue) {
         // In queue - start polling for match status
+        // Don't set saving to false - let startPollingForMatch handle the UI state
+        inQueue = true
         startPollingForMatch(userId)
+        return // Exit early - don't set saving to false
       } else if (data.requiresActive) {
         // User is not active - show error message
         alert(data.error || 'You must be actively using the site to find matches. Please make sure your tab is open and active.')
@@ -350,10 +357,16 @@ export default function VibePage() {
         return
       } else if (data.needsOnboarding) {
         router.push("/onboarding?step=email")
+        setSaving(false)
+        return
       } else {
-        // Not matched and not in queue - stay on vibe page to try again
+        // Not matched and not in queue - still show matching overlay on vibe page
+        // User was just added to queue, so start polling anyway
         // Don't redirect to /chat (which would redirect back to /vibe)
-        console.log('[VibePage] Not matched and not in queue - staying on vibe page')
+        console.log('[VibePage] Connect: Starting polling even if not confirmed in queue yet')
+        inQueue = true
+        startPollingForMatch(userId)
+        return // Exit early - don't set saving to false
       }
     } catch (error: any) {
       // Check if error is about being inactive
@@ -362,10 +375,18 @@ export default function VibePage() {
         setSaving(false)
         return
       }
-      // On error, stay on vibe page - don't redirect to /chat
+      // On error, still try to show matching overlay
+      // User might have been added to queue even if response failed
       console.error('[VibePage] Error connecting:', error)
+      inQueue = true
+      startPollingForMatch(userId)
+      return // Exit early - don't set saving to false
     } finally {
-      setSaving(false)
+      // Only set saving to false if we're not starting polling
+      // (polling will handle its own state)
+      if (!inQueue) {
+        setSaving(false)
+      }
     }
   }
 
