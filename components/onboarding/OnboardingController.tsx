@@ -157,8 +157,15 @@ export function OnboardingController() {
           return // Don't navigate if signup failed
         }
         
-        // Wait briefly for auth to propagate
-        await new Promise(resolve => setTimeout(resolve, 300))
+        // Wait for auth to propagate and user object to be available
+        // The user object from useAuth might not update immediately
+        let retries = 0
+        while (retries < 10) {
+          await new Promise(resolve => setTimeout(resolve, 200))
+          // Check if user is now available (will be updated by useAuth hook)
+          // We can't directly check user here, but we can try to save and it will retry
+          retries++
+        }
       } catch (error: any) {
         // Signup failed - show error to user
         const errorMessage = error?.message || 'Failed to create account. Please try again.'
@@ -168,13 +175,14 @@ export function OnboardingController() {
       }
     }
         
-    // Navigate to name step only if signup succeeded or user already exists
+    // Navigate to name step immediately (non-blocking)
     navigateToStep('name')
     
-    // Save progress in background (non-blocking)
-    // No additional data to save at this step (email/password already handled)
-    saveProgress('name').catch((error) => {
-      console.error('[OnboardingController] Save progress error:', error)
+    // Save progress AFTER account creation (now user.id should exist or will be available soon)
+    // Save step as 'name' since we're navigating there
+    // The saveProgress function will retry if user.id isn't available yet
+    saveProgress('name', { email: state.email }).catch((error) => {
+      console.error('[OnboardingController] Save name step error:', error)
     })
   }
 
