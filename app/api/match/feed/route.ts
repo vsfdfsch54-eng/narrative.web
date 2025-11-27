@@ -85,21 +85,13 @@ export async function GET(request: NextRequest) {
     const pendingArray = Array.from(pendingUserIds)
     const excludeIds = Array.from(new Set([userId, ...matchedArray, ...pendingArray]))
 
-    // Fetch potential matches
-    // Prefer users with same mood/topic, fallback to any active user
-    let query = supabase
-      .from('users')
-      .select('id, name, interests, mood, topic, reputation_emojis, communities')
-      .neq('id', userId)
-      .not('id', 'in', `(${excludeIds.join(',')})`)
-      .limit(50)
-
     // Get online user IDs from presence table (for all queries)
+    // Use 5 minutes instead of 1 minute for more lenient matching
     const { data: onlinePresence, error: presenceError } = await supabase
       .from('user_presence')
       .select('user_id')
       .eq('is_online', true)
-      .gte('last_seen_at', new Date(Date.now() - 60000).toISOString()) // Active in last minute
+      .gte('last_seen_at', new Date(Date.now() - 5 * 60000).toISOString()) // Active in last 5 minutes
 
     if (presenceError) {
       console.error('[Match Feed] Error fetching online presence:', presenceError)
@@ -108,23 +100,31 @@ export async function GET(request: NextRequest) {
     const onlineUserIds = new Set(
       (onlinePresence || []).map(p => p.user_id)
     )
+    
+    // If no online users found, fallback to all users (for testing/development)
+    const useOnlineFilter = onlineUserIds.size > 0
 
-    // If user has mood/topic, prefer matching those (but only online users)
+    // If user has mood/topic, prefer matching those
     if (currentUser?.mood || currentUser?.topic) {
-      // First try to get users with matching mood/topic who are online
+      // First try to get users with matching mood/topic
       let preferredQuery = supabase
         .from('users')
         .select('id, name, interests, mood, topic, reputation_emojis, communities')
         .neq('id', userId)
-        .in('id', Array.from(onlineUserIds))
-        .limit(50)
+      
+      // Filter by online users if available
+      if (useOnlineFilter && onlineUserIds.size > 0) {
+        preferredQuery = preferredQuery.in('id', Array.from(onlineUserIds))
+      }
       
       // Filter out excluded users
-      excludeIds.forEach(id => {
-        if (id !== userId) {
-          preferredQuery = preferredQuery.neq('id', id)
-        }
-      })
+      if (excludeIds.length > 1) { // More than just userId
+        excludeIds.forEach(id => {
+          if (id !== userId) {
+            preferredQuery = preferredQuery.neq('id', id)
+          }
+        })
+      }
 
       const { data: preferredMatches, error: preferredError } = await preferredQuery
         .or(`mood.eq.${currentUser.mood || ''},topic.eq.${currentUser.topic || ''}`)
@@ -141,38 +141,74 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fallback: Get any active users (active in last 48 hours) who are ONLINE
+    // Fallback: Get any active users (active in last 48 hours)
     const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
     
-    // Only fetch users who are online (onlineUserIds already fetched above)
+    // Build fallback query
     let fallbackQuery = supabase
       .from('users')
       .select('id, name, interests, mood, topic, reputation_emojis, communities')
       .neq('id', userId)
-      .in('id', Array.from(onlineUserIds))
+      .gte('created_at', fortyEightHoursAgo)
+    
+    // Filter by online users if available, otherwise get all recent users
+    if (useOnlineFilter && onlineUserIds.size > 0) {
+      fallbackQuery = fallbackQuery.in('id', Array.from(onlineUserIds))
+    }
+    
+    // Filter out excluded users
+    if (excludeIds.length > 1) { // More than just userId
+      excludeIds.forEach(id => {
+        if (id !== userId) {
+          fallbackQuery = fallbackQuery.neq('id', id)
+        }
+      })
+    }
+    
+    const { data: allMatches, error: allError } = await fallbackQuery
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    if (allError) {
+      console.error('[Match Feed] Error fetching all matches:', allError)
+    }
+
+    // If we have matches, return them
+    if (allMatches && allMatches.length > 0) {
+      const shuffled = allMatches.sort(() => Math.random() - 0.5)
+      return NextResponse.json({
+        success: true,
+        profiles: shuffled.map(formatProfile),
+      }, { headers: getCorsHeaders() })
+    }
+
+    // Final fallback: Get ANY users (not just online) if no online users found
+    // This ensures the match page always has something to show
+    let finalFallbackQuery = supabase
+      .from('users')
+      .select('id, name, interests, mood, topic, reputation_emojis, communities')
+      .neq('id', userId)
       .gte('created_at', fortyEightHoursAgo)
       .order('created_at', { ascending: false })
       .limit(20)
     
     // Filter out excluded users
-    excludeIds.forEach(id => {
-      if (id !== userId) {
-        fallbackQuery = fallbackQuery.neq('id', id)
-      }
-    })
+    if (excludeIds.length > 1) {
+      excludeIds.forEach(id => {
+        if (id !== userId) {
+          finalFallbackQuery = finalFallbackQuery.neq('id', id)
+        }
+      })
+    }
     
-    const { data: allMatches, error: allError } = await fallbackQuery
+    const { data: finalMatches, error: finalError } = await finalFallbackQuery
 
-    if (allError) {
-      console.error('[Match Feed] Error fetching all matches:', allError)
-      return NextResponse.json(
-        { error: 'Failed to fetch match feed' },
-        { status: 500, headers: getCorsHeaders() }
-      )
+    if (finalError) {
+      console.error('[Match Feed] Error in final fallback:', finalError)
     }
 
     // Shuffle results for variety
-    const shuffled = (allMatches || []).sort(() => Math.random() - 0.5)
+    const shuffled = (finalMatches || []).sort(() => Math.random() - 0.5)
 
     return NextResponse.json({
       success: true,
