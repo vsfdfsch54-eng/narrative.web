@@ -122,7 +122,9 @@ export default function VibePage() {
     setMatchStatus({ message: 'Finding your match...' })
     
     let pollCount = 0
-    const maxPolls = 60 // Poll for up to 60 seconds (30 polls * 2s)
+    const maxPolls = 120 // Poll for up to 4 minutes (120 polls * 2s = 240 seconds)
+    let consecutiveNotInQueue = 0 // Track how many times we've seen "not in queue"
+    const maxConsecutiveNotInQueue = 3 // Only stop if we see "not in queue" 3 times in a row
     
     // Heartbeat: Update last_active in waiting_pool every 15 seconds
     // This keeps user in pool as long as tab is active
@@ -213,6 +215,15 @@ export default function VibePage() {
       }
       
       try {
+        // Trigger matchmaking processor more aggressively during polling
+        // Every 3 polls (6 seconds), trigger matchmaking to ensure it runs
+        if (pollCount % 3 === 0) {
+          fetch('/api/matchmaking/process', {
+            method: 'GET',
+            cache: 'no-store',
+          }).catch(() => {}) // Silently fail - best effort
+        }
+        
         const response = await fetch(`/api/connect/status?userId=${userId}`, {
           method: 'GET',
           cache: 'no-store',
@@ -226,6 +237,7 @@ export default function VibePage() {
         
         if (data.success && data.matched && data.match && data.otherUserId) {
           // Match found!
+          console.log('[VibePage] ✅ Match found!', { otherUserId: data.otherUserId, matchId: data.match.id })
           clearInterval(pollInterval)
           clearInterval(heartbeatInterval)
           setMatching(false)
@@ -236,6 +248,8 @@ export default function VibePage() {
         }
         
         if (data.success && data.inQueue) {
+          // Reset counter - we're in queue
+          consecutiveNotInQueue = 0
           // Update status with queue info
           setMatchStatus({
             queueCount: data.queueCount || 0,
@@ -243,15 +257,26 @@ export default function VibePage() {
             message: data.estimatedWaitTime || (data.queueCount >= 2 ? 'Any moment now!' : 'Waiting for another user...'),
           })
         } else {
-          // Not in queue anymore but not matched - stay on vibe page to try again
-          // Don't redirect to /chat (which would redirect back to /vibe anyway)
-          clearInterval(pollInterval)
-          clearInterval(heartbeatInterval)
-          setMatching(false)
-          document.removeEventListener('visibilitychange', handleVisibilityChange)
-          window.removeEventListener('beforeunload', handleBeforeUnload)
-          // Stay on vibe page - user can try connecting again
-          return
+          // Not in queue - but don't stop immediately (might be a race condition)
+          consecutiveNotInQueue++
+          console.log(`[VibePage] Not in queue (attempt ${consecutiveNotInQueue}/${maxConsecutiveNotInQueue})`)
+          
+          // Only stop if we've seen "not in queue" multiple times in a row
+          if (consecutiveNotInQueue >= maxConsecutiveNotInQueue) {
+            console.log('[VibePage] Not in queue after multiple checks - stopping polling')
+            clearInterval(pollInterval)
+            clearInterval(heartbeatInterval)
+            setMatching(false)
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+            window.removeEventListener('beforeunload', handleBeforeUnload)
+            // Stay on vibe page - user can try connecting again
+            return
+          }
+          
+          // Continue polling - might be a temporary issue
+          setMatchStatus({
+            message: 'Checking match status...',
+          })
         }
         
         // Stop polling after max attempts
