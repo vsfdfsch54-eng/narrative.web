@@ -3,35 +3,47 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
+import { Save, Users, Edit2, Bell, Check, X, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
 import { checkOnboardingStatus } from "@/lib/user-helpers"
-import { VIBES } from "@/lib/constants"
 import { Loader2 } from "lucide-react"
 
-const DAILY_VIBES = [
+const DAILY_MOODS = [
   { id: 'chill', label: 'Chill', emoji: '😊' },
-  { id: 'motivated', label: 'Motivated', emoji: '🔥' },
+  { id: 'motivated', label: 'Motivated', emoji: '😤' },
   { id: 'low', label: 'Low', emoji: '😔' },
-  { id: 'focused', label: 'Focused', emoji: '🧠' },
+  { id: 'focused', label: 'Focused', emoji: '🤓' },
+  { id: 'playful', label: 'Playful', emoji: '😂' },
+  { id: 'frustrated', label: 'Frustrated', emoji: '😡' },
   { id: 'emotional', label: 'Emotional', emoji: '😭' },
-  { id: 'frustrated', label: 'Frustrated', emoji: '😤' },
-  { id: 'excited', label: 'Excited', emoji: '🎉' },
-  { id: 'calm', label: 'Calm', emoji: '🧘' },
+  { id: 'calm', label: 'Calm', emoji: '🧊' },
 ]
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, signOut } = useAuth()
   const [userName, setUserName] = useState("")
+  const [quoteOfDay, setQuoteOfDay] = useState("")
+  const [communityMembers, setCommunityMembers] = useState<{ id: string; name: string }[]>([])
+  const [recentChats, setRecentChats] = useState<any[]>([])
+  const [loadingChats, setLoadingChats] = useState(true)
+  const [loadingProfile, setLoadingProfile] = useState(true)
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [tempName, setTempName] = useState("")
+  const [notifications, setNotifications] = useState<any[]>([])
+  const [loadingNotifications, setLoadingNotifications] = useState(true)
+  const [personalitySummary, setPersonalitySummary] = useState<string | null>(null)
+  const [personalityTraits, setPersonalityTraits] = useState<any>(null)
+  const [loadingPersonality, setLoadingPersonality] = useState(true)
   const [reputationEmojis, setReputationEmojis] = useState<string[]>([])
-  const [selectedVibe, setSelectedVibe] = useState<string | null>(null)
+  const [interests, setInterests] = useState<string[]>([])
+  const [selectedMood, setSelectedMood] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [showVibeWarning, setShowVibeWarning] = useState(false)
+  const [showMoodWarning, setShowMoodWarning] = useState(false)
 
-  // Routing guard
+  // Routing guard: Check auth and onboarding status
   useEffect(() => {
     if (authLoading) return
 
@@ -69,93 +81,247 @@ export default function ProfilePage() {
     checkOnboarding()
   }, [user, authLoading, router])
 
-  // Load profile data
   useEffect(() => {
     if (!user?.id) return
 
-    async function loadProfile() {
-      if (!user) return // Additional check for TypeScript
-      
+    const loadProfile = async () => {
+      setLoadingProfile(true)
       try {
-        setLoading(true)
         const response = await fetch(`/api/users?userId=${user.id}`)
         const data = await response.json()
         
         if (data.success && data.data) {
-          setUserName(data.data.name || user.email?.split('@')[0] || 'User')
+          const savedName = data.data.name
+          if (savedName && savedName.trim()) {
+            setUserName(savedName.trim())
+            setTempName(savedName.trim())
+          } else {
+            const fallbackName = user.user_metadata?.name || user.email?.split('@')[0] || "User"
+            setUserName(fallbackName)
+            setTempName(fallbackName)
+          }
+          
           setReputationEmojis(Array.isArray(data.data.reputation_emojis) ? data.data.reputation_emojis : [])
-          setSelectedVibe(data.data.vibe || null)
+          setInterests(Array.isArray(data.data.interests) ? data.data.interests : [])
+          setSelectedMood(data.data.mood || null)
+          
+          // Load personality data
+          if (data.data.personality_summary) {
+            setPersonalitySummary(data.data.personality_summary)
+          }
+          if (data.data.traits) {
+            setPersonalityTraits(data.data.traits)
+          }
         } else {
-          setUserName(user.email?.split('@')[0] || 'User')
+          const fallbackName = user.user_metadata?.name || user.email?.split('@')[0] || "User"
+          setUserName(fallbackName)
+          setTempName(fallbackName)
         }
       } catch (error) {
-        console.error('[ProfilePage] Error loading profile:', error)
-        if (user) {
-          setUserName(user.email?.split('@')[0] || 'User')
-        }
+        console.error('Error loading profile:', error)
+        const fallbackName = user.user_metadata?.name || user.email?.split('@')[0] || "User"
+        setUserName(fallbackName)
+        setTempName(fallbackName)
       } finally {
-        setLoading(false)
+        setLoadingProfile(false)
+        setLoadingPersonality(false)
       }
     }
 
     loadProfile()
   }, [user])
 
-  // Prevent navigation if no vibe selected
+  useEffect(() => {
+    if (!user?.id) return
+
+    const savedQuote = localStorage.getItem("quoteOfDay")
+    if (savedQuote) {
+      setQuoteOfDay(savedQuote)
+    }
+
+    const community = JSON.parse(localStorage.getItem("communityMembers") || "[]")
+    setCommunityMembers(community)
+
+    const loadRecentChats = async () => {
+      setLoadingChats(true)
+      try {
+        const response = await fetch(`/api/chats?userId=${user.id}&type=recent&limit=5`)
+        const data = await response.json()
+        if (data.success && data.data) {
+          setRecentChats(data.data)
+        } else {
+          setRecentChats([])
+        }
+      } catch (error) {
+        console.error('Error loading recent chats:', error)
+        setRecentChats([])
+      } finally {
+        setLoadingChats(false)
+      }
+    }
+
+    loadRecentChats()
+
+    // Load notifications
+    const loadNotifications = async () => {
+      setLoadingNotifications(true)
+      try {
+        const response = await fetch(`/api/notifications?userId=${user.id}`)
+        const data = await response.json()
+        if (data.success && data.data) {
+          setNotifications(data.data)
+        } else {
+          setNotifications([])
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error)
+        setNotifications([])
+      } finally {
+        setLoadingNotifications(false)
+      }
+    }
+
+    loadNotifications()
+    
+    // Poll for new notifications every 5 seconds
+    const notificationInterval = setInterval(loadNotifications, 5000)
+    return () => clearInterval(notificationInterval)
+  }, [user])
+
+  // Prevent navigation if no mood selected
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (!selectedVibe) {
+      if (!selectedMood) {
         e.preventDefault()
         e.returnValue = ''
-        setShowVibeWarning(true)
+        setShowMoodWarning(true)
       }
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [selectedVibe])
+  }, [selectedMood])
 
-  const handleVibeSelect = async (vibeId: string) => {
+  const handleSaveQuote = () => {
+    localStorage.setItem("quoteOfDay", quoteOfDay)
+  }
+
+  const handleSaveName = async () => {
+    if (!user?.id || !tempName.trim()) {
+      setTempName(userName)
+      setIsEditingName(false)
+      return
+    }
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          name: tempName.trim(),
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setUserName(tempName.trim())
+        setIsEditingName(false)
+      } else {
+        setTempName(userName)
+        setIsEditingName(false)
+      }
+    } catch (error) {
+      console.error('Error saving name:', error)
+      setTempName(userName)
+      setIsEditingName(false)
+    }
+  }
+
+  const handleMoodSelect = async (moodId: string) => {
     if (!user?.id) return
 
     setSaving(true)
     try {
-      const vibe = DAILY_VIBES.find(v => v.id === vibeId)
-      if (!vibe) return
+      const mood = DAILY_MOODS.find(m => m.id === moodId)
+      if (!mood) return
 
       const response = await fetch('/api/users', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
-          vibe: vibe.label,
+          mood: mood.label,
         }),
       })
 
       if (response.ok) {
-        setSelectedVibe(vibeId)
-        setShowVibeWarning(false)
+        setSelectedMood(moodId)
+        setShowMoodWarning(false)
       } else {
-        alert('Failed to save vibe. Please try again.')
+        alert('Failed to save mood. Please try again.')
       }
     } catch (error) {
-      console.error('[ProfilePage] Error saving vibe:', error)
-      alert('Failed to save vibe. Please try again.')
+      console.error('[ProfilePage] Error saving mood:', error)
+      alert('Failed to save mood. Please try again.')
     } finally {
       setSaving(false)
     }
   }
 
-  if (authLoading || loading) {
+  const handleAcceptNotification = async (notificationId: string) => {
+    if (!user?.id) return
+    
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notificationId,
+          userId: user.id,
+          action: 'accept',
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success) {
+        setNotifications(prev => prev.filter(n => n.id !== notificationId))
+        alert('Added to community!')
+      } else {
+        alert('Failed to accept request. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error accepting notification:', error)
+      alert('Failed to accept request. Please try again.')
+    }
+  }
+
+  const handleDismissNotification = async (notificationId: string) => {
+    if (!user?.id) return
+    
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notificationId,
+          userId: user.id,
+          action: 'read',
+        })
+      })
+      
+      if (response.ok) {
+        setNotifications(prev => prev.filter(n => n.id !== notificationId))
+      }
+    } catch (error) {
+      console.error('Error dismissing notification:', error)
+    }
+  }
+
+  if (authLoading || loadingProfile) {
     return (
       <AppShell>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          padding: tokens.spacing[20],
-        }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
           <Loader2 style={{ width: '32px', height: '32px', animation: 'spin 1s linear infinite' }} />
         </div>
       </AppShell>
@@ -168,56 +334,103 @@ export default function ProfilePage() {
 
   return (
     <AppShell>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
-        paddingBottom: '120px',
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: tokens.spacing[28],
+        paddingTop: tokens.layout.topTitleSpacing, 
+        paddingBottom: '120px' 
       }}>
-        {/* Header: Name and Reputation */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
+        {/* Header Section - Name and Quote */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
           alignItems: 'center',
-          gap: tokens.spacing[16],
-          marginBottom: tokens.spacing[32],
+          gap: tokens.spacing[20],
           textAlign: 'center',
         }}>
-          <h1 style={{
-            ...tokens.typography.title,
-            color: tokens.colors.textPrimaryOnDark,
-            margin: 0,
-            fontSize: '28px',
-          }}>
-            {userName}
-          </h1>
-
-          {reputationEmojis.length > 0 && (
-            <div style={{
-              display: 'flex',
-              gap: tokens.spacing[8],
-              fontSize: '24px',
-            }}>
-              {reputationEmojis.map((emoji, idx) => (
-                <span key={idx}>{emoji}</span>
-              ))}
+          <div style={{ fontSize: '64px' }}>👤</div>
+          
+          {isEditingName ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12], width: '100%' }}>
+              <input
+                type="text"
+                value={tempName}
+                onChange={(e) => setTempName(e.target.value)}
+                style={{
+                  ...tokens.typography.heading,
+                  color: tokens.colors.textPrimaryOnDark,
+                  background: 'transparent',
+                  border: 'none',
+                  borderRadius: tokens.radii.input,
+                  padding: `${tokens.spacing[12]} ${tokens.spacing[18]}`,
+                  textAlign: 'center',
+                  maxWidth: '300px',
+                  width: '100%',
+                  outline: 'none',
+                  boxShadow: tokens.shadows.pillUnselected,
+                }}
+                autoFocus
+                onBlur={handleSaveName}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveName()
+                  if (e.key === 'Escape') {
+                    setTempName(userName)
+                    setIsEditingName(false)
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: tokens.spacing[12] }}>
+              <h1 style={{ 
+                ...tokens.typography.title,
+                color: tokens.colors.textPrimaryOnDark,
+                margin: 0,
+              }}>
+                {userName || "User"}
+              </h1>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsEditingName(true)}
+                style={{
+                  padding: tokens.spacing[8],
+                  borderRadius: tokens.radii.button,
+                  background: 'transparent',
+                  border: 'none',
+                  color: tokens.colors.textSecondary,
+                  cursor: 'pointer',
+                }}
+              >
+                <Edit2 style={{ width: '18px', height: '18px' }} />
+              </motion.button>
             </div>
           )}
-
-          {/* Basic Stats (optional) */}
-          <div style={{
-            display: 'flex',
-            gap: tokens.spacing[20],
-            fontSize: '14px',
-            color: tokens.colors.textSecondary,
-          }}>
-            <span>Chats: 0</span>
-            <span>Community: 0</span>
-          </div>
+          
+          <textarea
+            value={quoteOfDay}
+            onChange={(e) => setQuoteOfDay(e.target.value)}
+            onBlur={handleSaveQuote}
+            placeholder="What's on your mind today?"
+            style={{
+              width: '100%',
+              maxWidth: tokens.layout.maxWidth,
+              minHeight: '80px',
+              padding: `${tokens.spacing[16]} ${tokens.spacing[20]}`,
+              background: 'transparent',
+              border: 'none',
+              borderRadius: tokens.radii.input,
+              color: tokens.colors.textSecondary,
+              ...tokens.typography.body,
+              resize: 'none',
+              outline: 'none',
+              boxShadow: tokens.shadows.pillUnselected,
+            }}
+            rows={3}
+          />
         </div>
 
-        {/* Main: Choose your vibe for the day */}
+        {/* Your mood today section */}
         <div style={{
           marginBottom: tokens.spacing[32],
         }}>
@@ -227,10 +440,10 @@ export default function ProfilePage() {
             marginBottom: tokens.spacing[16],
             textAlign: 'center',
           }}>
-            Choose your vibe for the day
+            Your mood today
           </h2>
 
-          {showVibeWarning && (
+          {showMoodWarning && (
             <div style={{
               padding: tokens.spacing[12],
               borderRadius: tokens.radii.button,
@@ -241,7 +454,7 @@ export default function ProfilePage() {
               textAlign: 'center',
               fontSize: '13px',
             }}>
-              Please select a vibe before leaving
+              Please select a mood before leaving
             </div>
           )}
 
@@ -250,19 +463,19 @@ export default function ProfilePage() {
             gridTemplateColumns: 'repeat(2, 1fr)',
             gap: tokens.spacing[12],
           }}>
-            {DAILY_VIBES.map((vibe) => (
+            {DAILY_MOODS.map((mood) => (
               <motion.button
-                key={vibe.id}
+                key={mood.id}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => handleVibeSelect(vibe.id)}
+                onClick={() => handleMoodSelect(mood.id)}
                 disabled={saving}
                 style={{
                   padding: tokens.spacing[16],
                   borderRadius: tokens.radii.button,
-                  background: selectedVibe === vibe.id
+                  background: selectedMood === mood.id
                     ? 'rgba(255, 255, 255, 0.10)'
                     : 'rgba(255, 255, 255, 0.05)',
-                  border: selectedVibe === vibe.id
+                  border: selectedMood === mood.id
                     ? '2px solid rgba(255, 255, 255, 0.20)'
                     : '1px solid rgba(255, 255, 255, 0.10)',
                   color: tokens.colors.textPrimaryOnDark,
@@ -274,14 +487,14 @@ export default function ProfilePage() {
                   gap: tokens.spacing[8],
                 }}
               >
-                <span style={{ fontSize: '32px' }}>{vibe.emoji}</span>
+                <span style={{ fontSize: '32px' }}>{mood.emoji}</span>
                 <span style={{
                   fontSize: '14px',
                   fontWeight: 500,
                 }}>
-                  {vibe.label}
+                  {mood.label}
                 </span>
-                {selectedVibe === vibe.id && (
+                {selectedMood === mood.id && (
                   <span style={{
                     fontSize: '12px',
                     color: tokens.colors.textSecondary,
@@ -292,6 +505,373 @@ export default function ProfilePage() {
               </motion.button>
             ))}
           </div>
+        </div>
+
+        {/* Personality Profile Section */}
+        {personalitySummary && (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: tokens.spacing[20],
+            paddingTop: tokens.spacing[28],
+          }}>
+            <h2 style={{ 
+              ...tokens.typography.heading,
+              color: tokens.colors.textPrimaryOnDark,
+              margin: 0,
+              textAlign: 'center',
+            }}>
+              Your Personality
+            </h2>
+            
+            {loadingPersonality ? (
+              <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center' }}>
+                Loading personality profile...
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[20] }}>
+                <div>
+                  <p style={{ 
+                    ...tokens.typography.body,
+                    color: tokens.colors.textSecondary,
+                    lineHeight: 1.6,
+                    margin: 0,
+                    textAlign: 'center',
+                  }}>
+                    {personalitySummary}
+                  </p>
+                </div>
+
+                {personalityTraits && (
+                  <div style={{ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: tokens.spacing[10],
+                    justifyContent: 'center',
+                  }}>
+                    {personalityTraits.communicationStyle && (
+                      <span style={{
+                        padding: `6px ${tokens.spacing[14]}`,
+                        borderRadius: tokens.radii.pill,
+                        background: tokens.colors.pillUnselected,
+                        color: tokens.colors.textOnPill,
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        textTransform: 'capitalize',
+                      }}>
+                        {personalityTraits.communicationStyle}
+                      </span>
+                    )}
+                    {personalityTraits.socialEnergy && (
+                      <span style={{
+                        padding: `6px ${tokens.spacing[14]}`,
+                        borderRadius: tokens.radii.pill,
+                        background: tokens.colors.pillUnselected,
+                        color: tokens.colors.textOnPill,
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        textTransform: 'capitalize',
+                      }}>
+                        {personalityTraits.socialEnergy}
+                      </span>
+                    )}
+                    {personalityTraits.conversationDepth && (
+                      <span style={{
+                        padding: `6px ${tokens.spacing[14]}`,
+                        borderRadius: tokens.radii.pill,
+                        background: tokens.colors.pillUnselected,
+                        color: tokens.colors.textOnPill,
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        textTransform: 'capitalize',
+                      }}>
+                        {personalityTraits.conversationDepth}
+                      </span>
+                    )}
+                    {personalityTraits.socialIntention && Array.isArray(personalityTraits.socialIntention) && personalityTraits.socialIntention.length > 0 && (
+                      personalityTraits.socialIntention.map((intention: string) => (
+                        <span
+                          key={intention}
+                          style={{
+                            padding: `6px ${tokens.spacing[14]}`,
+                            borderRadius: tokens.radii.pill,
+                            background: tokens.colors.pillUnselected,
+                            color: tokens.colors.textOnPill,
+                            fontSize: '12px',
+                            fontWeight: 500,
+                            textTransform: 'capitalize',
+                          }}
+                        >
+                          {intention}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Reputation Emojis Section */}
+        {reputationEmojis.length > 0 && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: tokens.spacing[16],
+            paddingTop: tokens.spacing[28],
+            borderTop: `1px solid rgba(255,255,255,0.08)`,
+          }}>
+            <h2 style={{
+              ...tokens.typography.heading,
+              color: tokens.colors.textPrimaryOnDark,
+              margin: 0,
+              textAlign: 'center',
+            }}>
+              What people say about you
+            </h2>
+            <div style={{
+              display: 'flex',
+              gap: tokens.spacing[8],
+              justifyContent: 'center',
+              fontSize: '32px',
+            }}>
+              {reputationEmojis.map((emoji, idx) => (
+                <span key={idx}>{emoji}</span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Interests Section */}
+        {interests.length > 0 && (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: tokens.spacing[16],
+            paddingTop: tokens.spacing[28],
+            borderTop: `1px solid rgba(255,255,255,0.08)`,
+          }}>
+            <h2 style={{
+              ...tokens.typography.heading,
+              color: tokens.colors.textPrimaryOnDark,
+              margin: 0,
+              textAlign: 'center',
+            }}>
+              Interests
+            </h2>
+            <div style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: tokens.spacing[10],
+              justifyContent: 'center',
+            }}>
+              {interests.map((interest, idx) => (
+                <span
+                  key={idx}
+                  style={{
+                    padding: `6px ${tokens.spacing[14]}`,
+                    borderRadius: tokens.radii.pill,
+                    background: tokens.colors.pillUnselected,
+                    color: tokens.colors.textOnPill,
+                    fontSize: '12px',
+                    fontWeight: 500,
+                  }}
+                >
+                  {interest}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Friends Section */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: tokens.spacing[20],
+          paddingTop: tokens.spacing[28],
+          borderTop: `1px solid rgba(255,255,255,0.08)`,
+        }}>
+          <h2 style={{ 
+            ...tokens.typography.heading,
+            color: tokens.colors.textPrimaryOnDark,
+            margin: 0,
+            textAlign: 'center',
+          }}>
+            My Friends
+          </h2>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              padding: `${tokens.spacing[16]} 0`,
+              borderBottom: `1px solid rgba(255,255,255,0.05)`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentOrange }} />
+                <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimaryOnDark, fontWeight: 500, margin: 0 }}>
+                  Inner Circle
+                </p>
+              </div>
+              <span style={{ ...tokens.typography.body, color: tokens.colors.textSecondary }}>0</span>
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              padding: `${tokens.spacing[16]} 0`,
+              borderBottom: `1px solid rgba(255,255,255,0.05)`,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentBlue }} />
+                <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimaryOnDark, fontWeight: 500, margin: 0 }}>
+                  Close Friends
+                </p>
+              </div>
+              <span style={{ ...tokens.typography.body, color: tokens.colors.textSecondary }}>0</span>
+            </div>
+
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              gap: tokens.spacing[12],
+              padding: `${tokens.spacing[16]} 0`,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacing[12] }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: tokens.colors.accentGreen }} />
+                  <p style={{ ...tokens.typography.body, color: tokens.colors.textPrimaryOnDark, fontWeight: 500, margin: 0 }}>
+                    Community
+                  </p>
+                </div>
+                <span style={{ ...tokens.typography.body, color: tokens.colors.textSecondary }}>{communityMembers.length}</span>
+              </div>
+              {communityMembers.length > 0 ? (
+                <div style={{ display: 'flex', gap: tokens.spacing[10], overflowX: 'auto', paddingTop: tokens.spacing[8] }}>
+                  {communityMembers.map((member) => (
+                    <motion.button
+                      key={member.id}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => router.push(`/chat/${member.id}`)}
+                      style={{
+                        padding: `8px ${tokens.spacing[16]}`,
+                        borderRadius: tokens.radii.pill,
+                        background: tokens.colors.pillUnselected,
+                        color: tokens.colors.textOnPill,
+                        border: 'none',
+                        boxShadow: tokens.shadows.pillUnselected,
+                        ...tokens.typography.label,
+                        whiteSpace: 'nowrap',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {member.name}
+                    </motion.button>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, margin: 0, fontSize: '13px' }}>
+                  No community members yet
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Chats Section */}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: tokens.spacing[16],
+          paddingTop: tokens.spacing[28],
+          borderTop: `1px solid rgba(255,255,255,0.08)`,
+        }}>
+          <h2 style={{ 
+            ...tokens.typography.heading,
+            color: tokens.colors.textPrimaryOnDark,
+            margin: 0,
+            textAlign: 'center',
+          }}>
+            Recent Chats
+          </h2>
+          
+          {loadingChats ? (
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center' }}>
+              Loading...
+            </p>
+          ) : recentChats.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
+              {recentChats.map((chat) => {
+                const otherUserId = chat.user1_id === user.id ? chat.user2_id : chat.user1_id
+                return (
+                  <motion.button
+                    key={chat.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => router.push(`/chat/${otherUserId}?matchId=${chat.id}`)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: tokens.spacing[16],
+                      padding: `${tokens.spacing[16]} 0`,
+                      background: 'transparent',
+                      border: 'none',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      borderBottom: `1px solid rgba(255,255,255,0.05)`,
+                    }}
+                  >
+                    <span style={{ fontSize: '32px' }}>👤</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ ...tokens.typography.body, fontWeight: 500, color: tokens.colors.textPrimaryOnDark, margin: 0 }}>
+                        User {otherUserId.slice(0, 8)}
+                      </p>
+                      <p style={{ ...tokens.typography.label, color: tokens.colors.textSecondary, margin: 0, marginTop: tokens.spacing[4] }}>
+                        {new Date(chat.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </motion.button>
+                )
+              })}
+            </div>
+          ) : (
+            <p style={{ ...tokens.typography.body, color: tokens.colors.textSecondary, textAlign: 'center' }}>
+              No recent chats
+            </p>
+          )}
+        </div>
+
+        {/* Sign Out Button */}
+        <div style={{ paddingTop: tokens.spacing[28], borderTop: `1px solid rgba(255,255,255,0.08)` }}>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            onClick={async () => {
+              await signOut()
+              router.push("/")
+            }}
+            style={{
+              width: '100%',
+              padding: `${tokens.spacing[14]} ${tokens.spacing[20]}`,
+              borderRadius: tokens.radii.button,
+              background: 'transparent',
+              border: `1px solid rgba(255,255,255,0.12)`,
+              color: tokens.colors.textPrimaryOnDark,
+              ...tokens.typography.body,
+              fontWeight: 500,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: tokens.spacing[10],
+            }}
+          >
+            <LogOut style={{ width: '18px', height: '18px' }} />
+            Sign Out
+          </motion.button>
         </div>
       </div>
     </AppShell>

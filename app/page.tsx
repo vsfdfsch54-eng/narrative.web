@@ -45,8 +45,8 @@ export default function HomePage() {
         const { completed, step, apiError } = await checkOnboardingStatus(user.id)
         
         if (apiError) {
-          console.warn('[HomePage] ⚠️ API error checking onboarding - redirecting to /match')
-          router.replace("/match")
+          console.warn('[HomePage] ⚠️ API error checking onboarding - redirecting to /topic-match')
+          router.replace("/topic-match")
           return
         }
 
@@ -61,11 +61,11 @@ export default function HomePage() {
           return
         }
 
-        // Complete onboarding → show homepage
-        setCheckingOnboarding(false)
+        // Complete onboarding → redirect to topic-match
+        router.replace("/topic-match")
       } catch (error) {
         console.error('[HomePage] Error checking onboarding:', error)
-        router.replace("/match")
+        router.replace("/topic-match")
       } finally {
         setCheckingOnboarding(false)
       }
