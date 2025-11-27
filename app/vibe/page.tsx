@@ -418,16 +418,21 @@ export default function VibePage() {
         startPollingForMatch(userId)
         return // Exit early - don't set saving to false
       } else {
-        // Not matched and not in queue - redirect to /chat to show "AI is finding your match" screen
-        setSaving(false)
-        router.push('/chat')
-        return
+        // Not matched and not in queue - still show matching overlay on vibe page
+        // Don't redirect to /chat (which would redirect back to /vibe)
+        // Instead, start polling anyway - user was just added to queue
+        console.log('[VibePage] Skip: Starting polling even if not confirmed in queue yet')
+        inQueue = true
+        startPollingForMatch(userId)
+        return // Exit early - don't set saving to false
       }
     } catch (error) {
-      // On error, redirect to /chat to show matching screen
+      // On error, still try to show matching overlay
+      // User might have been added to queue even if response failed
       console.error('[VibePage] Error skipping:', error)
-      setSaving(false)
-      router.push('/chat')
+      inQueue = true
+      startPollingForMatch(userId)
+      return // Exit early - don't set saving to false
     } finally {
       // Only set saving to false if we're not starting polling
       // (polling will handle its own state)
