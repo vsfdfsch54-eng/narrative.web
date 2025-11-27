@@ -295,10 +295,10 @@ export async function POST(request: NextRequest) {
       .eq('user_id', userId)
       .single()
 
-    // Only allow matching if user is online and recently active (within last 60 seconds)
+    // Only allow matching if user is online and recently active (within last 5 minutes)
     const isOnline = presenceData?.is_online === true
     const lastSeenAt = presenceData?.last_seen_at ? new Date(presenceData.last_seen_at) : null
-    const isRecentlyActive = lastSeenAt && (Date.now() - lastSeenAt.getTime()) < 60000 // 60 seconds
+    const isRecentlyActive = lastSeenAt && (Date.now() - lastSeenAt.getTime()) < 300000 // 5 minutes
 
     if (!isOnline || !isRecentlyActive) {
       console.warn('[Connect API] User is not online or not recently active:', { userId, isOnline, lastSeenAt })

@@ -125,26 +125,33 @@ export default function VibePage() {
     const maxPolls = 60 // Poll for up to 60 seconds (30 polls * 2s)
     
     // Heartbeat: Update last_active in waiting_pool every 30 seconds
+    // This keeps user in pool as long as tab is active
     const heartbeatInterval = setInterval(async () => {
-      try {
-        await fetch('/api/connect', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, updateActivity: true }),
-          cache: 'no-store',
-        }).catch(() => {}) // Silently fail - heartbeat is best effort
-      } catch (error) {
-        // Ignore heartbeat errors
+      // Only send heartbeat if tab is visible (not in background)
+      if (!document.hidden) {
+        try {
+          await fetch('/api/connect', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, updateActivity: true }),
+            cache: 'no-store',
+          }).catch(() => {}) // Silently fail - heartbeat is best effort
+        } catch (error) {
+          // Ignore heartbeat errors
+        }
       }
     }, 30000) // Every 30 seconds
     
-    // Remove from waiting pool when tab goes to background or closes
+    // Remove from waiting pool when tab goes to background
+    // More aggressive: remove after 1 minute of being hidden (not 10 seconds)
     const handleVisibilityChange = async () => {
       if (document.hidden) {
-        // Tab went to background - remove from pool after 10 seconds
+        // Tab went to background - remove from pool after 1 minute
+        // This ensures background tabs don't stay in pool
         setTimeout(async () => {
           if (document.hidden) {
-            // Still hidden after 10 seconds - remove from pool
+            // Still hidden after 1 minute - remove from pool
+            console.log('[VibePage] Tab hidden for 1 minute, removing from waiting pool')
             try {
               await fetch('/api/connect', {
                 method: 'DELETE',
@@ -156,7 +163,19 @@ export default function VibePage() {
               // Ignore errors
             }
           }
-        }, 10000) // 10 second delay
+        }, 60000) // 1 minute delay (more aggressive than 10 seconds)
+      } else {
+        // Tab became visible again - update activity immediately
+        try {
+          await fetch('/api/connect', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, updateActivity: true }),
+            cache: 'no-store',
+          }).catch(() => {})
+        } catch (error) {
+          // Ignore errors
+        }
       }
     }
     
