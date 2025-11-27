@@ -55,6 +55,8 @@ export default function MatchPage() {
     if (!user || authLoading) return
 
     async function loadMatchFeed() {
+      if (!user) return // Additional check for TypeScript
+      
       try {
         setLoading(true)
         setError(null)
