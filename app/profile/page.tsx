@@ -459,51 +459,59 @@ export default function ProfilePage() {
           )}
 
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: tokens.spacing[12],
-          }}>
-            {DAILY_MOODS.map((mood) => (
-              <motion.button
-                key={mood.id}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => handleMoodSelect(mood.id)}
-                disabled={saving}
-                style={{
-                  padding: tokens.spacing[16],
-                  borderRadius: tokens.radii.button,
-                  background: selectedMood === mood.id
-                    ? 'rgba(255, 255, 255, 0.10)'
-                    : 'rgba(255, 255, 255, 0.05)',
-                  border: selectedMood === mood.id
-                    ? '2px solid rgba(255, 255, 255, 0.20)'
-                    : '1px solid rgba(255, 255, 255, 0.10)',
-                  color: tokens.colors.textPrimaryOnDark,
-                  cursor: saving ? 'not-allowed' : 'pointer',
-                  opacity: saving ? 0.5 : 1,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: tokens.spacing[8],
-                }}
-              >
-                <span style={{ fontSize: '32px' }}>{mood.emoji}</span>
-                <span style={{
-                  fontSize: '14px',
-                  fontWeight: 500,
-                }}>
-                  {mood.label}
-                </span>
-                {selectedMood === mood.id && (
+            maxHeight: '400px',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            paddingRight: tokens.spacing[8],
+            WebkitOverflowScrolling: 'touch',
+          }} className="no-scrollbar">
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gap: tokens.spacing[12],
+            }}>
+              {DAILY_MOODS.map((mood) => (
+                <motion.button
+                  key={mood.id}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => handleMoodSelect(mood.id)}
+                  disabled={saving}
+                  style={{
+                    padding: tokens.spacing[16],
+                    borderRadius: tokens.radii.button,
+                    background: selectedMood === mood.id
+                      ? 'rgba(255, 255, 255, 0.10)'
+                      : 'rgba(255, 255, 255, 0.05)',
+                    border: selectedMood === mood.id
+                      ? '2px solid rgba(255, 255, 255, 0.20)'
+                      : '1px solid rgba(255, 255, 255, 0.10)',
+                    color: tokens.colors.textPrimaryOnDark,
+                    cursor: saving ? 'not-allowed' : 'pointer',
+                    opacity: saving ? 0.5 : 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: tokens.spacing[8],
+                  }}
+                >
+                  <span style={{ fontSize: '32px' }}>{mood.emoji}</span>
                   <span style={{
-                    fontSize: '12px',
-                    color: tokens.colors.textSecondary,
+                    fontSize: '14px',
+                    fontWeight: 500,
                   }}>
-                    Selected
+                    {mood.label}
                   </span>
-                )}
-              </motion.button>
-            ))}
+                  {selectedMood === mood.id && (
+                    <span style={{
+                      fontSize: '12px',
+                      color: tokens.colors.textSecondary,
+                    }}>
+                      Selected
+                    </span>
+                  )}
+                </motion.button>
+              ))}
+            </div>
           </div>
         </div>
 
