@@ -79,6 +79,8 @@ export default function HomePage() {
     if (!user?.id || checkingOnboarding) return
 
     async function loadOnlineFriends() {
+      if (!user) return // Additional check for TypeScript
+      
       try {
         setLoadingFriends(true)
         const response = await fetch(`/api/friends/online?userId=${user.id}`, {
