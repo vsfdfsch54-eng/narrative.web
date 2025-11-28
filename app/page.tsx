@@ -289,90 +289,35 @@ export default function HomePage() {
 
   return (
     <AppShell>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
-        paddingBottom: '120px', // Space for navbar
-      }}>
+      <div className="max-w-[540px] mx-auto px-4 py-6 space-y-8 pb-32">
         {/* TOP BAR: Invite + Trending Topic */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          marginBottom: tokens.spacing[28],
-        }}>
+        <div className="flex items-center justify-between">
           {/* Top Left: Invite Button */}
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => router.push('/invite')}
-            style={{
-              padding: `${tokens.spacing[10]} ${tokens.spacing[16]}`,
-              borderRadius: '50%',
-              width: '44px',
-              height: '44px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.10)',
-              color: tokens.colors.textPrimaryOnDark,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className="w-11 h-11 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-neutral-200 hover:bg-neutral-700 transition-colors"
           >
-            <UserPlus style={{ width: '20px', height: '20px' }} />
+            <UserPlus className="w-5 h-5" />
           </motion.button>
 
           {/* Top Right: Trending Topic */}
-          <div style={{
-            padding: `${tokens.spacing[12]} ${tokens.spacing[16]}`,
-            borderRadius: tokens.radii.button,
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.10)',
-            maxWidth: '200px',
-          }}>
-            <p style={{
-              fontSize: '10px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-              color: tokens.colors.textSecondary,
-              margin: 0,
-              marginBottom: tokens.spacing[4],
-            }}>
+          <div className="px-4 py-3 rounded-lg bg-neutral-800 border border-neutral-700 max-w-[200px]">
+            <p className="text-[10px] uppercase tracking-wider text-neutral-400 mb-1">
               Trending Topic of the Day
             </p>
-            <p style={{
-              fontSize: '13px',
-              fontWeight: 500,
-              color: tokens.colors.textPrimaryOnDark,
-              margin: 0,
-              lineHeight: 1.4,
-            }}>
+            <p className="text-sm font-medium text-neutral-200 leading-snug">
               Trump shoots National Guardsman
             </p>
           </div>
         </div>
 
         {/* TOPICS SECTION */}
-        <div style={{
-          marginBottom: tokens.spacing[28],
-        }}>
-          <h2 style={{
-            ...tokens.typography.heading,
-            color: tokens.colors.textPrimaryOnDark,
-            marginBottom: tokens.spacing[16],
-            fontSize: '18px',
-          }}>
+        <div>
+          <h2 className="text-xl font-semibold text-neutral-200 mb-4">
             What do you want to talk about?
           </h2>
-          <div style={{
-            display: 'flex',
-            overflowX: 'auto',
-            gap: tokens.spacing[12],
-            paddingBottom: tokens.spacing[8],
-            WebkitOverflowScrolling: 'touch',
-          }} className="no-scrollbar">
+          <div className="flex space-x-3 overflow-x-auto no-scrollbar py-2">
             {TOPICS.map((topic) => {
               const isSelected = selectedTopic === topic.id
               return (
@@ -380,19 +325,11 @@ export default function HomePage() {
                   key={topic.id}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleTopicSelect(topic.id)}
-                  style={{
-                    padding: `${tokens.spacing[12]} ${tokens.spacing[18]}`,
-                    borderRadius: '9999px',
-                    background: isSelected 
-                      ? 'rgba(255, 255, 255, 0.15)' 
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${isSelected ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.10)'}`,
-                    color: tokens.colors.textPrimaryOnDark,
-                    fontSize: '14px',
-                    fontWeight: isSelected ? 600 : 500,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
+                  className={`whitespace-nowrap px-4 py-2 rounded-full border transition-colors ${
+                    isSelected
+                      ? 'bg-neutral-700 border-neutral-600 text-neutral-100 font-semibold'
+                      : 'bg-neutral-800 border-neutral-700 text-neutral-200 font-medium'
+                  }`}
                 >
                   {topic.label}
                 </motion.button>
@@ -402,21 +339,11 @@ export default function HomePage() {
         </div>
 
         {/* TIME LIMIT SECTION */}
-        <div style={{
-          marginBottom: tokens.spacing[28],
-        }}>
-          <h2 style={{
-            ...tokens.typography.heading,
-            color: tokens.colors.textPrimaryOnDark,
-            marginBottom: tokens.spacing[16],
-            fontSize: '18px',
-          }}>
+        <div>
+          <h2 className="text-xl font-semibold text-neutral-200 pt-4">
             How long do you want to chat?
           </h2>
-          <div style={{
-            display: 'flex',
-            gap: tokens.spacing[12],
-          }}>
+          <div className="flex space-x-4 pt-2">
             {TIME_LIMITS.map((limit) => {
               const isSelected = selectedTimeLimit === limit.id
               return (
@@ -424,19 +351,11 @@ export default function HomePage() {
                   key={limit.id}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedTimeLimit(limit.id)}
-                  style={{
-                    padding: `${tokens.spacing[12]} ${tokens.spacing[18]}`,
-                    borderRadius: '9999px',
-                    background: isSelected 
-                      ? 'rgba(255, 255, 255, 0.15)' 
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: `1px solid ${isSelected ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.10)'}`,
-                    color: tokens.colors.textPrimaryOnDark,
-                    fontSize: '14px',
-                    fontWeight: isSelected ? 600 : 500,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
+                  className={`whitespace-nowrap px-4 py-2 rounded-full border transition-colors ${
+                    isSelected
+                      ? 'bg-neutral-700 border-neutral-600 text-neutral-100 font-semibold'
+                      : 'bg-neutral-800 border-neutral-700 text-neutral-200 font-medium'
+                  }`}
                 >
                   {limit.label}
                 </motion.button>
@@ -446,134 +365,64 @@ export default function HomePage() {
         </div>
 
         {/* MATCHES SECTION */}
-        <div style={{
-          marginBottom: tokens.spacing[28],
-        }}>
-          <h2 style={{
-            ...tokens.typography.heading,
-            color: tokens.colors.textPrimaryOnDark,
-            marginBottom: tokens.spacing[16],
-            fontSize: '18px',
-          }}>
+        <div>
+          <h2 className="text-xl font-semibold text-neutral-200 mb-4">
             Matches
           </h2>
           {loadingMatches ? (
-            <p style={{
-              color: tokens.colors.textSecondary,
-              fontSize: '14px',
-            }}>
-              Loading...
-            </p>
+            <p className="text-neutral-400 text-sm">Loading...</p>
           ) : matches.length > 0 ? (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: tokens.spacing[12],
-            }}>
+            <div className="space-y-3">
               {matches.slice(0, 3).map((match: any) => {
                 if (!user) return null
                 const otherUserId = match.user1_id === user.id ? match.user2_id : match.user1_id
                 return (
-                <motion.div
-                  key={match.id}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    router.push(`/chat/${otherUserId}?matchId=${match.id}`)
-                  }}
-                  style={{
-                    padding: tokens.spacing[12],
-                    borderRadius: tokens.radii.button,
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.10)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <p style={{
-                    color: tokens.colors.textPrimaryOnDark,
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    margin: 0,
-                    marginBottom: tokens.spacing[4],
-                  }}>
-                    {match.otherUserName || 'User'}
-                  </p>
-                  {(match.otherUserMood || match.otherUserTopic) && (
-                    <p style={{
-                      color: tokens.colors.textSecondary,
-                      fontSize: '12px',
-                      margin: 0,
-                    }}>
-                      {match.otherUserMood ? `😊 ${match.otherUserMood}` : ''}
-                      {match.otherUserMood && match.otherUserTopic ? ' • ' : ''}
-                      {match.otherUserTopic ? `📌 ${match.otherUserTopic}` : ''}
+                  <motion.div
+                    key={match.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      router.push(`/chat/${otherUserId}?matchId=${match.id}`)
+                    }}
+                    className="p-3 rounded-lg bg-neutral-800 border border-neutral-700 cursor-pointer hover:bg-neutral-750 transition-colors"
+                  >
+                    <p className="text-sm font-medium text-neutral-200 mb-1">
+                      {match.otherUserName || 'User'}
                     </p>
-                  )}
-                </motion.div>
+                    {(match.otherUserMood || match.otherUserTopic) && (
+                      <p className="text-xs text-neutral-400">
+                        {match.otherUserMood ? `😊 ${match.otherUserMood}` : ''}
+                        {match.otherUserMood && match.otherUserTopic ? ' • ' : ''}
+                        {match.otherUserTopic ? `📌 ${match.otherUserTopic}` : ''}
+                      </p>
+                    )}
+                  </motion.div>
                 )
               })}
             </div>
           ) : (
-            <p style={{
-              color: tokens.colors.textSecondary,
-              fontSize: '14px',
-            }}>
+            <p className="text-neutral-400 text-sm">
               No matches right now. Come back later.
             </p>
           )}
         </div>
 
         {/* FRIENDS ONLINE SECTION */}
-        <div style={{
-          marginBottom: tokens.spacing[32],
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: tokens.spacing[16],
-          }}>
-            <h2 style={{
-              ...tokens.typography.heading,
-              color: tokens.colors.textPrimaryOnDark,
-              fontSize: '18px',
-              margin: 0,
-            }}>
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-neutral-200">
               Friends Online
             </h2>
-            <div style={{ position: 'relative' }}>
+            <div className="relative">
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setShowDropdown(!showDropdown)}
-                style={{
-                  padding: `${tokens.spacing[8]} ${tokens.spacing[12]}`,
-                  borderRadius: tokens.radii.button,
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.10)',
-                  color: tokens.colors.textPrimaryOnDark,
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: tokens.spacing[8],
-                }}
+                className="px-3 py-1.5 rounded-lg bg-neutral-800 border border-neutral-700 text-neutral-200 text-sm font-medium flex items-center gap-2 hover:bg-neutral-750 transition-colors"
               >
                 {FRIEND_GROUPS.find(g => g.id === selectedFriendGroup)?.label || 'Community'}
-                <ChevronDown style={{ width: '16px', height: '16px' }} />
+                <ChevronDown className="w-4 h-4" />
               </motion.button>
               {showDropdown && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: tokens.spacing[8],
-                  padding: tokens.spacing[8],
-                  borderRadius: tokens.radii.button,
-                  background: 'rgba(0, 0, 0, 0.9)',
-                  border: '1px solid rgba(255, 255, 255, 0.10)',
-                  minWidth: '150px',
-                  zIndex: 100,
-                }}>
+                <div className="absolute top-full right-0 mt-2 p-2 rounded-lg bg-black border border-neutral-700 min-w-[150px] z-50">
                   {FRIEND_GROUPS.map((group) => (
                     <button
                       key={group.id}
@@ -581,19 +430,11 @@ export default function HomePage() {
                         setSelectedFriendGroup(group.id)
                         setShowDropdown(false)
                       }}
-                      style={{
-                        width: '100%',
-                        padding: `${tokens.spacing[8]} ${tokens.spacing[12]}`,
-                        borderRadius: tokens.radii.button,
-                        background: selectedFriendGroup === group.id 
-                          ? 'rgba(255, 255, 255, 0.10)' 
-                          : 'transparent',
-                        border: 'none',
-                        color: tokens.colors.textPrimaryOnDark,
-                        fontSize: '13px',
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                      }}
+                      className={`w-full px-3 py-2 rounded-lg text-sm text-left transition-colors ${
+                        selectedFriendGroup === group.id
+                          ? 'bg-neutral-800 text-neutral-200'
+                          : 'text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200'
+                      }`}
                     >
                       {group.label}
                     </button>
@@ -602,101 +443,43 @@ export default function HomePage() {
               )}
             </div>
           </div>
-          <div style={{
-            display: 'flex',
-            overflowX: 'auto',
-            gap: tokens.spacing[10],
-            paddingBottom: tokens.spacing[8],
-            WebkitOverflowScrolling: 'touch',
-          }} className="no-scrollbar">
+          <div className="flex space-x-4 overflow-x-auto no-scrollbar py-2">
             {loadingFriends ? (
-              <p style={{ color: tokens.colors.textSecondary, fontSize: '12px' }}>Loading...</p>
+              <p className="text-neutral-400 text-sm">Loading...</p>
             ) : onlineFriends.length > 0 ? (
               onlineFriends.map((friend) => (
                 <div
                   key={friend.id}
-                  style={{
-                    minWidth: '60px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: tokens.spacing[4],
-                  }}
+                  className="flex-shrink-0 flex flex-col items-center gap-2 min-w-[60px]"
                 >
-                  <div style={{
-                    width: '50px',
-                    height: '50px',
-                    borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.10)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '24px',
-                    position: 'relative',
-                  }}>
+                  <div className="relative w-12 h-12 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-2xl">
                     <span>{friend.avatar || '👤'}</span>
-                    <div style={{
-                      position: 'absolute',
-                      bottom: 0,
-                      right: 0,
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      background: '#38B57A',
-                      border: '2px solid #0B0B0D',
-                    }} />
+                    <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-[#0a0a0c]" />
                   </div>
-                  <p style={{
-                    fontSize: '11px',
-                    color: tokens.colors.textSecondary,
-                    margin: 0,
-                    textAlign: 'center',
-                    maxWidth: '60px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}>
+                  <p className="text-xs text-neutral-400 text-center max-w-[60px] truncate">
                     {friend.name || 'User'}
                   </p>
                 </div>
               ))
             ) : (
-              <p style={{ color: tokens.colors.textSecondary, fontSize: '12px' }}>
+              <p className="text-neutral-400 text-sm">
                 No one online right now
               </p>
             )}
           </div>
         </div>
+      </div>
 
-        {/* BOTTOM: CONNECT BUTTON */}
-        <div style={{
-          marginTop: 'auto',
-          paddingTop: tokens.spacing[32],
-        }}>
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push('/match')}
-            style={{
-              width: '100%',
-              padding: `${tokens.spacing[18]} ${tokens.spacing[20]}`,
-              borderRadius: tokens.radii.button,
-              background: tokens.colors.pillSelected,
-              border: 'none',
-              color: tokens.colors.textOnPill,
-              fontSize: '18px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: tokens.spacing[10],
-              boxShadow: tokens.shadows.pillSelected,
-            }}
-          >
-            CONNECT
-            <ArrowRight style={{ width: '20px', height: '20px' }} />
-          </motion.button>
-        </div>
+      {/* BOTTOM: CONNECT BUTTON (Sticky) */}
+      <div className="fixed bottom-24 left-0 right-0 flex justify-center px-4 z-40">
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => router.push('/match')}
+          className="w-full max-w-[540px] py-4 px-5 rounded-full bg-white text-black font-semibold text-lg flex items-center justify-center gap-2 shadow-lg hover:bg-neutral-100 transition-colors"
+        >
+          CONNECT
+          <ArrowRight className="w-5 h-5" />
+        </motion.button>
       </div>
     </AppShell>
   )
