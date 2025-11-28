@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
@@ -8,6 +8,7 @@ import { CardStack } from "@/components/match/CardStack"
 import { tokens } from "@/lib/design-tokens"
 import { checkOnboardingStatus } from "@/lib/user-helpers"
 import { Loader2 } from "lucide-react"
+import { supabase } from "@/lib/supabaseClient"
 
 export default function MatchPage() {
   const router = useRouter()
@@ -15,6 +16,11 @@ export default function MatchPage() {
   const [profiles, setProfiles] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentCardIndex, setCurrentCardIndex] = useState(0)
+  const feedRef = useRef<any[]>([]) // Store full feed
+  const onlineCountRef = useRef<number>(0) // Track online user count
+  const currentCardUserIdRef = useRef<string | null>(null) // Track current card user
+  const realtimeChannelRef = useRef<any>(null)
 
   // Routing guard: Check auth and onboarding status
   useEffect(() => {
@@ -32,7 +38,6 @@ export default function MatchPage() {
         const { completed, apiError } = await checkOnboardingStatus(user.id)
         
         if (apiError) {
-          // API error - allow access to prevent loops
           console.warn('[MatchPage] API error checking onboarding, allowing access')
           return
         }
@@ -43,51 +48,157 @@ export default function MatchPage() {
         }
       } catch (error) {
         console.error('[MatchPage] Error checking onboarding:', error)
-        // Allow access on error to prevent loops
       }
     }
 
     checkOnboarding()
   }, [user, authLoading, router])
 
-  // Load match feed
+  // Load match feed ONCE when page loads
+  const loadMatchFeed = async () => {
+    if (!user?.id) return
+    
+    try {
+      setLoading(true)
+      setError(null)
+
+      const response = await fetch(`/api/match/feed?userId=${user.id}`, {
+        method: 'GET',
+        cache: 'no-store',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to load match feed')
+      }
+
+      const data = await response.json()
+      
+      if (data.success && data.profiles) {
+        const newProfiles = data.profiles
+        feedRef.current = newProfiles
+        setProfiles(newProfiles)
+        onlineCountRef.current = newProfiles.length
+        
+        // Set current card user ID
+        if (newProfiles.length > 0) {
+          currentCardUserIdRef.current = newProfiles[0].id
+        }
+        
+        setCurrentCardIndex(0)
+      } else {
+        feedRef.current = []
+        setProfiles([])
+        onlineCountRef.current = 0
+        currentCardUserIdRef.current = null
+      }
+    } catch (err) {
+      console.error('[MatchPage] Error loading match feed:', err)
+      setError('Failed to load matches. Please try again.')
+      feedRef.current = []
+      setProfiles([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Initial feed load
   useEffect(() => {
     if (!user || authLoading) return
+    loadMatchFeed()
+  }, [user, authLoading])
 
-    async function loadMatchFeed() {
-      if (!user) return
-      
-      try {
-        setLoading(true)
-        setError(null)
+  // Realtime presence listener
+  useEffect(() => {
+    if (!user?.id || loading) return
 
-        const response = await fetch(`/api/match/feed?userId=${user.id}`, {
-          method: 'GET',
-          cache: 'no-store',
-        })
+    // Subscribe to user_presence changes
+    const channel = supabase
+      .channel('match-presence-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_presence',
+          filter: `is_online=eq.true`,
+        },
+        async (payload: any) => {
+          // Check if we need to refresh feed
+          const oldRecord = payload.old_record as any
+          const newRecord = payload.new_record as any
+          const eventType = payload.eventType as string
 
-        if (!response.ok) {
-          throw new Error('Failed to load match feed')
+          const shouldRefresh = 
+            // Current card user went offline
+            (oldRecord?.user_id === currentCardUserIdRef.current && 
+             newRecord?.is_online === false) ||
+            // Online count changed significantly (new user came online)
+            (eventType === 'INSERT' && newRecord?.is_online === true)
+
+          if (shouldRefresh) {
+            console.log('[MatchPage] Presence change detected, refreshing feed...')
+            await loadMatchFeed()
+          }
         }
+      )
+      .subscribe()
+
+    realtimeChannelRef.current = channel
+
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [user, loading])
+
+  // Handle card actions (connect/skip)
+  const handleCardAction = async (action: 'connect' | 'skip', targetId: string) => {
+    if (!user?.id) return
+
+    try {
+      if (action === 'connect') {
+        const response = await fetch('/api/match/connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            targetId,
+          }),
+        })
 
         const data = await response.json()
         
-        if (data.success && data.profiles) {
-          setProfiles(data.profiles)
-        } else {
-          setProfiles([])
+        if (data.success && data.matched) {
+          // Mutual match! Navigate to chat
+          router.push(`/chat/${targetId}?roomId=${data.roomId}`)
+          return
         }
-      } catch (err) {
-        console.error('[MatchPage] Error loading match feed:', err)
-        setError('Failed to load matches. Please try again.')
-        setProfiles([])
-      } finally {
-        setLoading(false)
+      } else {
+        // Skip - no API call needed for now
+        await fetch('/api/match/skip', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            targetId,
+          }),
+        })
       }
-    }
 
-    loadMatchFeed()
-  }, [user, authLoading])
+      // Move to next card (no feed refresh)
+      const nextIndex = currentCardIndex + 1
+      if (nextIndex < feedRef.current.length) {
+        setCurrentCardIndex(nextIndex)
+        currentCardUserIdRef.current = feedRef.current[nextIndex]?.id || null
+      } else {
+        // No more cards - refresh feed
+        await loadMatchFeed()
+      }
+    } catch (err) {
+      console.error('[MatchPage] Error in card action:', err)
+    }
+  }
 
   if (authLoading || loading) {
     return (
@@ -120,6 +231,10 @@ export default function MatchPage() {
   if (!user) {
     return null
   }
+
+  // Get current card from feed
+  const currentCard = feedRef.current[currentCardIndex] || null
+  const visibleProfiles = currentCard ? [currentCard] : []
 
   return (
     <AppShell>
@@ -187,7 +302,7 @@ export default function MatchPage() {
           minHeight: 0,
           overflow: 'hidden',
         }}>
-          {profiles.length === 0 && !loading ? (
+          {visibleProfiles.length === 0 && !loading ? (
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -221,42 +336,13 @@ export default function MatchPage() {
             </div>
           ) : (
             <CardStack
-              profiles={profiles}
+              profiles={visibleProfiles}
               currentUserId={user.id}
               onConnect={async (targetId) => {
-                try {
-                  const response = await fetch('/api/match/connect', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userId: user.id,
-                      targetId,
-                    }),
-                  })
-
-                  const data = await response.json()
-                  
-                  if (data.success && data.matched) {
-                    // Mutual match! Navigate to chat
-                    router.push(`/chat/${targetId}?roomId=${data.roomId}`)
-                  }
-                } catch (err) {
-                  console.error('[MatchPage] Error connecting:', err)
-                }
+                await handleCardAction('connect', targetId)
               }}
               onSkip={async (targetId) => {
-                try {
-                  await fetch('/api/match/skip', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      userId: user.id,
-                      targetId,
-                    }),
-                  })
-                } catch (err) {
-                  console.error('[MatchPage] Error skipping:', err)
-                }
+                await handleCardAction('skip', targetId)
               }}
             />
           )}

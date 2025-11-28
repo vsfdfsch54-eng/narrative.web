@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AnimatePresence } from "framer-motion"
 import { MatchCard } from "./MatchCard"
 
@@ -15,26 +15,23 @@ export function CardStack({ profiles, currentUserId, onConnect, onSkip }: CardSt
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAnimating, setIsAnimating] = useState(false)
 
+  // Reset index when profiles change
+  useEffect(() => {
+    setCurrentIndex(0)
+  }, [profiles])
+
   if (profiles.length === 0) {
     return null
   }
 
   const currentProfile = profiles[currentIndex]
-  const hasMore = currentIndex < profiles.length - 1
 
   const handleConnect = async () => {
     if (isAnimating || !currentProfile) return
     
     setIsAnimating(true)
     await onConnect(currentProfile.id)
-    
-    // Move to next card after animation
-    setTimeout(() => {
-      if (hasMore) {
-        setCurrentIndex(prev => prev + 1)
-      }
-      setIsAnimating(false)
-    }, 300)
+    setIsAnimating(false)
   }
 
   const handleSkip = async () => {
@@ -42,14 +39,7 @@ export function CardStack({ profiles, currentUserId, onConnect, onSkip }: CardSt
     
     setIsAnimating(true)
     await onSkip(currentProfile.id)
-    
-    // Move to next card after animation
-    setTimeout(() => {
-      if (hasMore) {
-        setCurrentIndex(prev => prev + 1)
-      }
-      setIsAnimating(false)
-    }, 300)
+    setIsAnimating(false)
   }
 
   return (

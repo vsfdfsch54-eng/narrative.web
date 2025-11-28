@@ -15,7 +15,8 @@ export async function OPTIONS(request: NextRequest) {
 /**
  * GET /api/match/feed
  * Returns a feed of potential matches for the user
- * Excludes already matched users and users already connected with
+ * STRICT REQUIREMENT: Only returns online users (is_online = true, last_seen_at within 5 min)
+ * Uses single RPC call for high performance
  */
 export async function GET(request: NextRequest) {
   try {
@@ -31,163 +32,35 @@ export async function GET(request: NextRequest) {
 
     const supabase = createServerClient()
 
-    // Get all users the current user has already matched with
-    const { data: existingMatches, error: matchesError } = await supabase
-      .from('chat_matches')
-      .select('user1_id, user2_id')
-      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
-      .eq('status', 'active')
-
-    if (matchesError) {
-      console.error('[Match Feed] Error fetching existing matches:', matchesError)
-    }
-
-    const matchedUserIds = new Set<string>()
-    if (existingMatches) {
-      existingMatches.forEach(match => {
-        if (match.user1_id === userId) {
-          matchedUserIds.add(match.user2_id)
-        } else {
-          matchedUserIds.add(match.user1_id)
-        }
-      })
-    }
-
-    // Get all users the current user has pending connections with
-    const { data: pendingConnections, error: pendingError } = await supabase
-      .from('match_queue')
-      .select('target_id')
-      .eq('user_id', userId)
-      .eq('status', 'pending')
-
-    if (pendingError) {
-      console.error('[Match Feed] Error fetching pending connections:', pendingError)
-    }
-
-    const pendingUserIds = new Set<string>()
-    if (pendingConnections) {
-      pendingConnections.forEach(conn => pendingUserIds.add(conn.target_id))
-    }
-
-    // Get current user's mood and topic for preference matching
-    const { data: currentUser, error: userError } = await supabase
-      .from('users')
-      .select('mood, topic')
-      .eq('id', userId)
-      .single()
-
-    if (userError) {
-      console.error('[Match Feed] Error fetching current user:', userError)
-    }
-
-    // Build exclusion list - convert Sets to arrays first
-    const matchedArray = Array.from(matchedUserIds)
-    const pendingArray = Array.from(pendingUserIds)
-    const excludeIds = Array.from(new Set([userId, ...matchedArray, ...pendingArray]))
-
-    // Get online user IDs from presence table (for all queries)
-    // Use 5 minutes instead of 1 minute for more lenient matching
-    const { data: onlinePresence, error: presenceError } = await supabase
-      .from('user_presence')
-      .select('user_id')
-      .eq('is_online', true)
-      .gte('last_seen_at', new Date(Date.now() - 5 * 60000).toISOString()) // Active in last 5 minutes
-
-    if (presenceError) {
-      console.error('[Match Feed] Error fetching online presence:', presenceError)
-    }
-
-    const onlineUserIds = new Set(
-      (onlinePresence || []).map(p => p.user_id)
-    )
-    
-    // STRICT REQUIREMENT: Only show online users. If no one is online, return empty.
-    if (onlineUserIds.size === 0) {
-      return NextResponse.json({
-        success: true,
-        profiles: [],
-      }, { headers: getCorsHeaders() })
-    }
-
-    // Remove current user from online list if present
-    onlineUserIds.delete(userId)
-
-    // Filter out excluded users from online list
-    excludeIds.forEach(id => onlineUserIds.delete(id))
-
-    // If no online users left after filtering, return empty
-    if (onlineUserIds.size === 0) {
-      return NextResponse.json({
-        success: true,
-        profiles: [],
-      }, { headers: getCorsHeaders() })
-    }
-
-    // If user has mood/topic, prefer matching those (but ONLY from online users)
-    if (currentUser?.mood || currentUser?.topic) {
-      let preferredQuery = supabase
-        .from('users')
-        .select('id, name, interests, mood, topic, reputation_emojis, communities')
-        .neq('id', userId)
-        .in('id', Array.from(onlineUserIds))
-      
-      // Filter out excluded users
-      excludeIds.forEach(id => {
-        if (id !== userId) {
-          preferredQuery = preferredQuery.neq('id', id)
-        }
-      })
-
-      const { data: preferredMatches, error: preferredError } = await preferredQuery
-        .or(`mood.eq.${currentUser.mood || ''},topic.eq.${currentUser.topic || ''}`)
-        .order('created_at', { ascending: false })
-        .limit(20)
-
-      if (!preferredError && preferredMatches && preferredMatches.length > 0) {
-        // Shuffle and return preferred matches
-        const shuffled = preferredMatches.sort(() => Math.random() - 0.5)
-        return NextResponse.json({
-          success: true,
-          profiles: shuffled.map(formatProfile),
-        }, { headers: getCorsHeaders() })
-      }
-    }
-
-    // Fallback: Get any online users (active in last 48 hours)
-    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString()
-    
-    let fallbackQuery = supabase
-      .from('users')
-      .select('id, name, interests, mood, topic, reputation_emojis, communities')
-      .neq('id', userId)
-      .in('id', Array.from(onlineUserIds))
-      .gte('created_at', fortyEightHoursAgo)
-    
-    // Filter out excluded users
-    excludeIds.forEach(id => {
-      if (id !== userId) {
-        fallbackQuery = fallbackQuery.neq('id', id)
-      }
+    // Single RPC call - all filtering done in SQL
+    const { data, error } = await supabase.rpc('get_online_match_feed', {
+      current_user_id: userId,
     })
-    
-    const { data: allMatches, error: allError } = await fallbackQuery
-      .order('created_at', { ascending: false })
-      .limit(20)
 
-    if (allError) {
-      console.error('[Match Feed] Error fetching all matches:', allError)
-      return NextResponse.json({
-        success: true,
-        profiles: [],
-      }, { headers: getCorsHeaders() })
+    if (error) {
+      console.error('[Match Feed] RPC error:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch match feed', details: error.message },
+        { status: 500, headers: getCorsHeaders() }
+      )
     }
 
-    // Shuffle results for variety
-    const shuffled = (allMatches || []).sort(() => Math.random() - 0.5)
+    // Format profiles for frontend
+    const profiles = (data || []).map((user: any) => ({
+      id: user.id,
+      name: user.name || 'User',
+      interests: Array.isArray(user.interests) ? user.interests : [],
+      mood: user.mood || null,
+      topic: user.topic || null,
+      reputation_emojis: Array.isArray(user.reputation_emojis) ? user.reputation_emojis : [],
+      communities: Array.isArray(user.communities) ? user.communities : [],
+      mutual_friends: 0, // TODO: Calculate from relationships table
+      mutual_communities: 0, // TODO: Calculate from communities
+    }))
 
     return NextResponse.json({
       success: true,
-      profiles: shuffled.map(formatProfile),
+      profiles,
     }, { headers: getCorsHeaders() })
 
   } catch (error) {
@@ -198,18 +71,3 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
-function formatProfile(user: any) {
-  return {
-    id: user.id,
-    name: user.name || 'User',
-    interests: Array.isArray(user.interests) ? user.interests : [],
-    mood: user.mood || null,
-    topic: user.topic || null,
-    reputation_emojis: Array.isArray(user.reputation_emojis) ? user.reputation_emojis : [],
-    communities: Array.isArray(user.communities) ? user.communities : [],
-    mutual_friends: 0, // TODO: Calculate from relationships table
-    mutual_communities: 0, // TODO: Calculate from communities
-  }
-}
-
