@@ -98,7 +98,8 @@ export default function InvitePage() {
   const handleInvite = async (friendId: string) => {
     // TODO: Implement invite notification logic
     console.log('Invite friend:', friendId)
-    alert('Invite sent! (Stub for now)')
+    // For now, just show a simple alert
+    alert('Invite sent! (Notification stub for now)')
   }
 
   if (authLoading || checkingOnboarding) {
@@ -116,18 +117,25 @@ export default function InvitePage() {
   return (
     <AppShell>
       <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh',
         padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
-        paddingBottom: '120px',
+        paddingTop: `${tokens.spacing[28]}`,
+        paddingBottom: '100px',
       }}>
         {/* Header */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: tokens.spacing[12],
-          marginBottom: tokens.spacing[28],
+          marginBottom: tokens.spacing[20],
+          flexShrink: 0,
         }}>
           <motion.button
             whileTap={{ scale: 0.95 }}
@@ -147,106 +155,137 @@ export default function InvitePage() {
             ...tokens.typography.title,
             color: tokens.colors.textPrimaryOnDark,
             margin: 0,
+            fontSize: '28px',
           }}>
             Invite Friends
           </h1>
         </div>
 
         {/* Offline Friends List */}
-        {loading ? (
-          <p style={{
-            color: tokens.colors.textSecondary,
-            textAlign: 'center',
-            padding: tokens.spacing[32],
-          }}>
-            Loading...
-          </p>
-        ) : offlineFriends.length > 0 ? (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: tokens.spacing[12],
-          }}>
-            {offlineFriends.map((friend) => (
-              <motion.div
-                key={friend.id}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  padding: tokens.spacing[16],
-                  borderRadius: tokens.radii.button,
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.10)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: tokens.spacing[12],
-                }}>
-                  <div style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    background: 'rgba(255, 255, 255, 0.10)',
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          WebkitOverflowScrolling: 'touch',
+        }} className="no-scrollbar">
+          {loading ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: tokens.spacing[32],
+            }}>
+              <p style={{
+                color: tokens.colors.textSecondary,
+                fontSize: '14px',
+              }}>
+                Loading...
+              </p>
+            </div>
+          ) : offlineFriends.length > 0 ? (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: tokens.spacing[12],
+            }}>
+              {offlineFriends.map((friend) => (
+                <motion.div
+                  key={friend.id}
+                  whileTap={{ scale: 0.98 }}
+                  style={{
+                    padding: tokens.spacing[16],
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(255, 255, 255, 0.10)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '20px',
-                  }}>
-                    <span>{friend.avatar || '👤'}</span>
-                  </div>
-                  <div>
-                    <p style={{
-                      ...tokens.typography.body,
-                      color: tokens.colors.textPrimaryOnDark,
-                      margin: 0,
-                      fontWeight: 500,
-                    }}>
-                      {friend.name || 'User'}
-                    </p>
-                    <p style={{
-                      ...tokens.typography.label,
-                      color: tokens.colors.textSecondary,
-                      margin: 0,
-                      marginTop: tokens.spacing[4],
-                    }}>
-                      Offline
-                    </p>
-                  </div>
-                </div>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleInvite(friend.id)}
-                  style={{
-                    padding: `${tokens.spacing[10]} ${tokens.spacing[16]}`,
-                    borderRadius: tokens.radii.button,
-                    background: tokens.colors.pillSelected,
-                    border: 'none',
-                    color: tokens.colors.textOnPill,
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    cursor: 'pointer',
+                    justifyContent: 'space-between',
+                    backdropFilter: 'blur(10px)',
                   }}
                 >
-                  Invite to chat
-                </motion.button>
-              </motion.div>
-            ))}
-          </div>
-        ) : (
-          <p style={{
-            color: tokens.colors.textSecondary,
-            textAlign: 'center',
-            padding: tokens.spacing[32],
-          }}>
-            No offline friends to invite
-          </p>
-        )}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: tokens.spacing[12],
+                  }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      background: 'rgba(255, 255, 255, 0.10)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '24px',
+                    }}>
+                      <span>{friend.avatar || '👤'}</span>
+                    </div>
+                    <div>
+                      <p style={{
+                        ...tokens.typography.body,
+                        color: tokens.colors.textPrimaryOnDark,
+                        margin: 0,
+                        fontWeight: 500,
+                        fontSize: '15px',
+                      }}>
+                        {friend.name || 'User'}
+                      </p>
+                      <p style={{
+                        ...tokens.typography.label,
+                        color: tokens.colors.textSecondary,
+                        margin: 0,
+                        marginTop: tokens.spacing[4],
+                        fontSize: '12px',
+                      }}>
+                        Offline
+                      </p>
+                    </div>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => handleInvite(friend.id)}
+                    style={{
+                      padding: `${tokens.spacing[10]} ${tokens.spacing[16]}`,
+                      borderRadius: '9999px',
+                      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.20) 0%, rgba(255, 255, 255, 0.10) 100%)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
+                      color: tokens.colors.textPrimaryOnDark,
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Invite to chat
+                  </motion.button>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: tokens.spacing[32],
+              textAlign: 'center',
+            }}>
+              <p style={{
+                fontSize: '48px',
+                marginBottom: tokens.spacing[16],
+              }}>
+                📭
+              </p>
+              <p style={{
+                color: tokens.colors.textSecondary,
+                fontSize: '14px',
+              }}>
+                No offline friends to invite
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </AppShell>
   )
 }
-
