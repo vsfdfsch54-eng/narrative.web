@@ -12,15 +12,15 @@ export default function NavBar() {
   const { unreadCount } = useNotifications();
 
   const items = [
-    { label: "Home", icon: Home, href: "/match" },
+    { label: "Home", icon: Home, href: "/" },
     { label: "Chat", icon: MessageCircle, href: "/conversations" },
     { label: "Notifications", icon: Bell, href: "/notifications" },
     { label: "Calendar", icon: Calendar, href: "/calendar" },
     { label: "Profile", icon: User, href: "/profile" },
   ];
 
-  // Only show on specific pages: match, topic-match, chat, notifications, calendar, and profile
-  const allowedPaths = ['/match', '/topic-match', '/conversations', '/chat', '/notifications', '/calendar', '/profile']
+  // Only show on specific pages: home, match, chat, notifications, calendar, and profile
+  const allowedPaths = ['/', '/match', '/conversations', '/chat', '/notifications', '/calendar', '/profile']
   const isAllowedPath = pathname && (
     allowedPaths.some(path => pathname === path || pathname.startsWith(path + '/'))
   )
