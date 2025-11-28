@@ -56,9 +56,8 @@ export function CardStack({ profiles, currentUserId, onConnect, onSkip }: CardSt
     <div style={{
       position: 'relative',
       width: '100%',
-      maxWidth: '400px',
-      margin: '0 auto',
-      minHeight: '600px',
+      maxWidth: '420px',
+      height: '100%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -76,4 +75,3 @@ export function CardStack({ profiles, currentUserId, onConnect, onSkip }: CardSt
     </div>
   )
 }
-

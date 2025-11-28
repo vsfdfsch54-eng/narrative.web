@@ -32,27 +32,30 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
       style={{
         position: 'relative',
         width: '100%',
-        maxWidth: '400px',
-        margin: '0 auto',
-        borderRadius: tokens.radii.button,
-        background: 'rgba(255, 255, 255, 0.05)',
-        border: '1px solid rgba(255, 255, 255, 0.10)',
-        padding: tokens.spacing[20],
-        boxShadow: tokens.shadows.pillUnselected,
+        maxWidth: '420px',
+        borderRadius: '20px',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.15)',
+        padding: tokens.spacing[28],
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+        display: 'flex',
+        flexDirection: 'column',
         ...style,
       }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.3 }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9, y: -20 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
       {/* Name */}
       <h2 style={{
         ...tokens.typography.heading,
         color: tokens.colors.textPrimaryOnDark,
         marginBottom: tokens.spacing[20],
-        fontSize: '28px',
-        fontWeight: 600,
+        fontSize: '32px',
+        fontWeight: 700,
+        textAlign: 'center',
       }}>
         {profile.name}
       </h2>
@@ -62,22 +65,25 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
         display: 'grid',
         gridTemplateColumns: '1fr 1fr',
         gap: tokens.spacing[12],
-        marginBottom: tokens.spacing[20],
+        marginBottom: tokens.spacing[28],
+        flex: 1,
       }}>
         {/* Box 1: Interests */}
         <div style={{
           padding: tokens.spacing[16],
-          borderRadius: tokens.radii.button,
-          background: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.10)',
+          backdropFilter: 'blur(10px)',
         }}>
           <h3 style={{
             ...tokens.typography.label,
             color: tokens.colors.textSecondary,
-            marginBottom: tokens.spacing[8],
-            fontSize: '12px',
+            marginBottom: tokens.spacing[10],
+            fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
+            fontWeight: 600,
           }}>
             Interests
           </h3>
@@ -91,11 +97,12 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
                 <span
                   key={idx}
                   style={{
-                    padding: `${tokens.spacing[4]} ${tokens.spacing[8]}`,
-                    borderRadius: tokens.radii.pill,
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    color: tokens.colors.textOnPill,
-                    fontSize: '12px',
+                    padding: `${tokens.spacing[8]} ${tokens.spacing[10]}`,
+                    borderRadius: '9999px',
+                    background: 'rgba(255, 255, 255, 0.10)',
+                    color: tokens.colors.textPrimaryOnDark,
+                    fontSize: '11px',
+                    fontWeight: 500,
                     whiteSpace: 'nowrap',
                   }}
                 >
@@ -116,31 +123,34 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
         {/* Box 2: Mood + Topic */}
         <div style={{
           padding: tokens.spacing[16],
-          borderRadius: tokens.radii.button,
-          background: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.10)',
+          backdropFilter: 'blur(10px)',
         }}>
           <h3 style={{
             ...tokens.typography.label,
             color: tokens.colors.textSecondary,
-            marginBottom: tokens.spacing[8],
-            fontSize: '12px',
+            marginBottom: tokens.spacing[10],
+            fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
+            fontWeight: 600,
           }}>
             Mood & Topic
           </h3>
           <div style={{
             color: tokens.colors.textPrimaryOnDark,
-            fontSize: '14px',
+            fontSize: '13px',
+            lineHeight: 1.5,
           }}>
             {profile.mood && profile.topic ? (
               <div>
-                <div style={{ marginBottom: tokens.spacing[4] }}>{profile.mood}</div>
-                <div style={{ color: tokens.colors.textSecondary }}>{profile.topic}</div>
+                <div style={{ marginBottom: tokens.spacing[4], fontWeight: 500 }}>{profile.mood}</div>
+                <div style={{ color: tokens.colors.textSecondary, fontSize: '12px' }}>{profile.topic}</div>
               </div>
             ) : (
-              <span style={{ color: tokens.colors.textMuted }}>None selected</span>
+              <span style={{ color: tokens.colors.textMuted, fontSize: '12px' }}>None selected</span>
             )}
           </div>
         </div>
@@ -148,30 +158,33 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
         {/* Box 3: Mutual Friends/Communities */}
         <div style={{
           padding: tokens.spacing[16],
-          borderRadius: tokens.radii.button,
-          background: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.10)',
+          backdropFilter: 'blur(10px)',
         }}>
           <h3 style={{
             ...tokens.typography.label,
             color: tokens.colors.textSecondary,
-            marginBottom: tokens.spacing[8],
-            fontSize: '12px',
+            marginBottom: tokens.spacing[10],
+            fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
+            fontWeight: 600,
           }}>
             Connections
           </h3>
           <div style={{
             color: tokens.colors.textPrimaryOnDark,
-            fontSize: '14px',
+            fontSize: '13px',
+            fontWeight: 500,
           }}>
             {mutualFriends > 0 ? (
               <div>{mutualFriends} mutual friend{mutualFriends !== 1 ? 's' : ''}</div>
             ) : mutualCommunities > 0 ? (
               <div>{mutualCommunities} mutual communit{mutualCommunities !== 1 ? 'ies' : 'y'}</div>
             ) : (
-              <span style={{ color: tokens.colors.textMuted }}>None</span>
+              <span style={{ color: tokens.colors.textMuted, fontSize: '12px' }}>None</span>
             )}
           </div>
         </div>
@@ -179,27 +192,31 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
         {/* Box 4: Reputation Emojis */}
         <div style={{
           padding: tokens.spacing[16],
-          borderRadius: tokens.radii.button,
-          background: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '16px',
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid rgba(255, 255, 255, 0.10)',
+          backdropFilter: 'blur(10px)',
         }}>
           <h3 style={{
             ...tokens.typography.label,
             color: tokens.colors.textSecondary,
-            marginBottom: tokens.spacing[8],
-            fontSize: '12px',
+            marginBottom: tokens.spacing[10],
+            fontSize: '11px',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
+            fontWeight: 600,
           }}>
             Reputation
           </h3>
           <div style={{
             display: 'flex',
             gap: tokens.spacing[8],
-            fontSize: '20px',
+            fontSize: '24px',
+            alignItems: 'center',
+            minHeight: '24px',
           }}>
             {reputationEmojis.length > 0 ? (
-              reputationEmojis.map((emoji, idx) => (
+              reputationEmojis.slice(0, 3).map((emoji, idx) => (
                 <span key={idx}>{emoji}</span>
               ))
             ) : (
@@ -218,16 +235,17 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
       <div style={{
         display: 'flex',
         gap: tokens.spacing[12],
+        flexShrink: 0,
       }}>
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={onSkip}
           style={{
             flex: 1,
-            padding: tokens.spacing[14],
-            borderRadius: tokens.radii.button,
+            padding: `${tokens.spacing[16]} ${tokens.spacing[20]}`,
+            borderRadius: '9999px',
             background: 'transparent',
-            border: '1px solid rgba(255, 255, 255, 0.20)',
+            border: '1.5px solid rgba(255, 255, 255, 0.25)',
             color: tokens.colors.textPrimaryOnDark,
             fontSize: '16px',
             fontWeight: 600,
@@ -236,6 +254,7 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
             alignItems: 'center',
             justifyContent: 'center',
             gap: tokens.spacing[8],
+            backdropFilter: 'blur(10px)',
           }}
         >
           <X style={{ width: '20px', height: '20px' }} />
@@ -247,11 +266,11 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
           onClick={onConnect}
           style={{
             flex: 1,
-            padding: tokens.spacing[14],
-            borderRadius: tokens.radii.button,
-            background: tokens.colors.pillSelected,
-            border: 'none',
-            color: tokens.colors.textOnPill,
+            padding: `${tokens.spacing[16]} ${tokens.spacing[20]}`,
+            borderRadius: '9999px',
+            background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%)',
+            border: '1.5px solid rgba(255, 255, 255, 0.30)',
+            color: tokens.colors.textPrimaryOnDark,
             fontSize: '16px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -259,6 +278,8 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
             alignItems: 'center',
             justifyContent: 'center',
             gap: tokens.spacing[8],
+            boxShadow: '0 0 20px rgba(255, 255, 255, 0.15)',
+            backdropFilter: 'blur(10px)',
           }}
         >
           <Heart style={{ width: '20px', height: '20px' }} />
@@ -268,4 +289,3 @@ export function MatchCard({ profile, onConnect, onSkip, style }: MatchCardProps)
     </motion.div>
   )
 }
-

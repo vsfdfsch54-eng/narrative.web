@@ -55,7 +55,7 @@ export default function MatchPage() {
     if (!user || authLoading) return
 
     async function loadMatchFeed() {
-      if (!user) return // Additional check for TypeScript
+      if (!user) return
       
       try {
         setLoading(true)
@@ -93,11 +93,15 @@ export default function MatchPage() {
     return (
       <AppShell>
         <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '100vh',
           padding: tokens.spacing[20],
         }}>
           <Loader2 style={{ width: '32px', height: '32px', animation: 'spin 1s linear infinite' }} />
@@ -120,106 +124,144 @@ export default function MatchPage() {
   return (
     <AppShell>
       <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: '100vh',
         padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
+        paddingTop: `${tokens.spacing[28]}`,
+        paddingBottom: '100px',
       }}>
-        <h1 style={{
-          ...tokens.typography.heading,
-          color: tokens.colors.textPrimaryOnDark,
+        {/* Header */}
+        <div style={{
+          flexShrink: 0,
           marginBottom: tokens.spacing[20],
+          textAlign: 'center',
         }}>
-          Find Your Match
-        </h1>
+          <h1 style={{
+            ...tokens.typography.title,
+            color: tokens.colors.textPrimaryOnDark,
+            margin: 0,
+            marginBottom: tokens.spacing[8],
+            fontSize: '32px',
+            fontWeight: 700,
+          }}>
+            Find Your Match
+          </h1>
+          <p style={{
+            ...tokens.typography.body,
+            color: tokens.colors.textSecondary,
+            margin: 0,
+            fontSize: '14px',
+          }}>
+            Swipe to discover new connections
+          </p>
+        </div>
 
         {error && (
           <div style={{
-            padding: tokens.spacing[16],
+            flexShrink: 0,
+            padding: tokens.spacing[12],
             borderRadius: tokens.radii.button,
             background: 'rgba(255, 0, 0, 0.1)',
             border: '1px solid rgba(255, 0, 0, 0.3)',
             color: tokens.colors.textPrimaryOnDark,
             marginBottom: tokens.spacing[16],
+            textAlign: 'center',
+            fontSize: '14px',
           }}>
             {error}
           </div>
         )}
 
-        {profiles.length === 0 && !loading ? (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flex: 1,
-            padding: tokens.spacing[32],
-            textAlign: 'center',
-          }}>
-            <p style={{
-              fontSize: '48px',
-              marginBottom: tokens.spacing[16],
+        {/* Card Stack Container - Takes remaining space */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: 0,
+          overflow: 'hidden',
+        }}>
+          {profiles.length === 0 && !loading ? (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              padding: tokens.spacing[32],
             }}>
-              😔
-            </p>
-            <h2 style={{
-              ...tokens.typography.heading,
-              color: tokens.colors.textPrimaryOnDark,
-              marginBottom: tokens.spacing[8],
-            }}>
-              No More Matches
-            </h2>
-            <p style={{
-              ...tokens.typography.body,
-              color: tokens.colors.textSecondary,
-              marginBottom: tokens.spacing[20],
-            }}>
-              Check back later for new people to connect with!
-            </p>
-          </div>
-        ) : (
-          <CardStack
-            profiles={profiles}
-            currentUserId={user.id}
-            onConnect={async (targetId) => {
-              try {
-                const response = await fetch('/api/match/connect', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    userId: user.id,
-                    targetId,
-                  }),
-                })
+              <p style={{
+                fontSize: '64px',
+                marginBottom: tokens.spacing[16],
+              }}>
+                😔
+              </p>
+              <h2 style={{
+                ...tokens.typography.heading,
+                color: tokens.colors.textPrimaryOnDark,
+                marginBottom: tokens.spacing[8],
+                fontSize: '24px',
+              }}>
+                No More Matches
+              </h2>
+              <p style={{
+                ...tokens.typography.body,
+                color: tokens.colors.textSecondary,
+                marginBottom: tokens.spacing[20],
+                fontSize: '14px',
+              }}>
+                Check back later for new people to connect with!
+              </p>
+            </div>
+          ) : (
+            <CardStack
+              profiles={profiles}
+              currentUserId={user.id}
+              onConnect={async (targetId) => {
+                try {
+                  const response = await fetch('/api/match/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      targetId,
+                    }),
+                  })
 
-                const data = await response.json()
-                
-                if (data.success && data.matched) {
-                  // Mutual match! Navigate to chat
-                  router.push(`/chat/${targetId}?roomId=${data.roomId}`)
+                  const data = await response.json()
+                  
+                  if (data.success && data.matched) {
+                    // Mutual match! Navigate to chat
+                    router.push(`/chat/${targetId}?roomId=${data.roomId}`)
+                  }
+                } catch (err) {
+                  console.error('[MatchPage] Error connecting:', err)
                 }
-              } catch (err) {
-                console.error('[MatchPage] Error connecting:', err)
-              }
-            }}
-            onSkip={async (targetId) => {
-              try {
-                await fetch('/api/match/skip', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    userId: user.id,
-                    targetId,
-                  }),
-                })
-              } catch (err) {
-                console.error('[MatchPage] Error skipping:', err)
-              }
-            }}
-          />
-        )}
+              }}
+              onSkip={async (targetId) => {
+                try {
+                  await fetch('/api/match/skip', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      userId: user.id,
+                      targetId,
+                    }),
+                  })
+                } catch (err) {
+                  console.error('[MatchPage] Error skipping:', err)
+                }
+              }}
+            />
+          )}
+        </div>
       </div>
     </AppShell>
   )
 }
-
