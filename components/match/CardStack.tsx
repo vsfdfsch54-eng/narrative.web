@@ -24,22 +24,27 @@ export function CardStack({ profiles, currentUserId, onConnect, onSkip }: CardSt
     return null
   }
 
+  // Bug #8 Fix: Only render current card to prevent double-rendering
   const currentProfile = profiles[currentIndex]
 
   const handleConnect = async () => {
     if (isAnimating || !currentProfile) return
     
     setIsAnimating(true)
-    await onConnect(currentProfile.id)
-    setIsAnimating(false)
+    // Don't await - let animation complete smoothly
+    onConnect(currentProfile.id).finally(() => {
+      setIsAnimating(false)
+    })
   }
 
   const handleSkip = async () => {
     if (isAnimating || !currentProfile) return
     
     setIsAnimating(true)
-    await onSkip(currentProfile.id)
-    setIsAnimating(false)
+    // Don't await - let animation complete smoothly
+    onSkip(currentProfile.id).finally(() => {
+      setIsAnimating(false)
+    })
   }
 
   return (

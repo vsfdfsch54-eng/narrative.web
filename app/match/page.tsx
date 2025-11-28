@@ -153,6 +153,7 @@ export default function MatchPage() {
   }, [user, loading])
 
   // Handle card actions (connect/skip)
+  // Bug #8 Fix: Prevent double-rendering and ensure smooth transitions
   const handleCardAction = async (action: 'connect' | 'skip', targetId: string) => {
     if (!user?.id) return
 
@@ -186,14 +187,19 @@ export default function MatchPage() {
         })
       }
 
-      // Move to next card (no feed refresh)
+      // Bug #8 Fix: Move to next card immediately (don't wait for API)
+      // This prevents UI jitter and double-rendering
       const nextIndex = currentCardIndex + 1
       if (nextIndex < feedRef.current.length) {
+        // Update state immediately for smooth transition
         setCurrentCardIndex(nextIndex)
         currentCardUserIdRef.current = feedRef.current[nextIndex]?.id || null
       } else {
-        // No more cards - refresh feed
-        await loadMatchFeed()
+        // No more cards - refresh feed in background
+        // Don't await to prevent blocking UI
+        loadMatchFeed().catch(err => {
+          console.error('[MatchPage] Error refreshing feed:', err)
+        })
       }
     } catch (err) {
       console.error('[MatchPage] Error in card action:', err)

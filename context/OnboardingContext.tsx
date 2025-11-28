@@ -98,6 +98,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         const dbUser = data.data
         const dbStep = normalizeOnboardingStep(dbUser.onboarding_step)
 
+        // 🔍 DEBUG: Log what we received from database
+        console.log('[OnboardingContext] 📥 INITIALIZE - Database response:', {
+          userId: user.id,
+          dbStep: dbStep,
+          dbStepRaw: dbUser.onboarding_step,
+          dbCompleted: dbUser.onboarding_completed,
+          currentClientStep: state.step,
+          timestamp: new Date().toISOString()
+        })
+
         setState(prev => {
           // CRITICAL: Never reset to 'email' if user is already on a later step
           // This prevents the email loop when DB is stale or hasn't propagated
@@ -112,6 +122,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
             // If DB says 'email' but user is ahead, preserve user's step
             finalStep = prev.step
           }
+          
+          // 🔍 DEBUG: Log the final step decision
+          console.log('[OnboardingContext] ✅ INITIALIZE - Final step decision:', {
+            userId: user.id,
+            dbStep: dbStep,
+            prevStep: prev.step,
+            finalStep: finalStep,
+            decision: finalStep !== dbStep ? 'PRESERVED_CLIENT_STEP' : 'USED_DB_STEP',
+            timestamp: new Date().toISOString()
+          })
           
           return {
             ...prev,
@@ -253,9 +273,16 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
             const dbStepIndex = STEP_ORDER.indexOf(dbStep)
             
             // If current step is ahead of saved step, save it in background
+            // CRITICAL: Pass explicit values to prevent stale closure issues
             if (currentStepIndex > dbStepIndex) {
-              // Save in background - don't await
-              saveProgress(state.step).catch((error) => {
+              // Save in background - don't await, pass explicit values
+              saveProgress(state.step, {
+                firstName: state.firstName,
+                lastName: state.lastName,
+                questionsAnswers: state.questionsAnswers,
+                interests: state.interests,
+                email: state.email
+              }).catch((error) => {
                 console.log('[OnboardingContext] Background save retry failed:', error)
               })
             }
@@ -270,7 +297,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       const timeout = setTimeout(retrySave, 1000)
       return () => clearTimeout(timeout)
     }
-  }, [user?.id, state.initialized, state.step, state.loading, saveProgress])
+  }, [user?.id, state.initialized, state.step, state.loading, state.firstName, state.lastName, state.questionsAnswers, state.interests, state.email, saveProgress])
 
   const setStep = useCallback((step: OnboardingStep) => {
     setState(prev => ({ ...prev, step, error: null }))

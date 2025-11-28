@@ -81,10 +81,24 @@ export function usePresence(userId: string | null) {
       .subscribe()
 
     // Handle page visibility (tab switch, minimize, etc.)
+    // CRITICAL: Mark offline after 30 seconds if tab is hidden (Bug #5 fix)
+    let visibilityTimeout: NodeJS.Timeout | null = null
+    
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        setOffline()
+        // Tab is hidden - mark offline after 30 seconds
+        visibilityTimeout = setTimeout(() => {
+          if (document.hidden) {
+            // Still hidden after 30 seconds - mark offline
+            setOffline()
+          }
+        }, 30000) // 30 seconds delay
       } else {
+        // Tab is visible again - cancel timeout and mark online
+        if (visibilityTimeout) {
+          clearTimeout(visibilityTimeout)
+          visibilityTimeout = null
+        }
         setOnline()
       }
     }
@@ -93,6 +107,9 @@ export function usePresence(userId: string | null) {
 
     return () => {
       clearInterval(presenceInterval)
+      if (visibilityTimeout) {
+        clearTimeout(visibilityTimeout)
+      }
       channel.unsubscribe()
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       setOffline()

@@ -128,13 +128,17 @@ export default function OnboardingPage() {
         const dbStep = finalResult !== null ? finalResult.step : null // Don't default to 'email' - let OnboardingController handle it
         const clientStep = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('step') : null
         
-        // PART 4: Log both client and DB steps before allowing access
-        console.log('[OnboardingPage] 📊 Step comparison:', {
+        // 🔍 DEBUG: Log both client and DB steps before allowing access
+        console.log('[OnboardingPage] 📊 STEP_COMPARISON:', {
           userId: user.id,
           dbStep: dbStep || 'null',
+          dbStepRaw: finalResult?.record?.onboarding_step || 'null',
           clientStep: clientStep || 'null',
           dbCompleted: finalResult?.completed || false,
           apiError: finalResult?.apiError || false,
+          urlPath: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+          urlSearch: typeof window !== 'undefined' ? window.location.search : 'unknown',
+          timestamp: new Date().toISOString()
         })
         
         // CRITICAL: Never redirect to email if user is already on a later step

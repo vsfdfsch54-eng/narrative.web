@@ -156,6 +156,8 @@ export async function GET(request: NextRequest) {
         onboarding_completed: existingUser.onboarding_completed,
         name: existingUser.name,
         email: existingUser.email,
+        timestamp: new Date().toISOString(),
+        stackTrace: new Error().stack?.split('\n').slice(1, 4).join(' → ') // Show call stack
       })
       
     return NextResponse.json(
@@ -325,6 +327,7 @@ export async function GET(request: NextRequest) {
                 name: safeUserName, // Always provide a value (NOT NULL constraint)
                 interests: [],
                 onboarding_step: 'email', // Start at email step, not 'start'
+                // 🔍 DEBUG: Log when creating new user with 'email' step
               })
               .select('*')
             
@@ -367,13 +370,15 @@ export async function GET(request: NextRequest) {
               })
             } else if (insertResult && insertResult.length > 0) {
               userData = Array.isArray(insertResult) ? insertResult[0] : insertResult
-              // PART 5: Verbose logging - newly created record
-              console.log('[Users API GET] ✅ Newly created record:', {
+              // 🔍 DEBUG: Verbose logging - newly created record
+              console.log('[Users API GET] ✅ NEWLY CREATED RECORD:', {
                 userId,
                 onboarding_step: userData.onboarding_step,
                 onboarding_completed: userData.onboarding_completed,
                 name: userData.name,
                 email: userData.email,
+                timestamp: new Date().toISOString(),
+                callStack: new Error().stack?.split('\n').slice(1, 4).join(' → ')
               })
             }
           }
@@ -488,6 +493,18 @@ async function saveOnboardingProgress(
     email?: string
         }
 ): Promise<{ success: boolean; data?: any; error?: string }> {
+  // 🔍 DEBUG: Log incoming save request
+  console.log('[saveOnboardingProgress] 📥 INCOMING SAVE REQUEST:', {
+    userId,
+    incomingStep: data.onboarding_step,
+    incomingCompleted: data.onboarding_completed,
+    hasFirstName: !!data.firstName,
+    hasLastName: !!data.lastName,
+    hasInterests: !!data.interests,
+    timestamp: new Date().toISOString(),
+    callStack: new Error().stack?.split('\n').slice(1, 5).join(' → ')
+  })
+  
   try {
     // First, check if user exists
     const { data: existingUser, error: fetchError } = await supabase
@@ -528,10 +545,21 @@ async function saveOnboardingProgress(
     }
     
     // Build update object - only include fields that are provided
+    // CRITICAL: Preserve existing onboarding_step if not provided in update
     const updateData: any = {
       id: userId,
       email: email,
       updated_at: new Date().toISOString()
+    }
+    
+    // 🔍 DEBUG: Log existing user's step before update
+    if (existingUser) {
+      console.log('[saveOnboardingProgress] 📋 EXISTING USER STEP:', {
+        userId,
+        existingStep: existingUser.onboarding_step,
+        incomingStep: data.onboarding_step,
+        willPreserve: !data.onboarding_step && existingUser.onboarding_step !== 'email'
+      })
     }
     
     // CRITICAL: name column has NOT NULL constraint - always provide a value
@@ -579,8 +607,15 @@ async function saveOnboardingProgress(
       stepToSave = 'email'
     }
     
+    // CRITICAL: Only update onboarding_step if explicitly provided
+    // If not provided, preserve existing step (don't reset to 'email')
     if (stepToSave !== undefined) {
       updateData.onboarding_step = stepToSave
+    } else if (existingUser?.onboarding_step) {
+      // Preserve existing step if update doesn't specify one
+      // This prevents accidental resets to 'email'
+      updateData.onboarding_step = existingUser.onboarding_step
+      console.log('[saveOnboardingProgress] ✅ Preserving existing step:', existingUser.onboarding_step)
     }
     
     // PART 1: HARD RULE - If onboarding_completed === true, ALWAYS set both fields
@@ -599,16 +634,19 @@ async function saveOnboardingProgress(
       updateData.onboarding_completed = data.onboarding_completed
     }
 
-    // Log what we're about to save
-    console.log('[saveOnboardingProgress] Saving to database:', {
+    // 🔍 DEBUG: Log what we're about to save
+    console.log('[saveOnboardingProgress] 💾 BEFORE UPSERT - updateData:', {
       userId,
       onboarding_step: updateData.onboarding_step,
       onboarding_completed: updateData.onboarding_completed,
+      incomingStep: data.onboarding_step,
+      incomingCompleted: data.onboarding_completed,
       hasName: !!updateData.name,
       hasFirstName: !!updateData.first_name,
       hasLastName: !!updateData.last_name,
       hasInterests: !!updateData.interests,
       hasQuestions: !!updateData.questions_answers,
+      timestamp: new Date().toISOString()
     })
 
     // Use upsert to handle both new users and existing users
@@ -712,6 +750,18 @@ async function saveOnboardingProgress(
     if (!finalData) {
       return { success: false, error: 'Failed to save user data. Please try again.' }
     }
+    
+    // 🔍 DEBUG: Log what was actually saved immediately after upsert
+    console.log('[saveOnboardingProgress] ✅ AFTER UPSERT - saved data:', {
+      userId,
+      savedStep: finalData.onboarding_step,
+      savedCompleted: finalData.onboarding_completed,
+      expectedStep: updateData.onboarding_step,
+      expectedCompleted: updateData.onboarding_completed,
+      stepMatches: finalData.onboarding_step === updateData.onboarding_step,
+      completedMatches: finalData.onboarding_completed === updateData.onboarding_completed,
+      timestamp: new Date().toISOString()
+    })
 
     // PART 1: Post-save verification - re-fetch and confirm the save worked
     // This is critical for completion saves

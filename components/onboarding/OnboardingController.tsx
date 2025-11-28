@@ -230,11 +230,15 @@ export function OnboardingController() {
     setEmail(email)
     
     try {
-      // PART 5: Verbose logging
+      // 🔍 DEBUG: Verbose logging
       console.log('[OnboardingController] 📝 Email step: saving progress...', {
         email,
+        currentStep: state.step,
         nextStep: 'password',
-        hasUser: !!user?.id
+        hasUser: !!user?.id,
+        userId: user?.id,
+        timestamp: new Date().toISOString(),
+        callStack: new Error().stack?.split('\n').slice(1, 4).join(' → ')
       })
       
       // PART 3: Wait for save to complete (if user exists)
@@ -266,9 +270,17 @@ export function OnboardingController() {
               console.log('[OnboardingController] ✅ Email save successful:', {
                 savedStep: data.data?.onboarding_step,
                 savedCompleted: data.data?.onboarding_completed,
+                expectedStep: 'password',
+                stepMatches: data.data?.onboarding_step === 'password',
+                timestamp: new Date().toISOString()
               })
               // PART 3: Verify the save (with delay for DB replication)
-              await verifyStepSaved('password', user.id)
+              const verified = await verifyStepSaved('password', user.id)
+              console.log('[OnboardingController] 🔍 Email step verification result:', {
+                verified,
+                userId: user.id,
+                timestamp: new Date().toISOString()
+              })
             }
           }
         } catch (fetchError: any) {

@@ -43,34 +43,32 @@ BEGIN
     u.onboarding_completed
   FROM users u
   WHERE u.id != current_user_id
-
-  -- Exclude users already in match_queue (pending or matched)
-  AND u.id NOT IN (
-    SELECT target_id 
-    FROM match_queue 
-    WHERE user_id = current_user_id
-    AND status IN ('pending', 'matched')
-  )
-
-  -- Exclude users already matched in chat_matches
-  AND u.id NOT IN (
-    SELECT 
-      CASE 
-        WHEN user1_id = current_user_id THEN user2_id
-        ELSE user1_id 
-      END
-    FROM chat_matches
-    WHERE (user1_id = current_user_id OR user2_id = current_user_id)
-    AND status = 'active'
-  )
-
-  -- ONLY include users who are online (strict requirement)
-  AND u.id IN (
-    SELECT user_id 
-    FROM user_presence
-    WHERE is_online = true
-    AND last_seen_at >= NOW() - INTERVAL '5 minutes'
-  )
+    -- Exclude users already in match_queue (pending or matched)
+    AND u.id NOT IN (
+      SELECT target_id 
+      FROM match_queue 
+      WHERE user_id = current_user_id
+      AND status IN ('pending', 'matched')
+    )
+    -- Exclude users already matched in chat_matches (ONLY active matches, not ended)
+    -- Bug #6 Fix: Only exclude active matches, allow rematching with ended matches
+    AND u.id NOT IN (
+      SELECT 
+        CASE 
+          WHEN user1_id = current_user_id THEN user2_id
+          ELSE user1_id 
+        END
+      FROM chat_matches
+      WHERE (user1_id = current_user_id OR user2_id = current_user_id)
+      AND status = 'active' -- CRITICAL: Only exclude active, not 'ended' matches
+    )
+    -- ONLY include users who are online (strict requirement)
+    AND u.id IN (
+      SELECT user_id 
+      FROM user_presence
+      WHERE is_online = true
+      AND last_seen_at >= NOW() - INTERVAL '5 minutes'
+    )
 
   -- Prioritize mood/topic matches, then randomize
   ORDER BY 
