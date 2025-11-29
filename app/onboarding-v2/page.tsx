@@ -1,58 +1,32 @@
 "use client"
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/hooks/use-auth'
 import { OnboardingV2Provider, useOnboardingV2 } from '@/context/OnboardingV2Context'
-import { WelcomeStep } from '@/components/onboarding-v2/steps/WelcomeStep'
+import { EmailStep } from '@/components/onboarding-v2/steps/EmailStep'
+import { PasswordStep } from '@/components/onboarding-v2/steps/PasswordStep'
+import { NameStep } from '@/components/onboarding-v2/steps/NameStep'
+import { QuestionsStep } from '@/components/onboarding-v2/steps/QuestionsStep'
+import { InterestsStep } from '@/components/onboarding-v2/steps/InterestsStep'
 import { CreateAccountStep } from '@/components/onboarding-v2/steps/CreateAccountStep'
-import { NicknameStep } from '@/components/onboarding-v2/steps/NicknameStep'
-import { ProfileBasicsStep } from '@/components/onboarding-v2/steps/ProfileBasicsStep'
-import { MoodPreferencesStep } from '@/components/onboarding-v2/steps/MoodPreferencesStep'
-import { IntentionPreferencesStep } from '@/components/onboarding-v2/steps/IntentionPreferencesStep'
-import { TopicPreferencesStep } from '@/components/onboarding-v2/steps/TopicPreferencesStep'
-import { HowItWorksStep } from '@/components/onboarding-v2/steps/HowItWorksStep'
-import { PermissionsStep } from '@/components/onboarding-v2/steps/PermissionsStep'
-import { YoureInStep } from '@/components/onboarding-v2/steps/YoureInStep'
 
 function OnboardingV2Content() {
-  const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
   const { state } = useOnboardingV2()
-
-  // Redirect if already onboarded
-  useEffect(() => {
-    if (!authLoading && user) {
-      // Check if user has completed V2 onboarding
-      // TODO: Check schema_version === 'v2' in user record
-      // For now, allow access
-    }
-  }, [user, authLoading])
 
   const renderStep = () => {
     switch (state.step) {
-      case 'welcome':
-        return <WelcomeStep />
+      case 'email':
+        return <EmailStep />
+      case 'password':
+        return <PasswordStep />
+      case 'name':
+        return <NameStep />
+      case 'questions':
+        return <QuestionsStep />
+      case 'interests':
+        return <InterestsStep />
       case 'create-account':
         return <CreateAccountStep />
-      case 'nickname':
-        return <NicknameStep />
-      case 'profile-basics':
-        return <ProfileBasicsStep />
-      case 'mood-preferences':
-        return <MoodPreferencesStep />
-      case 'intention-preferences':
-        return <IntentionPreferencesStep />
-      case 'topic-preferences':
-        return <TopicPreferencesStep />
-      case 'how-it-works':
-        return <HowItWorksStep />
-      case 'permissions':
-        return <PermissionsStep />
-      case 'youre-in':
-        return <YoureInStep />
       default:
-        return <WelcomeStep />
+        return <EmailStep />
     }
   }
 
@@ -86,4 +60,3 @@ export default function OnboardingV2Page() {
     </OnboardingV2Provider>
   )
 }
-

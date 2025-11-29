@@ -1,44 +1,120 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useOnboardingV2 } from '@/context/OnboardingV2Context'
-import { useAuth } from '@/hooks/use-auth'
 import { tokensV2, animations } from '@/lib/design-tokens-v2'
+import { Loader2 } from 'lucide-react'
 
 export function CreateAccountStep() {
-  const { state, setEmail, setPassword, nextStep, previousStep } = useOnboardingV2()
-  const { signUp } = useAuth()
-  const [localEmail, setLocalEmail] = useState(state.email)
-  const [localPassword, setLocalPassword] = useState(state.password)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const { createAccount, state } = useOnboardingV2()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
-    setLoading(true)
-
-    try {
-      const { error: signUpError } = await signUp(localEmail, localPassword)
-      
-      if (signUpError) {
-        setError(signUpError.message || 'Failed to create account')
-        setLoading(false)
-        return
-      }
-
-      setEmail(localEmail)
-      setPassword(localPassword)
-      nextStep()
-    } catch (err: any) {
-      setError(err.message || 'Failed to create account')
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    // Auto-create account when this step is reached
+    if (state.step === 'create-account' && !state.loading && !state.error) {
+      createAccount().then((result) => {
+        if (result.success && result.userId) {
+          // Redirect to home after successful account creation
+          setTimeout(() => {
+            router.push('/home-v2')
+          }, 1500)
+        }
+      })
     }
+  }, [state.step, state.loading, state.error, createAccount, router])
+
+  if (state.loading) {
+    return (
+      <motion.div
+        {...animations.fadeUp}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          gap: tokensV2.spacing[32],
+        }}
+      >
+        <Loader2 style={{
+          width: '48px',
+          height: '48px',
+          animation: 'spin 1s linear infinite',
+          color: tokensV2.colors.accentSky,
+        }} />
+        <div>
+          <h1 style={{
+            fontSize: tokensV2.typography.fontSize['2xl'],
+            fontWeight: tokensV2.typography.fontWeight.bold,
+            color: tokensV2.colors.textPrimary,
+            margin: 0,
+            marginBottom: tokensV2.spacing[8],
+          }}>
+            Creating your account...
+          </h1>
+          <p style={{
+            fontSize: tokensV2.typography.fontSize.base,
+            color: tokensV2.colors.textSecondary,
+            margin: 0,
+          }}>
+            This will just take a moment
+          </p>
+        </div>
+      </motion.div>
+    )
   }
 
-  const isValid = localEmail.includes('@') && localEmail.includes('.') && localPassword.length >= 6
+  if (state.error) {
+    return (
+      <motion.div
+        {...animations.fadeUp}
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          gap: tokensV2.spacing[32],
+        }}
+      >
+        <div style={{ fontSize: '64px' }}>⚠️</div>
+        <div>
+          <h1 style={{
+            fontSize: tokensV2.typography.fontSize['2xl'],
+            fontWeight: tokensV2.typography.fontWeight.bold,
+            color: tokensV2.colors.textPrimary,
+            margin: 0,
+            marginBottom: tokensV2.spacing[8],
+          }}>
+            Something went wrong
+          </h1>
+          <p style={{
+            fontSize: tokensV2.typography.fontSize.base,
+            color: tokensV2.colors.accentPink,
+            margin: 0,
+          }}>
+            {state.error}
+          </p>
+        </div>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          onClick={() => createAccount()}
+          style={{
+            padding: `${tokensV2.spacing[12]} ${tokensV2.spacing[24]}`,
+            borderRadius: tokensV2.borderRadius.medium,
+            background: tokensV2.gradients.primary,
+            color: tokensV2.colors.textOnDark,
+            fontSize: tokensV2.typography.fontSize.base,
+            fontWeight: tokensV2.typography.fontWeight.semibold,
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          Try Again
+        </motion.button>
+      </motion.div>
+    )
+  }
 
   return (
     <motion.div
@@ -46,134 +122,30 @@ export function CreateAccountStep() {
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: tokensV2.spacing[24],
+        alignItems: 'center',
+        textAlign: 'center',
+        gap: tokensV2.spacing[32],
       }}
     >
+      <div style={{ fontSize: '64px' }}>🎉</div>
       <div>
         <h1 style={{
-          fontSize: tokensV2.typography.fontSize['2xl'],
+          fontSize: tokensV2.typography.fontSize['3xl'],
           fontWeight: tokensV2.typography.fontWeight.bold,
           color: tokensV2.colors.textPrimary,
           margin: 0,
-          marginBottom: tokensV2.spacing[8],
         }}>
-          Create Account
+          Welcome to Narrative!
         </h1>
         <p style={{
-          fontSize: tokensV2.typography.fontSize.sm,
+          fontSize: tokensV2.typography.fontSize.base,
           color: tokensV2.colors.textSecondary,
-          margin: 0,
+          margin: tokensV2.spacing[8],
+          lineHeight: tokensV2.typography.lineHeight.relaxed,
         }}>
-          Enter your email and create a password
+          Your account has been created. Redirecting you now...
         </p>
       </div>
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: tokensV2.spacing[20] }}>
-        <div>
-          <label style={{
-            display: 'block',
-            fontSize: tokensV2.typography.fontSize.sm,
-            fontWeight: tokensV2.typography.fontWeight.medium,
-            color: tokensV2.colors.textPrimary,
-            marginBottom: tokensV2.spacing[8],
-          }}>
-            Email
-          </label>
-          <input
-            type="email"
-            value={localEmail}
-            onChange={(e) => setLocalEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-            style={{
-              width: '100%',
-              padding: tokensV2.spacing[12],
-              borderRadius: tokensV2.borderRadius.medium,
-              border: `1px solid ${tokensV2.colors.borderLight}`,
-              fontSize: tokensV2.typography.fontSize.base,
-              background: tokensV2.colors.backgroundWhite,
-            }}
-          />
-        </div>
-
-        <div>
-          <label style={{
-            display: 'block',
-            fontSize: tokensV2.typography.fontSize.sm,
-            fontWeight: tokensV2.typography.fontWeight.medium,
-            color: tokensV2.colors.textPrimary,
-            marginBottom: tokensV2.spacing[8],
-          }}>
-            Password
-          </label>
-          <input
-            type="password"
-            value={localPassword}
-            onChange={(e) => setLocalPassword(e.target.value)}
-            placeholder="At least 6 characters"
-            required
-            minLength={6}
-            style={{
-              width: '100%',
-              padding: tokensV2.spacing[12],
-              borderRadius: tokensV2.borderRadius.medium,
-              border: `1px solid ${tokensV2.colors.borderLight}`,
-              fontSize: tokensV2.typography.fontSize.base,
-              background: tokensV2.colors.backgroundWhite,
-            }}
-          />
-        </div>
-
-        {error && (
-          <p style={{
-            fontSize: tokensV2.typography.fontSize.sm,
-            color: tokensV2.colors.accentPink,
-            margin: 0,
-          }}>
-            {error}
-          </p>
-        )}
-
-        <div style={{ display: 'flex', gap: tokensV2.spacing[12], marginTop: tokensV2.spacing[8] }}>
-          <motion.button
-            type="button"
-            whileTap={{ scale: 0.95 }}
-            onClick={previousStep}
-            style={{
-              flex: 1,
-              padding: tokensV2.spacing[12],
-              borderRadius: tokensV2.borderRadius.medium,
-              border: `1px solid ${tokensV2.colors.borderMedium}`,
-              background: tokensV2.colors.backgroundWhite,
-              color: tokensV2.colors.textPrimary,
-              fontSize: tokensV2.typography.fontSize.base,
-              fontWeight: tokensV2.typography.fontWeight.medium,
-              cursor: 'pointer',
-            }}
-          >
-            Back
-          </motion.button>
-          <motion.button
-            type="submit"
-            whileTap={{ scale: 0.95 }}
-            disabled={!isValid || loading}
-            style={{
-              flex: 1,
-              padding: tokensV2.spacing[12],
-              borderRadius: tokensV2.borderRadius.medium,
-              background: isValid ? tokensV2.gradients.primary : tokensV2.colors.borderLight,
-              color: tokensV2.colors.textOnDark,
-              fontSize: tokensV2.typography.fontSize.base,
-              fontWeight: tokensV2.typography.fontWeight.semibold,
-              border: 'none',
-              cursor: isValid ? 'pointer' : 'not-allowed',
-              opacity: isValid ? 1 : 0.5,
-            }}
-          >
-            {loading ? 'Creating...' : 'Continue'}
-          </motion.button>
-        </div>
-      </form>
     </motion.div>
   )
 }

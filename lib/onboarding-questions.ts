@@ -1,6 +1,7 @@
 /**
  * Onboarding Questions
  * 10 questions to understand the user for better matching and conversations
+ * Each question has exactly 4 choices
  */
 
 export interface OnboardingQuestion {
@@ -22,7 +23,6 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       { value: 'social', label: 'Hanging out with friends', emoji: '👥' },
       { value: 'active', label: 'Being active or outdoors', emoji: '🏃' },
       { value: 'creative', label: 'Working on a creative project', emoji: '🎨' },
-      { value: 'relax', label: 'Relaxing and unwinding', emoji: '😌' },
     ],
   },
   {
@@ -33,8 +33,6 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       { value: 'philosophy', label: 'Philosophy and deep thinking', emoji: '🤔' },
       { value: 'sports', label: 'Sports and competition', emoji: '⚽' },
       { value: 'arts', label: 'Arts and culture', emoji: '🎭' },
-      { value: 'science', label: 'Science and discovery', emoji: '🔬' },
-      { value: 'business', label: 'Business and entrepreneurship', emoji: '💼' },
     ],
   },
   {
@@ -55,7 +53,6 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       { value: 'concepts', label: 'Understanding complex concepts', emoji: '🧠' },
       { value: 'hobbies', label: 'Exploring new hobbies', emoji: '🎨' },
       { value: 'people', label: 'Understanding people and relationships', emoji: '👤' },
-      { value: 'world', label: 'Current events and world issues', emoji: '🌍' },
     ],
   },
   {
@@ -96,8 +93,6 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       { value: 'space', label: 'Space and the universe', emoji: '🚀' },
       { value: 'psychology', label: 'Psychology and human behavior', emoji: '🧠' },
       { value: 'cooking', label: 'Food and cooking', emoji: '🍳' },
-      { value: 'history', label: 'History and stories', emoji: '📜' },
-      { value: 'future', label: 'The future and possibilities', emoji: '🔮' },
     ],
   },
   {
@@ -118,7 +113,6 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       { value: 'humor', label: 'Humor and fun', emoji: '😄' },
       { value: 'intellectual', label: 'Intellectual stimulation', emoji: '🧠' },
       { value: 'emotional', label: 'Emotional support', emoji: '💗' },
-      { value: 'growth', label: 'Mutual growth', emoji: '🌱' },
     ],
   },
 ]
@@ -158,4 +152,3 @@ export function validateAllQuestionsAnswered(answers: Record<string, string>): {
     missing,
   }
 }
-

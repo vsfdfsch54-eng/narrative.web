@@ -7,7 +7,7 @@ import { getCorsHeaders } from '@/lib/cors-headers'
 
 /**
  * POST /api/onboarding-v2/complete
- * Complete V2 onboarding and save user preferences
+ * Complete V2 onboarding and save user data
  */
 export async function POST(request: NextRequest) {
   try {
@@ -15,15 +15,11 @@ export async function POST(request: NextRequest) {
     const {
       userId,
       email,
-      nickname,
-      photoUrl,
-      age,
-      moodPreferences,
-      intentionPreferences,
-      topicPreferences,
-      notificationsEnabled,
-      cameraEnabled,
-      microphoneEnabled,
+      firstName,
+      lastName,
+      username, // Format: "FirstName LastInitial" (e.g., "Sarah J")
+      questionAnswers,
+      interests,
     } = body
 
     if (!userId) {
@@ -47,15 +43,20 @@ export async function POST(request: NextRequest) {
     // Update or create user record with V2 onboarding data
     const updateData: any = {
       email: email || authUser.user.email,
-      nickname: nickname || null,
-      profile_photo_url: photoUrl || null,
-      age: age || null,
-      mood: moodPreferences?.[0] || null, // Store first selected mood as default
-      intention: intentionPreferences?.[0] || null, // Store first selected intention as default
-      topic: topicPreferences?.[0] || null, // Store first selected topic as default
+      name: `${firstName} ${lastName}`.trim(),
+      nickname: username, // Username format: "FirstName LastInitial"
+      conversation_nickname: username, // Also store in conversation_nickname
+      interests: interests || [],
       schema_version: 'v2', // CRITICAL: Mark user as V2
       onboarding_completed: true,
       onboarding_step: 'complete',
+    }
+
+    // Store question answers in a JSONB field (if available in schema)
+    // Otherwise, we can store in a separate table or in the users table
+    if (questionAnswers && Object.keys(questionAnswers).length > 0) {
+      // Store in questions_answers JSONB field if it exists
+      updateData.questions_answers = questionAnswers
     }
 
     const { data: updatedUser, error: updateError } = await supabase
@@ -80,6 +81,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[Onboarding V2 Complete] ✅ User updated:', {
       userId,
+      username,
       schema_version: updatedUser?.schema_version,
       onboarding_completed: updatedUser?.onboarding_completed,
     })
@@ -98,4 +100,3 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-
