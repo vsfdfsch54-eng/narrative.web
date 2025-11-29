@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { Button } from "@/components/ui/button"
 import { tokens } from "@/lib/design-tokens"
-import { checkOnboardingStatus } from "@/lib/user-helpers"
+import { checkV2UserStatus } from "@/lib/user-helpers-v2"
 import { useRouter } from "next/navigation"
 
 const monthNames = [
@@ -96,7 +96,17 @@ export default function CalendarPage() {
       if (!user) return
       
       try {
-        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+        const status = await checkV2UserStatus(user.id)
+        
+        if (status.needsOnboarding) {
+          router.replace('/onboarding-v2')
+          return
+        }
+        
+        // Legacy code cleanup - remove after this works
+        const completed = status.onboardingCompleted
+        const step = 'complete'
+        const apiError = false
 
         // NEVER redirect on API errors - causes redirect loops
         if (apiError) {

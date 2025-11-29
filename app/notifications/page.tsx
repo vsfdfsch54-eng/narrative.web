@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/use-auth"
 import { useNotifications } from "@/hooks/useNotifications"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
-import { checkOnboardingStatus } from "@/lib/user-helpers"
+import { checkV2UserStatus } from "@/lib/user-helpers-v2"
 import { Notification } from "@/hooks/useNotifications"
 import { User } from "lucide-react"
 import { CommunityRequestModal } from "@/components/ui/community-request-modal"
@@ -148,23 +148,10 @@ export default function NotificationsPage() {
       if (!user) return
       
       try {
-        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+        const status = await checkV2UserStatus(user.id)
 
-        if (apiError) {
-          console.warn('[NotificationsPage] ⚠️ API error checking onboarding - allowing access to prevent loop')
-          setCheckingOnboarding(false)
-          return
-        }
-
-        if (!completed) {
-          const redirectPath = `/onboarding?step=${step}`
-          const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
-          if (currentPath === redirectPath) {
-            console.warn('[NotificationsPage] ⚠️ Already on target path, skipping redirect')
-            setCheckingOnboarding(false)
-            return
-          }
-          router.replace(redirectPath)
+        if (status.needsOnboarding) {
+          router.replace('/onboarding-v2')
           return
         }
 

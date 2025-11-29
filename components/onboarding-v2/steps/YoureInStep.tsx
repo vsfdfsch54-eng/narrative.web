@@ -4,18 +4,20 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useOnboardingV2 } from '@/context/OnboardingV2Context'
+import { useAuth } from '@/hooks/use-auth'
 import { tokensV2, animations } from '@/lib/design-tokens-v2'
 
 export function YoureInStep() {
   const router = useRouter()
+  const { user } = useAuth()
   const { completeOnboarding, state } = useOnboardingV2()
 
   useEffect(() => {
     // Auto-complete onboarding when this step is reached
-    if (state.step === 'youre-in') {
-      completeOnboarding()
+    if (state.step === 'youre-in' && user?.id) {
+      completeOnboarding(user.id)
     }
-  }, [state.step, completeOnboarding])
+  }, [state.step, user?.id, completeOnboarding])
 
   const handleGoToHome = () => {
     router.push('/home-v2')

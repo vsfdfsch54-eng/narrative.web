@@ -6,7 +6,7 @@ import { MessageCircle } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
-import { checkOnboardingStatus } from "@/lib/user-helpers"
+import { checkV2UserStatus } from "@/lib/user-helpers-v2"
 
 export default function ConversationsPage() {
   const router = useRouter()
@@ -38,34 +38,14 @@ export default function ConversationsPage() {
       if (!user) return
       
       try {
-        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+        const status = await checkV2UserStatus(user.id)
 
-        // NEVER redirect on API errors - causes redirect loops
-        if (apiError) {
-          console.warn('[ConversationsPage] ⚠️ API error checking onboarding - allowing access to prevent loop')
-          // Allow access - don't redirect on API errors
+        if (status.needsOnboarding) {
+          router.replace('/onboarding-v2')
           return
         }
-
-        if (!completed) {
-          // Incomplete onboarding → redirect to onboarding
-          // Safety check: prevent redirect loops
-          const redirectPath = `/onboarding?step=${step}`
-          const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
-          if (currentPath === redirectPath) {
-            console.warn('[ConversationsPage] ⚠️ Already on target path, skipping redirect to prevent loop')
-            return
-          }
-          router.replace(redirectPath)
-          return
-        }
-
-        // Complete onboarding → allow access to conversations page
-        // No redirect needed, just render the page
       } catch (error) {
-        console.error('[ConversationsPage] Error checking onboarding:', error)
-        // On error, allow access - don't redirect to prevent loops
-        console.warn('[ConversationsPage] ⚠️ Error in checkOnboarding - allowing access to prevent loop')
+        console.error('[ConversationsPage] Error checking user status:', error)
       }
     }
 

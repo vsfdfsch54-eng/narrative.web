@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/hooks/use-auth'
 import { NavbarV2 } from '@/components/ui/navbar-v2'
 import { tokensV2, animations } from '@/lib/design-tokens-v2'
+import { checkV2UserStatus } from '@/lib/user-helpers-v2'
 
 const MOODS = [
   { id: 'happy', emoji: '😄', label: 'Happy' },
@@ -15,7 +17,53 @@ const MOODS = [
 
 export default function HomeV2Page() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [selectedMood, setSelectedMood] = useState<string | null>(null)
+  const [loops, setLoops] = useState<any[]>([])
+  const [events, setEvents] = useState<any[]>([])
+
+  // Routing guard
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      router.replace('/onboarding-v2')
+      return
+    }
+
+    const checkStatus = async () => {
+      const status = await checkV2UserStatus(user.id)
+      if (status.needsOnboarding) {
+        router.replace('/onboarding-v2')
+      }
+    }
+
+    checkStatus()
+  }, [user, authLoading, router])
+
+  // Load loops and events
+  useEffect(() => {
+    if (!user?.id) return
+
+    const loadData = async () => {
+      try {
+        const [loopsRes, eventsRes] = await Promise.all([
+          fetch(`/api/loops?userId=${user.id}`),
+          fetch(`/api/events?userId=${user.id}`),
+        ])
+
+        const loopsData = await loopsRes.json()
+        const eventsData = await eventsRes.json()
+
+        if (loopsData.success) setLoops(loopsData.data || [])
+        if (eventsData.success) setEvents(eventsData.data || [])
+      } catch (error) {
+        console.error('[HomeV2Page] Error loading data:', error)
+      }
+    }
+
+    loadData()
+  }, [user?.id])
 
   return (
     <div style={{
@@ -165,21 +213,53 @@ export default function HomeV2Page() {
           }}>
             Your Loops
           </h2>
-          <div style={{
-            padding: tokensV2.spacing[24],
-            borderRadius: tokensV2.borderRadius.medium,
-            background: tokensV2.colors.backgroundWhite,
-            boxShadow: tokensV2.shadows.small,
-            textAlign: 'center',
-          }}>
-            <p style={{
-              fontSize: tokensV2.typography.fontSize.base,
-              color: tokensV2.colors.textSecondary,
-              margin: 0,
+          {loops.length === 0 ? (
+            <div style={{
+              padding: tokensV2.spacing[24],
+              borderRadius: tokensV2.borderRadius.medium,
+              background: tokensV2.colors.backgroundWhite,
+              boxShadow: tokensV2.shadows.small,
+              textAlign: 'center',
             }}>
-              No loops yet. Start matching to create your first loop!
-            </p>
-          </div>
+              <p style={{
+                fontSize: tokensV2.typography.fontSize.base,
+                color: tokensV2.colors.textSecondary,
+                margin: 0,
+              }}>
+                No loops yet. Start matching to create your first loop!
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: tokensV2.spacing[12],
+            }}>
+              {loops.slice(0, 3).map((loop) => (
+                <motion.div
+                  key={loop.id}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => router.push(`/loops/${loop.id}`)}
+                  style={{
+                    padding: tokensV2.spacing[20],
+                    borderRadius: tokensV2.borderRadius.medium,
+                    background: tokensV2.colors.backgroundWhite,
+                    boxShadow: tokensV2.shadows.small,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <h3 style={{
+                    fontSize: tokensV2.typography.fontSize.base,
+                    fontWeight: tokensV2.typography.fontWeight.semibold,
+                    color: tokensV2.colors.textPrimary,
+                    margin: 0,
+                  }}>
+                    {loop.title}
+                  </h3>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Upcoming Events */}
@@ -193,21 +273,65 @@ export default function HomeV2Page() {
           }}>
             Upcoming Events
           </h2>
-          <div style={{
-            padding: tokensV2.spacing[24],
-            borderRadius: tokensV2.borderRadius.medium,
-            background: tokensV2.colors.backgroundWhite,
-            boxShadow: tokensV2.shadows.small,
-            textAlign: 'center',
-          }}>
-            <p style={{
-              fontSize: tokensV2.typography.fontSize.base,
-              color: tokensV2.colors.textSecondary,
-              margin: 0,
+          {events.length === 0 ? (
+            <div style={{
+              padding: tokensV2.spacing[24],
+              borderRadius: tokensV2.borderRadius.medium,
+              background: tokensV2.colors.backgroundWhite,
+              boxShadow: tokensV2.shadows.small,
+              textAlign: 'center',
             }}>
-              No upcoming events
-            </p>
-          </div>
+              <p style={{
+                fontSize: tokensV2.typography.fontSize.base,
+                color: tokensV2.colors.textSecondary,
+                margin: 0,
+              }}>
+                No upcoming events
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: tokensV2.spacing[12],
+            }}>
+              {events
+                .filter(e => new Date(e.date_time) >= new Date())
+                .sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
+                .slice(0, 3)
+                .map((event) => (
+                  <motion.div
+                    key={event.id}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => router.push(`/events/${event.id}`)}
+                    style={{
+                      padding: tokensV2.spacing[20],
+                      borderRadius: tokensV2.borderRadius.medium,
+                      background: tokensV2.colors.backgroundWhite,
+                      boxShadow: tokensV2.shadows.small,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <h3 style={{
+                      fontSize: tokensV2.typography.fontSize.base,
+                      fontWeight: tokensV2.typography.fontWeight.semibold,
+                      color: tokensV2.colors.textPrimary,
+                      margin: 0,
+                      marginBottom: tokensV2.spacing[4],
+                    }}>
+                      {event.title}
+                    </h3>
+                    <p style={{
+                      fontSize: tokensV2.typography.fontSize.sm,
+                      color: tokensV2.colors.textSecondary,
+                      margin: 0,
+                    }}>
+                      {new Date(event.date_time).toLocaleDateString()}
+                    </p>
+                  </motion.div>
+                ))}
+            </div>
+          )}
         </section>
 
         {/* Primary CTA: Find Someone */}

@@ -62,7 +62,7 @@ interface OnboardingV2ContextType {
   nextStep: () => void
   previousStep: () => void
   saveProgress: () => Promise<void>
-  completeOnboarding: () => Promise<void>
+  completeOnboarding: (userId: string) => Promise<void>
 }
 
 const initialState: OnboardingV2State = {
@@ -167,7 +167,7 @@ export function OnboardingV2Provider({ children }: { children: ReactNode }) {
     }
   }, [state])
 
-  const completeOnboarding = useCallback(async () => {
+  const completeOnboarding = useCallback(async (userId: string) => {
     setState(prev => ({ ...prev, loading: true, error: null }))
     
     try {
@@ -176,6 +176,7 @@ export function OnboardingV2Provider({ children }: { children: ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          userId, // Pass userId from auth
           email: state.email,
           nickname: state.nickname,
           photoUrl: state.photoUrl,

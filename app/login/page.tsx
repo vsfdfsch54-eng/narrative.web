@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { useAuth } from "@/hooks/use-auth"
 import { tokens } from "@/lib/design-tokens"
+import { checkV2UserStatus } from "@/lib/user-helpers-v2"
 import Link from "next/link"
-import { checkOnboardingStatus } from "@/lib/user-helpers"
 import { AppShell } from "@/components/AppShell"
 
 export default function LoginPage() {
@@ -35,34 +35,10 @@ export default function LoginPage() {
       if (!user) return
       
       try {
-        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
-              
-        // NEVER redirect on API errors - causes redirect loops
-        if (apiError) {
-          console.warn('[LoginPage] ⚠️ API error checking onboarding - redirecting to /topic-match to prevent loop')
-          router.replace("/topic-match")
-          return
-        }
-
-        if (!completed) {
-          // Incomplete onboarding → redirect to onboarding
-          // Safety check: prevent redirect loops
-          const redirectPath = `/onboarding?step=${step}`
-          const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
-          if (currentPath === redirectPath) {
-            console.warn('[LoginPage] ⚠️ Already on target path, skipping redirect to prevent loop')
-            return
-          }
-          router.replace(redirectPath)
-          return
-        }
-
-        // Complete onboarding → redirect to /topic-match
-        router.replace("/topic-match")
+        // V2 status check handled above
       } catch (error) {
-        console.error('[LoginPage] Error checking onboarding:', error)
-        // On error, redirect to /topic-match (not onboarding) to prevent loops
-        router.replace("/topic-match")
+        console.error('[LoginPage] Error checking user status:', error)
+        router.replace("/onboarding-v2")
       }
     }
 
@@ -77,11 +53,10 @@ export default function LoginPage() {
     try {
       const result = await signIn(email, password)
       if (result.success) {
-        // After successful login, check onboarding step from DB
-        // After successful login, check onboarding and redirect
-            const userId = (result as any).data?.user?.id || user?.id
-            if (!userId) {
-          router.replace("/onboarding?step=email")
+        // After successful login, redirect to V2 onboarding
+        const userId = (result as any).data?.user?.id || user?.id
+        if (!userId) {
+          router.replace("/onboarding-v2")
               return
             }
             
@@ -108,7 +83,17 @@ export default function LoginPage() {
         }
             
         try {
-          const { completed, step, apiError } = await checkOnboardingStatus(userId)
+          const status = await checkV2UserStatus(userId)
+          
+          if (status.needsOnboarding) {
+            router.replace('/onboarding-v2')
+            return
+          }
+          
+          // Legacy cleanup
+          const completed = status.onboardingCompleted
+          const step = 'complete'
+          const apiError = false
               
           // NEVER redirect on API errors - causes redirect loops
           if (apiError) {

@@ -13,6 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
+      userId,
       email,
       nickname,
       photoUrl,
@@ -25,29 +26,68 @@ export async function POST(request: NextRequest) {
       microphoneEnabled,
     } = body
 
-    const supabase = createServerClient()
-
-    // Get current user from auth
-    // TODO: Get from session/auth headers
-    // For now, we'll need to pass userId or get from session
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401, headers: getCorsHeaders() }
+        { success: false, error: 'User ID required' },
+        { status: 400, headers: getCorsHeaders() }
       )
     }
 
-    // Extract user ID from auth (simplified - should use proper session)
-    // TODO: Implement proper session handling
+    const supabase = createServerClient()
 
-    // Update user record with V2 onboarding data
-    // This will be implemented once we have proper auth session handling
-    // For now, return success
+    // Verify user exists in auth
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+    if (authError || !authUser?.user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404, headers: getCorsHeaders() }
+      )
+    }
+
+    // Update or create user record with V2 onboarding data
+    const updateData: any = {
+      email: email || authUser.user.email,
+      nickname: nickname || null,
+      profile_photo_url: photoUrl || null,
+      age: age || null,
+      mood: moodPreferences?.[0] || null, // Store first selected mood as default
+      intention: intentionPreferences?.[0] || null, // Store first selected intention as default
+      topic: topicPreferences?.[0] || null, // Store first selected topic as default
+      schema_version: 'v2', // CRITICAL: Mark user as V2
+      onboarding_completed: true,
+      onboarding_step: 'complete',
+    }
+
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .upsert({
+        id: userId,
+        ...updateData,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'id',
+      })
+      .select()
+      .single()
+
+    if (updateError) {
+      console.error('[Onboarding V2 Complete] Error updating user:', updateError)
+      return NextResponse.json(
+        { success: false, error: 'Failed to save user data' },
+        { status: 500, headers: getCorsHeaders() }
+      )
+    }
+
+    console.log('[Onboarding V2 Complete] ✅ User updated:', {
+      userId,
+      schema_version: updatedUser?.schema_version,
+      onboarding_completed: updatedUser?.onboarding_completed,
+    })
 
     return NextResponse.json({
       success: true,
       message: 'Onboarding completed',
+      data: updatedUser,
     }, { headers: getCorsHeaders() })
 
   } catch (error: any) {

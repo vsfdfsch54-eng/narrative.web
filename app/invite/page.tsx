@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
-import { checkOnboardingStatus } from "@/lib/user-helpers"
+import { checkV2UserStatus } from "@/lib/user-helpers-v2"
 import { motion } from "framer-motion"
 import { ArrowLeft } from "lucide-react"
 import { Loader2 } from "lucide-react"
@@ -31,22 +31,10 @@ export default function InvitePage() {
       setCheckingOnboarding(true)
       
       try {
-        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+        const status = await checkV2UserStatus(user.id)
         
-        if (apiError) {
-          console.warn('[InvitePage] ⚠️ API error checking onboarding - redirecting to /match')
-          router.replace("/match")
-          return
-        }
-
-        if (!completed) {
-          const redirectPath = `/onboarding?step=${step}`
-          const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
-          if (currentPath === redirectPath) {
-            console.warn('[InvitePage] ⚠️ Already on target path, skipping redirect')
-            return
-          }
-          router.replace(redirectPath)
+        if (status.needsOnboarding) {
+          router.replace('/onboarding-v2')
           return
         }
 

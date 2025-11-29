@@ -7,7 +7,7 @@ import { Save, Users, Edit2, Bell, Check, X, LogOut } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { AppShell } from "@/components/AppShell"
 import { tokens } from "@/lib/design-tokens"
-import { checkOnboardingStatus } from "@/lib/user-helpers"
+import { checkV2UserStatus } from "@/lib/user-helpers-v2"
 import { Loader2 } from "lucide-react"
 
 const DAILY_MOODS = [
@@ -56,21 +56,10 @@ export default function ProfilePage() {
       if (!user) return
       
       try {
-        const { completed, step, apiError } = await checkOnboardingStatus(user.id)
+        const status = await checkV2UserStatus(user.id)
 
-        if (apiError) {
-          console.warn('[ProfilePage] ⚠️ API error checking onboarding - allowing access')
-          return
-        }
-
-        if (!completed) {
-          const redirectPath = `/onboarding?step=${step}`
-          const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
-          if (currentPath === redirectPath) {
-            console.warn('[ProfilePage] ⚠️ Already on target path, skipping redirect')
-            return
-          }
-          router.replace(redirectPath)
+        if (status.needsOnboarding) {
+          router.replace('/onboarding-v2')
           return
         }
       } catch (error) {
