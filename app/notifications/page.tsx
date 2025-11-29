@@ -380,9 +380,12 @@ export default function NotificationsPage() {
       </div>
 
       <CommunityRequestModal
-        notification={selectedCommunityRequest}
+        isOpen={!!selectedCommunityRequest}
+        onClose={handleDeclineCommunityRequest}
         onAccept={handleAcceptCommunityRequest}
         onDecline={handleDeclineCommunityRequest}
+        senderName={selectedCommunityRequest?.sender?.name || selectedCommunityRequest?.title || 'User'}
+        senderId={selectedCommunityRequest?.sender_id || ''}
       />
 
       <NavbarV2 />
