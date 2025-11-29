@@ -11,10 +11,10 @@ import { getCorsHeaders } from '@/lib/cors-headers'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { sessionId: string } }
+  { params }: { params: Promise<{ sessionId: string }> }
 ) {
   try {
-    const { sessionId } = params
+    const { sessionId } = await params
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
 
