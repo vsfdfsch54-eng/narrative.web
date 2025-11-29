@@ -11,12 +11,13 @@ import { getCorsHeaders } from '@/lib/cors-headers'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
     const { userId, role = 'member' } = body
-    const loopId = params.id
+    const { id } = await params
+    const loopId = id
 
     if (!userId) {
       return NextResponse.json(
@@ -52,12 +53,13 @@ export async function POST(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const loopId = params.id
+    const { id } = await params
+    const loopId = id
 
     if (!userId) {
       return NextResponse.json(
@@ -93,10 +95,11 @@ export async function DELETE(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const loopId = params.id
+    const { id } = await params
+    const loopId = id
 
     const participants = await getLoopParticipants(loopId)
 

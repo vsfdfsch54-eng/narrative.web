@@ -11,12 +11,13 @@ import { getCorsHeaders } from '@/lib/cors-headers'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
     const { userId, status = 'invited', action = 'invite' } = body
-    const eventId = params.id
+    const { id } = await params
+    const eventId = id
 
     if (!userId) {
       return NextResponse.json(
@@ -62,10 +63,11 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const eventId = params.id
+    const { id } = await params
+    const eventId = id
 
     const participants = await getEventParticipants(eventId)
 

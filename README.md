@@ -198,6 +198,18 @@ Key tables:
 
 Users with `schema_version = 'v1'` will be redirected to `/onboarding-v2` to complete V2 onboarding. This sets `schema_version = 'v2'` and `onboarding_completed = true`.
 
+## Release Status
+
+**V2.0.0 is ready for release!** 🚀
+
+See `V2_RELEASE_READY.md` for release checklist and `RELEASE_CHECKLIST.md` for detailed testing procedures.
+
+### Quick Release Steps
+1. Run database migration: `supabase/migrations/036_narrative_v2_schema.sql`
+2. Set environment variables in deployment platform
+3. Build and deploy: `npm run build`
+4. Test critical user flows
+
 ## License
 
 Private - All rights reserved

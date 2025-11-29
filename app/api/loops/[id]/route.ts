@@ -11,12 +11,13 @@ import { getCorsHeaders } from '@/lib/cors-headers'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const loopId = params.id
+    const { id } = await params
+    const loopId = id
 
     if (!userId) {
       return NextResponse.json(

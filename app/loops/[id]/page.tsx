@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/hooks/use-auth'
@@ -8,6 +8,7 @@ import { NavbarV2 } from '@/components/ui/navbar-v2'
 import { tokensV2, animations } from '@/lib/design-tokens-v2'
 import { checkV2UserStatus } from '@/lib/user-helpers-v2'
 import { ArrowLeft, Send, Users } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function LoopDetailPage() {
   const router = useRouter()
@@ -69,6 +70,41 @@ export default function LoopDetailPage() {
 
     loadLoop()
   }, [user?.id, loopId])
+
+  // Real-time subscription for new messages
+  useEffect(() => {
+    if (!loopId) return
+
+    const channel = supabase
+      .channel(`loop:${loopId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'loop_messages',
+          filter: `loop_id=eq.${loopId}`,
+        },
+        (payload) => {
+          // Fetch the new message with sender info
+          fetch(`/api/loops/${loopId}/messages?limit=50`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.success) {
+                setMessages(data.data || [])
+              }
+            })
+            .catch((error) => {
+              console.error('[LoopDetailPage] Error fetching new message:', error)
+            })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [loopId])
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()

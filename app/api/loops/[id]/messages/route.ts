@@ -11,12 +11,13 @@ import { getCorsHeaders } from '@/lib/cors-headers'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const body = await request.json()
     const { senderId, text } = body
-    const loopId = params.id
+    const { id } = await params
+    const loopId = id
 
     if (!senderId || !text) {
       return NextResponse.json(
@@ -52,12 +53,13 @@ export async function POST(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '50')
-    const loopId = params.id
+    const { id } = await params
+    const loopId = id
 
     const messages = await getLoopMessages(loopId, limit)
 

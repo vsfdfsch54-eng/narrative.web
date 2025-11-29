@@ -8,6 +8,7 @@ import { NavbarV2 } from '@/components/ui/navbar-v2'
 import { tokensV2, animations } from '@/lib/design-tokens-v2'
 import { checkV2UserStatus } from '@/lib/user-helpers-v2'
 import { ArrowLeft, Calendar, MapPin, Clock, Users, Check, X, HelpCircle } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function EventDetailPage() {
   const router = useRouter()
@@ -73,6 +74,44 @@ export default function EventDetailPage() {
 
     loadEvent()
   }, [user?.id, eventId])
+
+  // Real-time subscription for participant updates
+  useEffect(() => {
+    if (!eventId) return
+
+    const channel = supabase
+      .channel(`event:${eventId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_participants',
+          filter: `event_id=eq.${eventId}`,
+        },
+        () => {
+          // Reload participants when changes occur
+          fetch(`/api/events/${eventId}/participants`)
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.success) {
+                const parts = data.data || []
+                setParticipants(parts)
+                const userPart = parts.find((p: any) => p.user_id === user?.id)
+                setUserStatus(userPart?.status || null)
+              }
+            })
+            .catch((error) => {
+              console.error('[EventDetailPage] Error fetching participants:', error)
+            })
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [eventId, user?.id])
 
   const handleUpdateStatus = async (status: 'accepted' | 'declined' | 'maybe') => {
     if (!user?.id || updating) return
