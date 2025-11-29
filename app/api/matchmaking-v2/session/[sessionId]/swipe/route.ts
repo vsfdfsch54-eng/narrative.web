@@ -71,14 +71,61 @@ export async function POST(
       updatedSession.user2_swipe === 'right'
 
     if (bothSwipedRight) {
-      // Update status to matched
-      await supabase
-        .from('matchmaking_sessions')
-        .update({
-          status: 'matched',
-          stay_connected_at: new Date().toISOString(),
+      // Both swiped right - create Loop automatically
+      try {
+        // Get other user ID
+        const otherUserId = isUser1 ? session.user2_id : session.user1_id
+        
+        // Get other user's name for loop title
+        const { data: otherUser } = await supabase
+          .from('users')
+          .select('conversation_nickname, name')
+          .eq('id', otherUserId)
+          .single()
+
+        const otherUserName = otherUser?.conversation_nickname || otherUser?.name || 'User'
+
+        // Create Loop
+        const { createLoop } = await import('@/lib/loops-helpers')
+        const loop = await createLoop({
+          title: `Loop with ${otherUserName}`,
+          visibilityLayer: 'private',
+          growthEnabled: false,
+          pastActivityEnabled: true,
+          feedSyncEnabled: true,
+          createdBy: userId,
         })
-        .eq('id', sessionId)
+
+        if (loop) {
+          // Add both users as participants
+          await supabase
+            .from('loop_participants')
+            .insert([
+              {
+                loop_id: loop.id,
+                user_id: userId,
+                role: 'owner',
+              },
+              {
+                loop_id: loop.id,
+                user_id: otherUserId,
+                role: 'member',
+              },
+            ])
+        }
+
+        // Update status to matched
+        await supabase
+          .from('matchmaking_sessions')
+          .update({
+            status: 'matched',
+            stay_connected_at: new Date().toISOString(),
+          })
+          .eq('id', sessionId)
+      } catch (loopError) {
+        console.error('[Matchmaking V2 Swipe] Error creating loop:', loopError)
+        // Continue even if loop creation fails
+      }
     }
 
     return NextResponse.json({
