@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { AnimatedButton } from "@/components/ui/animated-button"
 import { useAuth } from "@/hooks/use-auth"
-import { tokens } from "@/lib/design-tokens"
+import { tokensV2 } from "@/lib/design-tokens-v2"
 import { checkV2UserStatus } from "@/lib/user-helpers-v2"
 import Link from "next/link"
-import { AppShell } from "@/components/AppShell"
+import { Loader2 } from "lucide-react"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -20,22 +20,25 @@ export default function LoginPage() {
 
   // Redirect if user is already authenticated
   useEffect(() => {
-    // Wait for auth to finish loading
-    if (authLoading) {
+    if (authLoading) return
+
+    if (!user) {
       return
     }
-
-    // USER LOGGED OUT → Show login page
-    if (!user) {
-        return
-      }
       
-    // USER LOGGED IN → Check onboarding and redirect
     async function checkAndRedirect() {
       if (!user) return
       
       try {
-        // V2 status check handled above
+        const userId = user.id
+        const status = await checkV2UserStatus(userId)
+        
+        if (status.needsOnboarding) {
+          router.replace('/onboarding-v2')
+          return
+        }
+        
+        router.replace('/home-v2')
       } catch (error) {
         console.error('[LoginPage] Error checking user status:', error)
         router.replace("/onboarding-v2")
@@ -53,33 +56,20 @@ export default function LoginPage() {
     try {
       const result = await signIn(email, password)
       if (result.success) {
-        // After successful login, redirect to V2 onboarding
         const userId = (result as any).data?.user?.id || user?.id
         if (!userId) {
           router.replace("/onboarding-v2")
-              return
-            }
+          return
+        }
             
-        // CRITICAL: Ensure user record exists in database after sign-in
-        // This handles cases where user signed up but record wasn't created
+        // Ensure user record exists
         try {
-          console.log('[LoginPage] 🔍 Ensuring user record exists after sign-in...', { userId })
-          const getUserResponse = await fetch(`/api/users?userId=${userId}`, {
+          await fetch(`/api/users?userId=${userId}`, {
             method: 'GET',
             cache: 'no-store',
           })
-          
-          if (!getUserResponse.ok) {
-            console.error('[LoginPage] ❌ Failed to ensure user record exists:', await getUserResponse.text())
-          } else {
-            const getUserData = await getUserResponse.json()
-            if (getUserData.success) {
-              console.log('[LoginPage] ✅ User record exists or was created')
-            }
-          }
         } catch (error) {
-          console.error('[LoginPage] ❌ Error ensuring user record exists:', error)
-          // Continue anyway - might still work
+          console.error('[LoginPage] Error ensuring user record:', error)
         }
             
         try {
@@ -90,28 +80,11 @@ export default function LoginPage() {
             return
           }
           
-          // Legacy cleanup
-          const completed = status.onboardingCompleted
-          const step = 'complete'
-          const apiError = false
-              
-          // NEVER redirect on API errors - causes redirect loops
-          if (apiError) {
-            console.warn('[LoginPage] ⚠️ API error after signin - redirecting to /topic-match to prevent loop')
-            router.replace("/topic-match")
-            return
-          }
-
-          if (!completed) {
-            router.replace(`/onboarding?step=${step}`)
-              } else {
-            router.replace("/topic-match")
-              }
+          router.replace('/home-v2')
         } catch (err) {
-          console.error('[LoginPage] Error checking onboarding after signin:', err)
-          // On error, redirect to /topic-match (not onboarding) to prevent loops
-          router.replace("/topic-match")
-            }
+          console.error('[LoginPage] Error checking onboarding:', err)
+          router.replace("/onboarding-v2")
+        }
       } else {
         setError(result.error || "Invalid credentials")
       }
@@ -122,172 +95,173 @@ export default function LoginPage() {
     }
   }
 
-  // Show loading while checking auth state
   if (authLoading) {
     return (
-      <AppShell>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
-          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+      <div style={{
+        minHeight: '100vh',
+        background: tokensV2.colors.backgroundEggshell,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <Loader2 style={{ width: '32px', height: '32px', animation: 'spin 1s linear infinite' }} />
       </div>
-      </AppShell>
     )
   }
 
-  // If user is authenticated, show loading while redirecting
-  // (The useEffect above will handle the redirect)
   if (user && !authLoading) {
     return (
-      <AppShell>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
-          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
+      <div style={{
+        minHeight: '100vh',
+        background: tokensV2.colors.backgroundEggshell,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <Loader2 style={{ width: '32px', height: '32px', animation: 'spin 1s linear infinite' }} />
       </div>
-      </AppShell>
     )
   }
 
   const isValid = email.trim() !== '' && email.includes('@') && email.includes('.') && password.length > 0
 
   return (
-    <AppShell>
+    <div style={{
+      minHeight: '100vh',
+      background: tokensV2.colors.backgroundEggshell,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: tokensV2.spacing[24],
+    }}>
       <div style={{
+        width: '100%',
+        maxWidth: '400px',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 'calc(100vh - 140px)',
-        padding: `${tokens.spacing[20]} ${tokens.layout.paddingHorizontal}`,
-        paddingBottom: tokens.spacing[32],
+        gap: tokensV2.spacing[20],
       }}>
-        <div style={{
-          width: '100%',
-          maxWidth: tokens.layout.maxWidth,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: tokens.spacing[20],
-        }}>
-          <div>
-            <h1 style={{
-              ...tokens.typography.title,
-              color: tokens.colors.textPrimaryOnDark,
-              margin: 0,
-              marginBottom: tokens.spacing[8],
-              textAlign: 'center',
-            }}>
-                  Welcome back
-                </h1>
-            <p style={{
-              ...tokens.typography.body,
-              color: tokens.colors.textSecondary,
-              margin: 0,
-              textAlign: 'center',
-            }}>
-                  Sign in to continue the conversation
-                </p>
-              </div>
-
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
-                    {error && (
-                      <div style={{
-                        padding: tokens.spacing[12],
-                        borderRadius: tokens.radii.input,
-                        background: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-                        color: '#FCA5A5',
-                fontSize: '13px',
-                textAlign: 'center',
-                      }}>
-                        {error}
-                      </div>
-                    )}
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[16] }}>
-              <div>
-                <label style={{
-                  ...tokens.typography.label,
-                  color: tokens.colors.textSecondary,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  marginBottom: tokens.spacing[8],
-                  display: 'block',
-                }}>
-                          Email
-                        </label>
-                        <Input
-                          type="email"
-                          placeholder="you@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          required
-                          disabled={loading}
-                  autoFocus
-                        />
-                      </div>
-
-              <div>
-                <label style={{
-                  ...tokens.typography.label,
-                  color: tokens.colors.textSecondary,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em',
-                  marginBottom: tokens.spacing[8],
-                  display: 'block',
-                }}>
-                          Password
-                        </label>
-                        <Input
-                          type="password"
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                          disabled={loading}
-                        />
-                      </div>
-                    </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[12] }}>
-              <AnimatedButton
-                        type="submit"
-                disabled={!isValid || loading}
-                style={{ width: '100%' }}
-                      >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </AnimatedButton>
-
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: tokens.spacing[8],
-                textAlign: 'center',
-              }}>
-                <p style={{
-                  ...tokens.typography.label,
-                  color: tokens.colors.textSecondary,
-                  margin: 0,
-                }}>
-                          Don&apos;t have an account?{" "}
-                  <Link href="/onboarding" style={{ 
-                    color: tokens.colors.textPrimaryOnDark, 
-                    textDecoration: 'underline' 
-                  }}>
-                            Create account
-                          </Link>
-                </p>
-                <Link 
-                  href="/auth/reset-password" 
-                  style={{ 
-                    ...tokens.typography.label,
-                    color: tokens.colors.textSecondary,
-                    textDecoration: 'underline',
-                  }}
-                >
-                            Forgot password?
-                          </Link>
-                      </div>
-                    </div>
-                  </form>
+        <div>
+          <h1 style={{
+            fontSize: tokensV2.typography.fontSize['2xl'],
+            fontWeight: tokensV2.typography.fontWeight.bold,
+            color: tokensV2.colors.textPrimary,
+            margin: 0,
+            marginBottom: tokensV2.spacing[8],
+            textAlign: 'center',
+          }}>
+            Welcome back
+          </h1>
+          <p style={{
+            fontSize: tokensV2.typography.fontSize.base,
+            color: tokensV2.colors.textSecondary,
+            margin: 0,
+            textAlign: 'center',
+          }}>
+            Sign in to continue
+          </p>
         </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: tokensV2.spacing[16] }}>
+          {error && (
+            <div style={{
+              padding: tokensV2.spacing[12],
+              borderRadius: tokensV2.borderRadius.medium,
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#FCA5A5',
+              fontSize: tokensV2.typography.fontSize.sm,
+              textAlign: 'center',
+            }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokensV2.spacing[16] }}>
+            <div>
+              <label style={{
+                fontSize: tokensV2.typography.fontSize.sm,
+                fontWeight: tokensV2.typography.fontWeight.semibold,
+                color: tokensV2.colors.textSecondary,
+                marginBottom: tokensV2.spacing[8],
+                display: 'block',
+              }}>
+                Email
+              </label>
+              <Input
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label style={{
+                fontSize: tokensV2.typography.fontSize.sm,
+                fontWeight: tokensV2.typography.fontWeight.semibold,
+                color: tokensV2.colors.textSecondary,
+                marginBottom: tokensV2.spacing[8],
+                display: 'block',
+              }}>
+                Password
+              </label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: tokensV2.spacing[12] }}>
+            <AnimatedButton
+              type="submit"
+              disabled={!isValid || loading}
+              style={{ width: '100%' }}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </AnimatedButton>
+
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: tokensV2.spacing[8],
+              textAlign: 'center',
+            }}>
+              <p style={{
+                fontSize: tokensV2.typography.fontSize.sm,
+                color: tokensV2.colors.textSecondary,
+                margin: 0,
+              }}>
+                Don&apos;t have an account?{" "}
+                <Link href="/onboarding-v2" style={{ 
+                  color: tokensV2.colors.accentSky, 
+                  textDecoration: 'underline' 
+                }}>
+                  Create account
+                </Link>
+              </p>
+              <Link 
+                href="/auth/reset-password" 
+                style={{ 
+                  fontSize: tokensV2.typography.fontSize.sm,
+                  color: tokensV2.colors.textSecondary,
+                  textDecoration: 'underline',
+                }}
+              >
+                Forgot password?
+              </Link>
+            </div>
+          </div>
+        </form>
       </div>
-    </AppShell>
+    </div>
   )
 }

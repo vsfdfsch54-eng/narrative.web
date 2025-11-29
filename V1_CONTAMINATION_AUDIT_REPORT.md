@@ -108,12 +108,12 @@ The codebase contains **significant V1 legacy code** that needs to be removed or
    - References `matchId` from V1 matches
    - Uses old design tokens
 
-### ⚠️ Missing V2 Features
+### ✅ FIXED: Missing V2 Features
 
-1. **Stay Connected → Loop Creation**
-   - `app/messaging-only/[sessionId]/page.tsx` has TODO comment
-   - Calls `/api/loops/create-from-match` which **DOES NOT EXIST**
-   - Should create Loop when both users swipe right
+1. **Stay Connected → Loop Creation** ✅ **FIXED**
+   - ✅ Created `/api/loops/create-from-match/route.ts`
+   - ✅ Updated swipe route to auto-create Loop on dual right swipe
+   - ✅ Loop creation now happens automatically when both users swipe right
 
 2. **Visibility Hierarchy Enforcement**
    - Database trigger exists in migration

@@ -1,13 +1,13 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import NavBar from "@/components/ui/navbar"
 import { NavbarV2 } from "@/components/ui/navbar-v2"
 
 export function ConditionalNavbar() {
   const pathname = usePathname()
 
-  // V2 routes use V2 navbar
+  // All routes now use V2 navbar
+  // V2 routes that should show navbar
   const v2Routes = [
     '/onboarding-v2',
     '/home-v2',
@@ -16,16 +16,20 @@ export function ConditionalNavbar() {
     '/loops',
     '/events',
     '/profile-v2',
+    '/notifications',
+    '/invite',
   ]
 
-  const isV2Route = pathname && v2Routes.some(route => pathname.startsWith(route))
+  const shouldShowNavbar = pathname && (
+    v2Routes.some(route => pathname.startsWith(route)) ||
+    pathname.startsWith('/loops/') ||
+    pathname.startsWith('/events/')
+  )
 
-  if (isV2Route) {
+  if (shouldShowNavbar) {
     return <NavbarV2 />
   }
 
-  // All other routes use V1 navbar
-  return <NavBar />
+  // No navbar for auth pages, login, etc.
+  return null
 }
-
-

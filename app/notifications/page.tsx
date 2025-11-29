@@ -4,12 +4,12 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import { useNotifications } from "@/hooks/useNotifications"
-import { AppShell } from "@/components/AppShell"
-import { tokens } from "@/lib/design-tokens"
+import { tokensV2 } from "@/lib/design-tokens-v2"
 import { checkV2UserStatus } from "@/lib/user-helpers-v2"
 import { Notification } from "@/hooks/useNotifications"
 import { User } from "lucide-react"
 import { CommunityRequestModal } from "@/components/ui/community-request-modal"
+import { NavbarV2 } from "@/components/ui/navbar-v2"
 
 // Helper to format relative time
 function formatRelativeTime(date: string): string {
@@ -25,7 +25,6 @@ function formatRelativeTime(date: string): string {
   if (diffHours < 24) return `${diffHours}h ago`
   if (diffDays < 7) return `${diffDays}d ago`
   
-  // Format as date if older
   return notificationDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
@@ -62,69 +61,33 @@ function groupNotifications(notifications: Notification[]) {
     }
   })
 
-  // Filter out empty groups
   return groups.filter(group => group.notifications.length > 0)
 }
 
-// Helper to get navigation URL based on notification type
-// Returns a function that needs to be called with userId to resolve the URL
+// Helper to get navigation URL based on notification type (V2 routes only)
 async function getNotificationUrl(notification: Notification, currentUserId: string): Promise<string> {
   const { type, metadata } = notification
   
   switch (type) {
     case 'friend_chat_request':
-      return metadata?.userId ? `/chat/${metadata.userId}` : '/conversations'
+      // V2: Navigate to loops
+      return '/loops'
     case 'community_added':
-      // Handled separately in handleNotificationClick
       return '/notifications'
     case 'event_invite':
-      return metadata?.eventId ? `/calendar/event?id=${metadata.eventId}` : '/calendar'
+      // V2: Navigate to events
+      return metadata?.eventId ? `/events/${metadata.eventId}` : '/events'
     case 'match_found':
-      // Use otherUserId from metadata (already included in notification)
-      if (metadata?.otherUserId) {
-        const matchId = metadata?.matchId ? `?matchId=${metadata.matchId}` : ''
-        return `/chat/${metadata.otherUserId}${matchId}`
-      }
-      // Fallback: fetch match if otherUserId not in metadata
-      if (metadata?.matchId) {
-        try {
-          const response = await fetch(`/api/matches?matchId=${metadata.matchId}&userId=${currentUserId}`)
-          const data = await response.json()
-          if (data.success && data.data) {
-            const match = data.data
-            const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id
-            return `/chat/${otherUserId}?matchId=${metadata.matchId}`
-          }
-        } catch (error) {
-          console.error('Error fetching match:', error)
-        }
-      }
-      return '/conversations'
+      // V2: Navigate to matchmaking or loops
+      return '/match-v2'
     case 'message_received':
-      // Use otherUserId from metadata if available, otherwise fetch match
-      if (metadata?.otherUserId) {
-        const matchId = metadata?.threadId || metadata?.matchId
-        const matchIdParam = matchId ? `?matchId=${matchId}` : ''
-        return `/chat/${metadata.otherUserId}${matchIdParam}`
+      // V2: Navigate to loops
+      if (metadata?.loopId) {
+        return `/loops/${metadata.loopId}`
       }
-      // Fallback: fetch match if otherUserId not in metadata
-      if (metadata?.threadId || metadata?.matchId) {
-        const matchId = metadata.threadId || metadata.matchId
-        try {
-          const response = await fetch(`/api/matches?matchId=${matchId}&userId=${currentUserId}`)
-          const data = await response.json()
-          if (data.success && data.data) {
-            const match = data.data
-            const otherUserId = match.user1_id === currentUserId ? match.user2_id : match.user1_id
-            return `/chat/${otherUserId}?matchId=${matchId}`
-          }
-        } catch (error) {
-          console.error('Error fetching match:', error)
-        }
-      }
-      return '/conversations'
+      return '/loops'
     default:
-      return '/conversations'
+      return '/home-v2'
   }
 }
 
@@ -166,19 +129,15 @@ export default function NotificationsPage() {
   }, [user, authLoading, router])
 
   const handleNotificationClick = async (notification: Notification) => {
-    // Mark as read
     if (!notification.is_read) {
       await markAsRead(notification.id)
     }
     
-    // For community_added notifications, show accept/decline modal
     if (notification.type === 'community_added' && notification.sender_id) {
       setSelectedCommunityRequest(notification)
       return
     }
     
-    // Navigate based on type for other notifications
-    // Need to resolve URLs that require fetching match data
     if (!user) return
     
     const url = await getNotificationUrl(notification, user.id)
@@ -189,7 +148,6 @@ export default function NotificationsPage() {
     if (!selectedCommunityRequest || !user) return
     
     try {
-      // Add the sender to current user's community
       const response = await fetch('/api/relationships', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -202,7 +160,6 @@ export default function NotificationsPage() {
       const data = await response.json()
       if (data.success) {
         setSelectedCommunityRequest(null)
-        // Optionally show success message or refresh notifications
       } else {
         alert('Failed to add to community. Please try again.')
       }
@@ -220,44 +177,54 @@ export default function NotificationsPage() {
 
   if (authLoading || checkingOnboarding) {
     return (
-      <AppShell title="Notifications">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
-          <p style={{ color: tokens.colors.textSecondary }}>Loading...</p>
-        </div>
-      </AppShell>
+      <div style={{
+        minHeight: '100vh',
+        background: tokensV2.colors.backgroundEggshell,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <p style={{ color: tokensV2.colors.textSecondary }}>Loading...</p>
+      </div>
     )
   }
 
   return (
-    <AppShell title="Notifications">
+    <div style={{
+      minHeight: '100vh',
+      background: tokensV2.colors.backgroundEggshell,
+      paddingBottom: '80px',
+    }}>
       <div style={{
+        padding: tokensV2.spacing[24],
         display: 'flex',
         flexDirection: 'column',
-        gap: tokens.spacing[16],
+        gap: tokensV2.spacing[16],
       }}>
+        {/* Header */}
+        <h1 style={{
+          fontSize: tokensV2.typography.fontSize['2xl'],
+          fontWeight: tokensV2.typography.fontWeight.bold,
+          color: tokensV2.colors.textPrimary,
+          margin: 0,
+        }}>
+          Notifications
+        </h1>
+
         {/* Mark all as read button */}
         {notifications.length > 0 && notifications.some(n => !n.is_read) && (
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button
               onClick={markAllAsRead}
               style={{
-                padding: `${tokens.spacing[8]} ${tokens.spacing[12]}`,
+                padding: `${tokensV2.spacing[8]} ${tokensV2.spacing[12]}`,
                 background: 'transparent',
-                border: `1px solid ${tokens.colors.textSecondary}`,
-                borderRadius: tokens.radii.button,
-                color: tokens.colors.textSecondary,
-                fontSize: tokens.typography.label.fontSize,
-                fontWeight: tokens.typography.label.fontWeight,
+                border: `1px solid ${tokensV2.colors.borderMedium}`,
+                borderRadius: tokensV2.borderRadius.medium,
+                color: tokensV2.colors.textSecondary,
+                fontSize: tokensV2.typography.fontSize.sm,
+                fontWeight: tokensV2.typography.fontWeight.medium,
                 cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = tokens.colors.textPrimaryOnDark
-                e.currentTarget.style.color = tokens.colors.textPrimaryOnDark
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = tokens.colors.textSecondary
-                e.currentTarget.style.color = tokens.colors.textSecondary
               }}
             >
               Mark all as read
@@ -268,7 +235,7 @@ export default function NotificationsPage() {
         {/* Notifications list */}
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '200px' }}>
-            <p style={{ color: tokens.colors.textSecondary }}>Loading notifications...</p>
+            <p style={{ color: tokensV2.colors.textSecondary }}>Loading notifications...</p>
           </div>
         ) : groupedNotifications.length === 0 ? (
           <div style={{
@@ -278,45 +245,44 @@ export default function NotificationsPage() {
             justifyContent: 'center',
             minHeight: '400px',
             textAlign: 'center',
-            padding: tokens.spacing[32],
+            padding: tokensV2.spacing[32],
           }}>
             <User style={{ 
               width: '48px', 
               height: '48px', 
-              color: tokens.colors.textSecondary,
-              marginBottom: tokens.spacing[16],
+              color: tokensV2.colors.textSecondary,
+              marginBottom: tokensV2.spacing[16],
               opacity: 0.3,
             }} />
             <p style={{
-              fontSize: tokens.typography.heading.fontSize,
-              color: tokens.colors.textPrimaryOnDark,
-              marginBottom: tokens.spacing[8],
+              fontSize: tokensV2.typography.fontSize.lg,
+              color: tokensV2.colors.textPrimary,
+              marginBottom: tokensV2.spacing[8],
             }}>
               No notifications yet
             </p>
             <p style={{
-              fontSize: tokens.typography.body.fontSize,
-              color: tokens.colors.textSecondary,
+              fontSize: tokensV2.typography.fontSize.base,
+              color: tokensV2.colors.textSecondary,
             }}>
               Your notifications will appear here
             </p>
           </div>
         ) : (
           groupedNotifications.map((group) => (
-            <div key={group.label} style={{ marginBottom: tokens.spacing[28] }}>
+            <div key={group.label} style={{ marginBottom: tokensV2.spacing[28] }}>
               <h2 style={{
-                fontSize: tokens.typography.label.fontSize,
-                fontWeight: tokens.typography.label.fontWeight,
-                color: tokens.colors.textSecondary,
+                fontSize: tokensV2.typography.fontSize.sm,
+                fontWeight: tokensV2.typography.fontWeight.semibold,
+                color: tokensV2.colors.textSecondary,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                marginBottom: tokens.spacing[12],
-                paddingLeft: tokens.spacing[4],
+                marginBottom: tokensV2.spacing[12],
               }}>
                 {group.label}
               </h2>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacing[8] }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: tokensV2.spacing[8] }}>
                 {group.notifications.map((notification) => (
                   <button
                     key={notification.id}
@@ -324,29 +290,16 @@ export default function NotificationsPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'flex-start',
-                      gap: tokens.spacing[12],
-                      padding: tokens.spacing[16],
+                      gap: tokensV2.spacing[12],
+                      padding: tokensV2.spacing[16],
                       background: notification.is_read 
-                        ? 'rgba(255,255,255,0.02)' 
-                        : 'rgba(255,255,255,0.05)',
-                      border: `1px solid ${notification.is_read ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.10)'}`,
-                      borderRadius: '16px',
+                        ? tokensV2.colors.backgroundWhite
+                        : tokensV2.colors.backgroundWhite,
+                      border: `1px solid ${tokensV2.colors.borderLight}`,
+                      borderRadius: tokensV2.borderRadius.medium,
                       cursor: 'pointer',
-                      transition: 'all 0.2s',
                       textAlign: 'left',
                       width: '100%',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(255,255,255,0.08)'
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = notification.is_read 
-                        ? 'rgba(255,255,255,0.02)' 
-                        : 'rgba(255,255,255,0.05)'
-                      e.currentTarget.style.borderColor = notification.is_read 
-                        ? 'rgba(255,255,255,0.05)' 
-                        : 'rgba(255,255,255,0.10)'
                     }}
                   >
                     {/* Avatar */}
@@ -356,21 +309,17 @@ export default function NotificationsPage() {
                       borderRadius: '50%',
                       background: notification.sender?.avatar_url 
                         ? `url(${notification.sender.avatar_url})` 
-                        : tokens.colors.surface1,
+                        : tokensV2.colors.backgroundWhite,
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       flexShrink: 0,
-                      color: tokens.colors.textOnPill,
-                      fontSize: '16px',
-                      fontWeight: 600,
                     }}>
-                      {!notification.sender?.avatar_url && notification.sender?.name 
-                        ? notification.sender.name.charAt(0).toUpperCase()
-                        : <User size={20} />
-                      }
+                      {!notification.sender?.avatar_url && (
+                        <User size={20} color={tokensV2.colors.textSecondary} />
+                      )}
                     </div>
 
                     {/* Content */}
@@ -379,13 +328,13 @@ export default function NotificationsPage() {
                         display: 'flex',
                         alignItems: 'flex-start',
                         justifyContent: 'space-between',
-                        gap: tokens.spacing[8],
-                        marginBottom: tokens.spacing[4],
+                        gap: tokensV2.spacing[8],
+                        marginBottom: tokensV2.spacing[4],
                       }}>
                         <h3 style={{
-                          fontSize: tokens.typography.body.fontSize,
-                          fontWeight: 600,
-                          color: tokens.colors.textPrimaryOnDark,
+                          fontSize: tokensV2.typography.fontSize.base,
+                          fontWeight: tokensV2.typography.fontWeight.semibold,
+                          color: tokensV2.colors.textPrimary,
                           margin: 0,
                           flex: 1,
                         }}>
@@ -396,7 +345,7 @@ export default function NotificationsPage() {
                             width: '8px',
                             height: '8px',
                             borderRadius: '50%',
-                            background: tokens.colors.accentBlue,
+                            background: tokensV2.colors.accentSky,
                             flexShrink: 0,
                             marginTop: '4px',
                           }} />
@@ -404,18 +353,18 @@ export default function NotificationsPage() {
                       </div>
                       
                       <p style={{
-                        fontSize: tokens.typography.body.fontSize,
-                        color: tokens.colors.textSecondary,
+                        fontSize: tokensV2.typography.fontSize.sm,
+                        color: tokensV2.colors.textSecondary,
                         margin: 0,
-                        marginBottom: tokens.spacing[4],
+                        marginBottom: tokensV2.spacing[4],
                         lineHeight: 1.4,
                       }}>
                         {notification.body}
                       </p>
                       
                       <p style={{
-                        fontSize: tokens.typography.label.fontSize,
-                        color: tokens.colors.textSecondary,
+                        fontSize: tokensV2.typography.fontSize.xs,
+                        color: tokensV2.colors.textSecondary,
                         margin: 0,
                         opacity: 0.7,
                       }}>
@@ -429,7 +378,14 @@ export default function NotificationsPage() {
           ))
         )}
       </div>
-    </AppShell>
+
+      <CommunityRequestModal
+        notification={selectedCommunityRequest}
+        onAccept={handleAcceptCommunityRequest}
+        onDecline={handleDeclineCommunityRequest}
+      />
+
+      <NavbarV2 />
+    </div>
   )
 }
-
