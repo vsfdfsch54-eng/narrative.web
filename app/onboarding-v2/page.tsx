@@ -1,11 +1,13 @@
 "use client"
 
 import { OnboardingV2Provider, useOnboardingV2 } from '@/context/OnboardingV2Context'
+import { WelcomeStep } from '@/components/onboarding-v2/steps/WelcomeStep'
 import { EmailStep } from '@/components/onboarding-v2/steps/EmailStep'
 import { PasswordStep } from '@/components/onboarding-v2/steps/PasswordStep'
 import { NameStep } from '@/components/onboarding-v2/steps/NameStep'
 import { QuestionsStep } from '@/components/onboarding-v2/steps/QuestionsStep'
 import { InterestsStep } from '@/components/onboarding-v2/steps/InterestsStep'
+import { PermissionsStep } from '@/components/onboarding-v2/steps/PermissionsStep'
 import { CreateAccountStep } from '@/components/onboarding-v2/steps/CreateAccountStep'
 
 function OnboardingV2Content() {
@@ -13,6 +15,8 @@ function OnboardingV2Content() {
 
   const renderStep = () => {
     switch (state.step) {
+      case 'welcome':
+        return <WelcomeStep />
       case 'email':
         return <EmailStep />
       case 'password':
@@ -23,10 +27,12 @@ function OnboardingV2Content() {
         return <QuestionsStep />
       case 'interests':
         return <InterestsStep />
+      case 'permissions':
+        return <PermissionsStep />
       case 'create-account':
         return <CreateAccountStep />
       default:
-        return <EmailStep />
+        return <WelcomeStep />
     }
   }
 

@@ -20,6 +20,9 @@ export async function POST(request: NextRequest) {
       username, // Format: "FirstName LastInitial" (e.g., "Sarah J")
       questionAnswers,
       interests,
+      notificationsEnabled,
+      cameraEnabled,
+      microphoneEnabled,
     } = body
 
     if (!userId) {

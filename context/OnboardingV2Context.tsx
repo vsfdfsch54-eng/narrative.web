@@ -3,19 +3,23 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
 
 export type OnboardingStepV2 = 
+  | 'welcome'
   | 'email'
   | 'password'
   | 'name'
   | 'questions'
   | 'interests'
+  | 'permissions'
   | 'create-account'
 
 const STEP_ORDER: OnboardingStepV2[] = [
+  'welcome',
   'email',
   'password',
   'name',
   'questions',
   'interests',
+  'permissions',
   'create-account',
 ]
 
@@ -28,6 +32,9 @@ interface OnboardingV2State {
   lastName: string
   questionAnswers: Record<string, string> // { questionId: answerValue }
   interests: string[] // Array of interest IDs
+  notificationsEnabled: boolean
+  cameraEnabled: boolean
+  microphoneEnabled: boolean
   initialized: boolean
   loading: boolean
   error: string | null
@@ -43,13 +50,16 @@ interface OnboardingV2ContextType {
   setLastName: (lastName: string) => void
   setQuestionAnswer: (questionId: string, answerValue: string) => void
   setInterests: (interests: string[]) => void
+  setNotificationsEnabled: (enabled: boolean) => void
+  setCameraEnabled: (enabled: boolean) => void
+  setMicrophoneEnabled: (enabled: boolean) => void
   nextStep: () => void
   previousStep: () => void
   createAccount: () => Promise<{ success: boolean; userId?: string; error?: string }>
 }
 
 const initialState: OnboardingV2State = {
-  step: 'email',
+  step: 'welcome',
   email: '',
   password: '',
   passwordConfirm: '',
@@ -57,6 +67,9 @@ const initialState: OnboardingV2State = {
   lastName: '',
   questionAnswers: {},
   interests: [],
+  notificationsEnabled: false,
+  cameraEnabled: false,
+  microphoneEnabled: false,
   initialized: false,
   loading: false,
   error: null,
@@ -103,6 +116,18 @@ export function OnboardingV2Provider({ children }: { children: ReactNode }) {
 
   const setInterests = useCallback((interests: string[]) => {
     setState(prev => ({ ...prev, interests }))
+  }, [])
+
+  const setNotificationsEnabled = useCallback((notificationsEnabled: boolean) => {
+    setState(prev => ({ ...prev, notificationsEnabled }))
+  }, [])
+
+  const setCameraEnabled = useCallback((cameraEnabled: boolean) => {
+    setState(prev => ({ ...prev, cameraEnabled }))
+  }, [])
+
+  const setMicrophoneEnabled = useCallback((microphoneEnabled: boolean) => {
+    setState(prev => ({ ...prev, microphoneEnabled }))
   }, [])
 
   const nextStep = useCallback(() => {
@@ -166,6 +191,9 @@ export function OnboardingV2Provider({ children }: { children: ReactNode }) {
           username,
           questionAnswers: state.questionAnswers,
           interests: state.interests,
+          notificationsEnabled: state.notificationsEnabled,
+          cameraEnabled: state.cameraEnabled,
+          microphoneEnabled: state.microphoneEnabled,
         }),
       })
 
@@ -203,6 +231,9 @@ export function OnboardingV2Provider({ children }: { children: ReactNode }) {
         setLastName,
         setQuestionAnswer,
         setInterests,
+        setNotificationsEnabled,
+        setCameraEnabled,
+        setMicrophoneEnabled,
         nextStep,
         previousStep,
         createAccount,
