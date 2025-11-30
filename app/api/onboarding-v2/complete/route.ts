@@ -23,9 +23,6 @@ export async function POST(request: NextRequest) {
       notificationsEnabled,
       cameraEnabled,
       microphoneEnabled,
-      notificationsEnabled,
-      cameraEnabled,
-      microphoneEnabled,
     } = body
 
     if (!userId) {
