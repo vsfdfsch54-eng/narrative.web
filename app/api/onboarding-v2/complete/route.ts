@@ -23,6 +23,9 @@ export async function POST(request: NextRequest) {
       notificationsEnabled,
       cameraEnabled,
       microphoneEnabled,
+      notificationsEnabled,
+      cameraEnabled,
+      microphoneEnabled,
     } = body
 
     if (!userId) {
@@ -56,11 +59,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Store question answers in a JSONB field (if available in schema)
-    // Otherwise, we can store in a separate table or in the users table
     if (questionAnswers && Object.keys(questionAnswers).length > 0) {
-      // Store in questions_answers JSONB field if it exists
       updateData.questions_answers = questionAnswers
     }
+
+    // Note: Permissions (notifications, camera, microphone) are handled client-side
+    // They don't need to be stored in the database as they're browser permissions
 
     const { data: updatedUser, error: updateError } = await supabase
       .from('users')

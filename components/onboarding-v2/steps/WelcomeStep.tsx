@@ -76,4 +76,3 @@ export function WelcomeStep() {
     </motion.div>
   )
 }
-

@@ -249,4 +249,3 @@ export function PermissionsStep() {
     </motion.div>
   )
 }
-

@@ -130,6 +130,18 @@ export function OnboardingV2Provider({ children }: { children: ReactNode }) {
     setState(prev => ({ ...prev, microphoneEnabled }))
   }, [])
 
+  const setNotificationsEnabled = useCallback((notificationsEnabled: boolean) => {
+    setState(prev => ({ ...prev, notificationsEnabled }))
+  }, [])
+
+  const setCameraEnabled = useCallback((cameraEnabled: boolean) => {
+    setState(prev => ({ ...prev, cameraEnabled }))
+  }, [])
+
+  const setMicrophoneEnabled = useCallback((microphoneEnabled: boolean) => {
+    setState(prev => ({ ...prev, microphoneEnabled }))
+  }, [])
+
   const nextStep = useCallback(() => {
     setState(prev => {
       const currentIndex = STEP_ORDER.indexOf(prev.step)
